@@ -42,7 +42,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL/glu.h>
+#include <OSGGLU.h>
 
 #include <algorithm>
 #include <OSGConfig.h>
@@ -76,7 +76,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.8 2002/04/22 16:02:09 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.9 2002/04/25 07:22:13 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -316,6 +316,8 @@ void GeoLoadManager::estimatePerformace()
     glNewList(dList1, GL_COMPILE);
     float step = .1;
     int count  = 500;
+    int c;
+
     glBegin(GL_TRIANGLE_STRIP);
     for(float y=0;y<1;y+=step)
     {        
@@ -333,7 +335,7 @@ void GeoLoadManager::estimatePerformace()
     glFinish();
     GLuint dList2 = glGenLists(1);
     glNewList(dList2, GL_COMPILE);
-    for(int c=0;c<count;++c)
+    for(c=0;c<count;++c)
     {
         glCallList(dList1);
     }        
@@ -342,7 +344,7 @@ void GeoLoadManager::estimatePerformace()
     double t=runFaceBench(dList2,256,1.0);
     count=(int)(count/t);
     glNewList(dList2, GL_COMPILE);
-    for(int c=0;c<count;++c)
+    for(c=0;c<count;++c)
     {
         glCallList(dList1);
     }        

@@ -57,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.8 2002/04/12 12:02:44 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.9 2002/04/25 07:22:13 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -223,7 +223,7 @@ void GeoLoad::updateGeometry()
         return;
 
     // count faces
-    for(FaceIterator f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
+    for(f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
     {
         ++_faces;
     }
