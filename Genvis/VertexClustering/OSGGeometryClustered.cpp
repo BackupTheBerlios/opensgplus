@@ -1247,9 +1247,9 @@ static UInt32 TexCoords1IDs[numFormats][4];
     }
 
 
-// CF temporary
-static Int32  geoBeginFaces = -1;
-
+// OpenGL IM Pump for models from files
+// if getNumCells() < 2 then draw model without using grid
+// else draw model using grid
 static void fileGeoPump (std::istream& is, UInt32& ntri,
 			 Window* win, Viewport* port, GeometryClustered* geo, 
 			 Matrix wcMatrix, const Pnt3f& minBound, const Pnt3f& maxBound)
@@ -1366,8 +1366,8 @@ static void fileGeoPump (std::istream& is, UInt32& ntri,
 		   tri[n++] = index;
 		   if (n == 3) {
 		      ntri++; 
-		      Vec3f normal((geo->getPositions()->getValue(tri[1])-geo->getPositions()->getValue(tri[0]))
-				   .cross(geo->getPositions()->getValue(tri[2])-geo->getPositions()->getValue(tri[0])));
+		      Vec3f normal((geo->getPositions()->getValue(tri[2])-geo->getPositions()->getValue(tri[0]))
+				   .cross(geo->getPositions()->getValue(tri[1])-geo->getPositions()->getValue(tri[0])));
 		      glNormal3fv(normal.getValues());
 		      glVertex3fv(geo->getPositions()->getValue(tri[0]).getValues());
 		      glVertex3fv(geo->getPositions()->getValue(tri[1]).getValues());
@@ -1579,6 +1579,7 @@ static void fileGeoPump (std::istream& is, UInt32& ntri,
    }
 }
 
+// OpenGL IM Pump for Geometry models
 static void masterGeoPump (UInt32& ntri,
 			   Window* win, Viewport* port, GeometryClustered* geo, 
 			   Matrix wcMatrix, const Pnt3f& minBound, const Pnt3f& maxBound)
@@ -2150,7 +2151,7 @@ void GeometryClustered::adjustVolume (Volume& volume)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.6 2004/12/21 17:44:10 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.7 2005/01/19 09:26:13 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 
