@@ -54,7 +54,6 @@
 #include "OSGGeometry.h"
 #include "OSGTextureChunk.h"
 #include "OSGWindow.h"
-#include "OSGQTWindow.h"
 
 OSG_USING_NAMESPACE
 
@@ -128,6 +127,7 @@ RemoteAspect::RemoteAspect():
     _destroyedFunctors(),
     _changedFunctors()
 {
+    FieldContainerType  *type;
     _buffer    =NULL;
     _bufferSize=0;
     _dataSize  =0;
@@ -139,8 +139,17 @@ RemoteAspect::RemoteAspect():
     = TextureChunk::GLIdFieldMask;
     _fieldFilter[Window::getClassType().getId()] 
     = Window::GlObjectStatusFieldMask;
-    _fieldFilter[QTWindow::getClassType().getId()] 
-    = Window::GlObjectStatusFieldMask;
+
+    type=FieldContainerFactory::the()->findType("GLUTWindow");
+    if(type)
+    {
+        _fieldFilter[type->getId()] = Window::GlObjectStatusFieldMask;
+    }
+    type=FieldContainerFactory::the()->findType("QTWindow");
+    if(type)
+    {
+        _fieldFilter[type->getId()] = Window::GlObjectStatusFieldMask;
+    }
 }
 
 /** \brief Destructor
