@@ -52,6 +52,7 @@
 #include <OSGTime.h>
 #include <OSGLog.h>
 #include <OSGMatrix.h>
+#include <OSGWindow.h>
 
 #include "OSGRenderNode.h"
 
@@ -78,17 +79,67 @@ namespace
  *  \brief cluster node information
  **/
 
+RenderNode *RenderNode::_prefefined[]=
+{
+    // some nvidia cards 
+
+    new RenderNode(1.0/ 14595932,          // GF 256
+                   1.0/ 14597817,
+                   1.0/110599215,
+                   1.0/ 18896143,
+                   1.0/ 26220918,
+                   "NVIDIA Corporation",
+                   "GeForce 256/AGP"),
+
+    new RenderNode(1.0/ 44471738,          // GF 3
+                   1.0/ 44436880,
+                   1.0/635452995,
+                   1.0/ 24905933,
+                   1.0/ 45649003,
+                   "NVIDIA Corporation",
+                   "GeForce3/AGP/3DNOW!"),
+
+    // some sgi cards 
+
+    new RenderNode(1.0/   959594,          // O2
+                   1.0/   556724,
+                   1.0/ 28915540,
+                   1.0/  4047028,
+                   1.0/  1101353,
+                   "SGI",
+                   "CRIME"),
+
+    new RenderNode(1.0/  1771522,          // IR2
+                   1.0/   861486,
+                   1.0/ 70556999,
+                   1.0/ 38311070,
+                   1.0/ 73507039,
+                   "SGI",
+                   "IRL/M/2/64/4"),
+
+
+    NULL
+};
+
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
 /*! Constructor 
  */
-RenderNode::RenderNode(void):
-    _visibleFaceCost(.001),
-    _invisibleFaceCost(.0008),
-    _drawPixelCost(.0001),
-    _readPixelCost(.0001),
-    _writePixelCost(.0001)
+RenderNode::RenderNode(Real32 invisibleFaceCost,
+                       Real32 visibleFaceCost,
+                       Real32 drawPixelCost,
+                       Real32 readPixelCost,
+                       Real32 writePixelCost,
+                       const string &vendor,
+                       const string &renderer):
+    _visibleFaceCost(visibleFaceCost),
+    _invisibleFaceCost(invisibleFaceCost),
+    _drawPixelCost(drawPixelCost),
+    _readPixelCost(readPixelCost),
+    _writePixelCost(writePixelCost),
+    _vendor(vendor),
+    _renderer(renderer)
 {
 }
 
@@ -99,7 +150,9 @@ RenderNode::RenderNode(const RenderNode &source):
     _invisibleFaceCost(source._invisibleFaceCost),
     _drawPixelCost(source._drawPixelCost),
     _readPixelCost(source._readPixelCost),
-    _writePixelCost(source._writePixelCost)
+    _writePixelCost(source._writePixelCost),
+    _vendor(source._vendor),
+    _renderer(source._renderer)
 {
 }
 
@@ -127,7 +180,8 @@ RenderNode& RenderNode::operator = (const RenderNode &source)
     _drawPixelCost      = source._drawPixelCost;
     _readPixelCost      = source._readPixelCost;
     _writePixelCost     = source._writePixelCost;
-
+    _vendor             = source._vendor;
+    _renderer           = source._renderer;
     return *this;
 }
 
@@ -142,29 +196,46 @@ RenderNode& RenderNode::operator = (const RenderNode &source)
  * <pre>
  * // face cost calculation
  * cost = invisible * invisibleFaceCost +
- *        visible * visibleFaceCost + 
- *        pixel * pixelCost
+ *        max( visible * visibleFaceCost + 
+ *             pixel * pixelCost)
  * </pre>
  *
  **/
-void RenderNode::determinePerformance( void )
+void RenderNode::determinePerformance( WindowPtr &window )
 {
     int c;
     double faces=0;
     double A,B,C;
+    double t;
+
+    setVendor((const char*)glGetString(GL_VENDOR));
+    setRenderer((const char*)glGetString(GL_RENDERER));
+
+    // try to find precalculated values
+    for(c=0;_prefefined[c]!=NULL;++c)
+    {
+        if(_prefefined[c]->getVendor()   == getVendor()  &&
+           _prefefined[c]->getRenderer() == getRenderer())
+        {
+            SLOG << "Predefined performance values used." << endl;
+            *this=*_prefefined[c];
+            return;
+        }
+    }
 
     SLOG << "Start rendering benchmark" << endl;
+    window->activate();
     // create display list
     GLuint dList1 = glGenLists(1);
     glNewList(dList1, GL_COMPILE);
     float step = .1;
-    int count  = 500;
+    int count  = 400;
     for(float y=0;y<(1-step/2);y+=step)
     {        
         glBegin(GL_TRIANGLE_STRIP);
         glVertex3f(0,y     ,-1);
         glVertex3f(0,y+step,-1);
-        for(float x=0;x<(1+step/2);x+=step)
+        for(float x=step;x<(1+step/2);x+=step)
         {
             glVertex3f(x,y     ,-1);
             glVertex3f(x,y+step,-1);
@@ -182,78 +253,52 @@ void RenderNode::determinePerformance( void )
     }        
     glEndList();
     glFlush();
-    double t=runFaceBench(dList2,128*256,1.0);
+    t=runFaceBench(dList2,128,128,1.0);
     count=(int)(count/t);
     glNewList(dList2, GL_COMPILE);
     for(int c=0;c<count;++c)
     {
         glCallList(dList1);
-    }        
+    }
     glEndList();
-
-    glCallList(dList2);
+    runFaceBench(dList2,1,1,1.0);
     glFinish();
 
-    UInt32 aArea=256*256;
-    UInt32 bArea=256* 32;
-    UInt32 cArea=256*256;
-    Real32 aVisible= .9;
-    Real32 bVisible= .9;
-    Real32 cVisible= .5;
-
-//    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
-
-    // do the face benchmarks
+    Real32 aSize=2;
+    Real32 bSize=2;
+    Real32 cSize=128;
     do
     {
-        A=runFaceBench(dList2,aArea,aVisible)/count;
-        B=runFaceBench(dList2,bArea,bVisible)/count;
-        C=runFaceBench(dList2,cArea,cVisible)/count;
+        for(A=0,c=0;A<1.0;++c)
+        {
+            A += runFaceBench(dList2,aSize,aSize,1.000);
+        }
+        A/=c*count;
+        for(B=0,c=0;B<1.0;++c)
+        {
+            B += runFaceBench(dList2,bSize,bSize,0.001);
+        }
+        B/=c*count;
+        C = runFaceBench(dList2,cSize,cSize,1.000)/count;
+    } while(A>C);
 
-        Matrix m( faces*(1-aVisible), faces*aVisible, aArea, 0,
-                  faces*(1-bVisible), faces*bVisible, bArea, 0,
-                  faces*(1-cVisible), faces*cVisible, cArea, 0,
-                  0                 , 0             , 0    , 1);
-        Vec3f  v(A,B,C);
-        m.invert();
-        m.mult(v);
+    _visibleFaceCost     =A/faces;
+    _invisibleFaceCost   =B/faces;
+    _drawPixelCost       =C/(cSize*cSize);
 
-        _invisibleFaceCost=v[0];
-        _visibleFaceCost=v[1];
-        _drawPixelCost=v[2];
-#if 0
-
-        // cost = faces(1-visible)*i + vaces*visible*j + size^2 * k;
-        // i:  only if invisible
-        // j:  only if visible, but not size dependent
-        // k:  only size dependent
-        
-        _drawPixelCost     = 
-            (A-B) / (aArea-bArea);
-        
-        _visibleFaceCost   = (A - _drawPixelCost*aArea)/(double)faces;
-        
-        _invisibleFaceCost = 
-            (C - 
-             _visibleFaceCost * cVisible * faces - 
-             _drawPixelCost   * cArea)/((1-cVisible)*faces);
-#endif
-    } while(_invisibleFaceCost<0  ||     // some logical tests
-            _visibleFaceCost<0);
-
-    glViewport(0, 0, 256, 256);
+    glViewport(0, 0, window->getWidth(), window->getHeight());
     UInt32 width,height;
 
     // test write performance
     glPixelStorei(GL_PACK_ALIGNMENT,1); 
     glPixelStorei(GL_UNPACK_ALIGNMENT,1); 
     vector<UInt8> pixels;
-    width =256;
-    height=256;
+    width =window->getWidth();
+    height=window->getHeight();
     pixels.resize(width*height*4);
     glFlush();
     t=-getSystemTime();
-    for(c=0;c<10;++c)
+    for(c=0;c<2;++c)
         glReadPixels(0,0,width,height,GL_RGB,GL_UNSIGNED_BYTE,&pixels[0]);
     glFlush();
     t+=getSystemTime();
@@ -271,7 +316,7 @@ void RenderNode::determinePerformance( void )
     glDisable(GL_DEPTH_TEST);
     glFlush();
     t=-getSystemTime();
-    for(c=0;c<10;++c)
+    for(c=0;c<2;++c)
         glDrawPixels(width,height,GL_RGB,GL_UNSIGNED_BYTE,&pixels[0]);
     glFlush();
     t+=getSystemTime();
@@ -282,46 +327,6 @@ void RenderNode::determinePerformance( void )
     glPopMatrix();
     SLOG << "End rendering benchmark" << endl;
     
-#if 1
-    cout << A << endl;
-    cout << 
-        faces*(1-aVisible) * _invisibleFaceCost +
-        faces*aVisible * _visibleFaceCost + 
-        aArea * _drawPixelCost
-         << endl;
-
-    cout << B << endl;
-    cout << 
-        faces*(1-bVisible) * _invisibleFaceCost +
-        faces*bVisible * _visibleFaceCost + 
-        bArea * _drawPixelCost
-         << endl;
-
-    cout << C << endl;
-    cout << 
-        faces*(1-cVisible) * _invisibleFaceCost +
-        faces*cVisible * _visibleFaceCost + 
-        cArea * _drawPixelCost
-         << endl;
-#endif
-
-#if 0
-    double v,s;
-    for(Real32 v=.1;v<=1.01;v+=.1)
-    {
-        for(Int32 s=10;s<=200;s+=10)
-        {
-            printf("%d %f %f\n",s*s,v*100,
-                   
-                   100-(faces*(1-v) * invisibleFaceCost +
-                        faces*v * visibleFaceCost + 
-                        s*s * pixelCost) * 
-                   100 / (runFaceBench(dList2,s,v)/count));
-        }
-//        printf("\n");
-    }
-#endif
-
     glDeleteLists(dList2,1);
     glDeleteLists(dList1,1);
 }
@@ -390,6 +395,8 @@ void RenderNode::setGroup(const RenderNode *begin,const RenderNode *end)
 
 void RenderNode::dump(void) const
 {
+    FLOG(("Vendor           : %s\n",_vendor.c_str()));
+    FLOG(("Rnderer          : %s\n",_renderer.c_str()));
     FLOG(("Clipped Faces/s  : %20.5f\n",1.0/_invisibleFaceCost));
     FLOG(("Faces/s          : %20.5f\n",1.0/_visibleFaceCost));
     FLOG(("Pixel/s          : %20.5f\n",1.0/_drawPixelCost));
@@ -410,11 +417,15 @@ void RenderNode::dump(void) const
  * \param visible   visible portion of the geometry
  *
  **/
-double RenderNode::runFaceBench(UInt32 dlist,UInt32 area,Real32 visible)
+double RenderNode::runFaceBench(UInt32 dlist,
+                                UInt32 width,
+                                UInt32 height,
+                                Real32 visible)
 {
-    UInt32 width = area/256;
-    UInt32 height  = 256;
+    GLint depthFunc;
 
+    glGetIntegerv( GL_DEPTH_FUNC,&depthFunc );
+    glDepthFunc  ( GL_LEQUAL );
     glViewport(0, 0, width, height);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -436,11 +447,7 @@ double RenderNode::runFaceBench(UInt32 dlist,UInt32 area,Real32 visible)
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-#if 0
-    glutSwapBuffers();
-    int c;
-    cin >> c;
-#endif
+    glDepthFunc  ( depthFunc );
     return t;
 }
 

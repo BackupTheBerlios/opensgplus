@@ -63,6 +63,16 @@ inline Real32 RenderNode::getWritePixelCost(void) const
     return _writePixelCost;
 }
 
+inline string RenderNode::getVendor(void) const
+{
+    return _vendor;
+}
+
+inline string RenderNode::getRenderer(void) const
+{
+    return _renderer;
+}
+
 inline void RenderNode::setVisibleFaceCost(Real32 value)
 {
     _visibleFaceCost=value;
@@ -88,14 +98,30 @@ inline void RenderNode::setWritePixelCost(Real32 value)
     _writePixelCost=value;
 }
 
+inline void RenderNode::setVendor(const string &value)
+{
+    _vendor=value;
+}
+
+inline void RenderNode::setRenderer(const string &value)
+{
+    _renderer=value;
+}
+
+/** Estimate rendering performance
+ *
+ * Facesetup end rasterisation is done in parallel on most hardware
+ * plattforms. So we use the maximum of face cost and rasterisation cost.
+ **/
+
 inline Real32 RenderNode::estimatePerformance( Real32 invisibleFaces,
                                                Real32 visibleFaces,
                                                Real32 pixel ) const
 {
     return 
         ( invisibleFaces * _invisibleFaceCost ) +
-        ( visibleFaces   * _visibleFaceCost   ) +
-        ( pixel          * _drawPixelCost     );
+        osgMax( ( visibleFaces   * _visibleFaceCost   ), 
+                ( pixel          * _drawPixelCost     ) );
 }
 
 OSG_END_NAMESPACE
