@@ -1,0 +1,12 @@
+# add the Sockets library to the system
+
+ac_gdz_packages="${ac_gdz_packages} Sockets"
+ac_gdz_package_order="${ac_gdz_package_order} SocketsLib"
+ac_gdz_package_name_Sockets="Sockets" 
+ac_gdz_package_fact_init_Sockets="0" 
+ac_gdz_package_dirs_Sockets="Sockets@" 
+ac_gdz_package_inc_dep_Sockets="@Base@" 
+ac_gdz_package_link_dep_Sockets="BaseLib" 
+ac_gdz_package_testinc_dep_Sockets="" 
+ac_gdz_package_testlink_dep_Sockets="" 
+ac_gdz_package_def_Sockets="OSG_COMPILESOCKETLIB" 
