@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/21 15:04:36 $
+//   $Revision: 1.4 $
+//   $Date: 2003/09/25 16:17:57 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Hierarchical profiling based on code 
@@ -119,7 +119,7 @@ inline void	EndProfile(u32& val)
 {
    struct timeval stop;
    gettimeofday(&stop, NULL);
-   val -= u32(stop.tv_sec)*1000+u32(stop.tv_usec);
+   val = u32(stop.tv_sec)*1000+u32(stop.tv_usec) - val;
 }
 #endif
 
