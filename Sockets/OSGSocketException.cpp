@@ -97,5 +97,11 @@ SocketInUse::SocketInUse(const char *function):
 {
 }
 
+/** \brief Constructor
+ */
+SocketConnReset::SocketConnReset(const char *function):
+    SocketError(function)
+{
+}
 OSG_END_NAMESPACE
 

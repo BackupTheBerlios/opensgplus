@@ -14,7 +14,7 @@ void streamClient()
     cout << "Stream socket client: Start" << endl;
     sock.open();
     sock.connect(Address("localhost",23344));
-    sock.write("hallo",6);
+    sock.send("hallo",6);
     sock.close();
     cout << "Stream socket client: OK" << endl;
 }
@@ -24,19 +24,35 @@ void dgramClient()
     char buffer[6];
     DgramSocket sock;
     Address server;
-    Selection sel;
+    bool retry;
 
     cout << "Dgram socket client: Start" << endl;
     sock.open();
+    // bind socket
     do
     {
-        // write to server
-        sock.sendTo("hallo",6,Address("localhost",23344));
-        // check for server response
-        sel.setRead(sock);
-    } 
-    while(sel.select(0.2)==0); // wait 0.2 sec for response
-    sock.recvFrom(buffer,6,server);
+        do
+        {
+            // write to server
+            sock.sendTo("hallo",6,Address("localhost",23344));
+        }
+        while(sock.waitReadable(0.2)==false); // wait 0.2 sec for response
+        try
+        {
+            sock.recvFrom(buffer,6,server);
+            retry=false;
+        }
+        catch(SocketConnReset &e)
+        {
+            // this could happen, when we have send a package to
+            // a port which was unbound and the host responds
+            // this with an icmp package. In this case, this is
+            // not an error, because we whant to wait for this
+            // port to be open.
+            retry=true;
+        }
+    }
+    while(retry);
     sock.close();
     cout << "Dgram socket client: OK" << endl;
 }
@@ -76,7 +92,7 @@ void multicastClient()
         Address("224.0.0.50",23344)
     };
     char *msg[3]={
-        "hallo","hallo","_END_"
+        "msg:1","msg:2","_END_"
     };
     int i;
 

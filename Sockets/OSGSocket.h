@@ -121,21 +121,25 @@ class OSG_SOCKET_DLLMAPPING Socket
     virtual ~Socket();
 
     /*------------------------- your_category -------------------------------*/
-    virtual void open()=0;
-    void         close();
-    int          recv(void *buf,int size);
-    int          peek(void *buf,int size);
-    int          send(const void *buf,int size);
-    void         bind(const Address &address=AnyAddress());
-    void         listen(int maxPending=10);
-    void         connect(const Address &address);
-    void         setReusePort(bool value);
-    void         setBlocking(bool value);
-    Address      getAddress();
-    void         setReadBufferSize(int size);
+    virtual void open              ()=0;
+    void         close             (void);
+    int          recv              (void *buf,int size);
+    int          recvAvailable     (void *buf,int size);
+    int          peek              (void *buf,int size);
+    int          send              (const void *buf,int size);
+    void         bind              (const Address &address=AnyAddress());
+    void         listen            (int maxPending=10);
+    void         connect           (const Address &address);
+    void         setReusePort      (bool value);
+    void         setBlocking       (bool value);
+    Address      getAddress        (void);
+    void         setReadBufferSize (int size);
     void         setWriteBufferSize(int size);
-    int          getReadBufferSize();
-    int          getWriteBufferSize();
+    int          getReadBufferSize (void);
+    int          getWriteBufferSize(void);
+    int          getAvailable      (void);
+    Bool         waitReadable      (double duration);
+    Bool         waitWritable      (double duration);
 
     /*------------------------- your_operators ------------------------------*/
 

@@ -107,9 +107,6 @@ class OSG_SOCKET_DLLMAPPING StreamSocket:public Socket
     StreamSocket acceptFrom(Address &address);
     StreamSocket accept();
     void         setDelay(bool value);
-    int          read(void *buf,int size);
-    int          write(const void *buf,int size);
-    int          getNReadBytes(void);
 
     /*------------------------- your_operators ------------------------------*/
 

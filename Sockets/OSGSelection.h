@@ -46,7 +46,7 @@
 //  Includes
 //---------------------------------------------------------------------------
 #ifdef WIN32
-#include <Winsock2.h>
+#include <windows.h>
 #else
 #include <sys/types.h>
 #endif

@@ -41,12 +41,12 @@
 //---------------------------------------------------------------------------
 #define OSG_COMPILESOCKETLIB
 
-#include <sys/types.h>
 #ifdef WIN32
-#include <Winsock2.h>
+#include <windows.h>
 #include <WS2TCPIP.h>
 #include <io.h>
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -55,7 +55,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
-#include <sys/ioctl.h>
 #endif
 
 #include <errno.h>
@@ -170,52 +169,6 @@ void StreamSocket::setDelay(bool value)
     {
         throw SocketError("setsockopt(,SOCK_STREAM,TCP_NODELAY)");
     }
-}
-
-int StreamSocket::read(void *buf,int size)
-{
-    int readSize;
-    int pos=0;
-
-    while(size)
-    {
-        readSize=::read(_sd,((char*)buf)+pos,size);
-        if(readSize<=0)
-        {
-            throw SocketError("read()");
-        }
-        size-=readSize;
-        pos +=readSize;
-    }
-    return pos;
-}
-
-int StreamSocket::write(const void *buf,int size)
-{
-    int writeSize;
-    int pos=0;
-
-    while(size)
-    {
-        writeSize=::write(_sd,(const char*)buf+pos,size);
-        if(writeSize<=0)
-        {
-            throw SocketError("send()");
-        }
-        size-=writeSize;
-        pos+=writeSize;
-    }
-    return pos;
-}
-
-int StreamSocket::getNReadBytes(void)
-{
-    int value;
-    if(::ioctl(_sd, FIONREAD, &value)<0)
-    {    
-        throw SocketError("ioctl()");
-    }
-    return value;
 }
 
 /*-------------------------- assignment -----------------------------------*/

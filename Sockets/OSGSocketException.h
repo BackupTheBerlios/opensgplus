@@ -96,6 +96,12 @@ public:
     SocketInUse(const char *text);
 };
 
+class OSG_SOCKET_DLLMAPPING SocketConnReset : public SocketError
+{
+public:
+    SocketConnReset(const char *text);
+};
+
 OSG_END_NAMESPACE
 
 #endif

@@ -43,7 +43,7 @@
 
 #include <sys/types.h>
 #ifdef WIN32
-#include <Winsock2.h>
+#include <windows.h>
 #include <WS2TCPIP.h>
 #include <io.h>
 #else
@@ -55,6 +55,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
 #endif
 #include <errno.h>
 #include <stdio.h>
@@ -63,6 +64,7 @@
 #include <OSGSocketConfig.h>
 #include <OSGAddress.h>
 #include <OSGSocket.h>
+#include <OSGSelection.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -109,6 +111,55 @@ int Socket::getHostError()
 
 const char *Socket::getErrorStr()
 {
+#ifdef WIN32
+    switch(getError())
+    {
+        case WSAEINTR: return "WSAEINTR"; 
+        case WSAEBADF: return "WSAEBADF"; 
+        case WSEACCES: return "WSEACCES"; 
+        case WSAEFAULT: return "WSAEFAULT"; 
+        case WSAEINVAL: return "WSAEINVAL"; 
+        case WSAEMFILE: return "WSAEMFILE"; 
+        case WSAEWOULDBLOCK: return "WSAEWOULDBLOCK"; 
+        case WSAEINPROGRESS: return "WSAEINPROGRESS"; 
+        case WSAEALREADY: return "WSAEALREADY"; 
+        case WSAENOTSOCK: return "WSAENOTSOCK"; 
+        case WSAEDESTADDRREQ: return "WSAEDESTADDRREQ"; 
+        case WSAEMSGSIZE: return "WSAEMSGSIZE"; 
+        case WSAEPROTOTYPE: return "WSAEPROTOTYPE"; 
+        case WSAENOPROTOOPT: return "WSAENOPROTOOPT"; 
+        case WSAEPROTONOSUPPORT: return "WSAEPROTONOSUPPORT"; 
+        case WSAESOCKTNOSUPPORT: return "WSAESOCKTNOSUPPORT"; 
+        case WSAEOPNOTSUPP: return "WSAEOPNOTSUPP"; 
+        case WSAEPFNOSUPPORT: return "WSAEPFNOSUPPORT"; 
+        case WSAEAFNOSUPPORT: return "WSAEAFNOSUPPORT"; 
+        case WSAEADDRINUSE: return "WSAEADDRINUSE"; 
+        case WSAEADDRNOTAVAIL: return "WSAEADDRNOTAVAIL"; 
+        case WSAENETDOWN: return "WSAENETDOWN"; 
+        case WSAENETUNREACH: return "WSAENETUNREACH"; 
+        case WSAENETRESET: return "WSAENETRESET"; 
+        case WSAECONNABORTED: return "WSAECONNABORTED"; 
+        case WSAECONNRESET: return "WSAECONNRESET"; 
+        case WSAENOBUFS: return "WSAENOBUFS"; 
+        case WSAEISCONN: return "WSAEISCONN"; 
+        case WSAENOTCONN: return "WSAENOTCONN"; 
+        case WSAESHUTDOWN: return "WSAESHUTDOWN"; 
+        case WSAETOOMANYREFS: return "WSAETOOMANYREFS"; 
+        case WSAETIMEDOUT: return "WSAETIMEDOUT"; 
+        case WSAECONNREFUSED: return "WSAECONNREFUSED"; 
+        case WSAELOOP: return "WSAELOOP"; 
+        case WSAENAMETOOLONG: return "WSAENAMETOOLONG"; 
+        case WSAEHOSTDOWN: return "WSAEHOSTDOWN"; 
+        case WSAEHOSTUNREACH: return "WSAEHOSTUNREACH"; 
+        case WSASYSNOTREADY: return "WSASYSNOTREADY"; 
+        case WSAVERNOTSUPPORTED: return "WSAVERNOTSUPPORTED"; 
+        case WSANOTINITIALISED: return "WSANOTINITIALISED"; 
+        case WSAHOST_NOT_FOUND: return "WSAHOST_NOT_FOUND"; 
+        case WSATRY_AGAIN: return "WSATRY_AGAIN"; 
+        case WSANO_RECOVERY: return "WSANO_RECOVERY"; 
+        case WSANO_DATA: return "WSANO_DATA"; 
+    }
+#endif
     return strerror(getError());
 }
 
@@ -174,45 +225,105 @@ Socket::~Socket()
 
 void Socket::close()
 {
+#ifdef WIN32
+    ::closesocket(_sd);
+#else
     ::close(_sd);
+#endif
 }
 
-int Socket::recv(void *buf,int size)
+int Socket::recvAvailable(void *buf,int size)
 {
     int len;
 
     len=::recv(_sd,(char*)buf,size,0);
     if(len==-1)
     {
+#if defined WIN32
+        if(getError()==WSAECONNRESET)
+        {
+            throw SocketConnReset("recvAvailable()");
+        }
+#endif
         throw SocketError("recv()");
     }
     return len;
+}
+
+int Socket::recv(void *buf,int size)
+{
+    int readSize;
+    int pos=0;
+
+    while(size)
+    {
+        readSize=::recv(_sd,((char*)buf)+pos,size,0);
+        if(readSize<0)
+        {
+#if defined WIN32
+            if(getError()==WSAECONNRESET)
+            {
+                throw SocketConnReset("recv");
+            }
+#endif
+            throw SocketError("recv()");
+        }
+        if(readSize==0)
+        {
+            return 0;
+        }
+        size-=readSize;
+        pos +=readSize;
+    }
+    return pos;
 }
 
 int Socket::peek(void *buf,int size)
 {
-    int len;
-    //    socklen_t addrLen=from.getSockAddrSize();
+    int readSize;
+    int pos=0;
 
-    len=::recv(_sd,
-               (char*)buf,
-               size,
-               MSG_PEEK);
-    if(len==-1)
+    do
     {
-        throw SocketError("recv()");
+        readSize=::recv(_sd,((char*)buf)+pos,size,MSG_PEEK);
+        if(readSize<0)
+        {
+#if defined WIN32
+            if(getError()==WSAECONNRESET)
+            {
+                throw SocketConnReset("peek");
+            }
+#endif
+            throw SocketError("peek");
+        }
+        if(readSize==0)
+        {
+            return 0;
+        }
     }
-    return len;
+    while(readSize!=size);
+    return readSize;
 }
 
 int Socket::send(const void *buf,int size)
 {
-    int len=::send(_sd,(const char*)buf,size,0);
-    if(len==-1)
+    int writeSize;
+    int pos=0;
+    while(size)
     {
-        throw SocketError("send()");
+        writeSize=::send(_sd,((const char*)buf)+pos,size,0);
+        if(writeSize==-1)
+        {
+            throw SocketError("send()");
+        }
+        if(writeSize==0)
+        {
+            return 0;
+        }
+        size-=writeSize;
+        pos+=writeSize;
     }
-    return len;
+    return pos;
 }
 
 void Socket::bind(const Address &address)
@@ -318,7 +429,7 @@ void Socket::setWriteBufferSize(int size)
     ::setsockopt(_sd,SOL_SOCKET,SO_SNDBUF,(SocketOptT*)&v,sizeof(v));
 }
 
-int  Socket::getReadBufferSize() 
+int Socket::getReadBufferSize() 
 {
     int v;
     SocketLenT len=sizeof(v);
@@ -326,12 +437,51 @@ int  Socket::getReadBufferSize()
     return v;
 }
 
-int  Socket::getWriteBufferSize() 
+int Socket::getWriteBufferSize() 
 {
     int v;
     SocketLenT len=sizeof(v);
     ::getsockopt(_sd,SOL_SOCKET,SO_SNDBUF,(SocketOptT*)&v,&len);
     return v;
+}
+
+int Socket::getAvailable(void)
+{
+#ifndef WIN32
+    int value;
+    if(::ioctl(_sd, FIONREAD, &value)<0)
+    {    
+        throw SocketError("ioctl()");
+    }
+    return value;
+#else
+    u_long ulVal;
+    if( (ioctlsocket(_sd, FIONREAD, &ulVal)) != 0) 
+    {    
+        throw SocketError("ioctlsocket()");
+    }
+    return (int)ulVal;
+#endif
+}
+
+Bool Socket::waitReadable(double duration)
+{
+    Selection selection;
+    selection.setRead(*this);
+    if(selection.select(duration)==1)
+        return true;
+    else
+        return false;
+}
+
+Bool Socket::waitWritable(double duration)
+{
+    Selection selection;
+    selection.setWrite(*this);
+    if(selection.select(duration)==1)
+        return true;
+    else
+        return false;
 }
 
 /*-------------------------- assignment -----------------------------------*/

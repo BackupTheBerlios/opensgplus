@@ -31,7 +31,7 @@ void streamServer()
     }
     // accept client
     client=sock.accept();
-    client.read(buffer,6);
+    client.recv(buffer,6);
     sock.close();
     client.close();
     cout << "Stream socket server: OK" << endl;
@@ -91,7 +91,7 @@ void multicastServer()
     {
         sock.recvFrom(buffer,6,client);
         sock.sendTo(buffer,6,client);
-        cout << client.getHost() << endl;
+        cout << client.getHost() << " " << buffer << endl;
     } while(strcmp(buffer,"_END_"));
     sock.close();
     cout << "Dgram multicast server: OK" << endl;

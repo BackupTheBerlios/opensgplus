@@ -43,7 +43,7 @@
 
 #include <sys/types.h>
 #ifdef WIN32
-#include <Winsock2.h>  
+#include <windows.h>  
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -112,7 +112,7 @@ Address::Address(const char *host,int port)
     memset(&_sockaddr,0,sizeof(_sockaddr));
     _sockaddr.sin_family = AF_INET;
     if(host)
-        setHost(host);
+        setHost(string(host));
     setPort(port);
 }
 

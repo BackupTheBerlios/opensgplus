@@ -43,7 +43,7 @@
 
 #include <sys/types.h>
 #ifdef WIN32
-#include <Winsock2.h>
+#include <windows.h>
 #include <WS2TCPIP.h>
 #include <io.h>
 #else
@@ -159,6 +159,12 @@ int DgramSocket::recvFrom(void *buf,int size,Address &from)
                  &addrLen);
     if(len==-1)
     {
+#if defined WIN32
+        if(getError()==WSAECONNRESET)
+        {
+            throw SocketConnReset("recvfrom");
+        }
+#endif
         throw SocketError("recvfrom()");
     }
     return len;
@@ -177,6 +183,12 @@ int DgramSocket::peekFrom(void *buf,int size,Address &from)
                  &addrLen);
     if(len==-1)
     {
+#if defined WIN32
+        if(getError()==WSAECONNRESET)
+        {
+            throw SocketConnReset("recvfrom");
+        }
+#endif
         throw SocketError("recvfrom()");
     }
     return len;
