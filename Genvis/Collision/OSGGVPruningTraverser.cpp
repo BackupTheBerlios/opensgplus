@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:41:31 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Radix sorting and pruning based on code 
@@ -36,7 +36,7 @@ OSG_USING_NAMESPACE
 
 #define CREATE_HISTOGRAMS(type, buffer)														\
 	/* Clear counters/histograms */															\
-	ZeroMemory(mHistogram, 256*4*sizeof(u32));											\
+	memset(mHistogram, 0x0, 256*4*sizeof(u32));											\
 																							\
 	/* Prepare to count */																	\
 	u8* p = (u8*)input;																\
@@ -407,7 +407,7 @@ bool PruningTraverser<BasicTraits>::completePruning
    // 2) Sort the list
    // CF to be changed to member for coherence
    static RadixSort RS0;
-   u32* Sorted0 = RS0.Sort(m_MinPosList0.begin(), list0.size()).GetRanks();
+   u32* Sorted0 = RS0.Sort(m_MinPosList0.begin().operator->(), list0.size()).GetRanks();
 
    // 3) Prune the list
    const u32* const LastSorted = &Sorted0[list0.size()];
@@ -470,8 +470,8 @@ bool PruningTraverser<BasicTraits>::bipartitePruning
   
   // 2) Sort the lists
   static RadixSort RS0, RS1;	// Static for coherence.
-  u32* Sorted0 = RS0.Sort(m_MinPosList0.begin(), list0.size()).GetRanks();
-  u32* Sorted1 = RS1.Sort(m_MinPosList1.begin(), list1.size()).GetRanks();
+  u32* Sorted0 = RS0.Sort(m_MinPosList0.begin().operator->(), list0.size()).GetRanks();
+  u32* Sorted1 = RS1.Sort(m_MinPosList1.begin().operator->(), list1.size()).GetRanks();
   
   // 3) Prune the lists
   u32 Index0, Index1;
