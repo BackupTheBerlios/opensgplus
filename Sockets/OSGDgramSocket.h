@@ -105,8 +105,8 @@ class OSG_SOCKET_DLLMAPPING DgramSocket:public Socket
 
     virtual void open();
     int          sendTo(const void *buf,int size,const Address &to);
-    int          recvFrom(void *buf,int size,const Address &from);
-    int          peekFrom(void *buf,int size,const Address &from);
+    int          recvFrom(void *buf,int size,Address &from);
+    int          peekFrom(void *buf,int size,Address &from);
     void         join(const Address &group,const Address &interf=AnyAddress());
     void         leave(const Address &group,const Address &interf=AnyAddress());
     void         setTTL(unsigned char ttl);

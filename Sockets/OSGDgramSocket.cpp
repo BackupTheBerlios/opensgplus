@@ -146,7 +146,7 @@ void DgramSocket::open()
     setTTL(1);
 }
 
-int DgramSocket::recvFrom(void *buf,int size,const Address &from)
+int DgramSocket::recvFrom(void *buf,int size,Address &from)
 {
     int len;
     SocketLenT addrLen=from.getSockAddrSize();
@@ -164,7 +164,7 @@ int DgramSocket::recvFrom(void *buf,int size,const Address &from)
     return len;
 }
 
-int DgramSocket::peekFrom(void *buf,int size,const Address &from)
+int DgramSocket::peekFrom(void *buf,int size,Address &from)
 {
     int len;
     SocketLenT addrLen=from.getSockAddrSize();
