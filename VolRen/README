@@ -1,0 +1,45 @@
+
+            OpenSG VolRen Library
+            =====================            
+
+            contact: Manfred Weiler
+		     weiler@informatik.uni-stuttgart.de
+
+
+This directory contains a volume rendering library for OpenSG.
+
+
+Revision:
+
+Date:    10/10/2002
+Version: This is a 0.9 beta - try at your own risk.
+	 (The interfaces might still change occationally)
+
+
+Compatibility:
+
+The current library can be build with OpenSG-1.1.0. It should also
+run with the current OpenSG-Snapshot if you delete the
+"#define MW_OSG_1_1" in OSGVolRenDef.h.
+
+However we are not testing compatibility with the Snapshot every
+day so try it on your own risk.
+
+
+Build:
+
+The VolRen-Lib is fully integrated with the OpenSG-1.1.0 build tree.
+So in order to build just checkout the module VolRen in the OpenSG
+source tree and then configure, make should do.
+
+
+How to use:
+
+There is a utility function in "makeVolume.cpp" showing the correct
+instantiation of a volume node with all required field containers.
+You can simply plug this into your application and voila a volume will
+show up ;) You can use the included data file for testing. All other
+3D-Image formats supported by OpenSG should be ok too.
+
+
+

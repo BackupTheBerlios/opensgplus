@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="DVRIsoShader"
+	parent="DVRShader"
+	library="VolRen"
+	pointerfieldtypes="single"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+	decoratable="false"
+>
+Simple iso surface shader. Uses register combiners on NVidia hardware or the color matrix otherwise.
+</FieldContainer>
