@@ -71,6 +71,7 @@
 #include <OSGStringFields.h> // FileName type
 #include <OSGReal32Fields.h> // Sampling type
 #include <OSGReal32Fields.h> // SamplingInteractive type
+#include <OSGReal32Fields.h> // BaseAlpha type
 #include <OSGBoolFields.h> // DoTextures type
 #include <OSGUInt32Fields.h> // BrickOverlap type
 #include <OSGQBit.h> // Textures2D type
@@ -97,10 +98,12 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
 {
   private:
 
-    typedef NodeCore Inherited;
+    typedef NodeCore    Inherited;
 
     /*==========================  PUBLIC  =================================*/
   public:
+
+    typedef DVRVolumePtr  Ptr;
 
     enum
     {
@@ -110,7 +113,8 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
         FileNameFieldId               = ShaderFieldId                 + 1,
         SamplingFieldId               = FileNameFieldId               + 1,
         SamplingInteractiveFieldId    = SamplingFieldId               + 1,
-        DoTexturesFieldId             = SamplingInteractiveFieldId    + 1,
+        BaseAlphaFieldId              = SamplingInteractiveFieldId    + 1,
+        DoTexturesFieldId             = BaseAlphaFieldId              + 1,
         BrickOverlapFieldId           = DoTexturesFieldId             + 1,
         Textures2DFieldId             = BrickOverlapFieldId           + 1,
         RenderMaterialFieldId         = Textures2DFieldId             + 1,
@@ -131,6 +135,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
     static const OSG::BitVector FileNameFieldMask;
     static const OSG::BitVector SamplingFieldMask;
     static const OSG::BitVector SamplingInteractiveFieldMask;
+    static const OSG::BitVector BaseAlphaFieldMask;
     static const OSG::BitVector DoTexturesFieldMask;
     static const OSG::BitVector BrickOverlapFieldMask;
     static const OSG::BitVector Textures2DFieldMask;
@@ -175,6 +180,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
            SFString            *getSFFileName       (void);
            SFReal32            *getSFSampling       (void);
            SFReal32            *getSFSamplingInteractive(void);
+           SFReal32            *getSFBaseAlpha      (void);
            SFBool              *getSFDoTextures     (void);
            SFUInt32            *getSFBrickOverlap   (void);
            SFQBit              *getSFTextures2D     (void);
@@ -192,6 +198,8 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
      const Real32              &getSampling       (void) const;
            Real32              &getSamplingInteractive(void);
      const Real32              &getSamplingInteractive(void) const;
+           Real32              &getBaseAlpha      (void);
+     const Real32              &getBaseAlpha      (void) const;
            bool                &getDoTextures     (void);
      const bool                &getDoTextures     (void) const;
            UInt32              &getBrickOverlap   (void);
@@ -212,6 +220,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
      void setFileName       ( const std::string &value );
      void setSampling       ( const Real32 &value );
      void setSamplingInteractive( const Real32 &value );
+     void setBaseAlpha      ( const Real32 &value );
      void setDoTextures     ( const bool &value );
      void setBrickOverlap   ( const UInt32 &value );
      void setTextures2D     ( const QBit &value );
@@ -267,6 +276,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
     SFString            _sfFileName;
     SFReal32            _sfSampling;
     SFReal32            _sfSamplingInteractive;
+    SFReal32            _sfBaseAlpha;
     SFBool              _sfDoTextures;
     SFUInt32            _sfBrickOverlap;
     SFQBit              _sfTextures2D;
@@ -371,6 +381,6 @@ typedef DVRVolumeBase *DVRVolumeBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
 
 #endif /* _OSGDVRVOLUMEBASE_H_ */

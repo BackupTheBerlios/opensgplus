@@ -62,7 +62,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.3 2003/12/09 14:01:28 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRMTEXLUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRMTEXLUTSHADER_INLINE_CVSID;
 }
@@ -131,11 +131,13 @@ bool DVRMtexLUTShader::initialize     (DVRVolume *volume, DrawActionBase *action
     GLenum nInternalFormat;
     GLenum nExternalFormat;
 
+    Window * win = action->getWindow();
+
     // Determine lookup table mechanism
     if (getLutMode() != LM_AUTO)
     {
         // A certain mode has been selected
-        if (isModeSupported( action, getLutMode() ))
+        if (isModeSupported( action, getLutMode(), volume->getTextureMode(win) ))
 	{
 	    SWARNING << "DVRMtexLUTShader - User specified lookup table mode "
 		     << int(getLutMode()) << std::endl;
@@ -150,7 +152,7 @@ bool DVRMtexLUTShader::initialize     (DVRVolume *volume, DrawActionBase *action
     }
     else {
         // Use automatic mode selection
-        m_nTexturePaletteMode = selectMode( action );
+        m_nTexturePaletteMode = selectMode( action, volume->getTextureMode(win) );
     }
     setActiveLutMode( m_nTexturePaletteMode );
 

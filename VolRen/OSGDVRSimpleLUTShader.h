@@ -143,9 +143,9 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
 			   GLenum & internalFormat, GLenum & externalFormat );
 
     // Checks whether the selected mode is supported
-    bool isModeSupported( DrawActionBase *action, UInt8 mode );
+    bool isModeSupported( DrawActionBase *action, UInt8 mode, Int8 textureMode );
     // Automatically select a lookup table mode
-    UInt8 selectMode( DrawActionBase *action );
+    UInt8 selectMode( DrawActionBase *action, Int8 textureMode );
     
     // Enable/disable palette
     void enablePalette();
@@ -155,7 +155,10 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     void initDependentTexture(int size);
     void updateDependentTexture(int size, const UInt8 * data);
     void destroyDependentTexture();
-    
+
+    // Register combiners
+    void setupAlphaCorrectionRegisterCombiners(DrawActionBase *action);
+
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
@@ -173,11 +176,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     static UInt32 _arbMultitexture;
     static UInt32 _nvTextureShader2;
     static UInt32 _arbFragmentProgram;
+    static UInt32 _nvRegisterCombiners;
 
     // extension indices for used fucntions;
     static UInt32 _funcColorTableSGI;
     static UInt32 _funcColorTableEXT;
     static UInt32 _funcActiveTextureARB;
+    static UInt32 _funcFinalCombinerInputNV;
+    static UInt32 _funcCombinerInputNV;
+    static UInt32 _funcCombinerOutputNV;
     
   private:
 
@@ -198,6 +205,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRSimpleLUTShader.inl>
 #include <OSGDVRSimpleLUTShaderBase.inl>
 
-#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
 
 #endif /* _OSGDVRSIMPLELUTSHADER_H_ */

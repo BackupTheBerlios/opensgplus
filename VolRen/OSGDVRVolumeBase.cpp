@@ -83,6 +83,9 @@ const OSG::BitVector  DVRVolumeBase::SamplingFieldMask =
 const OSG::BitVector  DVRVolumeBase::SamplingInteractiveFieldMask = 
     (TypeTraits<BitVector>::One << DVRVolumeBase::SamplingInteractiveFieldId);
 
+const OSG::BitVector  DVRVolumeBase::BaseAlphaFieldMask = 
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BaseAlphaFieldId);
+
 const OSG::BitVector  DVRVolumeBase::DoTexturesFieldMask = 
     (TypeTraits<BitVector>::One << DVRVolumeBase::DoTexturesFieldId);
 
@@ -142,6 +145,9 @@ const OSG::BitVector DVRVolumeBase::MTInfluenceMask =
     
 */
 /*! \var Real32          DVRVolumeBase::_sfSamplingInteractive
+    
+*/
+/*! \var Real32          DVRVolumeBase::_sfBaseAlpha
     
 */
 /*! \var bool            DVRVolumeBase::_sfDoTextures
@@ -215,6 +221,11 @@ FieldDescription *DVRVolumeBase::_desc[] =
                      SamplingInteractiveFieldId, SamplingInteractiveFieldMask,
                      false,
                      (FieldAccessMethod) &DVRVolumeBase::getSFSamplingInteractive),
+    new FieldDescription(SFReal32::getClassType(), 
+                     "baseAlpha", 
+                     BaseAlphaFieldId, BaseAlphaFieldMask,
+                     false,
+                     (FieldAccessMethod) &DVRVolumeBase::getSFBaseAlpha),
     new FieldDescription(SFBool::getClassType(), 
                      "doTextures", 
                      DoTexturesFieldId, DoTexturesFieldMask,
@@ -336,6 +347,7 @@ DVRVolumeBase::DVRVolumeBase(void) :
     _sfFileName               (), 
     _sfSampling               (Real32(1.0)), 
     _sfSamplingInteractive    (Real32(1.0)), 
+    _sfBaseAlpha              (Real32(0.9)), 
     _sfDoTextures             (bool(true)), 
     _sfBrickOverlap           (UInt32(1)), 
     _sfTextures2D             (QBit(2)), 
@@ -363,6 +375,7 @@ DVRVolumeBase::DVRVolumeBase(const DVRVolumeBase &source) :
     _sfFileName               (source._sfFileName               ), 
     _sfSampling               (source._sfSampling               ), 
     _sfSamplingInteractive    (source._sfSamplingInteractive    ), 
+    _sfBaseAlpha              (source._sfBaseAlpha              ), 
     _sfDoTextures             (source._sfDoTextures             ), 
     _sfBrickOverlap           (source._sfBrickOverlap           ), 
     _sfTextures2D             (source._sfTextures2D             ), 
@@ -419,6 +432,11 @@ UInt32 DVRVolumeBase::getBinSize(const BitVector &whichField)
     if(FieldBits::NoField != (SamplingInteractiveFieldMask & whichField))
     {
         returnValue += _sfSamplingInteractive.getBinSize();
+    }
+
+    if(FieldBits::NoField != (BaseAlphaFieldMask & whichField))
+    {
+        returnValue += _sfBaseAlpha.getBinSize();
     }
 
     if(FieldBits::NoField != (DoTexturesFieldMask & whichField))
@@ -520,6 +538,11 @@ void DVRVolumeBase::copyToBin(      BinaryDataHandler &pMem,
         _sfSamplingInteractive.copyToBin(pMem);
     }
 
+    if(FieldBits::NoField != (BaseAlphaFieldMask & whichField))
+    {
+        _sfBaseAlpha.copyToBin(pMem);
+    }
+
     if(FieldBits::NoField != (DoTexturesFieldMask & whichField))
     {
         _sfDoTextures.copyToBin(pMem);
@@ -618,6 +641,11 @@ void DVRVolumeBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfSamplingInteractive.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (BaseAlphaFieldMask & whichField))
+    {
+        _sfBaseAlpha.copyFromBin(pMem);
+    }
+
     if(FieldBits::NoField != (DoTexturesFieldMask & whichField))
     {
         _sfDoTextures.copyFromBin(pMem);
@@ -705,6 +733,9 @@ void DVRVolumeBase::executeSyncImpl(      DVRVolumeBase *pOther,
     if(FieldBits::NoField != (SamplingInteractiveFieldMask & whichField))
         _sfSamplingInteractive.syncWith(pOther->_sfSamplingInteractive);
 
+    if(FieldBits::NoField != (BaseAlphaFieldMask & whichField))
+        _sfBaseAlpha.syncWith(pOther->_sfBaseAlpha);
+
     if(FieldBits::NoField != (DoTexturesFieldMask & whichField))
         _sfDoTextures.syncWith(pOther->_sfDoTextures);
 
@@ -769,7 +800,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.3 2003/12/09 14:01:28 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRVOLUMEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRVOLUMEBASE_INLINE_CVSID;
 

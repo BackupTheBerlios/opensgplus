@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRVolumePtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRVolumeFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRVOLUMEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRVolumeFields.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
 
 #endif /* _OSGDVRVOLUMEFIELDS_H_ */

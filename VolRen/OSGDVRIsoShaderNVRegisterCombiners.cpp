@@ -9,11 +9,14 @@
 #include <OSGWindow.h>
 #include <OSGCamera.h>
 #include <OSGColor.h>
+#include <OSGGL.h>
 #include <OSGGLU.h>
 #include <OSGGLEXT.h>
 #include "OSGDVRIsoShader.h"
 
 #include <math.h>
+
+OSG_USING_NAMESPACE
 
 void DVRIsoShader::initCombiners_IsoSurfaceDiffuse(DrawActionBase *action)
 {

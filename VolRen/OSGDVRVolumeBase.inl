@@ -138,6 +138,13 @@ SFReal32 *DVRVolumeBase::getSFSamplingInteractive(void)
     return &_sfSamplingInteractive;
 }
 
+//! Get the DVRVolume::_sfBaseAlpha field.
+inline
+SFReal32 *DVRVolumeBase::getSFBaseAlpha(void)
+{
+    return &_sfBaseAlpha;
+}
+
 //! Get the DVRVolume::_sfDoTextures field.
 inline
 SFBool *DVRVolumeBase::getSFDoTextures(void)
@@ -347,6 +354,27 @@ inline
 void DVRVolumeBase::setSamplingInteractive(const Real32 &value)
 {
     _sfSamplingInteractive.setValue(value);
+}
+
+//! Get the value of the DVRVolume::_sfBaseAlpha field.
+inline
+Real32 &DVRVolumeBase::getBaseAlpha(void)
+{
+    return _sfBaseAlpha.getValue();
+}
+
+//! Get the value of the DVRVolume::_sfBaseAlpha field.
+inline
+const Real32 &DVRVolumeBase::getBaseAlpha(void) const
+{
+    return _sfBaseAlpha.getValue();
+}
+
+//! Set the value of the DVRVolume::_sfBaseAlpha field.
+inline
+void DVRVolumeBase::setBaseAlpha(const Real32 &value)
+{
+    _sfBaseAlpha.setValue(value);
 }
 
 //! Get the value of the DVRVolume::_sfDoTextures field.
@@ -604,5 +632,5 @@ const MFString &DVRVolumeBase::getDrawStyleNames(void) const
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRVOLUMEBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeBase.inl,v 1.3 2003/12/09 14:01:28 weiler Exp $"
 

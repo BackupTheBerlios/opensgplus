@@ -12,6 +12,8 @@
 #include <OSGGLEXT.h>
 #include "OSGDVRIsoShader.h"
 
+OSG_USING_NAMESPACE
+
 Vec4f cToV (Color4f & col)
 {
     return Vec4f(col.red(), col.green(), col.blue(), col.alpha());

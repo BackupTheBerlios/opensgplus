@@ -63,7 +63,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.3 2003/12/09 14:01:28 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRSIMPLELUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRSIMPLELUTSHADER_INLINE_CVSID;
 }
@@ -159,31 +159,31 @@ void DVRSimpleLUTShader::getPaletteFormat( DrawActionBase */*action*/,
 
 
 //! Automatically select a lookup table mode
-UInt8 DVRSimpleLUTShader::selectMode( DrawActionBase *action )
+UInt8 DVRSimpleLUTShader::selectMode( DrawActionBase *action, Int8 textureMode )
 {
     
-    if (isModeSupported( action, LM_TABLE_SGI ))
+    if (isModeSupported( action, LM_TABLE_SGI, textureMode ))
     {
         FDEBUG(("Using SGI postshading palette....\n"));
         FFATAL(("Using SGI postshading palette....\n"));
 	return LM_TABLE_SGI;
     }
 
-    if (isModeSupported( action, LM_FRAGPROG ))
-    {
-        FDEBUG(("Using fragment program postshading palette....\n"));
-	FFATAL(("Using fragment program postshading palette....\n"));
-	return LM_FRAGPROG;
-    }
-
-    if (isModeSupported( action, LM_DEPENDENT ))
+    if (isModeSupported( action, LM_DEPENDENT, textureMode ))
     { 
         FDEBUG(("Using dependent texture postshading palette....\n"));
 	FFATAL(("Using dependent texture postshading palette....\n"));
 	return LM_DEPENDENT;
     }
 
-    if (isModeSupported( action, LM_PALETTE_EXT ))
+    if (isModeSupported( action, LM_FRAGPROG, textureMode ))
+    {
+        FDEBUG(("Using fragment program postshading palette....\n"));
+	FFATAL(("Using fragment program postshading palette....\n"));
+	return LM_FRAGPROG;
+    }
+
+    if (isModeSupported( action, LM_PALETTE_EXT, textureMode ))
     {
         FDEBUG(("Using preshading palette....\n"));
         FFATAL(("Using preshading palette....\n"));
@@ -196,7 +196,7 @@ UInt8 DVRSimpleLUTShader::selectMode( DrawActionBase *action )
 }
 
 //! Checks whether the selected mode is supported
-bool DVRSimpleLUTShader::isModeSupported( DrawActionBase *action, UInt8 mode )
+bool DVRSimpleLUTShader::isModeSupported( DrawActionBase *action, UInt8 mode, Int8 textureMode )
 {
     bool result = false;
   
@@ -213,12 +213,15 @@ bool DVRSimpleLUTShader::isModeSupported( DrawActionBase *action, UInt8 mode )
 	
       case LM_DEPENDENT:
 	result = (action->getWindow()->hasExtension(_arbMultitexture) &&
-		  action->getWindow()->hasExtension(_nvTextureShader2));
+		  action->getWindow()->hasExtension(_nvTextureShader2) &&
+		  action->getWindow()->hasExtension(_nvRegisterCombiners) &&
+		  textureMode != TextureManager::TM_2D_Multi);
 	break;
 
       case LM_FRAGPROG:
 	result = (action->getWindow()->hasExtension(_arbMultitexture) &&
-		  action->getWindow()->hasExtension(_arbFragmentProgram));
+		  action->getWindow()->hasExtension(_arbFragmentProgram) &&
+		  textureMode != TextureManager::TM_2D_Multi);
 	break;
 	
       case LM_RELOAD:
@@ -315,6 +318,86 @@ void DVRSimpleLUTShader::destroyDependentTexture()
     }
 }
 
+//! register combiners setup for opacity correction
+
+void DVRSimpleLUTShader::setupAlphaCorrectionRegisterCombiners(DrawActionBase *action)
+{
+    Window * win = action->getWindow();
+
+    void (*FinalCombinerInputNV) (GLenum, GLenum, GLenum, GLenum);
+    void (*CombinerInputNV) (GLenum, GLenum, GLenum, GLenum, GLenum, GLenum);
+    void (*CombinerOutputNV) (GLenum, GLenum, GLenum, GLenum, GLenum, 
+                              GLenum, GLenum, GLboolean, GLboolean, GLboolean);
+	
+    if (win->hasExtension(_nvRegisterCombiners)) {
+        FinalCombinerInputNV =
+	  (void (*) (GLenum, GLenum, GLenum, GLenum)) win->getFunction(_funcFinalCombinerInputNV);
+	CombinerInputNV = 
+	  (void (*) (GLenum, GLenum, GLenum, GLenum, GLenum, GLenum)) win->getFunction(_funcCombinerInputNV);
+	CombinerOutputNV = (void (*) (GLenum, GLenum, GLenum, GLenum, GLenum, 
+		     GLenum, GLenum, GLboolean, GLboolean, GLboolean)) win->getFunction(_funcCombinerOutputNV);
+    }
+	
+#if defined GL_NV_register_combiners
+    //!! First general combiner: multiply result of texture stage 1 by primary color
+    // -----------------------------------------------------------------------------
+    
+    // Input: RGB-portion
+    CombinerInputNV(GL_COMBINER0_NV, GL_RGB, 
+		    GL_VARIABLE_A_NV, GL_TEXTURE1_ARB,     GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    CombinerInputNV(GL_COMBINER0_NV, GL_RGB, 
+		    GL_VARIABLE_B_NV, GL_PRIMARY_COLOR_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    CombinerInputNV(GL_COMBINER0_NV, GL_RGB, 
+		    GL_VARIABLE_C_NV, GL_ZERO,             GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    CombinerInputNV(GL_COMBINER0_NV, GL_RGB, 
+		    GL_VARIABLE_D_NV, GL_ZERO,             GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    // Input: Alpha Portion
+    CombinerInputNV(GL_COMBINER0_NV, GL_ALPHA, 
+		    GL_VARIABLE_A_NV, GL_TEXTURE1_ARB,     GL_UNSIGNED_IDENTITY_NV, GL_ALPHA);
+    CombinerInputNV(GL_COMBINER0_NV, GL_ALPHA, 
+		    GL_VARIABLE_B_NV, GL_PRIMARY_COLOR_NV, GL_UNSIGNED_IDENTITY_NV, GL_ALPHA);
+    CombinerInputNV(GL_COMBINER0_NV, GL_ALPHA, 
+		    GL_VARIABLE_C_NV, GL_ZERO,             GL_UNSIGNED_IDENTITY_NV, GL_ALPHA);
+    CombinerInputNV(GL_COMBINER0_NV, GL_ALPHA, 
+		    GL_VARIABLE_D_NV, GL_ZERO,             GL_UNSIGNED_IDENTITY_NV, GL_ALPHA);
+    // Output
+    CombinerOutputNV(GL_COMBINER0_NV, // stage
+		     GL_RGB,	      // portion
+		     GL_SPARE0_NV,    // abOutput
+		     GL_DISCARD_NV,   // cdOutput
+		     GL_DISCARD_NV,   // sumOutput
+		     GL_NONE,	      // scale
+		     GL_NONE,	      // bias
+		     GL_FALSE,	      // abDotProduct
+		     GL_FALSE,	      // cdDotproduct
+		     GL_FALSE);	      // muxSum
+    CombinerOutputNV(GL_COMBINER0_NV, 
+		     GL_ALPHA, 
+		     GL_SPARE0_NV,    // abOutput
+		     GL_DISCARD_NV,   // cdOutput
+		     GL_DISCARD_NV,   // sumOutput
+		     GL_NONE, 
+		     GL_NONE, 
+		     GL_FALSE, 
+		     GL_FALSE, 
+		     GL_FALSE); 
+    
+    //!! Final combiner: route color and opacity of first general combinter to output (spare0)
+    // ---------------------------------------------------------------------------------------
+    
+    // RGB portion
+    FinalCombinerInputNV(GL_VARIABLE_A_NV, GL_ZERO,      GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    FinalCombinerInputNV(GL_VARIABLE_B_NV, GL_ZERO,      GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    FinalCombinerInputNV(GL_VARIABLE_C_NV, GL_ZERO,      GL_UNSIGNED_IDENTITY_NV, GL_RGB);	
+    FinalCombinerInputNV(GL_VARIABLE_E_NV, GL_ZERO,      GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    FinalCombinerInputNV(GL_VARIABLE_F_NV, GL_ZERO,      GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    FinalCombinerInputNV(GL_VARIABLE_D_NV, GL_SPARE0_NV, GL_UNSIGNED_IDENTITY_NV, GL_RGB);
+    // Alpha component
+    FinalCombinerInputNV(GL_VARIABLE_G_NV, GL_SPARE0_NV, GL_UNSIGNED_IDENTITY_NV, GL_ALPHA);
+#endif
+
+}
+
 //! initialize the static features of the class, e.g. action callbacks
 
 void DVRSimpleLUTShader::initMethod (void)
@@ -354,12 +437,13 @@ bool DVRSimpleLUTShader::initialize     (DVRVolume *volume, DrawActionBase *acti
     m_nTexturePaletteMode  = LM_NO;
     m_nTextureId           = -1; 
 
+    Window * win = action->getWindow(); 
 
     // Determine lookup table mechanism
     if (getLutMode() != LM_AUTO)
     {
         // A certain mode has been selected
-        if (isModeSupported( action, getLutMode() ))
+        if (isModeSupported( action, getLutMode(), volume->getTextureMode(win) ))
 	{
 	    SWARNING << "DVRSimpleLUTShader - User specified lookup table mode "
 		     << int(getLutMode()) << std::endl;
@@ -374,7 +458,7 @@ bool DVRSimpleLUTShader::initialize     (DVRVolume *volume, DrawActionBase *acti
     }
     else {
         // Use automatic mode selection
-        m_nTexturePaletteMode = selectMode( action );
+        m_nTexturePaletteMode = selectMode( action, volume->getTextureMode(win) );
     }
     setActiveLutMode( m_nTexturePaletteMode );
     
@@ -404,6 +488,7 @@ bool DVRSimpleLUTShader::initialize     (DVRVolume *volume, DrawActionBase *acti
     else
     {
         SWARNING << "New texture Id: " << m_nTextureId << std::endl;
+	volume->getTextureManager().reloadTexture(m_nTextureId, action); //!! Should fix uninizialized textures
     }
     
     if (lut != NullFC)
@@ -434,12 +519,14 @@ void DVRSimpleLUTShader::activate       (DVRVolume *volume, DrawActionBase *acti
 #endif
     
     void (*ColorTableSGI) (GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid *) = NULL;
+    if (win->hasExtension(_sgiTexColorTable))
     ColorTableSGI = (void (*) (GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid *)) win->getFunction(_funcColorTableSGI);
 
     void (*ColorTableEXT) (GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid *) = NULL;
+    if (win->hasExtension(_extSharedPalettedTexture))
     ColorTableEXT = (void (*) (GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid *)) win->getFunction(_funcColorTableEXT);
-
     
+   
     DVRSimpleShader::activate(volume, action);
 
 
@@ -527,9 +614,10 @@ void DVRSimpleLUTShader::activate       (DVRVolume *volume, DrawActionBase *acti
 			  break;
 		      default:
 			  FFATAL(( "Texture mode for dependent textures"
-				   " not supported by DVRSimpleLUTShader" ));
+				   " not supported by DVRSimpleLUTShader\n" ));
 			  return;
 		    }
+		    m_nTextureMode = volume->getTextureMode(win);
 		}
 
 		// Update dependent texture if neccessary
@@ -558,7 +646,7 @@ void DVRSimpleLUTShader::activate       (DVRVolume *volume, DrawActionBase *acti
 			  // SLOG << "Loading ... lutFragProg3D.asm" << std::endl;
 			  beginEditCP(m_pFragProg);
 		          m_pFragProg->setProgram(_fragProg3D);
-			  //m_pFragProg->read( "lutFragProg3D.asm" );
+			  // m_pFragProg->read( "lutFragProg3D.asm" );
 			  endEditCP(m_pFragProg);
 			  break;
 		      case TextureManager::TM_2D:
@@ -612,17 +700,27 @@ void DVRSimpleLUTShader::activate       (DVRVolume *volume, DrawActionBase *acti
 
 	    case LM_DEPENDENT:
 #if defined GL_NV_texture_shader2
+	        if (m_pDepTexture == NullFC)
+		    SWARNING << "LM_DEPENDENT - no dependent texture" << std::endl;
+
+// 		beginEditCP(m_pDepTexture, 
+// 			    TextureChunk::EnvModeFieldMask | TextureChunk::ShaderOperationFieldMask);
+// 		m_pDepTexture->setEnvMode(GL_REPLACE);
+// 		m_pDepTexture->setShaderOperation(GL_DEPENDENT_AR_TEXTURE_2D_NV);
+// 		endEditCP(m_pDepTexture, 
+// 			  TextureChunk::EnvModeFieldMask | TextureChunk::ShaderOperationFieldMask);
 	        m_pDepTexture->activate(action, 1);
 		
 		//!! Texture Stage 1 - dependent lookup
 		glEnable(GL_TEXTURE_SHADER_NV);
+
 		ActiveTextureARB(GL_TEXTURE1_ARB);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_DEPENDENT_AR_TEXTURE_2D_NV);
 
 		//!! Texture Stage 0 - ordinary lookup
 	        ActiveTextureARB(GL_TEXTURE0_ARB);
-		glEnable(GL_TEXTURE_SHADER_NV);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 		switch (volume->getTextureMode(win)) {
 		    case TextureManager::TM_3D:
@@ -635,7 +733,12 @@ void DVRSimpleLUTShader::activate       (DVRVolume *volume, DrawActionBase *acti
 //		        FFATAL(( "Texture mode for dependent texture not supported by DVRSimpleLUTShader" ));
 			break;
 		}
+#endif
 		
+#if defined GL_NV_register_combiners
+		//!! Register combiners to account for alpha value correction
+		setupAlphaCorrectionRegisterCombiners(action);
+		glEnable(GL_REGISTER_COMBINERS_NV);
 	        break;
 #endif
 
@@ -659,6 +762,21 @@ void DVRSimpleLUTShader::brickActivate  (DVRVolume *volume, DrawActionBase *acti
 
     DVRSimpleShader::brickActivate( volume, action, brick );
 
+    //!! FIXME: This is a workaround for the current snapshot since it overwrites the
+    //!!        texture shader settings on texture activation
+    if (m_nTexturePaletteMode == LM_DEPENDENT) {
+        switch (volume->getTextureMode(action->getWindow())) {
+	    case TextureManager::TM_3D:
+	        glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_3D);
+		break;
+            case TextureManager::TM_2D:
+	        glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_2D);
+		break;
+            default:
+//	        FFATAL(( "Texture mode for dependent texture not supported by DVRSimpleLUTShader" ));
+	        break;
+	}
+    }
 }
 
 //! Callback after all rendering of the volume is done
@@ -670,7 +788,7 @@ void DVRSimpleLUTShader::deactivate     (DVRVolume *volume, DrawActionBase *acti
     void (*ActiveTextureARB)(GLenum target) =
       (void (*)(GLenum target)) action->getWindow()->getFunction(_funcActiveTextureARB);
 #endif
-    
+
     switch(m_nTexturePaletteMode) {
         case LM_TABLE_SGI:
 #if defined GL_SGI_texture_color_table
@@ -685,21 +803,23 @@ void DVRSimpleLUTShader::deactivate     (DVRVolume *volume, DrawActionBase *acti
 	    break;
 	    
         case LM_DEPENDENT:
+#if defined GL_NV_register_combiners
+	    glEnable(GL_REGISTER_COMBINERS_NV);
+#endif
 #if defined GL_NV_texture_shader2
-	    ActiveTextureARB(GL_TEXTURE1_ARB);
 	    glDisable(GL_TEXTURE_SHADER_NV);
 
-	    ActiveTextureARB(GL_TEXTURE0_ARB);
-	    glDisable(GL_TEXTURE_SHADER_NV);
-
-	    m_pDepTexture->deactivate( action, 1 );
+	    if (m_pDepTexture != NullFC) 
+	        m_pDepTexture->deactivate( action, 1 );
 	    break;
 #endif
 
         case LM_FRAGPROG:
 	    // de-activate fragment program chunk
-	    m_pFragProg->deactivate( action );
-	    m_pDepTexture->deactivate( action, 2 );
+	    if (m_pFragProg != NullFC)
+	        m_pFragProg->deactivate( action );
+	    if (m_pDepTexture != NullFC) 
+	        m_pDepTexture->deactivate( action, 2 );
 	    break;
 	    
         case LM_RELOAD:
@@ -719,8 +839,10 @@ void DVRSimpleLUTShader::cleanup        (DVRVolume *volume, DrawActionBase *)
 {
     if (volume != NULL)
     {
-        if (m_nTextureId != -1)
+        if (m_nTextureId != -1) {
 	    volume->getTextureManager().unregisterTexture(m_nTextureId);
+	    m_nTextureId = -1;
+	}
     }
 
     destroyDependentTexture();
@@ -750,12 +872,14 @@ char DVRSimpleLUTShader::_fragProg3D[] =
 	 "PARAM scale = {0.99609375, 0.99609375, 0.99609375}; # 255/256\n"
 	 "PARAM const = {0.0, 0.0, 0.0, 0.0};\n"
 	 "TEMP depCoor;\n"
+	 "TEMP outColor;\n"
 
 	 "TEX volume, fragment.texcoord[0], texture[0], 3D;\n"
 	 "MOV depCoor, const;\n"
 	 "MOV depCoor.x, volume;\n"
 	 "MAD depCoor, depCoor, scale, bias;\n"
-	 "TEX result.color, depCoor, texture[2], 2D;\n"
+	 "TEX outColor, depCoor, texture[2], 2D;\n"
+	 "MUL result.color, outColor, fragment.color;\n"
 	 "END\n";
 
 char DVRSimpleLUTShader::_fragProg2DMulti[] =
@@ -767,6 +891,7 @@ char DVRSimpleLUTShader::_fragProg2DMulti[] =
 	 "PARAM scale = {0.99609375, 0.99609375, 0.99609375}; # 255/256\n"
 	 "PARAM const = {0.0, 0.0, 0.0, 0.0};\n"
 	 "TEMP depCoor;\n"
+	 "TEMP outColor;\n"
 
 	 "TEX stage0, fragment.texcoord[0], texture[0], 2D;\n"
 	 "TEX stage1, fragment.texcoord[1], texture[1], 2D;\n"
@@ -774,7 +899,8 @@ char DVRSimpleLUTShader::_fragProg2DMulti[] =
 	 "MOV depCoor, const;\n"
 	 "MOV depCoor.x, volume;\n"
 	 "MAD depCoor, depCoor, scale, bias;\n"
-	 "TEX result.color, depCoor, texture[2], 2D;\n"
+	 "TEX outColor, depCoor, texture[2], 2D;\n"
+	 "MUL result.color, outColor, fragment.color;\n"
 	 "END\n";
 
 UInt32 DVRSimpleLUTShader::_sgiTexColorTable         = Window::registerExtension( "GL_SGI_texture_color_table" );
@@ -783,7 +909,12 @@ UInt32 DVRSimpleLUTShader::_extSharedPalettedTexture = Window::registerExtension
 UInt32 DVRSimpleLUTShader::_arbMultitexture          = Window::registerExtension( "GL_ARB_multitexture" );
 UInt32 DVRSimpleLUTShader::_nvTextureShader2         = Window::registerExtension( "GL_NV_texture_shader2" );
 UInt32 DVRSimpleLUTShader::_arbFragmentProgram       = Window::registerExtension( "GL_ARB_fragment_program" );
+UInt32 DVRSimpleLUTShader::_nvRegisterCombiners      = Window::registerExtension( "GL_NV_register_combiners" );
 
 UInt32 DVRSimpleLUTShader::_funcColorTableSGI        = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glColorTableSGI" );
 UInt32 DVRSimpleLUTShader::_funcColorTableEXT        = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glColorTableEXT" );
 UInt32 DVRSimpleLUTShader::_funcActiveTextureARB     = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glActiveTextureARB" );
+UInt32 DVRSimpleLUTShader::_funcFinalCombinerInputNV = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
+UInt32 DVRSimpleLUTShader::_funcCombinerInputNV      = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerInputNV" );
+UInt32 DVRSimpleLUTShader::_funcCombinerOutputNV     = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerOutputNV" );
+

@@ -257,7 +257,8 @@ TextureChunkPtr BrickSet::makeTexture(UInt32 internalFormat,
   chunk->setMinFilter(GL_LINEAR);
   chunk->setMagFilter(GL_LINEAR);
     
-  chunk->setEnvMode(GL_REPLACE);
+  //  chunk->setEnvMode(GL_REPLACE);
+  chunk->setEnvMode(GL_MODULATE);
     
   endEditCP(chunk);
 
@@ -756,6 +757,9 @@ void Brick::render3DSlices(DVRVolume      * volume,
   float fSampleRate    = volume->getSampling();
   float fSliceDistance = vox.length() / 2.0 / fSampleRate;
   float fTolerance     = fSliceDistance / 100.0;
+  float fAlphaCorrect  = 1 - osgpow(1 - volume->getBaseAlpha(), 1.0f / fSampleRate);
+
+  SINFO << "Sampling rate: " << fSampleRate << " Alpha-Correction " << fAlphaCorrect << std::endl;
   
   Vec3f diag(res[0]*vox[0], res[1]*vox[1], res[2]*vox[2]);
   float fRadius = 0.5 * diag.length();
@@ -952,6 +956,7 @@ void Brick::render3DSlices(DVRVolume      * volume,
 	  for(i = 0; i < numIntersections; i++) {
 	    v = vecIntersectionsSorted[i];
 	    
+	    glColor4f(1.0, 1.0, 1.0, fAlphaCorrect);
 	    glTexCoord3f((v[0] * texscale[0] + textrans[0]), 
 			 (v[1] * texscale[1] + textrans[1]) , 
 			 (v[2] * texscale[2] + textrans[2]));
