@@ -182,7 +182,7 @@ string Address::getHost() const
     }
     else
     {
-        return hent->h_name;
+        result=hent->h_name;
     }
     return result;
 }

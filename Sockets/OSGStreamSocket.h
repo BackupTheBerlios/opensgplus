@@ -109,6 +109,7 @@ class OSG_SOCKET_DLLMAPPING StreamSocket:public Socket
     void         setDelay(bool value);
     int          read(void *buf,int size);
     int          write(const void *buf,int size);
+    int          getNReadBytes(void);
 
     /*------------------------- your_operators ------------------------------*/
 

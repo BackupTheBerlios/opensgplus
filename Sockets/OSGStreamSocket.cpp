@@ -55,7 +55,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
 #endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
@@ -204,6 +206,16 @@ int StreamSocket::write(const void *buf,int size)
         pos+=writeSize;
     }
     return pos;
+}
+
+int StreamSocket::getNReadBytes(void)
+{
+    int value;
+    if(::ioctl(_sd, FIONREAD, &value)<0)
+    {    
+        throw SocketError("ioctl()");
+    }
+    return value;
 }
 
 /*-------------------------- assignment -----------------------------------*/
