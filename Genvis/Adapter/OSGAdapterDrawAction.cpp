@@ -44,7 +44,7 @@ USING_GENVIS_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char AdapterDrawAction::cvsid[] = "@(#)$Id: OSGAdapterDrawAction.cpp,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $";
+char AdapterDrawAction::cvsid[] = "@(#)$Id: OSGAdapterDrawAction.cpp,v 1.3 2004/12/20 15:56:34 fuenfzig Exp $";
 
 AdapterDrawAction* AdapterDrawAction::_prototype = NULL;
 

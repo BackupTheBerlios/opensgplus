@@ -49,5 +49,5 @@ inline NodePtr GenvisCache::getOriginal() const
 
 OSG_END_NAMESPACE
 
-#define OSGGENVISCACHE_INLINE_CVSID "@(#)$Id: OSGGenvisCache.inl,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $"
+#define OSGGENVISCACHE_INLINE_CVSID "@(#)$Id: OSGGenvisCache.inl,v 1.2 2004/12/20 15:56:35 fuenfzig Exp $"
 

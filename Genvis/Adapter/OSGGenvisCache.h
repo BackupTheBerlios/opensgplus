@@ -153,6 +153,6 @@ OSG_END_NAMESPACE
 #include <OSGGenvisCacheBase.inl>
 #include <OSGGenvisCache.inl>
 
-#define OSGGENVISCACHE_HEADER_CVSID "@(#)$Id: OSGGenvisCache.h,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
+#define OSGGENVISCACHE_HEADER_CVSID "@(#)$Id: OSGGenvisCache.h,v 1.3 2004/12/20 15:56:35 fuenfzig Exp $"
 
 #endif /* _OSGGENVISCACHE_H_ */

@@ -256,6 +256,6 @@ typedef GenvisCacheBase *GenvisCacheBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGENVISCACHEBASE_HEADER_CVSID "@(#)$Id: OSGGenvisCacheBase.h,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
+#define OSGGENVISCACHEBASE_HEADER_CVSID "@(#)$Id: OSGGenvisCacheBase.h,v 1.3 2004/12/20 15:56:35 fuenfzig Exp $"
 
 #endif /* _OSGGENVISCACHEBASE_H_ */

@@ -238,5 +238,5 @@ void GenvisCacheBase::setFrameMatrix(const Matrix &value)
 
 OSG_END_NAMESPACE
 
-#define OSGGENVISCACHEBASE_INLINE_CVSID "@(#)$Id: OSGGenvisCacheBase.inl,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
+#define OSGGENVISCACHEBASE_INLINE_CVSID "@(#)$Id: OSGGenvisCacheBase.inl,v 1.3 2004/12/20 15:56:36 fuenfzig Exp $"
 

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// File:    $Id: OSGGVBVolFunctions.h,v 1.2 2004/03/12 13:23:23 fuenfzig Exp $
+// File:    $Id: OSGGVBVolFunctions.h,v 1.3 2004/12/20 15:58:23 fuenfzig Exp $
 // Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
 // ---------------------------------------------------------------
 // bounding volume union functions
