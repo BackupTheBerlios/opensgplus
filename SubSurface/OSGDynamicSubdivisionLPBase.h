@@ -57,20 +57,15 @@
 #pragma once
 #endif
 
-
 #include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
-
 #include "OSGBaseTypes.h"
-
-#include "OSGGroup.h" // Parent
-
-#include "OSGUInt16Fields.h" // MinDepth type
-#include "OSGReal32Fields.h" // MinProjSize type
-#include "OSGBoolFields.h" // BackfaceCulling type
-#include "OSGOpenMeshPFields.h" // Mesh type
+#include "OSGGroup.h"                     // Parent
+#include "OSGUInt16Fields.h"              // MinDepth type
+#include "OSGReal32Fields.h"              // MinProjSize type
+#include "OSGBoolFields.h"                // BackfaceCulling type
+#include "OSGOpenMeshPFields.h"           // Mesh type
 #include "OSGOpenMeshTesselatorPFields.h" // Tesselator type
-
 #include "OSGDynamicSubdivisionLPFields.h"
 
 OSG_BEGIN_NAMESPACE
@@ -302,6 +297,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLPBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.1 2003/12/23 18:47:27 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.2 2004/03/24 12:47:41 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLPBASE_H_ */

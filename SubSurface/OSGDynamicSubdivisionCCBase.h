@@ -57,20 +57,15 @@
 #pragma once
 #endif
 
-
 #include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
-
 #include "OSGBaseTypes.h"
-
-#include "OSGGroup.h" // Parent
-
-#include "OSGUInt16Fields.h" // MinDepth type
-#include "OSGReal32Fields.h" // MinProjSize type
-#include "OSGBoolFields.h"   // BackfaceCulling type
+#include "OSGGroup.h"                     // Parent
+#include "OSGUInt16Fields.h"              // MinDepth type
+#include "OSGReal32Fields.h"              // MinProjSize type
+#include "OSGBoolFields.h"                // BackfaceCulling type
 #include "OSGOpenMeshPFields.h"           // Mesh type
 #include "OSGOpenMeshTesselatorPFields.h" // Tesselator type
-
 #include "OSGDynamicSubdivisionCCFields.h"
 
 OSG_BEGIN_NAMESPACE
@@ -87,6 +82,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     typedef Group Inherited;
 
   public:
+    //enum                                    { MType = MESH2MTYPE<MESH>::MType };
     enum                                      { MType = QUAD };
     typedef MESH2WSDVECTOR                    WSDVector;
     typedef MESH                              OpenMesh;
@@ -302,6 +298,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.3 2004/03/24 12:47:40 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCBASE_H_ */

@@ -142,6 +142,6 @@ OSG_END_NAMESPACE
 #include "OSGDynamicSubdivisionLPBase.inl"
 #include "OSGDynamicSubdivisionLP.inl"
 
-#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.1 2003/12/23 18:47:27 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.2 2004/03/24 12:47:40 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLP_H_ */
