@@ -57,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.12 2002/06/08 20:33:34 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.13 2002/06/12 01:51:06 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -77,7 +77,7 @@ namespace
 /*! Constructor
  */
 
-GeoLoad::GeoLoad(NodePtr node,bool useFaceDistribution=true):
+GeoLoad::GeoLoad(NodePtr node,bool useFaceDistribution):
     _node(node),
     _faces(0),
     _useFaceDistribution(useFaceDistribution)
