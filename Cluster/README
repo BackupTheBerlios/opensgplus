@@ -1,21 +1,25 @@
+- Server 
 
-- This package needs the package Sockets
+./testServer name [-m]
 
-- The following line must be copied in to CommonConf/common.libs.in  
+The server will be started. If option -m is given, then a 
+multicast connection is used for communication. The 
+argument "name" is a symbolic name for the server.
 
-ac_gdz_package[7]="Cluster:1:Cluster@ : Sockets Action Action/DrawAction Base Field FieldContainer Loader Log MultiThreading Image State Material Nodes/Misc Nodes/Geometry Nodes/Light Experimental/ScanParseSkel Experimental/OSGLoader Experimental/VRMLLoader Experimental/VRMLWriter Window Window/@WINDOWSYSTEM@ Window/QT QT GL: Window@WINDOWSYSTEM@Lib WindowQTLib SystemLib BaseLib SocketsLib ::QT GL TIF JPG:"
+- Client 
 
-- Server start
+./testClient name1 name2 name3 ... [-m] [-C] -r -ffile
 
-testClusterServer_qt [Port]
-if no port is given then 7878 is used
+Start client and connect to the given server. 
 
-- Client start
+-fxxx         File to load
+-m            Use multicast connection
+-C            Test image composition
+-r            Number of rows for tile rendering
 
-testClusterClient -fbeetle_stripe.fhs localhost:2001 localhost:2002 -w400 -h200
-
--f            File to load
--w            Window width. Each server renders a window of width/servers
--h            Window height
-hostname:port If no port is given 7878 is used
-
+Keys:
+ESC   exit
+a     render as fast as possible
+j     use jpeg compression
+r     use rle compression
+n     no compression
