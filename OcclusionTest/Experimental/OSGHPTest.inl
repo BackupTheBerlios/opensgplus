@@ -183,7 +183,7 @@ void HPTest::exit(void){
 /**
 */
 inline
-void Occlusion::visualize(void)
+void HPTest::visualize(void)
 {
 };
 			

@@ -254,7 +254,7 @@ void StencilTest::exit(void){
 /**
 */
 inline
-void Occlusion::visualize(void)
+void StencilTest::visualize(void)
 {
 };
 			

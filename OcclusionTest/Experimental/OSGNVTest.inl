@@ -186,7 +186,7 @@ void NVTest::exit(void){
 /**
 */
 inline
-void Occlusion::visualize(void)
+void NVTest::visualize(void)
 {
 };
 			
