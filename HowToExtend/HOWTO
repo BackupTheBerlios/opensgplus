@@ -1,0 +1,98 @@
+
+OpenSG Extension HOWTO
+======================
+
+Version 1.0, 2002/09/20, written by Dirk Reiners
+
+This directory contains information about how to add a new experimental module
+to OpenSG in a way to have it seamlessly integrate itself into the system. It
+also describes how to add such a module to the Berlios CVS repository in a way
+to allow other people to use it in a simple way.
+
+1) Add a new directory to the OpenSG libraries
+
+The best position to add new stuff is the Experimental directory. Just create
+a new directory in there to keep your sources. As a convention, use a
+capitalized name for your directory, e.g. NewDirectory.
+
+The source files need to follow two naming conventions. File names for the
+library should begin with OSG, otherwise they will be ignored. Test program
+names should begin with test. This will allow them to be found by the build
+system.
+
+The next step is to decide to which library you want to add your new code.
+Unless it's a new window system wrapper it will probably fit best into the
+System library.
+
+To do that you need two things: a common.mk and a common.libs.in.
+
+The common.mk. describes some common facts about the compiling environment
+your code needs. In 99% of the cases you can just use the common.mk.in in this
+directory and just replace the @newname@ with the name of your directory.
+
+The common.libs.in is used to let the build system know about your new
+directory. common.libs.in.simple is a very simple example, which will probably
+be appropriate for most cases. It justs appends a new directory to the list of
+known ones, and that's it. After the next configure run the directory's
+contents will be compiled and linked into the System lib.
+
+If you have new FieldContainers make sure that they all belong to the right
+library and that they are flagged as System Components, otherwise they will 
+
+During development it's probably more sensible to add new things to a smaller
+lib than the System lib, as it takes a long time to link it. You can use any
+other library, e.g. the WindowGLUT library. If you're not on Windows you can
+just change the name in the common.libs.in and everything will work. On Windows
+you will also have to change the library for the FieldContainers and recreate
+the OSG*Base.* files.
+
+If your new code depends on external libraries there is currently no automatic
+way to add this dependency to the configure system. You will have to add an
+INSTALL file to your directory that explains other people trying to use your
+code which libraries they will have to pass to configure via the
+--with-add-incdir=, --with-add-libdir= and --with-add-lib= options. Make sure
+to define the correct versions of the additional libs. 
+
+In general it would be better to not add external dependencies to the system,
+as every external dependency will scare off some people, especially if it's
+not a standard part of the common operating systems. If you only need small
+parts of an external lib, consider just including the code (with proper credit
+and after getting approval from the author first, of course).
+
+2) Or add a new library to the system
+
+If you do want to find your stuff in a new library you need a somewhat more
+complicated common.libs.in, see common.libs.in.newlib for an example. It
+also explains the other variables that need to be set.
+
+In addition to that you will need a OSG*Def.h file, which is needed for proper
+DLL building on Windows. See OSG@newname@Def.h for an example. 
+
+
+To create these files from the examples in this directory you can use the
+make_files script. Just call make_files <your new directory name> or make_files
+-l <your new directory name> to create the necessary files.
+
+
+3) Add it to the CVS repository
+
+You need write access to the repository. For Berlios and other SourceForge
+clones that means becoming a project developer.
+
+Now add your new directory to the repository by going one directory higher in
+the hierarchy and calling "cvs add @newname@". Note that the details of the
+cvs call depend on the repository setup. For Berlios you will have to use
+"setenv CVS_RSH ssh; cvs -duser@opensgplus.berlios.de:/cvsroot/opensgplus
+import @newname@ initial release". This will include all the files and
+directories in the current directory into the CVS module @newname@, so make
+sure you only have the files you actually want to keep in the repository in the
+current directory.
+
+
+
+
+
+
+If you have any questions or problems, don't hesitate to send a mail to
+info@opensg.org.
+

@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# A little script to create a set of utility files needed for adding new code 
+# directories to OpenSG
+
+replace ()
+{
+    from=$1 
+    to=$2
+    
+    sed -e "s/@newname@/$name/g" -e "s/@NEWNAME@/$capsname/" < $from > $to
+}
+
+case $# in
+0)   echo "usage: $0 [opts] <newname>" 1>&2; 
+     echo "opts: -l  create files for a new library" 1>&2;
+     exit 1;;
+esac
+
+newlib=0
+
+if test $1 = "-l"
+then
+    newlib=1
+    shift
+fi
+
+name=$1
+capsname=`echo $name | tr [:lower:] [:upper:]`
+
+echo -n "now copy common.mk" 
+replace common.mk.in common.mk
+
+if test $newlib -eq 1
+then
+    replace common.libs.in.newlib common.libs.in 
+    replace OSG@newname@Def.h OSG${name}Def.h
+    echo -n ",common.libs.in and OSG${name}Def.h"
+else
+    replace common.libs.in.simple common.libs.in 
+    echo -n " and common.libs.in"
+fi
+
+echo " to your new directory and reconfigure"

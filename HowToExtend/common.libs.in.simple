@@ -1,0 +1,6 @@
+# Add our directory to the System Lib
+# 
+# Just append your directory or directories to the list of used directories
+# Note that every name needs to end with a @
+
+ac_gdz_package_dirs_System="${ac_gdz_package_dirs_System} Experimental/@newname@@" 
