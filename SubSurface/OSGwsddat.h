@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------*\
  * OpenSG - Dynamic Subdivision                                              *
  *                                                                           *
- *					  contact: v.settgast@cg.cs.tu-bs.de * 
+ *            contact: v.settgast@cg.cs.tu-bs.de * 
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
@@ -52,7 +52,6 @@
 
 #include <math.h>
 #include <stdio.h>
-// always include first
 #include "OSGMyMesh.h"
 #include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
@@ -64,22 +63,25 @@
 
 OSG_BEGIN_NAMESPACE
 
-// Crease Types:
-#define CREASE_HALF             -2  // oder doch -20??
-#define CREASE_REG_REG           5
-#define CREASE_IRREG_REG        10
-#define CREASE_REG_IRREG        15
-#define CREASE_IRREG_REG_ONCE   20    // has to be handled as  5 after first subdiv!
-#define CREASE_HALF_REG_ONCE    25    // has to be handled as  5 after first subdiv!
-#define CREASE_HALF_IRREG_ONCE  30    // has to be handled as 15 after first subdiv!
-
+// Crease Types (Loop):
+enum Crease_Type { 
+   CREASE_HALF =            -2,  // dart
+   CREASE_NO =               0,  // no crease at all
+   CREASE_REG_REG =          5,  // regular - regular
+   CREASE_IRREG_IRREG =      7,  // irregular - irregluar (has to be handled as regular - irregular after one subdivision step)
+   CREASE_IRREG_REG =       10,  // irregular - regular
+   CREASE_REG_IRREG =       15,  // regular - irregular
+   CREASE_IRREG_REG_ONCE =  20,  // irregular - regular (handled as regular - regular after one subdiv step)
+   CREASE_HALF_REG_ONCE =   25,  // dart - regular (handled as regular - regular after ...)
+   CREASE_HALF_IRREG_ONCE = 30   // dart - irregular (handled as regular - irregular after ...)
+};
 
 
 //! shared data for all instances
 struct OSG_SUBSURFACELIB_DLLMAPPING sharedFields
 {
    OSG::GeoPositions3fPtr limitpointsptr;
-   OSG::GeoNormals3fPtr   limitnormalsptr;	
+   OSG::GeoNormals3fPtr   limitnormalsptr;  
    OSG::GeoPositions3f::StoredFieldType* limitpoints;       //!< limit points
    OSG::GeoNormals3f::StoredFieldType*   limitnormals;      //!< limit normals   
    OSG::GeoTexCoords2fPtr texcoordsptr;                     //!< Texture Coordinates
@@ -97,11 +99,11 @@ struct OSG_SUBSURFACELIB_DLLMAPPING perInstanceData
    OSG::GeoIndicesUI32Ptr  oneIndicesPtr;
 
    OSG::GeoPTypesUI8::StoredFieldType*    oneTypes;
-   OSG::GeoPLengthsUI32::StoredFieldType* oneLengths;	
+   OSG::GeoPLengthsUI32::StoredFieldType* oneLengths;  
    OSG::GeoIndicesUI32::StoredFieldType*  oneIndis;
 
    OSG::GeometryPtr onlyOneGeoP; //!< the geometry node core for this instance
-   OSG::NodePtr onlyOneNode;	 //!< node for instance
+   OSG::NodePtr onlyOneNode;     //!< node for instance
 };
 
 const Int32 zweihoch[] = {1,2,4,8,16,32,64,128,256,512}; // pow(2,x)
@@ -154,40 +156,40 @@ public:
    Int32 getneighbor(Int32 from, Int32 ad);
 
    //! openmesh to wsddat cache (1-neighborhood)
-   VectorType slateO[4][4];			   
+   VectorType slateO[4][4];         
    //! for corners of valence greater than 4
    VectorCAType  cornerO;
    
    //! texture coordinates of the four corners
-   VectorType TexCoords[4][4];	
+   VectorType TexCoords[4][4];  
 
    //! curvature dependent depth
-   Int32 maxdepth;					  
+   Int32 maxdepth;            
    //! actual depth for current frame
-   Int32 currentdepth;				      
+   Int32 currentdepth;              
    //! planed depth for the next frame
-   Int32 solltiefe;					      
+   Int32 solltiefe;                
 
    //! patch radius approximation for projected size
-   Real32 radiusD;			
+   Real32 radiusD;      
 
    //! indices to the four corner-verts.
-   Int32 vertexindex[4];		
+   Int32 vertexindex[4];    
    //! helper for the "vertex to face" connect routine
-   Int32 cvindex;				
+   Int32 cvindex;        
    //! valence at the four corner-verts. 
-   Int32 valenz[4];			
+   Int32 valenz[4];      
    //! sum of the adjacent sharp edges
    Int32 iscorner[4];
    //! only for loop: is the corner-vert. a regular corner (for creases)
    Int32 isregular[4];
 
    /*
-   //		0 ----- 3
-   //		|       |
-   //		|       |
-   //		|       |
-   //		1 ----- 2
+   //    0 ----- 3
+   //    |       |
+   //    |       |
+   //    |       |
+   //    1 ----- 2
    */
    //! index to neighbor-patches
    Int32 neighbors[4];
@@ -195,18 +197,18 @@ public:
    Int32 borders[4];
 
    /*
-   //      3
-   //		-----
-   //	 0	|   |	2
-   //		-----
-   //		  1
+   //        3
+   //      -----
+   //   0  |   |  2
+   //      -----
+   //        1
    */
    //! neighbors of neighbor
-   Int32 neighbor0in1, neighbor1in0, neighbor2in1, neighbor1in2,		
+   Int32 neighbor0in1, neighbor1in0, neighbor2in1, neighbor1in2,    
       neighbor3in2, neighbor2in3, neighbor0in3, neighbor3in0;
 
    //! crease data for regular inner edges
-   Int32 crease[12];			 
+   Int32 crease[12];       
 
    /*
    //   -----   -----   -----
@@ -242,17 +244,17 @@ public:
    */
    
    //! crease data for corners with valence > 4
-   Int32 corcrease[4][wsdmaxvalenz];	
+   Int32 corcrease[4][wsdmaxvalenz];  
    //! indices to the inner-first two crease edges
-   Int32 crindis[4][2];				   						      
+   Int32 crindis[4][2];                             
    //! the used size of a slate
-   Int32 tabsize;					      
+   Int32 tabsize;                
 
    //! resulting orientation
    FacingType isFacing;
 
    //! average of the four corner vertices
-   VectorType faceloc;			
+   VectorType faceloc;      
       
    //! \name some helpers
    //! \{
@@ -268,17 +270,17 @@ public:
    //! \}
 
    //! the offset within the vertexarray
-   Int32 varrayOffset;				
+   Int32 varrayOffset;        
 
    //! set inner geometry
    void setInnerGeoP(perInstanceData &insta, UInt32 &indisIn);
    //! set outer geometry
    void setOuterGeoP(perInstanceData &insta, Int32 finer_l, Int32 finer_r, 
-		     Int32 finer_o, Int32 finer_u, UInt32 &indisIn);
+         Int32 finer_o, Int32 finer_u, UInt32 &indisIn);
 
 
    //! instance shared data
-   sharedFields*	      mySharedFields;
+   sharedFields*        mySharedFields;
 
    //! slate A
    static VectorType*   slateA;
@@ -289,15 +291,20 @@ public:
    //! slate pointer B
    static VectorType*   ptabB;
    //! width of slate A
-   static Int32		  breiteA;   
+   static Int32      breiteA;   
    //! corners greater valence 4 in slate A
-   static VectorCAType  cornerA;	
+   static VectorCAType  cornerA;  
    //! corners greater valence 4 in slate B
-   static VectorCAType  cornerB;	
+   static VectorCAType  cornerB;  
    //! pointer corners A
    static VectorCAType* pcorA;
    //! pointer corners B
    static VectorCAType* pcorB;
+
+#ifdef DEFINE_SHOWROOM
+   static UInt32 _numtris;
+   static UInt32 _numquads;
+#endif
 
    /*==========================  PRIVATE  =================================*/      
 private:
@@ -305,58 +312,63 @@ private:
    /*! \name       geometry set methods                                 */
    /*! \{                                                               */
    void setOuterRightLine(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-			  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-			  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-			  Int32 finer_r, UInt32 &indisIn);
+        OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+        OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+        Int32 finer_r, UInt32 &indisIn);
    void setOuterLeftLine(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-			 OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-			 OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-			 Int32 finer_l, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_l, UInt32 &indisIn);
    void setOuterFirstLine(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-			  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-			  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-			  Int32 finer_o, UInt32 &indisIn);
+        OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+        OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+        Int32 finer_o, UInt32 &indisIn);
    void setOuterLastLine(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-			 OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-			 OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-			 Int32 finer_u, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_u, UInt32 &indisIn);
    void setOuterC0(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		   OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		   OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		   Int32 finer_o, Int32 finer_l, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_o, Int32 finer_l, UInt32 &indisIn);
    void setOuterC1(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		   OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		   OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		   Int32 finer_u, Int32 finer_l, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_u, Int32 finer_l, UInt32 &indisIn);
    void setOuterC2(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		   OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		   OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		   Int32 finer_u, Int32 finer_r, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_u, Int32 finer_r, UInt32 &indisIn);
    void setOuterC3(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		   OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		   OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		   Int32 finer_o, Int32 finer_r, UInt32 &indisIn);
+       OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+       OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+       Int32 finer_o, Int32 finer_r, UInt32 &indisIn);
   
    void setTiefe0(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		  UInt32 &indisIn);  
+      OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+      OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+      UInt32 &indisIn);  
   
    void setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add);
+      OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+      OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+      UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add);
    void setupHalfStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add, Int32 width);
+      OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+      OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+      UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add, Int32 width);
    void setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
-		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
-		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
-		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4);
+      OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+      OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+      UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4);
+   void setSpecialTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+      OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+      OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+      UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3);
    /*! \}                                                             */
 };
 
 OSG_END_NAMESPACE
 
 #endif 
+

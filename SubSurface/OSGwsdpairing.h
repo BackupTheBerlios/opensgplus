@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------*\
  * OpenSG - Dynamic Subdivision                                              *
  *                                                                           *
- *					  contact: v.settgast@cg.cs.tu-bs.de * 
+ *            contact: v.settgast@cg.cs.tu-bs.de * 
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
@@ -62,13 +62,13 @@ OSG_BEGIN_NAMESPACE
 //! struct for set of faces
 template <class Mesh> 
 struct OSG_SUBSURFACELIB_DLLMAPPING PairFaceDataTemplate
-{	
+{  
    typedef Mesh                                 MeshType;
    typedef typename  MeshType::FaceHandle       FaceHandle;
-	FaceHandle	fh;      //!< facehandle into openmesh face
+  FaceHandle  fh;      //!< facehandle into openmesh face
    Int32       partner;                      //!< -1 if not yet connected
-   FaceHandle	fh2;     //!< facehandle into openmesh partner-face
-	Int32	      n[3];                         //!< index to neighbor
+   FaceHandle  fh2;     //!< facehandle into openmesh partner-face
+  Int32        n[3];                         //!< index to neighbor
    Int32       freeneighbors;                //!< number of free neighbors
    Int32       prio;                         //!< priority class
 };
@@ -83,28 +83,25 @@ public:
    typedef typename  MeshType::FaceHandle       FaceHandle;
    typedef PairFaceDataTemplate<MeshType>       PairFaceData;
    typedef std::vector<PairFaceData>            PairFaceDataContainer;
-   typedef std::vector<Int32>	                  IndexContainer;
-   
-
-      
+   typedef std::vector<Int32>                    IndexContainer;
+         
    //! Constructor          
-	WSDpairing( MeshType *_mesh );
+   WSDpairing( MeshType *_mesh );
 
    //! Destructor           
-	virtual ~WSDpairing();
+   virtual ~WSDpairing();
 
    //! entry point
-	void buildPairs( void );
+   void buildPairs( void );                     
 
-   PairFaceDataContainer pairs;        //!< finished pairing list
+   PairFaceDataContainer pairs;                 //!< finished pairing list
  
  /*==========================  PRIVATE  =================================*/
 private:
-
-   MeshType *mesh;	
-   PairFaceDataContainer prepairs;
+   MeshType *mesh;                              //!< pointer to openmesh
+   PairFaceDataContainer prepairs;              //!< temp container
    
-   Int32 getIndexOfFace(FaceHandle fh);
+   Int32 getIndexOfFace(FaceHandle fh);         //!< returns index of face fh
    IndexContainer::iterator getIterator(IndexContainer &v, Int32 i);
 };
 

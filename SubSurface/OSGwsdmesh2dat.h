@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------*\
  * OpenSG - Dynamic Subdivision                                              *
  *                                                                           *
- *					  contact: v.settgast@cg.cs.tu-bs.de * 
+ *            contact: v.settgast@cg.cs.tu-bs.de * 
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
@@ -51,6 +51,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <OpenMesh/Core/Utils/Property.hh>
 #include "OSGwsddat.h"
 
 OSG_BEGIN_NAMESPACE
@@ -68,8 +69,8 @@ class OSG_SUBSURFACELIB_DLLMAPPING WSDmesh2dat
    typedef Mesh                              MeshType;
    typedef typename MeshType::HalfedgeHandle HalfedgeHandle;
    typedef typename MeshType::FaceHandle     FaceHandle;
-   typedef typename MeshType::Point	     OMPoint;
-   typedef typename MeshType::TexCoord	     OMTexCoord;
+   typedef typename MeshType::Point       OMPoint;
+   typedef typename MeshType::TexCoord       OMTexCoord;
 
  /*==========================  PUBLIC  =================================*/
 public:
@@ -81,8 +82,14 @@ public:
 
    //! flag for texture usage
    bool useTexture;
+   //! flag for crease usage
+   bool useCreases;
 
-   //! one face into patch
+   //! property within openmesh
+   OpenMesh::EPropHandleT<Int32> isCrease;
+
+
+   //! store one face into patch
    //! \param f_h face handle to one face
    //! \param pp pointer to the destination patch
    void insertface     (FaceHandle f_h, FaceHandle tpair,WSDdat<VectorType, MType> *pp);
@@ -90,7 +97,7 @@ public:
    void getBoundingBox (OSG::Pnt3f& boundingMin, OSG::Pnt3f& boundingMax);
 
  /*==========================  PRIVATE  =================================*/
-private:  			
+private:        
 
    //! helper for the corners
    void collectCorner (Int32 i, HalfedgeHandle &fhe_h, HalfedgeHandle &op);
@@ -98,7 +105,7 @@ private:
    void helper2       (Int32 i, Int32 a2, Int32 a7, HalfedgeHandle &fhe_h);
 
    //! helper to make the code simpler
-   void p_nach(const OMPoint &p, Int32 x, Int32 y);
+   void put_p_to(const OMPoint &p, Int32 x, Int32 y);
 
    HalfedgeHandle getfirsthalfedge   (FaceHandle f_h, FaceHandle tpair);
    Int32          vertexIsRegular    (HalfedgeHandle fhe_h);

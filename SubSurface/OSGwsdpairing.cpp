@@ -2,7 +2,7 @@
  *                       OpenSG - Dynamic Subdivision                        *
  *                                                                           *
  *                                                                           *
- *					  contact: v.settgast@cg.cs.tu-bs.de * 
+ *            contact: v.settgast@cg.cs.tu-bs.de * 
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
@@ -42,12 +42,10 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
    // init priority lists
    IndexContainer s[4];
    Int32 i=0;
-
    // build vector of faces
    PairFaceData *tempData;   
    typename MeshType::FaceIter f_it;
-   for (f_it=mesh->faces_begin(); f_it!=mesh->faces_end(); ++f_it) {
-		
+   for (f_it=mesh->faces_begin(); f_it!=mesh->faces_end(); ++f_it) {    
       prepairs.push_back(PairFaceData());
       tempData = &(prepairs.back());
       tempData->fh = f_it.handle();
@@ -57,8 +55,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
       //prepairs.push_back(*tempData);
       //s[3].push_back(i); // not yet, because of border faces have less free neighbors!
       i++;
-   }
-   
+   }   
    // get neighbors
    for (i=0; i<prepairs.size(); i++) {
       typename MeshType::HalfedgeHandle h=mesh->halfedge_handle(prepairs[i].fh);
@@ -69,12 +66,12 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
           // border -> one less free neighbour
           prepairs[i].freeneighbors--;
           prepairs[i].n[z] = i;
+       } else {
+          prepairs[i].n[z] = getIndex;
        }
-       else prepairs[i].n[z] = getIndex;
        h = mesh->next_halfedge_handle(h);
       }      
-   }  
-
+   }
    for (i=0; i<prepairs.size(); i++) {         
       if (prepairs[i].freeneighbors < 2) {
          prepairs[i].prio = 0;
@@ -84,14 +81,14 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
          prepairs[i].prio = 0;
          Int32 su=0;
          for (Int32 j=0; j<3; j++) su+=prepairs[prepairs[i].n[j]].prio;
-         if (su == 6)
-          prepairs[i].prio = 2;
-         else
-          prepairs[i].prio = 1;
+         if (su == 6) {
+            prepairs[i].prio = 2;
+         } else {
+            prepairs[i].prio = 1;
+         }
       }
       s[prepairs[i].prio].push_back(i);
    }
-
    
    // lets go now!
    bool finished = false;   
@@ -100,8 +97,11 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
       Int32 p=0;
       // 1. get triangle f from nonempty highest prio set
       while (workindex == -1) {
-         if (s[p].size() > 0) workindex = s[p].back();   // get last element
-         else p++;
+         if (s[p].size() > 0) {
+            workindex = s[p].back();   // get last element
+         } else {
+            p++;
+         }
          if (p > 3) { 
             workindex = 0;
             finished = true;            
@@ -119,10 +119,11 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
             && (l<3))) l++;         
          Int32 newpartner = prepairs[workindex].n[l];
          for (Int32 gg=1; gg<3; gg++) {
-          if ((prepairs[prepairs[workindex].n[gg]].prio < prepairs[newpartner].prio) 
+            if ((prepairs[prepairs[workindex].n[gg]].prio < prepairs[newpartner].prio) 
              && (prepairs[prepairs[workindex].n[gg]].prio < 4)
-             && (prepairs[workindex].n[gg] != workindex))
-             newpartner = prepairs[workindex].n[gg];
+             && (prepairs[workindex].n[gg] != workindex)) {
+               newpartner = prepairs[workindex].n[gg];
+            }
          }
          prepairs[workindex].partner = newpartner;
          prepairs[newpartner].partner = workindex;
@@ -130,22 +131,24 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
          // delete f,g from set
          assert(prepairs[workindex].prio >= 0);
          assert(prepairs[workindex].prio < 4);
-
          assert(prepairs[newpartner].prio >= 0);
          assert(prepairs[newpartner].prio < 4);
 
          IndexContainer::iterator toDel;
          toDel = getIterator(s[prepairs[workindex].prio],workindex);
-         if (toDel != s[prepairs[workindex].prio].end())
-         s[prepairs[workindex].prio].erase(toDel);
-         else SLOG << "end()" << std::endl;
+         if (toDel != s[prepairs[workindex].prio].end()) {
+            s[prepairs[workindex].prio].erase(toDel);
+         } else {
+            SLOG << "end()" << std::endl;
+         }
          toDel = getIterator(s[prepairs[newpartner].prio],newpartner);
-         if (toDel != s[prepairs[newpartner].prio].end())
-         s[prepairs[newpartner].prio].erase(toDel);
-         else SLOG << "end() np=" << newpartner << std::endl;
+         if (toDel != s[prepairs[newpartner].prio].end()) {
+            s[prepairs[newpartner].prio].erase(toDel);
+         } else {
+            SLOG << "end() np=" << newpartner << std::endl;
+         }
          prepairs[workindex].prio = 5;
          prepairs[newpartner].prio = 5;
-
          // put the finished pair into the pairinglist "pair"
          pairs.push_back(PairFaceData());
          tempData = &(pairs.back());
@@ -154,9 +157,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
          tempData->freeneighbors = 0;
          tempData->partner = 1;
          tempData->prio = 0;         
-
-      }
-      else {   // no free neighbors left
+      } else {   // no free neighbors left
          s[p].erase(s[p].end() - 1); // remove last element (which is workindex!)
          prepairs[workindex].prio = 5;
          pairs.push_back(PairFaceData());
@@ -168,7 +169,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
          tempData->prio = 0;         
       }      
       // 3. increase neighbor priorities for f and g
-      bool movedFromS3=false;
+      bool movedFromS3 = false;
       while (workindex > -1) {
          for (Int32 nn=0; nn<3; nn++) {
             Int32 ni = prepairs[workindex].n[nn];
@@ -178,26 +179,24 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
             IndexContainer::iterator toMove = getIterator(s[si],ni);
             if (toMove != s[si].end()) {
                s[si].erase(toMove);
-
                if (si == 3) {
-                prepairs[ni].prio--; si--;
-                movedFromS3 = true;
+                  prepairs[ni].prio--; si--;
+                  movedFromS3 = true;
+               } else {
+                  prepairs[ni].prio=0; si=0;
                }
-               else {
-                prepairs[ni].prio=0; si=0;
-               }
-
                s[si].push_back(ni);
+            } else {
+               SLOG << ni << " in S" << si << " not found!" << std::endl;
             }
-            else SLOG << ni << " in S" << si << " not found!" << std::endl;
          }
          if (neighborFound) {
             workindex = prepairs[workindex].partner;
             neighborFound = false;
+         } else {
+            workindex = -1;
          }
-         else workindex = -1;
-      }
-      
+      }      
       if (movedFromS3) {
          IndexContainer::iterator toMove = s[2].begin();
          for (;toMove != s[2].end(); toMove++) {
@@ -210,8 +209,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
                s[1].push_back(*toMove);
                s[2].erase(toMove);  //?
                if (s[2].size() < 1) break;
-               toMove = s[2].begin();
-               
+               toMove = s[2].begin();               
             }
          }
       }      

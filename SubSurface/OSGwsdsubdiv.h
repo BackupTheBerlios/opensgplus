@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------*\
  * OpenSG - Dynamic Subdivision                                              *
  *                                                                           *
- *					  contact: v.settgast@cg.cs.tu-bs.de * 
+ *            contact: v.settgast@cg.cs.tu-bs.de * 
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
@@ -69,10 +69,10 @@ class OSG_SUBSURFACELIB_DLLMAPPING WSDsubdiv
 public:
    
    //! Constructor          
-	WSDsubdiv();
+   WSDsubdiv();
 
    //! Destructor           
-	virtual ~WSDsubdiv();
+   virtual ~WSDsubdiv();
 
    //! flag for texture usage
    bool useTexture;
@@ -81,94 +81,102 @@ public:
    Int32 wsdmaxdepth;
 
    //! subdivision entry point
-	void subdiv(Int32 depth, WSDdat<VectorType, MType> *pp);
+   void subdiv(Int32 depth, WSDdat<VectorType, MType> *pp);
 
  /*==========================  PRIVATE  =================================*/
 private:
 
-	WSDdat<VectorType, MType> *ppatch; //!< current patch
-	Int32 targetdepth;                //!< target subdiv depth
+   WSDdat<VectorType, MType> *ppatch; //!< current patch
+   Int32 targetdepth;                //!< target subdiv depth
 
-	void initwsdsubdiv(void);         //!< init
+   void initwsdsubdiv(void);         //!< init
 
-	void corsupdate(void);            //!< helper to keep the corners up to date (for cc only)
+   void corsupdate(void);            //!< helper to keep the corners up to date (for cc only)
    void allcorners(void);            //!< helper to calc. all edges around the 4 corners
    //! \name slate row processing methods
    //! \{    
-	void firstedgerow(void);
-	void edgerow(Int32 readindex, Int32 writeindex);
-	void lastedgerow(Int32 readindex, Int32 writeindex);
-	void inneredgerow(Int32 ri, Int32 wi, Int32& i, Int32& j);
+   void firstedgerow(void);
+   void edgerow(Int32 readindex, Int32 writeindex);
+   void lastedgerow(Int32 readindex, Int32 writeindex);
+   void inneredgerow(Int32 ri, Int32 wi, Int32& i, Int32& j);
    void tricrease4_inneredgerow(Int32 ri, Int32 wi, Int32& i, Int32& j);
    void first_last_inneredgerow(Int32 ri, Int32 wi, Int32& i, Int32& j);
-	void firstvertexrow(void);
-	void vertexrow(Int32 readindex, Int32 writeindex);
-	void lastvertexrow(Int32 readindex, Int32 writeindex);   
-	void innervertexrow(Int32 ri, Int32 wi, Int32& i, Int32& j);   
+   void firstvertexrow(void);
+   void vertexrow(Int32 readindex, Int32 writeindex);
+   void lastvertexrow(Int32 readindex, Int32 writeindex);   
+   void innervertexrow(Int32 ri, Int32 wi, Int32& i, Int32& j);   
    void tricrease4_innervertexrow(Int32 ri, Int32 wi, Int32& i, Int32& j);   
 
-	void vertexpoint(VectorType& v, VectorType& v0, VectorType& v1, VectorType& v2, VectorType& v3, 
-		   VectorType& v4, VectorType& w1, VectorType& w2,VectorType& w3, VectorType& w4);
-	void vertexpointmulti(VectorType& v, VectorType& v0, VectorType* array, Int32 val);
+   void vertexpoint(VectorType& v, VectorType& v0, VectorType& v1, VectorType& v2, VectorType& v3, 
+         VectorType& v4, VectorType& w1, VectorType& w2,VectorType& w3, VectorType& w4);
+   void vertexpointmulti(VectorType& v, VectorType& v0, VectorType* array, Int32 val);
 
    //! \name for texture coords
    //! \{
- 	void edgerowtex(Int32 readindex, Int32 writeindex);
+   void edgerowtex(Int32 readindex, Int32 writeindex);
    void vertexrowtex(Int32 readindex, Int32 writeindex);
    void textureCoords();    //!< main method for texcoords calc.
    //! \}
 
-	//! \name for creases
+   //! \name for creases
    //! \{
-	void creaseinnervertexrow(Int32 ri, Int32 wi, Int32& i, Int32& j, Int32 ce);
-	void vertexpointcrease(VectorType& v, VectorType& v0, VectorType& v1, VectorType& v2);   
-	void edgepoint(VectorType& v, VectorType& v1, VectorType& v2, 
-		   VectorType& w1, VectorType& w2,VectorType& w3, VectorType& w4, Int32 crease);
+   void creaseinnervertexrow(Int32 ri, Int32 wi, Int32& i, Int32& j, Int32 ce);
+   void vertexpointcrease(VectorType& v, VectorType& v0, VectorType& v1, VectorType& v2);   
+   void edgepoint(VectorType& v, VectorType& v1, VectorType& v2, 
+         VectorType& w1, VectorType& w2,VectorType& w3, VectorType& w4, Int32 crease);
    //! \}
 
-	//! only for quads: face point
-	void facepoint(VectorType& v, VectorType& v1, VectorType& v2, VectorType& v3, VectorType& v4);
+   //! only for quads: face point
+   void facepoint(VectorType& v, VectorType& v1, VectorType& v2, VectorType& v3, VectorType& v4);
    //! \}
 
    //! \name limit point calculations
    //! \{
-	void limits();    //!< entry point
+   void limits();    //!< entry point
 
-	void firstlimitrow(UInt32 &lwi);
-	void limitrow(Int32 ri, UInt32 &lwi);
-	void lastlimitrow(UInt32 &lwi);
-	void innerlimitrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
+   void firstlimitrow(UInt32 &lwi);
+   void limitrow(Int32 ri, UInt32 &lwi);
+   void lastlimitrow(UInt32 &lwi);
+   void innerlimitrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
+      void tricrease4_innerlimitrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);  // loop only
 
-	void creaseinnerlimitfirstrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
-	void creaseinnerlimitlastrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
+   void creaseinnerlimitfirstrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
+   void creaseinnerlimitlastrow(Int32 ri, UInt32& lwi, Int32& i, UInt32& nwi);
 
-	void limitpointcrease(UInt32& lwi, VectorType& v0, VectorType& v1, 
-	 VectorType& v2);
+   void limitpointcrease(UInt32& lwi, VectorType& v0, VectorType& v1, 
+   VectorType& v2);
    void limitpointcreaseirreg(UInt32& lwi, VectorType& v0, VectorType& v1, 
-	 VectorType& v2);
-	void limitpoint(UInt32& lwi, VectorType& v0, VectorType& v1, VectorType& v2, VectorType& v3, 
-		   VectorType& v4, VectorType& w1, VectorType& w2, VectorType& w3, VectorType& w4);
+   VectorType& v2);
+   void limitpointcs(OSG::UInt32& lwi,  VectorType& v0,    VectorType& v1, VectorType& v2,
+            OSG::Int32 type0, OSG::Int32 type1, OSG::Int32 type2 );
+   void limitpoint(UInt32& lwi, VectorType& v0, VectorType& v1, VectorType& v2, VectorType& v3, 
+         VectorType& v4, VectorType& w1, VectorType& w2, VectorType& w3, VectorType& w4);
 
-	void limitpointmulti(UInt32& lwi, VectorType& v0, 
-	 VectorType *array, Int32 val);
+   void limitpointmulti(UInt32& lwi, VectorType& v0, 
+   VectorType *array, Int32 val);
    //! \}
 
    //! \name limit normal calculations
    //! \{
-	void innernormal(UInt32& nwi, VectorType& v0, VectorType& v1, 
-	 VectorType& v2, VectorType& v3, VectorType& v4, VectorType& w1, VectorType& w2, VectorType& w3, 
-	 VectorType& w4);
+   void innernormal(UInt32& nwi, VectorType& v0, VectorType& v1, 
+   VectorType& v2, VectorType& v3, VectorType& v4, VectorType& w1, VectorType& w2, VectorType& w3, 
+   VectorType& w4);
 
-	void innernormalmulti(UInt32& nwi, 
-	 VectorType *array, Int32 val);
+   void innernormalmulti(UInt32& nwi, 
+   VectorType *array, Int32 val);
 
-	void creasenormal(UInt32& nwi, VectorType& v0, VectorType *array, Int32 val, Int32 a, Int32 b);
-	void regcreasenormal(UInt32& nwi, VectorType& v0, 	 
-	 VectorType& v1, VectorType& w1, VectorType& v2, VectorType& w2, VectorType& v3);
+   void creasenormal(UInt32& nwi, VectorType& v0, VectorType *array, Int32 val, Int32 a, Int32 b);
+   void regcreasenormal(UInt32& nwi, VectorType& v0,    
+   VectorType& v1, VectorType& w1, VectorType& v2, VectorType& w2, VectorType& v3);
+  void limitnormalcs(OSG::UInt32& nwi, 
+   VectorType& v0, VectorType *array, OSG::Int32 val, OSG::Int32 a, OSG::Int32 b,
+   OSG::Int32 type0,  OSG::Int32 type1, OSG::Int32 type2 );
    //! \}
 
    //! Helper for Loop-Crease-Types
    Int32 getCreaseType(Int32 crease, Int32 C0, Int32 C1, Int32 ri);
+   //! Another helper for Loop-Crease-Types
+   Int32 getIsRegular(Int32 crease);
 
 };
 
