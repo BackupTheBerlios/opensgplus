@@ -103,7 +103,7 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     void   wait            ( void );
     void   signal          ( void );
     UInt32 getChannelCount ( void );
-    Bool   selectChannel   ( void );
+    void   selectChannel   ( void );
 
     void   printStatistics( void );
     void   clearStatistics( void );
@@ -149,7 +149,9 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
         ACK,
         DATA,
         ALIVE,
-        SYNC
+        SYNC,
+        CONNECT,
+        CLOSED
     };
 
     typedef std::vector<std::vector<UInt8> > UDPBuffersT;
@@ -205,8 +207,10 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     DgramSocket                       _socket;
     DgramSocket                       _inSocket;
     DgramSocket                       _groupSocket;
+    DgramSocket                       _aliveSocket;
     Address                           _destination;
     UInt32                            _member;
+    Time                              _aliveTime;
 
     /*! \}                                                                 */
 #   ifdef MULTICAST_STATISTICS

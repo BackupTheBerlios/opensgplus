@@ -117,7 +117,7 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     virtual void   wait            ( void );
     virtual void   signal          ( void );
     virtual UInt32 getChannelCount ( void );
-    virtual Bool   selectChannel   ( void );
+    virtual void   selectChannel   ( void );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

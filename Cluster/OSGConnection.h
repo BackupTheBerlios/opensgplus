@@ -108,7 +108,7 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
     virtual void   wait            ( void )=0;
     virtual void   signal          ( void )=0;
     virtual UInt32 getChannelCount ( void )=0;
-    virtual Bool   selectChannel   ( void )=0;
+    virtual void   selectChannel   ( void )=0;
 
     /*------------------------- your_operators ------------------------------*/
 

@@ -135,7 +135,8 @@ MulticastConnection::MulticastConnection(int ) :
     _maxWaitForSync(0.5),
     _socket(),
     _aliveThread(NULL),
-    _stopAliveThread(false)
+    _stopAliveThread(false),
+    _aliveTime(4)
 {
     UInt32 i;
 
@@ -161,6 +162,9 @@ MulticastConnection::MulticastConnection(int ) :
 
     _socket.open();
     _groupSocket.open();
+    _aliveSocket.open();
+    _aliveSocket.bind();
+
     startAliveThread();
 
 #   ifdef MULTICAST_STATISTICS
@@ -174,8 +178,21 @@ MulticastConnection::MulticastConnection(int ) :
 MulticastConnection::~MulticastConnection(void)
 {
     stopAliveThread();
+    try
+    {
+        if(_destination.getPort()!=0)
+        {
+            UDPHeader closed={0,CLOSED};
+            SLOG << "Connection closed" << endl;
+            _socket.sendTo(&closed,sizeof(closed),_destination);
+        }
+    }
+    catch(...)
+    {
+    }
     _socket.close();
     _groupSocket.close();
+    _aliveSocket.close();
 #   ifdef MULTICAST_STATISTICS
     printStatistics();
 #   endif
@@ -237,19 +254,49 @@ string MulticastConnection::bind( const string &address )
  **/
 void MulticastConnection::accept( void )
 {
-    UDPBuffer alive;
+    UDPBuffer connect;
     Address destination;
+    UInt32 size;
+    Selection selection;
 
-    do
+    for(;;)
     {
-        _inSocket.recvFrom(&alive,sizeof(alive),destination);
+        // wait for connection request
+        do
+        {
+            size=_inSocket.recvFrom(&connect,sizeof(connect),destination);
+        }
+        while(connect.header.type != CONNECT ||
+              connect.member      != _member);
+        // send connection response
+        _socket.sendTo(&connect,size,destination);
+        // wait max 4 sec for response acknolage
+        selection.setRead(_socket);
+        selection.setRead(_inSocket);
+        if(selection.select(4))
+        {
+            if(selection.isSetRead(_socket))
+            {
+                size=_socket.recvFrom(&connect,sizeof(connect),destination);
+                if(connect.header.type == CONNECT &&
+                   connect.member      == _member)
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // response ack lost. Doesn't matter. Because we haven't
+            // got a new connection request either.
+            break;
+        }
     }
-    while(alive.header.type != ALIVE);
     _destination=destination;
     _channelAddress.push_back(destination);
     _channelSeqNumber.push_back(1);
-    SINFO << "Connection accepted from " << destination.getHost()
-          << ":" << destination.getPort() << endl;
+    SLOG << "Connection accepted from " << destination.getHost()
+         << ":" << destination.getPort() << endl;
 }
 
 /** connect a connection at the given address
@@ -260,10 +307,12 @@ void MulticastConnection::accept( void )
 void MulticastConnection::connect( const string &address )
 {
     Address from;
-    UDPBuffer alive;
+    UDPBuffer connectRequest;
+    UDPBuffer connectResponse;
     string group;
     UInt32 port;
     UInt32 member;
+    UInt32 size;
 
     interpreteAddress(address,group,port,member);
     _destination=Address(group.c_str(),port);
@@ -277,18 +326,31 @@ void MulticastConnection::connect( const string &address )
         SFATAL << "No group given to connect" << endl;
         return;
     }
-    // wait for alive signal
-    do
+    // prepare connection request
+    connectRequest.header.type      = CONNECT;
+    connectRequest.header.seqNumber = 0;
+    connectRequest.member           = member;
+    size=sizeof(connectRequest.header) + sizeof(connectRequest.member);
+    for(;;)
     {
-        _socket.recvFrom(&alive,sizeof(alive),from);
+        _socket.sendTo(&connectRequest,size,_destination);
+        if(_socket.waitReadable(.1))
+        {
+            _socket.recvFrom(&connectResponse,sizeof(connectResponse),from);
+            if(connectResponse.header.type == connectRequest.header.type &&
+               connectResponse.member      == connectRequest.member)
+            {
+                _socket.sendTo(&connectRequest,size,from);
+                break;
+            }
+        }
     }
-    while(alive.header.type != ALIVE ||
-          alive.member != member);
     _channelAddress.push_back(from);
     _channelSeqNumber.push_back(1);
     _inSocket=_socket;
-    SINFO << "Connected to " << from.getHost() 
-          << ":" << from.getPort();
+    SLOG << "Connected to " << from.getHost() 
+         << ":" << from.getPort()
+         << ":" << member << endl;
 }
 
 /** wait for sync
@@ -351,7 +413,7 @@ UInt32 MulticastConnection::getChannelCount(void)
  * need to select one channel for exclusive read. 
  *
  **/
-Bool MulticastConnection::selectChannel()
+void MulticastConnection::selectChannel()
 {
     UDPHeader header;
     Address from;
@@ -360,14 +422,18 @@ Bool MulticastConnection::selectChannel()
 
     for(;;)
     {
-        if(!_inSocket.waitReadable(2))
+        if(!_inSocket.waitReadable(_aliveTime+1))
         {
-            return false;
+            throw ReadError("Timeout");
         }
         size=_inSocket.peekFrom(&header,sizeof(header),from);
         // wait for data or ack request of unread data
         if(size>=sizeof(header))
         {
+            if(header.type == CLOSED)
+            {
+                throw ReadError("Connection closed");
+            }
             for(UInt32 i=0;i<_channelAddress.size();i++)
             {
                 if(_channelAddress[i]==from &&
@@ -376,7 +442,7 @@ Bool MulticastConnection::selectChannel()
                       header.seqNumber > _channelSeqNumber[i])))
                 {
                     _channel=i;
-                    return true;
+                    return;
                 }
             }
         }
@@ -457,7 +523,7 @@ void MulticastConnection::readBuffer()
     for(;;)
     {
         selection.setRead(_inSocket);
-        if(selection.select(2)<=0)
+        if(selection.select(_aliveTime+1)<=0)
         {
             throw ReadError("Timeout");
         }
@@ -614,9 +680,9 @@ void MulticastConnection::writeBuffer(void)
                     // ignore if we are not waiting for this ack
                     if(missingAcks.find(from)==missingAcks.end())
                     {
-                        printf("Unexpected ACK from %s,%d\n",
-                               from.getHost().c_str(),
-                               from.getPort());
+                        SINFO << "Unexpected ACK from "
+                              << from.getHost().c_str() << ":"
+                              << from.getPort();
                         continue;
                     }
                     // ignore if no ack or old package
@@ -640,10 +706,10 @@ void MulticastConnection::writeBuffer(void)
 #   ifdef MULTICAST_STATISTICS
                             _statPckDrop++;
 #   endif
-                            printf("Missing package %d %s:%d\n",
-                                   responseAck.nack.missing[i],
-                                   from.getHost().c_str(),
-                                   from.getPort());
+                            SINFO << "Missing package "
+                                  << responseAck.nack.missing[i] << " "
+                                  << from.getHost().c_str() << ":"
+                                  << from.getPort() << endl;
                             send[responseAck.nack.missing[i]]=true;
                         }
                     }
@@ -676,12 +742,21 @@ void MulticastConnection::startAliveThread()
 
 void MulticastConnection::stopAliveThread()
 {
+    char tag;
     if(_aliveThread)
     {
         _stopAliveThread=true;
+        DgramSocket s;
+        s.open();
+        s.sendTo(&tag,
+                 sizeof(tag),
+                 Address(_aliveSocket.getAddress()));
         Thread::join( _aliveThread );
 //!!        ThreadManager::the()->removeThread(_aliveThread);
         _aliveThread=0;
+        if(_aliveSocket.waitReadable(0))
+            _aliveSocket.recv(&tag,sizeof(tag));
+        s.close();
     }
 }
 
@@ -704,11 +779,11 @@ void *MulticastConnection::aliveProc(void *arg)
                 sizeof(UDPHeader)+sizeof(alive.member),
                 connection->_destination);
         }
-#if defined WIN32
-        Sleep(1000);
-#else
-        sleep(1);
-#endif
+        if(connection->_aliveSocket.waitReadable(connection->_aliveTime))
+        {
+            char tag;
+            connection->_aliveSocket.recv(&tag,sizeof(tag));
+        }
     }
     return NULL;
 }

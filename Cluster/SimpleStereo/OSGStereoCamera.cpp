@@ -58,7 +58,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.3 2002/01/04 13:18:34 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.4 2002/01/10 08:23:05 marcus Exp $";
     static char cvsid_hpp[] = OSGSTEREOCAMERA_HEADER_CVSID;
     static char cvsid_inl[] = OSGSTEREOCAMERA_INLINE_CVSID;
 }
@@ -135,7 +135,7 @@ void StereoCamera::getProjection( Matrix& result, UInt32 width, UInt32 height)
                             1);
 }
 
-void StereoCamera::getViewing( Matrix& result, UInt32 width, UInt32 height)
+void StereoCamera::getViewing( Matrix& result, UInt32 , UInt32 )
 {
     Matrix m;
     Real32 rEye = getEyedistance() * ( getWhicheye() - .5f );

@@ -88,6 +88,7 @@ ClusterServer::ClusterServer(WindowPtr window,
     _servicePort(servicePort),
     _serverId(0),
     _address(address),
+    _serviceThread(NULL),
     _needUpdate(false)
 {
     _connection = ConnectionFactory::the().create(connectionType);
@@ -104,6 +105,18 @@ ClusterServer::ClusterServer(WindowPtr window,
  */
 ClusterServer::~ClusterServer(void)
 {
+    if(_serviceThread)
+    {
+        DgramSocket      s;
+        BinSocketMessage msg;
+        msg.clear();
+        msg.putString("stop");
+        msg.putString(_serviceName);
+        s.open();
+        s.sendTo(msg,BroadcastAddress(_servicePort));
+        Thread::join(_serviceThread);
+        s.close();
+    }
     if(_connection)
         delete _connection;
 }
@@ -219,6 +232,12 @@ void *ClusterServer::serviceProc(void *arg)
             serviceSock.recvFrom(msg,addr);
             service=msg.getString();
             SINFO << "Request for " << service << endl;
+            if(service=="stop")
+            {
+                service=msg.getString();
+                if(service == server->_serviceName)
+                    return NULL;
+            }
             if(service == server->_serviceName)
             {
                 msg.clear();

@@ -34,7 +34,7 @@ int main(int argc,char **argv)
             StreamSockConnection con;
             con.bind("5555");
             con.accept();
-            while(!con.selectChannel());
+            con.selectChannel();
             for(i=0;i<10000000;i++)
             {
                 con.getUInt32(j);

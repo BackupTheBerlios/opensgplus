@@ -33,10 +33,7 @@ int main(int argc,char **argv)
             for(i=2;(int)i<argc;i+=1)
             {
                 string who;
-                while(!con.selectChannel())
-                {
-                    cout << "no channe" << endl;
-                }
+                con.selectChannel();
                 con.getString(who);
                 cout << "response:" << who << endl;
             }
@@ -51,7 +48,7 @@ int main(int argc,char **argv)
             addr = con.bind(addr);
             cout << "bound addr " << addr << endl;
             con.accept();
-            while(!con.selectChannel());
+            con.selectChannel();
             for(i=0;i<COUNT;i++)
             {
                 con.getUInt32(j);

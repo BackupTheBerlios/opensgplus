@@ -338,7 +338,7 @@ UInt32 StreamSockConnection::getChannelCount(void)
  * need to select one channel for exclusive read. 
  *
  **/
-Bool StreamSockConnection::selectChannel(void)
+void StreamSockConnection::selectChannel(void)
 {
     Int32 maxnread=0,nread;
     SocketsT::iterator socket;
@@ -349,7 +349,7 @@ Bool StreamSockConnection::selectChannel(void)
     if(_sockets.size()==1)
     {
         _readSocket=_sockets[0];
-        return true;
+        return;
     }
 
     // select socket with most data
@@ -366,7 +366,7 @@ Bool StreamSockConnection::selectChannel(void)
     }
     if(maxnread)
     {
-        return true;
+        return;
     }
 
     // wait for first socket to deliver data
@@ -384,7 +384,7 @@ Bool StreamSockConnection::selectChannel(void)
     // find readable socket
     for(socket=_sockets.begin();!result.isSetRead(*socket);socket++);
     _readSocket=*socket;
-    return true;
+    return;
 }
 
 /*-------------------------- create ---------------------------------------*/

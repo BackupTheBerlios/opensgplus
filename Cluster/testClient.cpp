@@ -217,6 +217,7 @@ void key(unsigned char key, int /*x*/, int /*y*/)
             }
             break;
         case 27:	// should kill the clients here
+            subRefCP(clusterWindow);
             osgExit(); 
             exit(0);
 	}
