@@ -36,56 +36,83 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _GEOLOAD_H_
-#define _GEOLOAD_H_
+#ifndef _GEOLOADMANAGER_H_
+#define _GEOLOADMANAGER_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <OSGBaseTypes.h>
+#include <map>
+#include <vector>
 #include <OSGClusterDef.h>
-#include <OSGGeometry.h>
-#include <OSGCamera.h>
-#include <OSGViewport.h>
+#include <OSGBaseTypes.h>
+#include <OSGGeoLoad.h>
 
 OSG_BEGIN_NAMESPACE
 
-class OSG_CLUSTERLIB_DLLMAPPING GeoLoad 
+class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 {
     /*==========================  PUBLIC  =================================*/
   public:
 
+    typedef std::vector<GeoLoad>        GeoLoadVecT;
+    typedef std::vector<Int32>          ResultT;
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                      dcast                                   */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name        General Fieldcontainer Declaration                    */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    GeoLoad(NodePtr node);
-    GeoLoad(const GeoLoad &source);
+    GeoLoadManager(void);
+    GeoLoadManager(const GeoLoadManager &source);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Assignment                                 */
+    /*! \{                                                                 */
+
+    GeoLoadManager& operator =(const GeoLoadManager &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~GeoLoad(void);
+    virtual ~GeoLoadManager(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                  load calculation                            */
+    /*! \name                 Load balancing functions                     */
     /*! \{                                                                 */
 
-    void updateView        ( ViewportPtr vp               );
-    void updateGeometry    (                              );
-    Real32 getServerLoad   ( Int32 min[2],
-                             Int32 max[2],
-                             bool clientRendering);
-    Real32 getClientLoad   ( Int32 min[2],
-                             Int32 max[2],
-                             bool clientRendering);
-    bool checkRegion       ( Int32 min[2],
-                             Int32 max[2] );
-    Real32 getRenderingLoad( Int32 min[2],
-                             Int32 max[2] );
+    void add         (NodePtr node);
+    void balance     (ViewportPtr     vp,
+                      UInt32          servers,
+                      ResultT        &result);
+    void splitRegion (UInt32          servers,
+                      Int32           min[2],
+                      Int32           max[2],
+                      ResultT        &result);
+    void findBestCut (Int32           min[2],
+                      Int32           max[2],
+                      UInt32          a,
+                      UInt32          b,
+                      Int32          &cut,
+                      Real32         &load);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Get                                     */
+    /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -94,86 +121,34 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Get                                     */
-    /*! \{                                                                 */
-
-    const Int32 *     getMin();
-    const Int32 *     getMax();
-    bool              isVisible();
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   your_operators                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                    Assignment                                */
-    /*! \{                                                                 */
-
-    GeoLoad& operator = (const GeoLoad &source);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                    Comparison                                */
-    /*! \{                                                                 */
-
-    bool operator < (const GeoLoad &other) const;
-    //bool operator == (const GeoLoad &other) const;
-    //bool operator != (const GeoLoad &other) const;
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
     /*! \name                        Dump                                  */
     /*! \{                                                                 */
-
-    void dump(void);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                     utilities                                */
+    /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    void clipLine(         int from,
-                           Real32 near,
-                           vector<Pnt3f> &pnt,
-                           vector<Pnt3f> &clip);
+    GeoLoadVecT           _geoLoad;
 
     /*! \}                                                                 */
-
     /*---------------------------------------------------------------------*/
-    /*! \name                        Members                               */
+    /*! \name                      Member                                  */
     /*! \{                                                                 */
-
-    NodePtr               _node;
-    GeometryPtr           _geometry;
-    UInt32                _faces;
-    Int32                 _min[2];
-    Int32                 _max[2];
-    bool                  _visible;
 
     /*! \}                                                                 */
 
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /*---------------------------------------------------------------------*/
-    /*! \name                static configuration                          */
-    /*! \{                                                                 */
-
-    static Real32        _primRenderPerSec;
-    static Real32        _primTransformPerSec;
-    static Real32        _pixelReadPerSec;
-    static Real32        _pixelWritePerSec;
-
-    /*! \}                                                                 */
 };
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.4 2002/02/10 12:51:34 marcus Exp $"
+#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.1 2002/02/10 12:51:34 marcus Exp $"
 
-#endif /* _GEOLOAD_H_ */
+#endif /* _GEOLOADMANAGER_H_ */
+

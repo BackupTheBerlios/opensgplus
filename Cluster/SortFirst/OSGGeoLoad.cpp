@@ -56,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.2 2002/02/05 13:26:46 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.3 2002/02/10 12:51:34 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -64,9 +64,11 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \class osg::GeoLoad
-  Holds the load corsed by a geometry node
- */
+/** \class osg::GeoLoad
+ *  \ingroup ClusterLib
+ *  \brief GeoLoad holds the load caused by geometry rendering
+ *
+ **/
 
 // how to estimate ? 
 Real32 GeoLoad::_primTransformPerSec=10000000;
@@ -80,24 +82,18 @@ Real32 GeoLoad::_pixelReadPerSec    =2500000;
 /*! Constructor
  */
 
-GeoLoad::GeoLoad(NodePtr node,
-                 GeometryPtr geo):
+GeoLoad::GeoLoad(NodePtr node):
     _node(node),
-    _geometry(geo),
     _faces(0)
 {
-    // count faces
-    for(FaceIterator f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
-    {
-        _faces++;
-    }
-    SLOG << "Faces: " << _faces << endl;
+    updateGeometry();
 } 
 
 /*! copy Constructor
  */
 
-GeoLoad::GeoLoad(const GeoLoad &source) 
+GeoLoad::GeoLoad(const GeoLoad &source):
+    _node(source._node)
 {
     _min[0]  = source._min[0];
     _min[1]  = source._min[1];
@@ -107,13 +103,23 @@ GeoLoad::GeoLoad(const GeoLoad &source)
     _visible = source._visible;
 }
 
-/*! line clipping 
+/*-------------------------------------------------------------------------*/
+/*                             Destructor                                  */
+
+/** Destructor documentation
+ **/
+GeoLoad::~GeoLoad(void)
+{
+}
+
+
+/** line clipping 
  *  
  * Clip lines of the bounding volume at the front clipping plane
- * The pints in pnt are sorted so that the invertation of one
+ * The points in pnt are sorted so that the invertation of one
  * bit of the "from" index results in a valid "to" index of en edge
  * 
- */
+ **/
 
 void GeoLoad::clipLine(int from,
                        Real32 near,
@@ -135,10 +141,10 @@ void GeoLoad::clipLine(int from,
     }
 }
 
-/*! Update the view dependend load parameters
- */
+/** Update the view dependend load parameters
+ **/
 
-void GeoLoad::update(ViewportPtr port)
+void GeoLoad::updateView(ViewportPtr port)
 {
     CameraPtr camera=port->getCamera();
     Vec3f vol[2];
@@ -151,13 +157,12 @@ void GeoLoad::update(ViewportPtr port)
     Matrix p;
     Real32 near=-camera->getNear();
     bool needClip=false;
+    DynamicVolume volume;
 
     // get whole viewport transformation
     camera->getViewing( v, port->getPixelWidth(), port->getPixelHeight() );
-    v.mult(_node->getToWorld());
-    // get bounding volume
-    const BoxVolume *volume = (OSG::BoxVolume *)&_node->getVolume();
-    volume->getBounds(vol[0], vol[1]);
+    _node->getWorldVolume(volume);
+    volume.getBounds(vol[0], vol[1]);
     // transform into view coordinate system
     for(i=0;i<8;++i)
     {
@@ -177,6 +182,7 @@ void GeoLoad::update(ViewportPtr port)
         clipLine(5,near,pnt,clip);  // from 101  to 001 111 100
         clipLine(6,near,pnt,clip);  // from 110  to 111 010 100
     }
+    // all points behind the front clipping plane?
     if(clip.size()==0)
     {
         _visible=false;
@@ -185,15 +191,21 @@ void GeoLoad::update(ViewportPtr port)
     {
         camera->getProjection( p, port->getPixelWidth(), port->getPixelHeight() );
         // project
-        maxx=maxy=-2;
-        minx=miny= 2;
         for(i=0;i<clip.size();++i)
         {
             p.multFullMatrixPnt(clip[i]);
-            if(minx > clip[i][0]) minx = clip[i][0];
-            if(miny > clip[i][1]) miny = clip[i][1];
-            if(maxx < clip[i][0]) maxx = clip[i][0];
-            if(maxy < clip[i][1]) maxy = clip[i][1];
+            if(i>0)
+            {
+                if(minx > clip[i][0]) minx = clip[i][0];
+                if(miny > clip[i][1]) miny = clip[i][1];
+                if(maxx < clip[i][0]) maxx = clip[i][0];
+                if(maxy < clip[i][1]) maxy = clip[i][1];
+            }
+            else
+            {
+                maxx = minx = clip[i][0];
+                maxy = miny = clip[i][1];
+            }
         }
         // scale to 0..1
         minx=minx/2+.5;
@@ -208,28 +220,37 @@ void GeoLoad::update(ViewportPtr port)
         }
         else
         {
-            if(minx<0) minx=0;
-            if(miny<0) miny=0;
-            if(maxx>1) maxx=1;
-            if(maxy>1) maxy=1;
-            _min[0]=(UInt32)(minx*port->getPixelWidth());
-            _min[1]=(UInt32)(miny*port->getPixelHeight());
-            _max[0]=(UInt32)(maxx*port->getPixelWidth());
-            _max[1]=(UInt32)(maxy*port->getPixelHeight());
+            // scale to framebuffer pixels
+            _min[0]=(Int32)(minx*port->getPixelWidth());
+            _min[1]=(Int32)(miny*port->getPixelHeight());
+            _max[0]=(Int32)(maxx*port->getPixelWidth());
+            _max[1]=(Int32)(maxy*port->getPixelHeight());
             _visible = true;
         }
     }
 }
-    
-/*-------------------------------------------------------------------------*/
-/*                             Destructor                                  */
 
-/*! Destructor documentation
- */
-GeoLoad::~GeoLoad(void)
+void GeoLoad::updateGeometry()
 {
-}
+    NodeCorePtr core;
+    GeometryPtr geo;
 
+    _faces = 0;
+    core=_node->getCore();
+    if(_node->getCore() == NullFC)
+        return;
+    geo=GeometryPtr::dcast(core);
+    if(geo == NullFC)
+        return;
+
+    // count faces
+    for(FaceIterator f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
+    {
+        ++_faces;
+    }
+    SLOG << "Faces: " << _faces << endl;
+}
+    
 /*-------------------------------------------------------------------------*/
 /*                             Assignment                                  */
 
@@ -245,6 +266,7 @@ GeoLoad& GeoLoad::operator = (const GeoLoad &source)
     _max[1]  = source._max[1];
     _faces   = source._faces;
     _visible = source._visible;
+    _node = source._node;
     return *this;
 }
 
@@ -271,15 +293,15 @@ void GeoLoad::dump(void)
 /*-------------------------------------------------------------------------*/
 /*                             get                                         */
 
-Real32 GeoLoad::getServerLoad(UInt32 min[2],
-                              UInt32 max[2],
+Real32 GeoLoad::getServerLoad(Int32 min[2],
+                              Int32 max[2],
                               bool clientRendering)
 {
     if(clientRendering || _visible==false)
         return 0;
 
-    UInt32 pixMin[2];
-    UInt32 pixMax[2];
+    Int32 pixMin[2];
+    Int32 pixMax[2];
 
     pixMin[0] = osgMax(min[0],_min[0]);
     pixMin[1] = osgMax(min[1],_min[1]);
@@ -304,12 +326,12 @@ Real32 GeoLoad::getServerLoad(UInt32 min[2],
     return t;
 }
 
-Real32 GeoLoad::getClientLoad(UInt32 min[2],
-                              UInt32 max[2],
+Real32 GeoLoad::getClientLoad(Int32 min[2],
+                              Int32 max[2],
                               bool clientRendering)
 {
-    UInt32 pixMin[2];
-    UInt32 pixMax[2];
+    Int32 pixMin[2];
+    Int32 pixMax[2];
 
     if(_visible==false)
         return 0;
@@ -333,6 +355,84 @@ Real32 GeoLoad::getClientLoad(UInt32 min[2],
     }
     return t;
 }
+
+/** Return min valuse in window coordinates
+ **/
+const Int32 *GeoLoad::getMin()
+{
+    return _min;
+}
+
+/** Return max valuse in window coordinates
+ **/
+const Int32 *GeoLoad::getMax()
+{
+    return _max;
+}
+
+/** Is the geometry visible in the current viewport
+ **/
+bool GeoLoad::isVisible()
+{
+    return _visible;
+}
+
+/** Check if one part of the geometry lays in the given region
+ *
+ * \param min    [ minx, miny ]
+ * \param max    [ maxx, maxy ]
+ *
+ **/
+bool GeoLoad::checkRegion( Int32 min[2],
+                           Int32 max[2] )
+{
+    if(min[0] > _max[0] ||
+       max[0] < _min[0] ||
+       min[1] > _max[1] ||
+       max[1] < _min[1])
+        return false;
+    else
+        return true;
+}
+
+
+Real32 GeoLoad::getRenderingLoad( Int32 min[2],
+                                  Int32 max[2] )
+{
+    Real32 load,a,b,s;
+    Int32 pixMin[2];
+    Int32 pixMax[2];
+
+    if(_visible==false)
+        return 0;
+
+    pixMin[0] = osgMax(min[0],_min[0]);
+    pixMin[1] = osgMax(min[1],_min[1]);
+    pixMax[0] = osgMin(max[0],_max[0]);
+    pixMax[1] = osgMin(max[1],_max[1]);
+    // not in region
+    if(pixMin[0] > pixMax[0] ||
+       pixMin[1] > pixMax[1])
+        return 0;
+    load=_faces;
+
+    s = _max[0] - _min[0] + 1;
+    a = (pixMin[0] - _min[0]    ) / s;
+    b = (pixMax[0] - _min[0] + 1) / s;
+    load *= a + b - a * b;
+    s = _max[1] - _min[1] + 1;
+    a = (pixMin[1] - _min[1]    ) / s;
+    b = (pixMax[1] - _min[1] + 1) / s;
+    load *= a + b - a * b;
+
+    return load;
+}
+
+
+
+
+
+
 
 
 

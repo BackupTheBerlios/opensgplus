@@ -409,8 +409,8 @@ void SortFirstWindow::traverseGeometry(NodePtr np,ViewportPtr port)
         geom=GeometryPtr::dcast(core);
         if(geom!=NullFC)
         {
-            GeoLoad load(np,geom);
-            load.update(port);
+            GeoLoad load(np);
+            load.updateView(port);
             load.dump();
         }
     }
