@@ -46,6 +46,7 @@
 //  Includes
 //---------------------------------------------------------------------------
 
+#include <OSGConfig.h>
 #include <OSGSocketConfig.h>
 #include <OSGSocketException.h>
 #include <OSGAddress.h>

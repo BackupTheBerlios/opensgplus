@@ -41,9 +41,8 @@
 //---------------------------------------------------------------------------
 
 #include <sys/types.h>
-#ifdef WIN32
-#include <windows.h>  
-#else
+
+#ifndef WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

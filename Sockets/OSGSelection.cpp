@@ -40,10 +40,12 @@
 //  Includes
 //---------------------------------------------------------------------------
 
+#include <OSGConfig.h>
+
 #include <string.h>
 #ifdef WIN32
 #include <windows.h>
-#include <WS2TCPIP.h>
+//#include <WS2TCPIP.h>
 #include <io.h>
 #else
 #include <sys/socket.h>
