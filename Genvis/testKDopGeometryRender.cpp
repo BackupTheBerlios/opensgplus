@@ -86,7 +86,7 @@ void draw (Polygon3SetIndexed& geom)
 {
    static char buffer[255];
 
-   glColor3f(0.8f, 0.8f, 0.8f);
+   glColor3f(0.0f, 0.0f, 0.0f);
    unsigned f = 0;
    for (Polygon3SetIndexed::Container::const_iterator itF=geom.faces.begin(); 
 	itF != geom.faces.end(); 
@@ -110,7 +110,7 @@ void draw (Polygon3SetIndexed& geom, unsigned thisFace)
    glColor3f(0.8f, 0.8f, 0.8f);
    Pnt3f pos = geom.getFace(thisFace)->firstEdge()->getPoint();
    static char buffer[255];
-   sprintf(buffer, "%u", m_numFace);
+   sprintf(buffer, "%u", thisFace);
    glBitmapText(pos[0], pos[1], pos[2], buffer);
 #endif
    glColor3f(0.0f, 0.0f, 1.0f);
@@ -269,9 +269,9 @@ void display( void )
 #endif
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
    //BVOL::unitDop().drawWireframe();
-   //drawWireframe(BVOL::unitDop().getGeometry().getPolygonSet(), m_numFace);
-   //draw(BVOL::unitDop().getGeometry().getPolygonSet(), m_numFace);
-   drawRegularPolytope(20);
+   drawWireframe(BVOL::unitDop().getGeometry().getPolygonSet());
+   draw(BVOL::unitDop().getGeometry().getPolygonSet());
+   //drawRegularPolytope(20);
 
    glutSwapBuffers();
 }
