@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:39:35 $
 //                                                                            
 //=============================================================================
 
@@ -90,8 +90,8 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy ()
 template <class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy (NodePtr node)
 {
-   Cache::CacheData& data = getCache()[node];
-   for (CacheData::AdapterContainer::const_iterator 
+   CacheData& data = getCache()[node];
+   for (typename CacheData::AdapterContainer::iterator 
         it = data.getAdapter(AdapterType::getAdapterId()).begin();
 	it != data.getAdapter(AdapterType::getAdapterId()).end();
 	++it) {
@@ -105,7 +105,7 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const GeomObjectT
    CacheData& data = getCache()[obj];
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
-   for (TriangleIterator tri=geom->beginTriangles(); 
+   for (TriangleIterator tri = geom->beginTriangles(); 
 	tri!=end; 
 	++tri) {
       AdapterType* adapter = LeafFactory::the().newObject();
@@ -125,8 +125,8 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformTy
 
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
-   for (TriangleIterator tri=geom->beginTriangles(); 
-	tri!=end; 
+   for (TriangleIterator tri = geom->beginTriangles(); 
+	tri != end; 
 	++tri) {
       AdapterType* adapter = LeafFactory::the().newObject();
       m_leaf.push_back(adapter);
@@ -225,9 +225,9 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyGlobal ()
 {
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
-   Cache::EntryIterator it;
+   typename Cache::EntryIterator it;
    for (it = getCache().begin(); it != getCache().end(); ++it) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
 	 isLeaf.push_back(false);
 	 continue;
@@ -247,11 +247,11 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyGlobal ()
    std::vector<bool>::const_iterator itLeaf;
    for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 Cache::CacheData& data = getCache()[*it];
+	 CacheData& data = getCache()[*it];
 	 BVolAdapterBase* leaf =
 	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   Cache::CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = getCache()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache anymore
 	     break;
 	   }
@@ -286,9 +286,9 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal ()
 {
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
-   Cache::EntryIterator it;
+   typename Cache::EntryIterator it;
    for (it = getCache().begin(); it != getCache().end(); ++it) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
 	 isLeaf.push_back(false);
 	 continue;
@@ -309,11 +309,11 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal ()
    std::vector<bool>::const_iterator itLeaf;
    for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 Cache::CacheData& data = getCache()[*it];
+	 CacheData& data = getCache()[*it];
 	 BVolAdapterBase* leaf = 
 	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   Cache::CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = getCache()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache 
 	     break;
 	   }
@@ -523,9 +523,9 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
 {
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
-   Cache::EntryIterator it;
+   typename Cache::EntryIterator it;
    for (it = getCache().begin(); it != getCache().end(); ++it) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
 	 isLeaf.push_back(false);
 	 continue;
@@ -544,7 +544,7 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
    // create BVolGroups for inner nodes
    std::vector<bool>::const_iterator itLeaf;
    for (it = getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (!(*itLeaf)) {
 	 continue;
       }
@@ -553,7 +553,7 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
 	static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
       NodePtr parent;
       for (parent = data.getParent(); parent != NullFC; parent = parent->getParent()) {
-	   Cache::CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = getCache()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache anymore
 	     break;
 	   }
@@ -589,9 +589,9 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
 {
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
-   Cache::EntryIterator it;
+   typename Cache::EntryIterator it;
    for (it = getCache().begin(); it != getCache().end(); ++it) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
 	 isLeaf.push_back(false);
 	 continue;
@@ -613,11 +613,11 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
    std::vector<bool>::const_iterator itLeaf;
    for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 Cache::CacheData& data = getCache()[*it];
+	 CacheData& data = getCache()[*it];
 	 BVolAdapterBase* leaf = 
 	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   Cache::CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = getCache()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache 
 	     break;
 	   }
