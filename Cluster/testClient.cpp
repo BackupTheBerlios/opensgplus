@@ -42,6 +42,7 @@ MultiDisplayWindowPtr multidisplay;
 SimpClustSterWinPtr   stereodisplay;
 bool                  animate=false;
 bool                  multiport=false;
+float                 ca=-1,cb=-1,cc=-1;
 
 void showText(int x, int y, char *string)
 {
@@ -249,6 +250,7 @@ void init(vector<char *> &filenames)
 {
     int i;
     OSG::DirectionalLightPtr dl;
+    Real32 x,y,z;
 
     glEnable( GL_DEPTH_TEST );
     glEnable( GL_LIGHTING );
@@ -313,10 +315,50 @@ void init(vector<char *> &filenames)
     }
 	if ( filenames.size()==0 )
 	{
-		file = makeTorus( .5, 2, 16, 16 );
-        beginEditCP(file->getCore());
-        endEditCP(file->getCore());
-        dlight->addChild(file);
+        if(ca>0)
+        {
+            if(cb==-1)
+                cb=ca;
+            if(cc==-1)
+                cc=cb;
+            GeometryPtr geo=makeBoxGeo(.6,.6,.6,5,5,5);
+            
+            NodePtr node;
+            NodePtr geoNode;
+            TransformPtr trans;
+            for(x=-ca/2 ; x<ca/2 ; x++)
+                for(y=-cb/2 ; y<cb/2 ; y++)
+                    for(z=-cc/2 ; z<cc/2 ; z++)
+                    {
+                        trans=Transform::create();
+                        node=Node::create();
+                        geoNode=Node::create();
+                        
+                        beginEditCP(geoNode);
+                        beginEditCP(trans);
+                        beginEditCP(node);
+                        
+                        node->setCore(trans);
+                        trans->getMatrix().setTranslate(x,y,z);
+                        geoNode=Node::create();
+                        geoNode->setCore(geo);
+                        node->addChild( geoNode );
+                        beginEditCP(dlight);
+                        dlight->addChild(node);
+
+                        endEditCP(geoNode);
+                        endEditCP(dlight);
+                        endEditCP(trans);
+                        endEditCP(node);
+                    }
+        }
+        else
+        {
+            file = makeTorus( .5, 2, 16, 16 );
+            beginEditCP(file->getCore());
+            endEditCP(file->getCore());
+            dlight->addChild(file);
+        }
 	}
 
     dlight->invalidateVolume();
@@ -418,6 +460,19 @@ int main(int argc,char **argv)
     {
         for(i=1;i<argc;i++)
         {
+            if(argv[i][0] >='0' &&
+               argv[i][0] <='9')
+            {
+                if(ca==-1)
+                    ca=atoi(argv[i]);
+                else
+                    if(cb==-1)
+                        cb=atoi(argv[i]);
+                    else
+                        if(cc==-1)
+                            cc=atoi(argv[i]);
+                continue;
+            }
             if(strlen(argv[i])>1 && argv[i][0]=='-')
             {
                 switch(argv[i][1])
@@ -544,7 +599,8 @@ int main(int argc,char **argv)
             // set servers
             for(i=1;i<argc;i++)
             {
-                if(argv[i][0]!='-')
+                if(argv[i][0]!='-' && 
+                   (argv[i][0]<'0' || argv[i][0]>'9'))
                 {
                     clusterWindow->getServers().push_back(argv[i]);
                 }
