@@ -43,8 +43,9 @@
 #endif
 
 #include "OSGConfig.h"
-
 #include "OSGDynamicSubdivisionCCBase.h"
+#include "OSGViewport.h"
+#include "OSGAction.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -57,6 +58,12 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC : public DynamicSubdivis
 
     /*==========================  PUBLIC  =================================*/
   public:
+    typedef typename Inherited::OpenMesh               OpenMesh;
+    typedef typename Inherited::OpenMeshP              OpenMeshP;
+    typedef typename Inherited::SFOpenMeshP            SFOpenMeshP;
+    typedef typename Inherited::OpenMeshTesselator     OpenMeshTesselator;
+    typedef typename Inherited::OpenMeshTesselatorP    OpenMeshTesselatorP;
+    typedef typename Inherited::SFOpenMeshTesselatorP  SFOpenMeshTesselatorP;
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -74,6 +81,13 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC : public DynamicSubdivis
                       const BitVector  bvFlags  = 0) const;
 
 	
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                     Functions                                */
+    /*! \{                                                                 */
+
+    void  prepareFrame (const ViewportPtr& port);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
@@ -96,11 +110,14 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC : public DynamicSubdivis
     virtual ~DynamicSubdivisionCC(void); 
 
     /*! \}                                                                 */
-    Action::ResultE drawEnter  (Action *action);
+    /*---------------------------------------------------------------------*/
+    /*! \name                  Functor Functions                           */
+    /*! \{                                                                 */
 
-    Action::ResultE renderEnter(Action *action);
+    Action::ResultE drawEnter  (Action* action);
+    Action::ResultE renderEnter(Action* action);
 
-	/*! \}                                                                 */
+    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Volume                                  */
     /*! \{                                                                 */
@@ -127,6 +144,6 @@ OSG_END_NAMESPACE
 #include "OSGDynamicSubdivisionCCBase.inl"
 #include "OSGDynamicSubdivisionCC.inl"
 
-#define OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.h,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.h,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCC_H_ */

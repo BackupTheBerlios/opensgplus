@@ -55,11 +55,9 @@
 #endif
 
 #include "OSGConfig.h"
-
+#include "OSGSubSurfaceDef.h"
 #include "OSGFieldContainerPtr.h"
 #include "OSGNodeCoreFieldDataType.h"
-#include "OSGSubSurfaceDef.h"
-
 #include "OSGGroupFields.h"
 
 OSG_BEGIN_NAMESPACE
@@ -83,11 +81,12 @@ struct FieldDataTraits<FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > > :
 {
    static DataType             _type;                       
 
-   static char* getName(void) { 
-      static char sname[1000];
-      sprintf(sname, "DynamicSubdivisionCCPtr%d", MeshIdentifier<MESH>::id);
-      return sname; 
-   }
+   static const Char8* getName(void) { 
+       static std::string sname;
+       sname = "DynamicSubdivisionCCPtr";
+       sname.append(MeshIdentifier<MESH>::getIdString());
+       return sname.c_str(); 
+    }
 
    enum                        { StringConvertable = 0x00 };
    enum                        { bHasParent        = 0x01 };
@@ -97,6 +96,6 @@ struct FieldDataTraits<FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > > :
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCFIELDS_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCFields.h,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCFIELDS_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCFields.h,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCFIELDS_H_ */

@@ -66,9 +66,9 @@
 #include "OSGGroup.h" // Parent
 
 #include "OSGUInt16Fields.h" // MinDepth type
-#include "OSGUInt16Fields.h" // MaxDepth type
-#include "OSGBoolFields.h" // BackfaceCulling type
-#include "OSGOpenMeshPFields.h" // Mesh type
+#include "OSGReal32Fields.h" // MinProjSize type
+#include "OSGBoolFields.h"   // BackfaceCulling type
+#include "OSGOpenMeshPFields.h"           // Mesh type
 #include "OSGOpenMeshTesselatorPFields.h" // Tesselator type
 
 #include "OSGDynamicSubdivisionCCFields.h"
@@ -87,37 +87,59 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     typedef Group Inherited;
 
   public:
-    typedef MESH                        OpenMesh;
-    typedef OpenMesh*                   OpenMeshP;
-    typedef SField<OpenMeshP>           SFOpenMeshP;
-    typedef	WSDmain<Vec4f,OpenMesh,1>   OpenMeshTesselator;
-    typedef	OpenMeshTesselator*         OpenMeshTesselatorP;
-    typedef	SField<OpenMeshTesselatorP> SFOpenMeshTesselatorP;
+    enum                                      { MType = QUAD };
+    typedef MESH2WSDVECTOR                    WSDVector;
+    typedef MESH                              OpenMesh;
+    typedef OpenMesh*                         OpenMeshP;
+    typedef SField<OpenMeshP>                 SFOpenMeshP;
+    typedef WSDmain<WSDVector,OpenMesh,MType> OpenMeshTesselator;
+    typedef OpenMeshTesselator*               OpenMeshTesselatorP;
+    typedef SField<OpenMeshTesselatorP>       SFOpenMeshTesselatorP;
 
     /*==========================  PUBLIC  =================================*/
     enum
     {
-        MinDepthFieldId        = Inherited::NextFieldId,
-        MaxDepthFieldId        = MinDepthFieldId        + 1,
-        BackfaceCullingFieldId = MaxDepthFieldId        + 1,
-        MeshFieldId            = BackfaceCullingFieldId + 1,
-        TesselatorFieldId      = MeshFieldId            + 1,
-        NextFieldId            = TesselatorFieldId      + 1
+        MinProjSizeFieldId        = Inherited::NextFieldId,
+        MaxProjSizeFieldId        = MinProjSizeFieldId        + 1,
+        VertexClassifierFieldId   = MaxProjSizeFieldId        + 1,
+        NormalConeApertureFieldId = VertexClassifierFieldId   + 1,
+        MinDepthFieldId           = NormalConeApertureFieldId + 1,
+        MaxDepthFieldId           = MinDepthFieldId           + 1,
+        BackfaceCullingFieldId    = MaxDepthFieldId           + 1,
+        MeshFieldId               = BackfaceCullingFieldId    + 1,
+        TesselatorFieldId         = MeshFieldId               + 1,
+        NextFieldId               = TesselatorFieldId         + 1
     };
 
-    static const osg::BitVector MinDepthFieldMask;
-    static const osg::BitVector MaxDepthFieldMask;
-    static const osg::BitVector BackfaceCullingFieldMask;
-    static const osg::BitVector MeshFieldMask;
-    static const osg::BitVector TesselatorFieldMask;
-
+#ifdef OSG_WIN32_ICL
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MinProjSizeFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MaxProjSizeFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector VertexClassifierFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector NormalConeApertureFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MinDepthFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MaxDepthFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector BackfaceCullingFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MeshFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector TesselatorFieldMask;
+#else
+    static const OSG::BitVector MinProjSizeFieldMask;
+    static const OSG::BitVector MaxProjSizeFieldMask;
+    static const OSG::BitVector VertexClassifierFieldMask;
+    static const OSG::BitVector NormalConeApertureFieldMask;
+    static const OSG::BitVector MinDepthFieldMask;
+    static const OSG::BitVector MaxDepthFieldMask;
+    static const OSG::BitVector BackfaceCullingFieldMask;
+    static const OSG::BitVector MeshFieldMask;
+    static const OSG::BitVector TesselatorFieldMask;
+#endif
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
     /*! \{                                                                 */
 
-    static        FieldContainerType &getClassType    (void); 
-    static        UInt32              getClassTypeId  (void); 
+    inline static        FieldContainerType &getClassType    (void); 
+    inline static        UInt32              getClassTypeId  (void); 
+    inline static        const Char8*        getName         (void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -134,33 +156,49 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-           SFUInt16            *getSFMinDepth       (void);
-           SFUInt16            *getSFMaxDepth       (void);
-           SFBool              *getSFBackfaceCulling(void);
-           SFOpenMeshP         *getSFMesh           (void);
-           SFOpenMeshTesselatorP *getSFTesselator     (void);
-
-           UInt16              &getMinDepth       (void);
-     const UInt16              &getMinDepth       (void) const;
-           UInt16              &getMaxDepth       (void);
-     const UInt16              &getMaxDepth       (void) const;
-           bool                &getBackfaceCulling(void);
-     const bool                &getBackfaceCulling(void) const;
-           OpenMeshP           &getMesh           (void);
-     const OpenMeshP           &getMesh           (void) const;
-           OpenMeshTesselatorP &getTesselator     (void);
-     const OpenMeshTesselatorP &getTesselator     (void) const;
+    inline SFReal32              *getSFMinProjSize       (void);
+    inline SFReal32              *getSFMaxProjSize       (void);
+    inline SFReal32              *getSFVertexClassifier  (void);
+    inline SFReal32              *getSFNormalConeAperture(void);           
+    inline SFUInt16              *getSFMinDepth          (void);
+    inline SFUInt16              *getSFMaxDepth          (void);
+    inline SFBool                *getSFBackfaceCulling   (void);
+    inline SFOpenMeshP           *getSFMesh              (void);
+    inline SFOpenMeshTesselatorP *getSFTesselator        (void);
+           
+    inline       Real32              &getMinProjSize         (void);
+    inline const Real32              &getMinProjSize         (void) const;
+    inline       Real32              &getMaxProjSize         (void);
+    inline const Real32              &getMaxProjSize         (void) const;
+    inline       Real32              &getVertexClassifier    (void);
+    inline const Real32              &getVertexClassifier    (void) const;
+    inline       Real32              &getNormalConeAperture  (void); 
+    inline const Real32              &getNormalConeAperture  (void) const; 
+    inline       UInt16              &getMinDepth            (void);
+    inline const UInt16              &getMinDepth            (void) const;
+    inline       UInt16              &getMaxDepth            (void);
+    inline const UInt16              &getMaxDepth            (void) const;
+    inline       bool                &getBackfaceCulling     (void);
+    inline const bool                &getBackfaceCulling     (void) const;
+    inline       OpenMeshP           &getMesh                (void);
+    inline const OpenMeshP           &getMesh                (void) const;
+    inline       OpenMeshTesselatorP &getTesselator          (void);
+    inline const OpenMeshTesselatorP &getTesselator          (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
-
-     void setMinDepth       ( const UInt16 &value );
-     void setMaxDepth       ( const UInt16 &value );
-     void setBackfaceCulling( const bool &value );
-     void setMesh           ( const OpenMeshP &value );
-     void setTesselator     ( const OpenMeshTesselatorP &value );
+     
+     inline void setMinProjSize       ( const Real32 &value );
+     inline void setMaxProjSize       ( const Real32 &value );
+     inline void setVertexClassifier  ( const Real32 &value );
+     inline void setNormalConeAperture( const Real32 &value );
+     inline void setMinDepth          ( const UInt16 &value );
+     inline void setMaxDepth          ( const UInt16 &value );
+     inline void setBackfaceCulling   ( const bool &value );
+     inline void setMesh              ( const OpenMeshP &value );
+     inline void setTesselator        ( const OpenMeshTesselatorP &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -187,8 +225,8 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     /*! \name                   Construction                               */
     /*! \{                                                                 */
 
-    static  FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> >      create          (void); 
-    static  FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> >      createEmpty     (void); 
+    inline static  FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> >      create          (void); 
+    inline static  FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> >      createEmpty     (void); 
 
     /*! \}                                                                 */
 
@@ -199,11 +237,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     virtual FieldContainerPtr     shallowCopy     (void) const; 
 
     /*! \}                                                                 */
-    static char               *getName(void) { 
-		static char sname[1000];
-		sprintf(sname, "DynamicSubdivisionCC%d", MeshIdentifier<MESH>::id);
-		return sname; 
-	}
 
     /*=========================  PROTECTED  ===============================*/
   protected:
@@ -212,6 +245,10 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
+    SFReal32            _sfMinProjSize;
+    SFReal32            _sfMaxProjSize;
+    SFReal32            _sfVertexClassifier;
+    SFReal32            _sfNormalConeAperture;
     SFUInt16            _sfMinDepth;
     SFUInt16            _sfMaxDepth;
     SFBool              _sfBackfaceCulling;
@@ -247,8 +284,13 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
 
     friend class FieldContainer;
 
+#ifdef OSG_WIN32_ICL
     static OSG_SUBSURFACELIB_DLLMAPPING FieldDescription   *_desc[];
     static OSG_SUBSURFACELIB_DLLMAPPING FieldContainerType  _type;
+#else
+    static FieldDescription   *_desc[];
+    static FieldContainerType  _type;
+#endif
 
     // prohibit default functions (move to 'public' if you need one)
     void operator =(const DynamicSubdivisionCCBase &source);
@@ -260,6 +302,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCBASE_H_ */

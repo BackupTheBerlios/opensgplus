@@ -56,7 +56,7 @@ OSG_BEGIN_NAMESPACE
 //! access the type of the class
 template <class MESH>
 inline
-OSG::FieldContainerType &DynamicSubdivisionCCBase<MESH>::getClassType(void)
+FieldContainerType &DynamicSubdivisionCCBase<MESH>::getClassType(void)
 {
     return _type; 
 } 
@@ -64,10 +64,21 @@ OSG::FieldContainerType &DynamicSubdivisionCCBase<MESH>::getClassType(void)
 //! access the numerical type of the class
 template <class MESH>
 inline
-OSG::UInt32 DynamicSubdivisionCCBase<MESH>::getClassTypeId(void) 
+UInt32 DynamicSubdivisionCCBase<MESH>::getClassTypeId(void) 
 {
     return _type.getId(); 
 } 
+
+//! access the class name
+template <class MESH>
+inline
+const Char8* DynamicSubdivisionCCBase<MESH>::getName (void) 
+{
+   static std::string sname;
+   sname = "DynamicSubdivisionCC";
+   sname.append(MeshIdentifier<MESH>::getIdString());
+   return sname.c_str(); 
+}
 
 //! create a new instance of the class
 template <class MESH>
@@ -76,7 +87,7 @@ FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > DynamicSubdivisionCCBase<MESH>::cre
 {
     FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != NullFC) 
     {
         fc = FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> >::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -102,6 +113,34 @@ FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > DynamicSubdivisionCCBase<MESH>::cre
 
 template <class MESH>
 inline
+SFReal32 *DynamicSubdivisionCCBase<MESH>::getSFMinProjSize(void)
+{
+    return &_sfMinProjSize;
+}
+
+template <class MESH>
+inline
+SFReal32 *DynamicSubdivisionCCBase<MESH>::getSFMaxProjSize(void)
+{
+    return &_sfMaxProjSize;
+}
+
+template <class MESH>
+inline
+SFReal32 *DynamicSubdivisionCCBase<MESH>::getSFVertexClassifier(void)
+{
+    return &_sfVertexClassifier;
+}
+
+template <class MESH>
+inline
+SFReal32 *DynamicSubdivisionCCBase<MESH>::getSFNormalConeAperture(void)
+{
+    return &_sfNormalConeAperture;
+}
+
+template <class MESH>
+inline
 SFUInt16 *DynamicSubdivisionCCBase<MESH>::getSFMinDepth(void)
 {
     return &_sfMinDepth;
@@ -123,7 +162,7 @@ SFBool *DynamicSubdivisionCCBase<MESH>::getSFBackfaceCulling(void)
 
 template <class MESH>
 inline
-DynamicSubdivisionCCBase<MESH>::SFOpenMeshP*
+typename DynamicSubdivisionCCBase<MESH>::SFOpenMeshP*
 DynamicSubdivisionCCBase<MESH>::getSFMesh(void)
 {
     return &_sfMesh;
@@ -131,12 +170,96 @@ DynamicSubdivisionCCBase<MESH>::getSFMesh(void)
 
 template <class MESH>
 inline
-DynamicSubdivisionCCBase<MESH>::SFOpenMeshTesselatorP*
+typename DynamicSubdivisionCCBase<MESH>::SFOpenMeshTesselatorP*
 DynamicSubdivisionCCBase<MESH>::getSFTesselator(void)
 {
     return &_sfTesselator;
 }
 
+
+template <class MESH>
+inline
+Real32 &DynamicSubdivisionCCBase<MESH>::getMinProjSize(void)
+{
+    return _sfMinProjSize.getValue();
+}
+
+template <class MESH>
+inline
+const Real32 &DynamicSubdivisionCCBase<MESH>::getMinProjSize(void) const
+{
+    return _sfMinProjSize.getValue();
+}
+
+template <class MESH>
+inline
+void DynamicSubdivisionCCBase<MESH>::setMinProjSize(const Real32 &value)
+{
+    _sfMinProjSize.setValue(value);
+}
+
+template <class MESH>
+inline
+Real32 &DynamicSubdivisionCCBase<MESH>::getMaxProjSize(void)
+{
+    return _sfMaxProjSize.getValue();
+}
+
+template <class MESH>
+inline
+const Real32 &DynamicSubdivisionCCBase<MESH>::getMaxProjSize(void) const
+{
+    return _sfMaxProjSize.getValue();
+}
+
+template <class MESH>
+inline
+void DynamicSubdivisionCCBase<MESH>::setMaxProjSize(const Real32 &value)
+{
+    _sfMaxProjSize.setValue(value);
+}
+
+template <class MESH>
+inline
+Real32 &DynamicSubdivisionCCBase<MESH>::getVertexClassifier(void)
+{
+    return _sfVertexClassifier.getValue();
+}
+
+template <class MESH>
+inline
+const Real32 &DynamicSubdivisionCCBase<MESH>::getVertexClassifier(void) const
+{
+    return _sfVertexClassifier.getValue();
+}
+
+template <class MESH>
+inline
+void DynamicSubdivisionCCBase<MESH>::setVertexClassifier(const Real32 &value)
+{
+    _sfVertexClassifier.setValue(value);
+}
+
+template <class MESH>
+inline
+Real32 &DynamicSubdivisionCCBase<MESH>::getNormalConeAperture(void)
+{
+    return _sfNormalConeAperture.getValue();
+}
+
+template <class MESH>
+inline
+const Real32 &DynamicSubdivisionCCBase<MESH>::getNormalConeAperture(void) const
+{
+    return _sfNormalConeAperture.getValue();
+}
+
+template <class MESH>
+inline
+void DynamicSubdivisionCCBase<MESH>::setNormalConeAperture(const Real32 &value)
+{
+    _sfNormalConeAperture.setValue(value);
+}
 
 template <class MESH>
 inline
@@ -203,7 +326,7 @@ void DynamicSubdivisionCCBase<MESH>::setBackfaceCulling(const bool &value)
 
 template <class MESH>
 inline
-DynamicSubdivisionCCBase<MESH>::OpenMeshP &
+typename DynamicSubdivisionCCBase<MESH>::OpenMeshP&
 DynamicSubdivisionCCBase<MESH>::getMesh(void)
 {
     return _sfMesh.getValue();
@@ -211,7 +334,7 @@ DynamicSubdivisionCCBase<MESH>::getMesh(void)
 
 template <class MESH>
 inline
-const DynamicSubdivisionCCBase<MESH>::OpenMeshP &
+const typename DynamicSubdivisionCCBase<MESH>::OpenMeshP&
 DynamicSubdivisionCCBase<MESH>::getMesh(void) const
 {
     return _sfMesh.getValue();
@@ -226,7 +349,7 @@ void DynamicSubdivisionCCBase<MESH>::setMesh(const OpenMeshP &value)
 
 template <class MESH>
 inline
-DynamicSubdivisionCCBase<MESH>::OpenMeshTesselatorP &
+typename DynamicSubdivisionCCBase<MESH>::OpenMeshTesselatorP&
 DynamicSubdivisionCCBase<MESH>::getTesselator(void)
 {
     return _sfTesselator.getValue();
@@ -234,7 +357,7 @@ DynamicSubdivisionCCBase<MESH>::getTesselator(void)
 
 template <class MESH>
 inline
-const DynamicSubdivisionCCBase<MESH>::OpenMeshTesselatorP &
+const typename DynamicSubdivisionCCBase<MESH>::OpenMeshTesselatorP&
 DynamicSubdivisionCCBase<MESH>::getTesselator(void) const
 {
     return _sfTesselator.getValue();
@@ -250,5 +373,5 @@ void DynamicSubdivisionCCBase<MESH>::setTesselator(const OpenMeshTesselatorP &va
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $"
 

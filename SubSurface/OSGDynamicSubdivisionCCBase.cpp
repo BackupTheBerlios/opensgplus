@@ -65,6 +65,22 @@
 OSG_USING_NAMESPACE
 
 template <class MESH>
+const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::MinProjSizeFieldMask = 
+    (1 << DynamicSubdivisionCCBase<MESH>::MinProjSizeFieldId);
+
+template <class MESH>
+const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::MaxProjSizeFieldMask = 
+    (1 << DynamicSubdivisionCCBase<MESH>::MaxProjSizeFieldId);
+
+template <class MESH>
+const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::VertexClassifierFieldMask = 
+    (1 << DynamicSubdivisionCCBase<MESH>::VertexClassifierFieldId);
+
+template <class MESH>
+const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::NormalConeApertureFieldMask = 
+    (1 << DynamicSubdivisionCCBase<MESH>::NormalConeApertureFieldId);
+
+template <class MESH>
 const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::MinDepthFieldMask = 
     (1 << DynamicSubdivisionCCBase<MESH>::MinDepthFieldId);
 
@@ -88,6 +104,18 @@ const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::TesselatorFieldMask =
 
 // Field descriptions
 
+/*! \var Real32          DynamicSubdivisionCCBase::_sfMinProjSize
+    minimum pixel size
+*/
+/*! \var Real32          DynamicSubdivisionCCBase::_sfMaxProjSize
+    maximum pixel size
+*/
+/*! \var Real32          DynamicSubdivisionCCBase::_sfVertexClassifier
+    silhouette epsilon
+*/
+/*! \var Real32          DynamicSubdivisionCCBase::_sfNormalConeAperture
+    curvature calc. 
+*/
 /*! \var UInt16          DynamicSubdivisionCCBase::_sfMinDepth
     minimum subdivision depth
 */
@@ -109,6 +137,26 @@ const OSG::BitVector  DynamicSubdivisionCCBase<MESH>::TesselatorFieldMask =
 template <class MESH>
 FieldDescription *DynamicSubdivisionCCBase<MESH>::_desc[] = 
 {
+    new FieldDescription(SFReal32::getClassType(), 
+                     "MinProjSize", 
+                     MinProjSizeFieldId, MinProjSizeFieldMask,
+                     false,
+                     (FieldAccessMethod) &DynamicSubdivisionCCBase::getSFMinProjSize),
+    new FieldDescription(SFReal32::getClassType(), 
+                     "MaxProjSize", 
+                     MaxProjSizeFieldId, MaxProjSizeFieldMask,
+                     false,
+                     (FieldAccessMethod) &DynamicSubdivisionCCBase::getSFMaxProjSize),
+    new FieldDescription(SFReal32::getClassType(), 
+                     "VertexClassifier", 
+                     VertexClassifierFieldId, VertexClassifierFieldMask,
+                     false,
+                     (FieldAccessMethod) &DynamicSubdivisionCCBase::getSFVertexClassifier),
+    new FieldDescription(SFReal32::getClassType(), 
+                     "NormalConeAperture", 
+                     NormalConeApertureFieldId, NormalConeApertureFieldMask,
+                     false,
+                     (FieldAccessMethod) &DynamicSubdivisionCCBase::getSFNormalConeAperture),
     new FieldDescription(SFUInt16::getClassType(), 
                      "MinDepth", 
                      MinDepthFieldId, MinDepthFieldMask,
@@ -196,8 +244,12 @@ void DynamicSubdivisionCCBase<MESH>::executeSync(      FieldContainer &other,
 
 template <class MESH>
 DynamicSubdivisionCCBase<MESH>::DynamicSubdivisionCCBase(void) :
+    _sfMinProjSize            (Real32(5.0)), 
+    _sfMaxProjSize            (Real32(15.0)), 
+    _sfVertexClassifier       (Real32(0.01)), 
+    _sfNormalConeAperture     (Real32(0.01)), 
     _sfMinDepth               (UInt16(0)), 
-    _sfMaxDepth               (UInt16(0)), 
+    _sfMaxDepth               (UInt16(4)), 
     _sfBackfaceCulling        (bool(false)), 
     _sfMesh                   (OpenMeshP(NULL)), 
     _sfTesselator             (OpenMeshTesselatorP(NULL)), 
@@ -211,6 +263,10 @@ DynamicSubdivisionCCBase<MESH>::DynamicSubdivisionCCBase(void) :
 
 template <class MESH>
 DynamicSubdivisionCCBase<MESH>::DynamicSubdivisionCCBase(const DynamicSubdivisionCCBase &source) :
+    _sfMinProjSize            (source._sfMinProjSize            ), 
+    _sfMaxProjSize            (source._sfMaxProjSize            ), 
+    _sfVertexClassifier       (source._sfVertexClassifier       ), 
+    _sfNormalConeAperture     (source._sfNormalConeAperture     ), 
     _sfMinDepth               (source._sfMinDepth               ), 
     _sfMaxDepth               (source._sfMaxDepth               ), 
     _sfBackfaceCulling        (source._sfBackfaceCulling        ), 
@@ -234,6 +290,26 @@ UInt32 DynamicSubdivisionCCBase<MESH>::getBinSize(const BitVector &whichField)
 {
     UInt32 returnValue = Inherited::getBinSize(whichField);
 
+    if(FieldBits::NoField != (MinProjSizeFieldMask & whichField))
+    {
+        returnValue += _sfMinProjSize.getBinSize();
+    }
+
+    if(FieldBits::NoField != (MaxProjSizeFieldMask & whichField))
+    {
+        returnValue += _sfMaxProjSize.getBinSize();
+    }
+
+    if(FieldBits::NoField != (VertexClassifierFieldMask & whichField))
+    {
+        returnValue += _sfVertexClassifier.getBinSize();
+    }
+
+    if(FieldBits::NoField != (NormalConeApertureFieldMask & whichField))
+    {
+        returnValue += _sfNormalConeAperture.getBinSize();
+    }
+
     if(FieldBits::NoField != (MinDepthFieldMask & whichField))
     {
         returnValue += _sfMinDepth.getBinSize();
@@ -249,6 +325,7 @@ UInt32 DynamicSubdivisionCCBase<MESH>::getBinSize(const BitVector &whichField)
         returnValue += _sfBackfaceCulling.getBinSize();
     }
 
+#if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
         returnValue += _sfMesh.getBinSize();
@@ -258,7 +335,7 @@ UInt32 DynamicSubdivisionCCBase<MESH>::getBinSize(const BitVector &whichField)
     {
         returnValue += _sfTesselator.getBinSize();
     }
-
+#endif
 
     return returnValue;
 }
@@ -268,6 +345,26 @@ void DynamicSubdivisionCCBase<MESH>::copyToBin(      BinaryDataHandler &pMem,
                                   const BitVector         &whichField)
 {
     Inherited::copyToBin(pMem, whichField);
+
+    if(FieldBits::NoField != (MinProjSizeFieldMask & whichField))
+    {
+        _sfMinProjSize.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (MaxProjSizeFieldMask & whichField))
+    {
+        _sfMaxProjSize.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (VertexClassifierFieldMask & whichField))
+    {
+        _sfVertexClassifier.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NormalConeApertureFieldMask & whichField))
+    {
+        _sfNormalConeAperture.copyToBin(pMem);
+    }
 
     if(FieldBits::NoField != (MinDepthFieldMask & whichField))
     {
@@ -284,6 +381,7 @@ void DynamicSubdivisionCCBase<MESH>::copyToBin(      BinaryDataHandler &pMem,
         _sfBackfaceCulling.copyToBin(pMem);
     }
 
+#if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
         _sfMesh.copyToBin(pMem);
@@ -293,7 +391,7 @@ void DynamicSubdivisionCCBase<MESH>::copyToBin(      BinaryDataHandler &pMem,
     {
         _sfTesselator.copyToBin(pMem);
     }
-
+#endif
 
 }
 
@@ -302,6 +400,26 @@ void DynamicSubdivisionCCBase<MESH>::copyFromBin(      BinaryDataHandler &pMem,
                                     const BitVector    &whichField)
 {
     Inherited::copyFromBin(pMem, whichField);
+
+    if(FieldBits::NoField != (MinProjSizeFieldMask & whichField))
+    {
+        _sfMinProjSize.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (MaxProjSizeFieldMask & whichField))
+    {
+        _sfMaxProjSize.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (VertexClassifierFieldMask & whichField))
+    {
+        _sfVertexClassifier.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NormalConeApertureFieldMask & whichField))
+    {
+        _sfNormalConeAperture.copyFromBin(pMem);
+    }
 
     if(FieldBits::NoField != (MinDepthFieldMask & whichField))
     {
@@ -318,6 +436,7 @@ void DynamicSubdivisionCCBase<MESH>::copyFromBin(      BinaryDataHandler &pMem,
         _sfBackfaceCulling.copyFromBin(pMem);
     }
 
+#if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
         _sfMesh.copyFromBin(pMem);
@@ -327,7 +446,7 @@ void DynamicSubdivisionCCBase<MESH>::copyFromBin(      BinaryDataHandler &pMem,
     {
         _sfTesselator.copyFromBin(pMem);
     }
-
+#endif
 
 }
 
@@ -337,6 +456,18 @@ void DynamicSubdivisionCCBase<MESH>::executeSyncImpl(      DynamicSubdivisionCCB
 {
 
     Inherited::executeSyncImpl(pOther, whichField);
+
+    if(FieldBits::NoField != (MinProjSizeFieldMask & whichField))
+        _sfMinProjSize.syncWith(pOther->_sfMinProjSize);
+
+    if(FieldBits::NoField != (MaxProjSizeFieldMask & whichField))
+        _sfMaxProjSize.syncWith(pOther->_sfMaxProjSize);
+
+    if(FieldBits::NoField != (VertexClassifierFieldMask & whichField))
+        _sfVertexClassifier.syncWith(pOther->_sfVertexClassifier);
+
+    if(FieldBits::NoField != (NormalConeApertureFieldMask & whichField))
+        _sfNormalConeAperture.syncWith(pOther->_sfNormalConeAperture);
 
     if(FieldBits::NoField != (MinDepthFieldMask & whichField))
         _sfMinDepth.syncWith(pOther->_sfMinDepth);
@@ -357,9 +488,13 @@ void DynamicSubdivisionCCBase<MESH>::executeSyncImpl(      DynamicSubdivisionCCB
 }
 
 
+#ifndef FIELD_TYPE_DEF
+#define FIELD_TYPE_DEF
 
 #include "OSGSFieldTypeDef.inl"
 #include "OSGMFieldTypeDef.inl"
+
+#endif
 
 OSG_BEGIN_NAMESPACE
 
@@ -388,7 +523,7 @@ OSG_END_NAMESPACE
 #if 0
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionCCBase.cpp,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionCCBase.cpp,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID;
 

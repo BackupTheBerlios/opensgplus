@@ -46,13 +46,13 @@
 //#define OSG_COMPILEDYNAMICSUBDIVISIONCCINST
 
 #include "OSGwsdmain.h"
+#include "OSGDynamicSubdivisionCC.h"
 #include "OSGConfig.h"
 #include "OSGRenderAction.h"
 #include "OSGViewport.h"
 #include "OSGCamera.h"
 #include "OSGPerspectiveCamera.h"
-
-#include "OSGDynamicSubdivisionCC.h"
+#include "OSGLog.h"
 
 OSG_USING_NAMESPACE
 
@@ -112,18 +112,63 @@ void DynamicSubdivisionCC<MESH>::changed(BitVector whichField, UInt32 origin)
 	
 	bool update_parents = false;
 
+   // changed MinProjSize:
+   // * update in tesselator
+   if (whichField & MinProjSizeFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->Pmin = getMinProjSize();         
+      }
+   }   
+   // changed MaxProjSize:
+   // * update in tesselator
+   if (whichField & MaxProjSizeFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->Pmax = getMaxProjSize();         
+      }
+   }
+   // changed VertexClassifier:
+   // * update in tesselator
+   if (whichField & VertexClassifierFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->VertexClassifier = getVertexClassifier();         
+      }
+   }   
+   // changed NormalConeAperture:
+   // * update in tesselator
+   if (whichField & NormalConeApertureFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->NormalConeAperture = getNormalConeAperture();         
+      }
+   }   
+   // changed BackfaceCulling:
+   // * update in tesselator
+   if (whichField & BackfaceCullingFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->isSetBFCull = getBackfaceCulling();         
+      }
+   }   
+
 	// changed MeshField: 
 	// * create tesselator
 	// * do tesselator preprocessing	
-	if (whichField & MeshFieldMask) {					// mesh has been altered
+	if (whichField & MeshFieldMask
+      || whichField & MaxDepthFieldMask ) {		// mesh has been altered or maxdepth
 		if (getTesselator() != NULL) {
 		   delete getTesselator();
 		}
 		if (getMesh() != NULL) {
 			setTesselator(new OpenMeshTesselator(getMesh()));
+         // only chance to adjust the maxdepth
+         getTesselator()->setMaxDepth(getMaxDepth());
+         // update fields-data in tesselator
+         getTesselator()->Pmin = getMinProjSize();
+         getTesselator()->Pmax = getMaxProjSize();
+         getTesselator()->VertexClassifier = getVertexClassifier();
+         getTesselator()->NormalConeAperture = getNormalConeAperture();
+         getTesselator()->isSetBFCull = getBackfaceCulling();
 			// preprocess				
-			getTesselator()->initPatches();							
-			update_parents = true;						// explicit update of the instances
+			getTesselator()->initPatches();							         
+			update_parents = true;						// explicit update of the instances         
 		}
 	}
 	// changed ParentsField: 
@@ -146,10 +191,13 @@ void DynamicSubdivisionCC<MESH>::changed(BitVector whichField, UInt32 origin)
 }
 
 template <class MESH>
-void DynamicSubdivisionCC<MESH>::dump(      UInt32    , 
-                         const BitVector ) const
+void DynamicSubdivisionCC<MESH>::dump (UInt32          uiIndent, 
+				       const BitVector bvFlags) const
 {
-    SLOG << "Dump DynamicSubdivisionCC NI" << std::endl;
+    indentLog(uiIndent, PLOG);
+
+    PLOG << getName()
+         << std::endl;
 }
 
 
@@ -159,61 +207,97 @@ Action::ResultE DynamicSubdivisionCC<MESH>::drawEnter(Action *action)
     return Group::drawEnter(action);
 }
 
+template <class MESH>
+void DynamicSubdivisionCC<MESH>::prepareFrame (const ViewportPtr& port)
+{	
+   SINFO << getName() << ": prepareFrame" << std::endl;
+   // is getTesselator valid?
+   if (getTesselator() != NULL) { 
+      // get camera object
+      Matrix  camMatrix, transMatrix;	   
+      CameraPtr cam = port->getCamera();
+      if (cam == NullFC || cam->getBeacon() == NullFC) {
+	 return;
+      }
+      camMatrix = cam->getBeacon()->getToWorld();
+      // is view port dependant data set?
+      //if (!getTesselator()->isSetViewPort) {
+	 PerspectiveCameraPtr percam = PerspectiveCameraPtr::dcast(cam);
+	 if (percam == NullFC) {
+ 	    return;
+	 }
+	 Real32 winkel = percam->getFov();
+	 Int32  yres = port->getPixelHeight();
+	 Int32  xres = port->getPixelWidth();
+
+	 getTesselator()->initViewPortVars(winkel,xres,yres);
+      //}
+      // frame setup for parent
+      Vec3f eye;
+      for (UInt32 i=0; i<getParents().size(); ++i) {
+	 // get camera position
+	 transMatrix = getParents()[i]->getToWorld();
+	 transMatrix.invert();
+	 transMatrix.mult(camMatrix);
+	 eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]); 
+	 getTesselator()->perFrameSetup(getParents()[i], eye);
+      }
+   }
+}
 
 template <class MESH>
 Action::ResultE DynamicSubdivisionCC<MESH>::renderEnter(Action * action)
 {	
-	//Group::renderEnter(action);
-    RenderAction *da = dynamic_cast<RenderAction *>(action);
+   SINFO << getName() << ": renderEnter" << std::endl;
+#if 0
+   RenderAction *da = dynamic_cast<RenderAction *>(action);
 
-    if (da != NULL) {
-       // get camera object
-       CameraP cam = da->getCamera();
-	   Matrix  camMatrix,transMatrix;	   
+   if (da != NULL) {
+       // is getTesselator valid?
+       if (getTesselator() != NULL) { 
+	   // get camera object
+	   CameraP cam = da->getCamera();
+	   Matrix  camMatrix, transMatrix;	   
 	   camMatrix = da->getCameraToWorld();
 	   // is view port dependant data set?
-	   if (!getTesselator()->isSetViewPort)
-	   {
-		   PerspectiveCameraP percam = dynamic_cast<PerspectiveCameraP>(cam);
-		   float winkel = percam->getFov();
-		   float resY = cam->getNear();
+	   if (!getTesselator()->isSetViewPort) {
+	      PerspectiveCameraP percam = dynamic_cast<PerspectiveCameraP>(cam);
+	      Real32    winkel = percam->getFov();
+	      ViewportP vp = da->getViewport();
+	      Int32     yres = vp->getPixelHeight();
+	      Int32     xres = vp->getPixelWidth();
 
-		   ViewportP vp = da->getViewport();
-		   int yres = vp->getPixelHeight();
-		   int xres = vp->getPixelWidth();
-
-		   getTesselator()->initViewPortVars(winkel,xres,yres);
+	      getTesselator()->initViewPortVars(winkel,xres,yres);
 	   }
-      // get camera position
-		NodePtr parent = da->getActNode();
-		transMatrix = parent->getToWorld();  						
-		transMatrix.invert();
-		transMatrix.mult(camMatrix);
-      Vec3f eye(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]);		
-      // frame setup for parent
-		getTesselator()->perFrameSetup(parent, eye);
-	}
-    return Action::Continue;		
+	   // get camera position
+	   NodePtr parent = da->getActNode();
+	   transMatrix = parent->getToWorld();  						
+	   transMatrix.invert();
+	   transMatrix.mult(camMatrix);
+	   Vec3f eye(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]);		
+	   // frame setup for parent
+	   getTesselator()->perFrameSetup(parent, eye);
+       }
+   }
+#endif
+   return Group::renderEnter(action);
 }
 
 template <class MESH>
 void DynamicSubdivisionCC<MESH>::adjustVolume    (Volume &volume)
 {
-	if (getTesselator() == NULL) {
-		return;
-	}
-
-	Pnt3f boundingMin, boundingMax;
-	getTesselator()->OpenMeshBoundingBox(boundingMin, boundingMax);
-
-	volume.setValid(false);
-	//volume.setStatic(false);
-	volume.setEmpty();
-	volume.extendBy(boundingMin);
-	volume.extendBy(boundingMax);
-	//volume.dump();
-	//volume.setStatic();
-	volume.setValid();
+   if (getTesselator() == NULL) {
+      return;
+   }
+   
+   Pnt3f boundingMin, boundingMax;
+   getTesselator()->OpenMeshBoundingBox(boundingMin, boundingMax);
+   
+   volume.setValid(false);
+   volume.setEmpty();
+   volume.extendBy(boundingMin);
+   volume.extendBy(boundingMax);
+   volume.setValid();
 }
 
 /*------------------------------------------------------------------------*/
@@ -230,7 +314,7 @@ void DynamicSubdivisionCC<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.2 2003/12/23 18:34:29 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONCC_INLINE_CVSID;
 }
