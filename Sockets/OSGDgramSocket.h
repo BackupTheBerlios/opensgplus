@@ -104,8 +104,8 @@ class OSG_SOCKET_DLLMAPPING DgramSocket:public Socket
     /*------------------------- your_operators ------------------------------*/
 
     virtual void open();
-    int          writeTo(const void *buf,int size,const Address &to);
-    int          readFrom(void *buf,int size,const Address &from);
+    int          sendTo(const void *buf,int size,const Address &to);
+    int          recvFrom(void *buf,int size,const Address &from);
     int          peekFrom(void *buf,int size,const Address &from);
     void         join(const Address &group,const Address &interf=AnyAddress());
     void         leave(const Address &group,const Address &interf=AnyAddress());

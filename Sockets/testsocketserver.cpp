@@ -50,9 +50,9 @@ void dgramServer()
     // bind socket to port 23344
     sock.bind(AnyAddress(23344));
     // read from client
-    sock.readFrom(buffer,6,client);
+    sock.recvFrom(buffer,6,client);
     // replay to client
-    sock.writeTo(buffer,6,client);
+    sock.sendTo(buffer,6,client);
     sock.close();
     cout << "Dgram socket server: OK" << endl;
 }
@@ -67,8 +67,8 @@ void broadcastServer()
     sock.open();
     sock.setReusePort(true);
     sock.bind(AnyAddress(23344));
-    sock.readFrom(buffer,6,client);
-    sock.writeTo(buffer,6,client);
+    sock.recvFrom(buffer,6,client);
+    sock.sendTo(buffer,6,client);
     sock.close();
     cout << "Dgram broadcast server: OK" << endl;
 }
@@ -89,8 +89,8 @@ void multicastServer()
     sock.leave(Address("224.0.0.52"));
     do
     {
-        sock.readFrom(buffer,6,client);
-        sock.writeTo(buffer,6,client);
+        sock.recvFrom(buffer,6,client);
+        sock.sendTo(buffer,6,client);
         cout << client.getHost() << endl;
     } while(strcmp(buffer,"_END_"));
     sock.close();

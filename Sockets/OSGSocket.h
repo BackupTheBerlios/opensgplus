@@ -123,9 +123,9 @@ class OSG_SOCKET_DLLMAPPING Socket
     /*------------------------- your_category -------------------------------*/
     virtual void open()=0;
     void         close();
-    int          read(void *buf,int size);
+    int          recv(void *buf,int size);
     int          peek(void *buf,int size);
-    int          write(const void *buf,int size);
+    int          send(const void *buf,int size);
     void         bind(const Address &address=AnyAddress());
     void         listen(int maxPending=10);
     void         connect(const Address &address);

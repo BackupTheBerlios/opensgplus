@@ -31,12 +31,12 @@ void dgramClient()
     do
     {
         // write to server
-        sock.writeTo("hallo",6,Address("localhost",23344));
+        sock.sendTo("hallo",6,Address("localhost",23344));
         // check for server response
         sel.setRead(sock);
     } 
     while(sel.select(0.2)==0); // wait 0.2 sec for response
-    sock.readFrom(buffer,6,server);
+    sock.recvFrom(buffer,6,server);
     sock.close();
     cout << "Dgram socket client: OK" << endl;
 }
@@ -54,12 +54,12 @@ void broadcastClient()
     do
     {
         // write to server
-        sock.writeTo("hallo",6,BroadcastAddress(23344));
+        sock.sendTo("hallo",6,BroadcastAddress(23344));
         // check for server response
         sel.setRead(sock);
     } 
     while(sel.select(0.2)==0); // wait 0.2 sec for response
-    sock.readFrom(buffer,6,server);
+    sock.recvFrom(buffer,6,server);
     sock.close();
     cout << "Dgram broadcast client: OK" << endl;
 }
@@ -88,12 +88,12 @@ void multicastClient()
         do
         {
             // write to server
-            sock.writeTo(msg[i],6,addr[i]);
+            sock.sendTo(msg[i],6,addr[i]);
             // check for server response
             sel.setRead(sock);
         } 
         while(sel.select(0.2)==0); // wait 0.2 sec for response
-        sock.readFrom(buffer,6,server);
+        sock.recvFrom(buffer,6,server);
     }
     sock.close();
     cout << "Dgram multicast client: OK" << endl;

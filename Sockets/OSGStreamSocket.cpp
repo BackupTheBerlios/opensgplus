@@ -170,6 +170,42 @@ void StreamSocket::setDelay(bool value)
     }
 }
 
+int StreamSocket::read(void *buf,int size)
+{
+    int readSize;
+    int pos=0;
+
+    while(size)
+    {
+        readSize=::read(_sd,((char*)buf)+pos,size);
+        if(readSize<=0)
+        {
+            throw SocketError("read()");
+        }
+        size-=readSize;
+        pos +=readSize;
+    }
+    return pos;
+}
+
+int StreamSocket::write(const void *buf,int size)
+{
+    int writeSize;
+    int pos=0;
+
+    while(size)
+    {
+        writeSize=::write(_sd,(const char*)buf+pos,size);
+        if(writeSize<=0)
+        {
+            throw SocketError("send()");
+        }
+        size-=writeSize;
+        pos+=writeSize;
+    }
+    return pos;
+}
+
 /*-------------------------- assignment -----------------------------------*/
 
 /** \brief assignment

@@ -146,7 +146,7 @@ void DgramSocket::open()
     setTTL(1);
 }
 
-int DgramSocket::readFrom(void *buf,int size,const Address &from)
+int DgramSocket::recvFrom(void *buf,int size,const Address &from)
 {
     int len;
     SocketLenT addrLen=from.getSockAddrSize();
@@ -182,13 +182,13 @@ int DgramSocket::peekFrom(void *buf,int size,const Address &from)
     return len;
 }
 
-int DgramSocket::writeTo(const void *buf,int size,const Address &to)
+int DgramSocket::sendTo(const void *buf,int size,const Address &to)
 {
     int len;
 
     // send Request
     len=sendto(_sd,
-               (char*)buf,size,
+               (const char*)buf,size,
                0,
                to.getSockAddr(),
                to.getSockAddrSize());

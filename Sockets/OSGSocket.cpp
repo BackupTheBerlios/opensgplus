@@ -177,7 +177,7 @@ void Socket::close()
     ::close(_sd);
 }
 
-int Socket::read(void *buf,int size)
+int Socket::recv(void *buf,int size)
 {
     int len;
 
@@ -194,10 +194,10 @@ int Socket::peek(void *buf,int size)
     int len;
     //    socklen_t addrLen=from.getSockAddrSize();
 
-    len=recv(_sd,
-             (char*)buf,
-             size,
-             MSG_PEEK);
+    len=::recv(_sd,
+               (char*)buf,
+               size,
+               MSG_PEEK);
     if(len==-1)
     {
         throw SocketError("recv()");
@@ -205,7 +205,7 @@ int Socket::peek(void *buf,int size)
     return len;
 }
 
-int Socket::write(const void *buf,int size)
+int Socket::send(const void *buf,int size)
 {
     int len=::send(_sd,(const char*)buf,size,0);
     if(len==-1)
