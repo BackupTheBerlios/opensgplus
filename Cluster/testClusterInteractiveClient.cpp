@@ -46,7 +46,7 @@
 #include "OSGStreamSockConnection.h"
 #include "OSGMulticastConnection.h"
 #include "OSGClusterWindowAtt.h"
-#include "OSGImageComposition.h"
+#include "OSGViewBufferHandler.h"
 
 using namespace OSG;
 using namespace std;
@@ -60,7 +60,7 @@ PerspectiveCameraPtr  cam;
 Connection           *connection;
 int                   servers;
 RemoteAspect          aspect;
-ImageComposition      composition;
+ViewBufferHandler     bufferHandler;
 Bool                  composite=false;
 
 // **************
@@ -85,8 +85,11 @@ Bool interactive=true;
 
 // Program
 
-//void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+#ifdef WIN32
 void *font = 6;
+#else
+void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+#endif
 
 void
 showText(int x, int y, char *string)
@@ -94,6 +97,8 @@ showText(int x, int y, char *string)
   int len, i;
 
   glEnable(GL_COLOR_MATERIAL);
+  glPushMatrix();
+  glLoadIdentity();
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
@@ -107,6 +112,7 @@ showText(int x, int y, char *string)
   }
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
   glEnable(GL_DEPTH_TEST);  
   glDisable(GL_COLOR_MATERIAL);
 }
@@ -386,16 +392,14 @@ display(void)
             // i dont'n need this. resize doesn't work otherwise
             win->renderAllViewports(dummyract);	// draw the viewports     
 
-            composition.clearStatistics();
-            composition.recv(*connection,
-                             win->getWidth(),
-                             win->getHeight());
-            composition.printStatistics();
+            bufferHandler.recv(*connection);
+
             endTime=getSystemTime();
             sprintf(text,"Frametime: %6.3f",endTime-startTime);
             showText(10,10,text);
             sprintf(text,"Frames/s : %6.3f",1/(endTime-startTime));
             showText(10,34,text);
+
             win->swap(); 
             win->frameExit();	            // frame-cleanup
         }
@@ -623,7 +627,7 @@ int main( int argc, char **argv )
 
 	// create the GLUT window for interaction
 	glutInit(&argc, argv);
-	glutInitDisplayMode( GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
+	glutInitDisplayMode( GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE | GLUT_STENCIL);
 	winid = glutCreateWindow("OpenSG Cluster Client");
 	glutKeyboardFunc(key);
 	glutReshapeFunc(reshape);

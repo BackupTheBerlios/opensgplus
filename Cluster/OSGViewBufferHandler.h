@@ -36,50 +36,58 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _IMAGECOMPOSITION_H_
-#define _IMAGECOMPOSITION_H_
+#ifndef _VIEWBUFFERHANDLER_H_
+#define _VIEWBUFFERHANDLER_H_
 #ifdef __sgi
 #pragma once
 #endif
 
 #include <vector>
-#include <OSGBaseTypes.h>
 #include <OSGClusterDef.h>
-#include <OSGConnection.h>
+#include <OSGBaseTypes.h>
 
 OSG_BEGIN_NAMESPACE
 
-class Connection;
 class ImageFileType;
+class Connection;
 
 /*! \ingroup clusterlib
  *  \brief Brief
  */
 
-class OSG_CLUSTERLIB_DLLMAPPING ImageComposition 
+class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
 {
     /*==========================  PUBLIC  =================================*/
   public:
-
     /*---------------------------------------------------------------------*/
-    /*! \name                      types                                   */
+    /*! \name                   Types                                      */
     /*! \{                                                                 */
 
+    enum {
+        RED      =1,
+        GREEN    =2,
+        BLUE     =4,
+        ALPHA    =8,
+        STENCIL  =16,
+        DEPTH    =32,
+        RGB      =RED|GREEN|BLUE,
+        RGBA     =RED|GREEN|BLUE|ALPHA
+    } Component;
     typedef std::vector<Int8> BufferT;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
- 
-    ImageComposition(void);
+
+    ViewBufferHandler(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~ImageComposition(void); 
+    virtual ~ViewBufferHandler(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -96,68 +104,36 @@ class OSG_CLUSTERLIB_DLLMAPPING ImageComposition
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void recv       (Connection &connection,
-                     UInt32     width,
-                     UInt32     height);
+    void recv       (Connection &connection);
+
     void send       (Connection &connection,
-                     string     mimeType,
-                     UInt32     subTileSize,
-                     UInt32     dstX,
-                     UInt32     dstY,
+                     UInt32     component,
+                     UInt32     x,
+                     UInt32     y,
                      UInt32     width,
-                     UInt32     height);
+                     UInt32     height,
+                     UInt32     toX,
+                     UInt32     toY);
+    void send       (Connection &connection,
+                     UInt32     component,
+                     UInt32     toX,
+                     UInt32     toY);
 
-    void clearStatistics();
-    void printStatistics();
+    void setImgTransType(const char *mime=NULL);
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                 Container Access                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Binary Access                              */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   your_operators                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                    Assignment                                */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                    Comparison                                */
-    /*! \{                                                                 */
-
-    Bool operator < (const ImageComposition &other) const;
-    
-	//OSGBool operator == (const ImageComposition &other) const;
-	//OSGBool operator != (const ImageComposition &other) const;
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                        Dump                                  */
-    /*! \{                                                                 */
+    UInt32 getBufferWidth();
+    UInt32 getBufferHeight();
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                  Type information                            */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
+    ImageFileType              *_imgTransType;
+    UInt32                      _subTileSize;
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
@@ -165,36 +141,27 @@ class OSG_CLUSTERLIB_DLLMAPPING ImageComposition
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                        Changed                               */
+    /*! \name                      Changed                                 */
     /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                MT Destruction                                */
+    /*! \name                   MT Destruction                             */
     /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                     Sync                                     */
+    /*! \name                       Sync                                   */
     /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
   private:
 
-    UInt32         _statBytesRead;
-    UInt32         _statBytesWrite;
-
-    UInt32         _statBytesCompress;
-    UInt32         _statBytesUncompress;
-
-    UInt32         _statPixelRead;
-    UInt32         _statPixelWrite;
-
-	/*!\brief prohibit default function (move to 'public' if needed) */
-
-    ImageComposition(const ImageComposition &source);
-    void operator =(const ImageComposition &source);
+    /* prohibit default function (move to 'public' if needed) */
+    ViewBufferHandler(const ViewBufferHandler &source);
+    /* prohibit default function (move to 'public' if needed) */
+    void operator =(const ViewBufferHandler &source);
 };
 
 //---------------------------------------------------------------------------
@@ -203,10 +170,10 @@ class OSG_CLUSTERLIB_DLLMAPPING ImageComposition
 
 // class pointer
 
-typedef ImageComposition *ImageCompositionP;
+typedef ViewBufferHandler *ViewBufferHandlerP;
 
 OSG_END_NAMESPACE
 
-#define OSG_IMAGECOMPOSITIONHEADER_CVSID "@(#)$Id:$"
+#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
 
-#endif /* _IMAGECOMPOSITION_H_ */
+#endif /* _VIEWBUFFERHANDLER_H_ */

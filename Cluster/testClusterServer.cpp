@@ -39,7 +39,7 @@
 #include "OSGMulticastConnection.h"
 #include "OSGVRMLWriteAction.h"
 #include "OSGClusterWindowAtt.h"
-#include "OSGImageComposition.h"
+#include "OSGViewBufferHandler.h"
 
 using namespace OSG;
 
@@ -49,7 +49,7 @@ RenderAction	   *ract;
 WindowPtr           osgWin;
 RemoteAspect        aspect;
 int                 winid;
-ImageComposition    composition;
+ViewBufferHandler   bufferHandler;
 ClusterWindowAttPtr windowAtt;
 
 Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
@@ -133,14 +133,11 @@ void display()
                         osgWin->getPort()[i]->getCamera());
                     if(tile!=NullFC)
                     {
-                        composition.send(
+                        bufferHandler.send(
                             *connection,
-                            windowAtt->getImageTransType(),
-                            windowAtt->getSubTileSize(),
+                            ViewBufferHandler::RGB,
                             tile->getLeft()   * tile->getFullWidth(),
-                            tile->getBottom() * tile->getFullHeight(),
-                            osgWin->getWidth(),
-                            osgWin->getHeight());
+                            tile->getBottom() * tile->getFullHeight());
 /*
                         cout << endl;
                         composition.printStatistics();
