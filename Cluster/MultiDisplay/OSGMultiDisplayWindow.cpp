@@ -50,6 +50,7 @@
 #include <OSGStereoBufferViewport.h>
 #include "OSGMultiDisplayWindow.h"
 #include "OSGConnection.h"
+#include "OSGNode.h"
 
 
 OSG_USING_NAMESPACE
@@ -194,8 +195,14 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
         serverPort->setSize(l,b,r,t);
         serverPort->setRoot      ( clientPort->getRoot()       );
         serverPort->setBackground( clientPort->getBackground() );
-        serverPort->getMFForegrounds()->setValues( clientPort->getForegrounds() );
+        serverPort->getMFForegrounds()->setValues( clientPort->getForegrounds() );        
         endEditCP(serverPort);
+
+        if(serverPort->getRoot() != OSG::NullFC)
+        {
+            serverPort->getRoot()->dump(0, 0);
+        }
+
         // calculate tile parameters
         beginEditCP(deco);
         deco->setFullWidth ( cright-cleft );
@@ -236,6 +243,7 @@ void MultiDisplayWindow::clientInit( void )
     if(getClientWindow() == NullFC ||
        getPort().size()==0)
         return;
+
     cvp=getPort()[0];
 
     // duplucate viewport for client window

@@ -66,15 +66,15 @@ OSG_BEGIN_NAMESPACE
 
 DataType FieldDataTraits<ClusterWindowPtr>::_type("ClusterWindowPtr", "WindowPtr");
 
-#if defined(__sgi)
+#if defined(OSG_SGI_EXPLICIT_INSTANTIATION)
 
 #pragma instantiate SField<ClusterWindowPtr>::_fieldType
 #pragma instantiate MField<ClusterWindowPtr>::_fieldType
 
 #else
 
-OSG_DLLEXPORT_DEF1(SField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
-OSG_DLLEXPORT_DEF1(MField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
+OSG_DLLEXPORT_SFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_MFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
 
 #endif
 
