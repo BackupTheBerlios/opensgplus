@@ -218,6 +218,6 @@ typedef GeometryClusteredBase *GeometryClusteredBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDBASE_H_ */

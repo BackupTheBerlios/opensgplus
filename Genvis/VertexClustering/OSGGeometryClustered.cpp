@@ -1211,7 +1211,7 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.2 2003/09/17 16:55:58 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 

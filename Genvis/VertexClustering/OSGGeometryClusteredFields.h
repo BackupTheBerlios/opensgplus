@@ -103,6 +103,6 @@ struct FieldDataTraits<GeometryClusteredPtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.1 2003/09/11 16:20:32 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.2 2003/09/19 21:56:27 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDFIELDS_H_ */

@@ -134,6 +134,6 @@ OSG_END_NAMESPACE
 #include <OSGGeometryClusteredBase.inl>
 #include <OSGGeometryClustered.inl>
 
-#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTERED_H_ */

@@ -44,5 +44,5 @@ OSG_BEGIN_NAMESPACE
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTERED_INLINE_CVSID "@(#)$Id: OSGGeometryClustered.inl,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTERED_INLINE_CVSID "@(#)$Id: OSGGeometryClustered.inl,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
 
