@@ -637,7 +637,11 @@ void *MulticastConnection::aliveProc(void *arg)
         ackRequest.header.type            = ALIVE;
         connection->_socket.sendTo(&ackRequest.header,
                                    sizeof(UDPHeader),connection->_address);
+#if defined WIN32
+        Sleep(1000);
+#else
         sleep(1);
+#endif
     }
     return NULL;
 }

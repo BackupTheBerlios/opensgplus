@@ -54,7 +54,7 @@
 //---------------------------------------------------------------------------
 
 #if defined(WIN32) && defined(OSG_BUILD_DLL)
-#   ifdef OSG_COMPILECLUTERLIB
+#   ifdef OSG_COMPILECLUSTERLIB
 #       define OSG_CLUSTERLIB_DLLMAPPING        __declspec(dllexport)
 #       define OSG_CLUSTERLIB_DLLTMPLMAPPING    __declspec(dllexport)
 #       if defined(_MSC_VER) && defined(__ICL)

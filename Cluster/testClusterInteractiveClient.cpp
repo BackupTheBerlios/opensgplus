@@ -85,7 +85,8 @@ Bool interactive=true;
 
 // Program
 
-void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+//void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+void *font = 6;
 
 void
 showText(int x, int y, char *string)

@@ -42,9 +42,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "OSGConfig.h"
 #include "GL/gl.h"
 #include "GL/glu.h"
-#include "OSGConfig.h"
 #include "OSGBaseFunctions.h"
 #include "OSGImageComposition.h"
 #include "OSGImageFileHandler.h"
