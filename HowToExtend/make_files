@@ -8,37 +8,41 @@ replace ()
     from=$1 
     to=$2
     
-    sed -e "s/@newname@/$name/g" -e "s/@NEWNAME@/$capsname/" < $from > $to
+    sed -e "s/@newname@/$name/g" -e "s/@NEWNAME@/$capsname/" \
+        -e "s/@libname@/$libname/g" < $from > $to
 }
 
 case $# in
 0)   echo "usage: $0 [opts] <newname>" 1>&2; 
-     echo "opts: -l  create files for a new library" 1>&2;
+     echo "opts: -l <libname>  integrate into library <libname>" 1>&2;
+     echo "                    defaut: create a new library called <newname>" 1>&2;
      exit 1;;
 esac
 
-newlib=0
+newlib=1
 
 if test $1 = "-l"
 then
-    newlib=1
+    newlib=0
+    libname=$2
+    shift
     shift
 fi
 
 name=$1
 capsname=`echo $name | tr [:lower:] [:upper:]`
 
-echo -n "now copy common.mk" 
+echo -n "now move common.mk" 
 replace common.mk.in common.mk
 
 if test $newlib -eq 1
 then
     replace common.libs.in.newlib common.libs.in 
     replace OSG@newname@Def.h OSG${name}Def.h
-    echo -n ",common.libs.in and OSG${name}Def.h"
+    echo -n " common.libs.in OSG${name}Def.h"
 else
     replace common.libs.in.simple common.libs.in 
-    echo -n " and common.libs.in"
+    echo -n " common.libs.in"
 fi
 
 echo " to your new directory and reconfigure"

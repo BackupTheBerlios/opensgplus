@@ -28,7 +28,7 @@ ac_gdz_package_dirs_@newname@="Experimental/@newname@@"
 ac_gdz_package_inc_dep_@newname@="@Base@ @System@ GL"
 
 # Which directories are needed for linking the library
-ac_gdz_package_link_dep_@newname@="SystemLib BaseLib @newname@Lib"
+ac_gdz_package_link_dep_@newname@="SystemLib BaseLib"
 
 # Which additional directories/libraries are needed for compiling/linking the
 # test programs
