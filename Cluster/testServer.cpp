@@ -40,7 +40,8 @@ int main(int argc,char **argv)
 {
     char           *name          ="ClusterServer";
     char           *connectionType="StreamSock";
-    bool           fullscreen=true;
+    bool           fullscreen     =true;
+    string         address        ="";
 
     for(int i=1;i<argc;i++)
     {
@@ -54,11 +55,18 @@ int main(int argc,char **argv)
                 case 'w':
                     fullscreen=false;
                     break;
+                case 'a':
+                    address=&(argv[i][2]);
+                    break;
                 case 'h':
                     cout << argv[0] 
-                         << "-m"
+                         << "-m "
+                         << "-w "
+                         << "-aAddress "
                          << endl;
-                    cout << "-m  use multicast" << endl;
+                    cout << "-m        use multicast" << endl;
+                    cout << "-w        no fullscreen" << endl;
+                    cout << "-aAddress Server network address" << endl;
                     return 0;
             }
         }
@@ -92,9 +100,7 @@ int main(int argc,char **argv)
         window     = GLUTWindow::create();
         window->setId(winid);
         window->init();
-        server     = new ClusterServer(window,
-                                       name,
-                                       connectionType);
+        server     = new ClusterServer(window,name,connectionType,address);
         server->init();
         glutMainLoop();
     } 

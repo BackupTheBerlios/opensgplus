@@ -467,10 +467,18 @@ int main(int argc,char **argv)
         ract1 = RenderAction::create();
         ract2 = RenderAction::create();
         // just draw the group's volumes as wireframe, ignore geometries
-        ract1->registerEnterFunction( Group::getClassType(),
-                                      osgFunctionFunctor2( wireDraw ) );
-        ract1->registerEnterFunction( Geometry::getClassType(),
-                                      osgFunctionFunctor2( ignore ) );
+        ract1->registerEnterFunction( OSG::Group::getClassType(),
+                                      OSG::osgTypedFunctionFunctor2CPtrRef<
+                                      OSG::Action::ResultE, 
+                                      OSG::CNodePtr,
+                                      OSG::Action *                       >(
+                                         wireDraw));
+        ract1->registerEnterFunction( OSG::Geometry::getClassType(),
+                                      OSG::osgTypedFunctionFunctor2CPtrRef<
+                                      OSG::Action::ResultE, 
+                                      OSG::CNodePtr,
+                                      OSG::Action *                       >(
+                                         ignore));
         ract=ract2;
 
         // clear changelist from prototypes
