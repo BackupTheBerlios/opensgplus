@@ -90,6 +90,7 @@ OSG_BEGIN_NAMESPACE
 inline
 HPTest::HPTest(void):_maxtests(0), _results(NULL)
 {
+	_hpExtension = Window::registerExtension("GL_HP_occlusion_test");
 };
 
 inline
@@ -111,8 +112,15 @@ void HPTest::frameExit(void)
 };
 
 inline
-void HPTest::setup(const UInt16& max, Viewport*, const UInt32 maxpix)
+void HPTest::setup(const UInt16& max, Viewport* vp, const UInt32 maxpix)
 {
+	WindowPtr win=vp->GetParent();
+	if(win->hasExtension(_hpExtension)){
+		_extworks=true;
+	}else{
+		_extworks=false;
+	}
+	
 	_vispix=maxpix+1;
 
 	if(_maxtests!=max){
@@ -134,36 +142,40 @@ void HPTest::perform(const UInt16& num, const OCTestNode* node)
 {
 	const DynamicVolume& vol=node->_node->getVolume();
 #ifdef GL_OCCLUSION_TEST_HP
-	glEnable(GL_OCCLUSION_TEST_HP);
+	if(_extworks){
+		glEnable(GL_OCCLUSION_TEST_HP);
 
-	Pnt3f min,max;
-	vol.getBounds(min, max);
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glEnd();
+		Pnt3f min,max;
+		vol.getBounds(min, max);
+		glBegin( GL_TRIANGLE_STRIP);
+		glVertex3f( min[0], min[1], max[2]);
+		glVertex3f( max[0], min[1], max[2]);
+		glVertex3f( min[0], max[1], max[2]);
+		glVertex3f( max[0], max[1], max[2]);
+		glVertex3f( min[0], max[1], min[2]);
+		glVertex3f( max[0], max[1], min[2]);
+		glVertex3f( min[0], min[1], min[2]);
+		glVertex3f( max[0], min[1], min[2]);
+		glEnd();
 
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glEnd();
+		glBegin( GL_TRIANGLE_STRIP);
+		glVertex3f( max[0], max[1], min[2]);
+		glVertex3f( max[0], max[1], max[2]);
+		glVertex3f( max[0], min[1], min[2]);
+		glVertex3f( max[0], min[1], max[2]);
+		glVertex3f( min[0], min[1], min[2]);
+		glVertex3f( min[0], min[1], max[2]);
+		glVertex3f( min[0], max[1], min[2]);
+		glVertex3f( min[0], max[1], max[2]);
+		glEnd();
 
-	glDisable(GL_OCCLUSION_TEST_HP);
+		glDisable(GL_OCCLUSION_TEST_HP);
 		
-	_results[num]=0;
-	glGetBooleanv(GL_OCCLUSION_TEST_RESULT_HP, &(_results[num]));
+		_results[num]=0;
+		glGetBooleanv(GL_OCCLUSION_TEST_RESULT_HP, &(_results[num]));
+	}else{
+		_results[num]=1;
+	}
 #else
 	_results[num]=1;
 #endif

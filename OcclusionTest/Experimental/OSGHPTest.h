@@ -108,8 +108,10 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
     /*==========================  PRIVATE  ================================*/
   private:
 
+    UInt32 _hpExtension;
     UInt16 _maxtests;
     UInt32 _vispix;
+    bool _extworks;
     GLboolean* _results;
 
     /*! \brief prohibit default function (move to 'public' if needed) */

@@ -44,12 +44,12 @@
 #endif
 
 #include <GL/gl.h>
-#include <OpenSG/OSGBaseTypes.h>
-#include <OpenSG/OSGSystemDef.h>
-#include <OpenSG/OSGDrawAction.h>
-#include <OpenSG/OSGDynamicVolume.h>
+#include <OSGBaseTypes.h>
+#include <OSGSystemDef.h>
+#include <OSGDrawAction.h>
+#include <OSGDynamicVolume.h>
 
-#include <OpenSG/OSGOcclusionTestBase.h>
+#include <OSGOcclusionTestBase.h>
 
 OSG_BEGIN_NAMESPACE
 

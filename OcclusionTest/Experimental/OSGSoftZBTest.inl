@@ -40,9 +40,9 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#include <OpenSG/OSGConfig.h>
-#include <OpenSG/OSGDrawAction.h>
-#include <OpenSG/OSGViewport.h>
+#include <OSGConfig.h>
+#include <OSGDrawAction.h>
+#include <OSGViewport.h>
 
 OSG_BEGIN_NAMESPACE
 

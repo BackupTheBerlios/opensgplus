@@ -42,13 +42,108 @@
 
 #include<GL/gl.h>
 
-#include <OpenSG/OSGConfig.h>
-#include <OpenSG/OSGDrawAction.h>
-#include <OpenSG/OSGViewport.h>
-
-#include <OVGeoTools.h>
+#include <OSGConfig.h>
+#include <OSGDrawAction.h>
+#include <OSGViewport.h>
 
 OSG_BEGIN_NAMESPACE
+
+template<class T, class T2, const UInt16 nump>
+inline UInt16 calcConvHull2D(const T* px, const T* py, UInt16* result){
+	UInt16 sorty[nump];
+	UInt16 left[nump];
+	UInt16 right[nump];
+	
+	for(UInt16 i=0; i<nump; i++){
+		sorty[i]=i;
+		UInt16 k=i;
+		while(k>0){
+			if(py[sorty[k]]<py[sorty[k-1]]){
+				UInt16 tmp=sorty[k];
+				sorty[k]=sorty[k-1];
+				sorty[k-1]=tmp;
+			}else
+				break;
+			k--;
+		}
+	}
+	left[0]=sorty[0];
+	right[0]=sorty[0];
+
+	UInt16 lc=0;
+	UInt16 rc=0;
+	{
+		// Vektor a aus konvexer huelle
+		const T2 ax=px[sorty[1]]-px[sorty[0]];
+		const T2 ay=py[sorty[1]]-py[sorty[0]];
+		// neuer Vektor b:
+		const T2 bx=px[sorty[2]]-px[sorty[1]];
+		const T2 by=py[sorty[2]]-py[sorty[1]];
+	
+		if(ay*bx>ax*by){
+			left[1]=sorty[1];
+			left[2]=sorty[2];
+			right[1]=sorty[2];
+			rc=2;
+			lc=3;
+		}else{
+			left[1]=sorty[2];
+			right[1]=sorty[1];
+			right[2]=sorty[2];
+			rc=3;
+			lc=2;
+		}
+	}
+	
+	for(UInt16 i=3; i<nump; i++){
+		while(lc>1){
+			left[lc]=sorty[i];
+			// Vektor a aus konvexer huelle
+			const T2 ax=px[left[lc-1]]-px[left[lc-2]];
+			const T2 ay=py[left[lc-1]]-py[left[lc-2]];
+			// neuer Vektor b:
+			const T2 bx=px[left[lc]]-px[left[lc-1]];
+			const T2 by=py[left[lc]]-py[left[lc-1]];
+			if(ay*bx>ax*by){
+				lc++;
+				break;
+			}else if(lc>2){
+				lc--;
+			}else{
+				left[1]=sorty[i];
+				break;
+			}
+		}
+		
+		while(rc>1){
+			right[rc]=sorty[i];
+			// Vektor a aus konvexer huelle
+			const T2 ax=px[right[rc-2]]-px[right[rc-1]];
+			const T2 ay=py[right[rc-2]]-py[right[rc-1]];
+			// neuer Vektor b:
+			const T2 bx=px[right[rc-1]]-px[right[rc]];
+			const T2 by=py[right[rc-1]]-py[right[rc]];
+			if(ay*bx<ax*by){
+				rc++;
+				break;
+			}else if(rc>2){
+				rc--;
+			}else{
+				right[1]=sorty[i];
+				break;
+			}
+		}
+		
+	}
+	
+	UInt16 res=0;
+	for(UInt16 i=0; i<lc; i++)
+		result[res++]=left[i];
+	for(UInt16 i=rc-1; i>0; i--)
+		result[res++]=right[i-1];
+
+	return(res);
+};
 
 /***************************************************************************\
  *                               Types                                     *

@@ -89,6 +89,7 @@ OSG_BEGIN_NAMESPACE
 inline
 NVTest::NVTest(void):_maxtests(0), _results(NULL)
 {
+	_nvExtension = Window::registerExtension("GL_NV_occlusion_query");
 };
 
 inline
@@ -112,6 +113,13 @@ void NVTest::frameExit(void)
 inline
 void NVTest::setup(const UInt16& max, Viewport*, const UInt32)
 {
+	WindowPtr win=vp->GetParent();
+	if(win->hasExtension(_nvExtension)){
+		_extworks=true;
+	}else{
+		_extworks=false;
+	}
+	
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
 		_results=new GLuint[max];
@@ -125,7 +133,8 @@ void NVTest::init(void)
 	glDepthMask(GL_FALSE);
 	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
 #ifdef GL_NV_occlusion_query
-        glGenOcclusionQueriesNV(_maxtests, _results);
+	if(_extworks)
+	        glGenOcclusionQueriesNV(_maxtests, _results);
 #endif
 };
 
@@ -135,44 +144,50 @@ void NVTest::perform(const UInt16& num, const OCTestNode* node)
 	const DynamicVolume& vol=node->_node->getVolume();
 
 #ifdef GL_NV_occlusion_query
-	glBeginOcclusionQueryNV(_results[num]);
+	if(_extworks){
+		glBeginOcclusionQueryNV(_results[num]);
 
-	Pnt3f min,max;
-	vol.getBounds(min, max);
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glEnd();
+		Pnt3f min,max;
+		vol.getBounds(min, max);
+		glBegin( GL_TRIANGLE_STRIP);
+		glVertex3f( min[0], min[1], max[2]);
+		glVertex3f( max[0], min[1], max[2]);
+		glVertex3f( min[0], max[1], max[2]);
+		glVertex3f( max[0], max[1], max[2]);
+		glVertex3f( min[0], max[1], min[2]);
+		glVertex3f( max[0], max[1], min[2]);
+		glVertex3f( min[0], min[1], min[2]);
+		glVertex3f( max[0], min[1], min[2]);
+		glEnd();
 
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glEnd();
-
-	glEndOcclusionQueryNV();
+		glBegin( GL_TRIANGLE_STRIP);
+		glVertex3f( max[0], max[1], min[2]);
+		glVertex3f( max[0], max[1], max[2]);
+		glVertex3f( max[0], min[1], min[2]);
+		glVertex3f( max[0], min[1], max[2]);
+		glVertex3f( min[0], min[1], min[2]);
+		glVertex3f( min[0], min[1], max[2]);
+		glVertex3f( min[0], max[1], min[2]);
+		glVertex3f( min[0], max[1], max[2]);
+		glEnd();
+	
+		glEndOcclusionQueryNV();
+	}
 #endif
 };
 
 inline
 UInt32 NVTest::result(const UInt16& num)
 {
-#ifdef GL_NV_occlusion_query
 	GLuint pixelCount;
-	glGetOcclusionQueryuivNV(_results[num], GL_PIXEL_COUNT_NV, &pixelCount);
+#ifdef GL_NV_occlusion_query
+	if(_extworks){
+		glGetOcclusionQueryuivNV(_results[num], GL_PIXEL_COUNT_NV, &pixelCount);
+	}else{
+		pixelCount=100000;
+	}	
 #else
-	GLuint pixelCount=100000;
+	pixelCount=100000;
 #endif
 	return(pixelCount);
 };

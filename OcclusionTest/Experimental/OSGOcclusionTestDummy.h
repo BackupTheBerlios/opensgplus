@@ -43,14 +43,14 @@
 #pragma once
 #endif
 
-#include <OpenSG/OSGBaseTypes.h>
-#include <OpenSG/OSGSystemDef.h>
-#include <OpenSG/OSGDrawAction.h>
-#include <OpenSG/OSGDynamicVolume.h>
+#include <OSGBaseTypes.h>
+#include <OSGSystemDef.h>
+#include <OSGDrawAction.h>
+#include <OSGDynamicVolume.h>
 
 #include <OSGOcclusionTypes.h>
 
-#include <OpenSG/OSGOcclusionTestBase.h>
+#include <OSGOcclusionTestBase.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -115,6 +115,6 @@ class OSG_SYSTEMLIB_DLLMAPPING OcclusionTestDummy:public OcclusionTestBase
 
 OSG_END_NAMESPACE
 
-#include "OpenSG/OSGOcclusionTestDummy.inl"
+#include "OSGOcclusionTestDummy.inl"
 
 #endif /* _OSGOCCLUSIONTESTDUMMY_H_ */

@@ -46,17 +46,17 @@
 #include <vector>
 #include <map>
 
-#include <OpenSG/OSGBaseTypes.h>
-#include <OpenSG/OSGSystemDef.h>
-#include <OpenSG/OSGDrawAction.h>
-#include <OpenSG/OSGDynamicVolume.h>
-#include <OpenSG/OSGNode.h>
-#include <OpenSG/OSGNodePtr.h>
-#include <OpenSG/OSGCamera.h>
+#include <OSGBaseTypes.h>
+#include <OSGSystemDef.h>
+#include <OSGDrawAction.h>
+#include <OSGDynamicVolume.h>
+#include <OSGNode.h>
+#include <OSGNodePtr.h>
+#include <OSGCamera.h>
 
 #include <OSGOcclusionTypes.h>
 
-#include <OpenSG/OSGOcclusionTestBase.h>
+#include <OSGOcclusionTestBase.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -140,6 +140,6 @@ class OSG_SYSTEMLIB_DLLMAPPING OcclusionPrediction:public OcclusionTestBase
 
 OSG_END_NAMESPACE
 
-#include "OpenSG/OSGOcclusionPrediction.inl"
+#include "OSGOcclusionPrediction.inl"
 
 #endif /* _OSGOCCLUSIONPREDICTION_H_ */

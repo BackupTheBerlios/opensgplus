@@ -108,8 +108,10 @@ class OSG_SYSTEMLIB_DLLMAPPING NVTest
     /*==========================  PRIVATE  ================================*/
   private:
 
+    UInt32 _nvExtension;
     UInt16 _maxtests;
     GLuint* _results;
+    bool _extworks;
 
     /*! \brief prohibit default function (move to 'public' if needed) */
     NVTest(const NVTest &source);
