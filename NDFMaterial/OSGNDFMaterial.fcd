@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="NDFMaterial"
+	parent="ChunkMaterial"
+	library="System"
+	pointerfieldtypes="none"
+	structure="concrete"
+	systemcomponent="false"
+	parentsystemcomponent="true"
+	decoratable="false"
+>
+NDF-shading model. The ambient and diffuse parts are the same as in the Phong model. The highligh is painted on the 2D texture (normal distribution function). Lo = ka + kd * Li(l) * n.l /Pi + + ks * S(l,v) * p(h) * n.l S(l,v) = Li(l) * G(l,v) * F(h.v)/(Pi * n.l * n.v) G(l,v) = min{1, n.h * n.v/h.v, n.h * n.l/h.v} F(h.v) = f + (1 - f)*(1 - h.v)^5. Additionally here is a possiblity to add the texture to the diffuse part.
+	<Field
+		name="ambient"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	ambient color
+	</Field>
+	<Field
+		name="diffuse"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	diffuse color
+	</Field>
+	<Field
+		name="specular"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1,1,1"
+		access="public"
+	>
+	specular color
+	</Field>
+	<Field
+		name="Ka"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	Material ambient coefficient
+	</Field>
+	<Field
+		name="Kd"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	Material diffuse coefficient
+	</Field>
+	<Field
+		name="Ks"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	Material specular coefficient
+	</Field>
+	<Field
+		name="emission"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	emission
+	</Field>
+	<Field
+		name="Fresnel"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1,1,1"
+		access="public"
+	>
+	Fresnel Color
+	</Field>
+	<Field
+		name="transparency"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0"
+		access="public"
+	>
+	transparency
+	</Field>
+	<Field
+		name="FresnelTerm"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Use Fresnel approach?
+	</Field>
+	<Field
+		name="SelfShadowingTerm"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Use SelfShadowing?
+	</Field>
+	<Field
+		name="CorrectCosine"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Use correct cosine?
+	</Field>
+	<Field
+		name="DiffuseImage"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer for the diffuse texture
+	</Field>
+	<Field
+		name="NDFImage"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer for the NDF image
+	</Field>
+	<Field
+		name="lightPos"
+		type="Pnt3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	position of light source
+	</Field>
+	<Field
+		name="lightSpecular"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1,1,1"
+		access="public"
+	>
+	Specular component of the light
+	</Field>
+	<Field
+		name="OnlyDiffuse"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="false"
+		access="public"
+	>
+	Show only diffuse part?
+	</Field>
+	<Field
+		name="UseFPorRC"
+		type="UInt8"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1"
+		access="public"
+	>
+	</Field>
+</FieldContainer>

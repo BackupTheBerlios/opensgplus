@@ -1,0 +1,42 @@
+/*********************************************************************/
+/*      NDFMaterial                                                  */
+/*********************************************************************/
+
+Characteristics:
+-------------------
+
+1. Use Vertex Program and (ARB Fragment Program or NVIDIA Register Combiners)
+   for shading. User can choose FP or RC mode.
+2. Possible to add texture for diffuse term. (If the
+   texture not needed, use white texture)
+3. Vertex and Fragment Programs are embedded into the
+   OSGNDFMaterial.cpp
+4. Call:
+   ./main file.scene diffuseImage ndfImage S F C D R DiffuseCol FresnelCol SpecularCol AmbientCol
+   where: S - take into account Self Shadowing (0/1)
+          F - take into account Fresnel Term   (0/1)
+          C - take into account Correct Cosine (0/1)
+          D - show only diffuse material (0/1)
+          R - use fragment program or register combiners (0/1)
+          DiffuseCol  - diffuse color  (rgb)
+          FresnelCol  - Fresnel color  (rgb)
+          SpecularCol - specular color (rgb)
+          AmbientCol  - ambient color  (rgb)
+
+5. Keys:
+         'q' exit
+         'f' toggle Fresnel
+         's' toggle self-shadowing
+         'c' toggle correct cosine
+         'd' toggle diffuse term only
+         'l' toggle light
+         '}' move light source forward
+         '{' move light source backward
+        'Up' move light source up    (NumLock is ON)
+      'Down' move light source down  (NumLock is ON)
+      'Left' move light source left  (NumLock is ON)
+     'Right' move light source right (NumLock is ON)
+
+6. Example:
+
+testNDFMaterial torus marble.jpg bigstar.jpg 1 1 1 0 1   1 1 1   .4 .7 .9   1 1 1   0.1 0.1 0.1

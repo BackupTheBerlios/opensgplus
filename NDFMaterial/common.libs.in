@@ -1,0 +1,37 @@
+# Add a new library to the system
+
+# Let the configure system know about the new library
+ac_gdz_packages="${ac_gdz_packages} NDFMaterial" 
+# and when to work on it
+ac_gdz_package_order="${ac_gdz_package_order} NDFMaterial"
+
+# Now define the specs and needs of the new library
+
+# First the name
+ac_gdz_package_name_NDFMaterial="NDFMaterial"
+# and the #define needed for Windows compilation
+ac_gdz_package_def_NDFMaterial="OSG_COMPILENDFMATERIALLIB"
+
+# Define whether the library needs factory initialisation. All but the Base 
+# library will
+ac_gdz_package_fact_init_NDFMaterial="1"
+
+# Which directories should be linked together to get the new library
+# Note that every name needs to be ended by a @
+ac_gdz_package_dirs_NDFMaterial="Experimental/NDFMaterial@"
+
+# Which other directories are needed for inclusion to compile this library.
+# The @name@ variables refer to other system libraries resp. the directories 
+# they are made of. External libraries like OpenGL and QT have their own 
+# shorthand notation. The actual pathes are taken from the configure options or
+# test results.
+ac_gdz_package_inc_dep_NDFMaterial="@Base@ @System@ GL"
+
+# Which directories are needed for linking the library
+ac_gdz_package_link_dep_NDFMaterial="SystemLib BaseLib"
+
+# Which additional directories/libraries are needed for compiling/linking the
+# test programs
+ac_gdz_package_testinc_dep_NDFMaterial=""
+ac_gdz_package_testlink_dep_NDFMaterial="GL"
+
