@@ -97,15 +97,7 @@ struct FieldDataTraits<ClusterWindowPtr> :
 typedef SField<ClusterWindowPtr> SFClusterWindowPtr;
 
 #ifndef OSG_COMPILECLUSTERWINDOWINST
-#if defined(__sgi)
-
-#pragma do_not_instantiate SField<ClusterWindowPtr>::_fieldType
-
-#else
-
 OSG_DLLEXPORT_DECL1(SField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
-
-#endif
 #endif
 
 //! MFClusterWindowPtr
@@ -114,15 +106,7 @@ OSG_DLLEXPORT_DECL1(SField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
 typedef MField<ClusterWindowPtr> MFClusterWindowPtr;
 
 #ifndef OSG_COMPILECLUSTERWINDOWINST
-#if defined(__sgi)
-
-#pragma do_not_instantiate MField<ClusterWindowPtr>::_fieldType
-
-#else
-
 OSG_DLLEXPORT_DECL1(MField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
-
-#endif
 #endif
 
 OSG_END_NAMESPACE

@@ -175,7 +175,7 @@ void ClusterWindowBase::setServicePort(const UInt32 &value)
 OSG_CLUSTERLIB_DLLMAPPING
 string &ClusterWindowBase::getServers(UInt32 index)
 {
-    return _mfServers.getValue( index );
+    return _mfServers[index];
 }
 
 MFString &ClusterWindowBase::getServers(void)

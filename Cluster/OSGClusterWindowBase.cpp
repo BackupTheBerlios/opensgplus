@@ -62,24 +62,6 @@
 #include "OSGClusterWindow.h"
 
 
-OSG_BEGIN_NAMESPACE
-
-DataType FieldDataTraits<ClusterWindowPtr>::_type("ClusterWindowPtr", "WindowPtr");
-
-#if defined(OSG_SGI_EXPLICIT_INSTANTIATION)
-
-#pragma instantiate SField<ClusterWindowPtr>::_fieldType
-#pragma instantiate MField<ClusterWindowPtr>::_fieldType
-
-#else
-
-OSG_DLLEXPORT_SFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
-OSG_DLLEXPORT_MFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
-
-#endif
-
-OSG_END_NAMESPACE
-
 OSG_USING_NAMESPACE
 
 #ifdef __sgi
@@ -347,3 +329,14 @@ void ClusterWindowBase::executeSyncImpl(      ClusterWindowBase *pOther,
 
 }
 
+#include <OSGSFieldTypeDef.inl>
+#include <OSGMFieldTypeDef.inl>
+
+OSG_BEGIN_NAMESPACE
+
+DataType FieldDataTraits<ClusterWindowPtr>::_type("ClusterWindowPtr", "WindowPtr");
+
+OSG_DLLEXPORT_SFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_MFIELD_DEF1(ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING);
+
+OSG_END_NAMESPACE

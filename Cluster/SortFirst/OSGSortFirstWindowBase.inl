@@ -199,7 +199,7 @@ void SortFirstWindowBase::setUseFaceDistribution(const bool &value)
 OSG_CLUSTERLIB_DLLMAPPING
 UInt32 &SortFirstWindowBase::getRegion(UInt32 index)
 {
-    return _mfRegion.getValue( index );
+    return _mfRegion[index];
 }
 
 MFUInt32 &SortFirstWindowBase::getRegion(void)
