@@ -30,6 +30,7 @@ public:
         updateHighlight();
         _win->activate();
         _win->frameInit();
+
         loadManager.balance(_win->getPort()[0],16,false,region);
         _win->renderAllViewports( _action );
         glPushMatrix();

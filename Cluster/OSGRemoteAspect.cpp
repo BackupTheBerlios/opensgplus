@@ -378,9 +378,10 @@ void RemoteAspect::sendSync(Connection &connection,
         connection.putUInt32(fcPtr.getFieldContainerId());   // id
         connection.putUInt32(mask);                          // mask
         fcPtr->copyToBin(connection,mask);
-        FDEBUG (( "Changed: ID:%d Mask:%d Size:%d\n",
-                 fcPtr.getFieldContainerId(),
-                 mask ))
+        FDEBUG (( "Changed: %s ID:%d Mask:%d\n",
+                  fcPtr->getType().getName().str(),
+                  fcPtr.getFieldContainerId(),
+                  mask ))
     }
 
     // destroy fct
@@ -437,7 +438,7 @@ void RemoteAspect::registerCreated(const FieldContainerType &type,
     while ( type.getId() >= _createdFunctors.size() )
     {
         _createdFunctors.push_back(
-             osgTypedFunctionFunctor2CPtrRef<bool,
+            osgTypedFunctionFunctor2CPtrRef<bool,
                                              FieldContainerPtr,
                                              RemoteAspect     *>(
                                                  &_defaultCreatedFunction));
