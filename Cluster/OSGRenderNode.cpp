@@ -265,7 +265,7 @@ void RenderNode::determinePerformance( WindowPtr &window )
     t=runFaceBench(dList2,128,128,1.0);
     count=(int)(count/t);
     glNewList(dList2, GL_COMPILE);
-    for(int c=0;c<count;++c)
+    for(c=0;c<count;++c)
     {
         glCallList(dList1);
     }
