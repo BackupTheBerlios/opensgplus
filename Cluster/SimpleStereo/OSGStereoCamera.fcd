@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+
+<FieldContainer
+	name="StereoCamera"
+	parent="Camera"
+	library="Cluster"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+>
+A stereo perspective camera with a symmetric frustum.
+	<Field
+		name="fov"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+	The vertical field of view, in radians.
+	</Field>
+	<Field
+		name="eyedistance"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+    Eye distance
+	</Field>
+	<Field
+		name="zeroparallax"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+    zero paralax
+	</Field>
+	<Field
+		name="whicheye"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+    0 left 1 right
+	</Field>
+</FieldContainer>

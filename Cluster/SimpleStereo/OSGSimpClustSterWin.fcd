@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="SimpClustSterWin"
+	parent="ClusterWindow"
+	library="Cluster"
+	pointerfieldtypes="none"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+>
+Cluster rendering configuration for a two server stereo display
+	<Field
+		name="fov"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+	The vertical field of view, in radians.
+	</Field>
+	<Field
+		name="eyedistance"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+    Eye distance
+	</Field>
+	<Field
+		name="zeroparallax"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+	>
+    zero paralax
+	</Field>
+</FieldContainer>
+
+
