@@ -204,8 +204,8 @@ void MulticastConnection::accept( const string &address )
     socket.listen();
     client=socket.accept();
     cout << "client connected" << endl;
-    client.read(ip,100);
-    client.read(&multicastport,sizeof(UInt32));
+    client.recv(ip,100);
+    client.recv(&multicastport,sizeof(UInt32));
     
     cout << "Multicast group:" << ip << " " << multicastport << endl;
 
@@ -238,8 +238,8 @@ void MulticastConnection::connect( const string &address )
     strcpy(ip,_address.getHost().c_str());
     multicastport=_address.getPort();
 
-    socket.write(ip,100);
-    socket.write(&multicastport,sizeof(UInt32));
+    socket.send(ip,100);
+    socket.send(&multicastport,sizeof(UInt32));
 
     _receivers.push_back(Address(host.c_str(),multicastport));
 

@@ -147,7 +147,7 @@ void StreamSockConnection::read(MemoryHandle mem,UInt32 size)
     int len;
 
     // read data
-    len=_readSocket.read(mem,size);
+    len=_readSocket.recv(mem,size);
     if(len==0)
     {
         cout << size << endl;
@@ -169,12 +169,12 @@ void StreamSockConnection::readBuffer()
     int len;
 
     // read buffer header
-    len=_readSocket.read(&_socketReadBuffer[0],sizeof(SocketBufferHeader));
+    len=_readSocket.recv(&_socketReadBuffer[0],sizeof(SocketBufferHeader));
     if(len==0)
         throw ReadError("peek got 0 bytes!");
     // read remaining data
     size=((SocketBufferHeader*)&_socketReadBuffer[0])->size;
-    len=_readSocket.read(&_socketReadBuffer[sizeof(SocketBufferHeader)],size);
+    len=_readSocket.recv(&_socketReadBuffer[sizeof(SocketBufferHeader)],size);
     if(len==0)
         throw ReadError("read got 0 bytes!");
     readBufBegin()->setDataSize(size);
@@ -193,7 +193,7 @@ void StreamSockConnection::write(MemoryHandle mem,UInt32 size)
         socket!=_sockets.end();
         socket++)
     {
-        socket->write(mem,size);
+        socket->send(mem,size);
     }
 }
 
@@ -213,7 +213,7 @@ void StreamSockConnection::writeBuffer(void)
         ++socket)
     {
         // write whole block
-        socket->write(&_socketWriteBuffer[0],size+sizeof(SocketBufferHeader));
+        socket->send(&_socketWriteBuffer[0],size+sizeof(SocketBufferHeader));
     }
 }
 
@@ -270,14 +270,14 @@ void StreamSockConnection::wait(void)
         i++)
     {
         // tell receiver wait entered
-        i->write(&trigger,sizeof(UInt8));
+        i->send(&trigger,sizeof(UInt8));
     }
     for(i =_sockets.begin();
         i!=_sockets.end();
         i++)
     {
         // wait for signal
-        i->read(&trigger,sizeof(UInt8));
+        i->recv(&trigger,sizeof(UInt8));
     }
 }
 
@@ -294,14 +294,14 @@ void StreamSockConnection::signal(void)
         i++)
     {
         // wait for all links to enter wait
-        i->read(&trigger,sizeof(UInt8));
+        i->recv(&trigger,sizeof(UInt8));
     }
     for(i =_sockets.begin();
         i!=_sockets.end();
         i++)
     {
         // send signal to all links
-        i->write(&trigger,sizeof(UInt8));
+        i->send(&trigger,sizeof(UInt8));
     }
 }
 
@@ -338,7 +338,7 @@ Bool StreamSockConnection::selectChannel(void)
         socket!=_sockets.end();
         socket++)
     {
-        nread=socket->getNReadBytes();
+        nread=socket->getAvailable();
         if(maxnread < nread)
         {
             maxnread = nread;
