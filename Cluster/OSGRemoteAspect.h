@@ -167,11 +167,6 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     // fild filter
     FieldFilterT                      _fieldFilter;
 
-    MemoryHandle                      _buffer;
-    int                               _bufferSize;
-    int                               _dataSize;
-    int                               _dataPos;
-
     vector<Functor>                   _createdFunctors;
     vector<Functor>                   _destroyedFunctors;
     vector<Functor>                   _changedFunctors;
@@ -182,13 +177,6 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     
     void   send(Connection &connection);
     void   receive(Connection &connection);
-    void   resize(Connection &connection,int size);
-    void   putUInt8(UInt8 value);
-    void   putUInt32(UInt32 value);
-    void   putString(const char *value);
-    UInt8  getUInt8();
-    UInt32 getUInt32();
-    char  *getString();
     Bool   callCreated( FieldContainerPtr &node );
     Bool   callDestroyed( FieldContainerPtr &node );
     Bool   callChanged( FieldContainerPtr &node );

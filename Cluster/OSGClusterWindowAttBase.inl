@@ -48,66 +48,29 @@
  *****************************************************************************
 \*****************************************************************************/
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
-
-
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <OSGConfig.h>
 
 OSG_BEGIN_NAMESPACE
 
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
 
-/***************************************************************************\
- *                           Class variables                               *
-\***************************************************************************/
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-/***************************************************************************\
- *                           Instance methods                              *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
+//! access the type of the class
 inline OSG::FieldContainerType &ClusterWindowAttBase::getClassType(void)
 {
     return _type; 
 } 
 
+//! access the numerical type of the class
 inline OSG::UInt32 ClusterWindowAttBase::getClassTypeId(void) 
 {
     return _type.getId(); 
 } 
 
+//! create a new instance of the class
 inline ClusterWindowAttPtr ClusterWindowAttBase::create(void) 
 {
     ClusterWindowAttPtr fc; 
 
-    if(getClassType(). getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != osg::NullFC) 
     {
         fc = ClusterWindowAttPtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -116,6 +79,7 @@ inline ClusterWindowAttPtr ClusterWindowAttBase::create(void)
     return fc; 
 }
 
+//! create an empty new instance of the class, do not copy the prototype
 inline ClusterWindowAttPtr ClusterWindowAttBase::createEmpty(void) 
 { 
     ClusterWindowAttPtr returnValue; 
@@ -126,11 +90,7 @@ inline ClusterWindowAttPtr ClusterWindowAttBase::createEmpty(void)
 }
 
 
-/*------------- constructors & destructors --------------------------------*/
-
-/*--------------------------- type information-----------------------------*/
-
-/*------------------------------ access -----------------------------------*/
+/*------------------------------ get -----------------------------------*/
 
 OSG_CLUSTERLIB_DLLMAPPING
 SFUInt32 *ClusterWindowAttBase::getSFServerId(void)
@@ -158,7 +118,7 @@ const UInt32 &ClusterWindowAttBase::getServerId(void) const
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setServerId( const UInt32 &value )
+void ClusterWindowAttBase::setServerId(const UInt32 &value)
 {
 	_sfServerId.setValue(value);
 }
@@ -176,28 +136,14 @@ const Bool &ClusterWindowAttBase::getComposite(void) const
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setComposite( const Bool &value )
+void ClusterWindowAttBase::setComposite(const Bool &value)
 {
 	_sfComposite.setValue(value);
 }
 
 
 
-/*------------------------------ access -----------------------------------*/
-
-/*------------------------------- size ----------------------------------*/
-
-/*------------------------------- dump ----------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
 OSG_END_NAMESPACE
+
+#define OSGCLUSTERWINDOWATTBASE_INLINE_CVSID "@(#)$Id: $"
 

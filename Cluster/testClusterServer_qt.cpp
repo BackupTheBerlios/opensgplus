@@ -66,6 +66,7 @@ public:
                                       RemoteAspect * aspect);
     virtual void initializeGL (void);
     virtual void paintGL (void);
+    virtual void drawGL (void);
     virtual void resizeGL (int w, int h);
     virtual void keyPressEvent ( QKeyEvent* );
 };
@@ -103,6 +104,10 @@ void MyOSGQGLWidget::initializeGL ( void )
 }
 
 void MyOSGQGLWidget::paintGL ( void )
+{
+}
+
+void MyOSGQGLWidget::drawGL ( void )
 {
     UInt8 trigger;
 
@@ -229,7 +234,9 @@ Bool WindowChangedFunction(FieldContainerPtr& fcp,
         glWidget->osgWin = QTWindowPtr::dcast( fcp );
         glWidget->osgWin->setGlWidget( glWidget );
         glWidget->initializeGL( );
-        glWidget->setFixedSize(500,500);
+//        glWidget->setFixedSize(500,500);
+        glWidget->showFullScreen();
+        glWidget->setCursor( BlankCursor );
         glWidget->show();
     }
 
@@ -301,7 +308,7 @@ void mainLoop(int port)
                 // dumpTree();
             }
             if(glWidget)
-                glWidget->paintGL();
+                glWidget->drawGL();
             else
             {
                 UInt8 trigger;

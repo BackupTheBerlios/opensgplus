@@ -66,17 +66,13 @@
 
 OSG_BEGIN_NAMESPACE
 
-//---------------------------------------------------------------------------
-//  Forward References
-//---------------------------------------------------------------------------
-
 class ClusterWindowAtt;
-/** \brief ClusterWindowAttPtr
- */
+//! ClusterWindowAttPtr
+
 typedef FCPtr<AttachmentPtr, ClusterWindowAtt> ClusterWindowAttPtr;
 
 /** \ingroup FieldLib ClusterWindowAtt
- *  \brief ClusterWindowAttPtr field traits 
+ *  ClusterWindowAttPtr field traits 
  */
 
 template <>
@@ -94,8 +90,8 @@ struct FieldDataTraits<ClusterWindowAttPtr> :
     static char     *getMName(void) { return "MFClusterWindowAttPtr"; }
 };
 
-/** \brief SFClusterWindowAttPtr
- */
+//! SFClusterWindowAttPtr
+
 typedef SField<ClusterWindowAttPtr> SFClusterWindowAttPtr;
 
 #ifndef OSG_COMPILECLUSTERWINDOWATTINST
@@ -110,8 +106,8 @@ OSG_DLLEXPORT_DECL1(SField, ClusterWindowAttPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
 #endif
 #endif
 
-/** \brief MFClusterWindowAttPtr
- */
+//! MFClusterWindowAttPtr
+
 typedef MField<ClusterWindowAttPtr> MFClusterWindowAttPtr;
 
 #ifndef OSG_COMPILECLUSTERWINDOWATTINST
@@ -127,5 +123,7 @@ OSG_DLLEXPORT_DECL1(MField, ClusterWindowAttPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
 #endif
 
 OSG_END_NAMESPACE
+
+#define OSGCLUSTERWINDOWATTFIELDS_HEADER_CVSID "@(#)$Id: $"
 
 #endif /* _OSGCLUSTERWINDOWATTFIELDS_H_ */

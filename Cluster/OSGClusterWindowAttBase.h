@@ -57,39 +57,27 @@
 #pragma once
 #endif
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
 
 #include <OSGConfig.h>
+#include <OSGClusterDef.h>
 
 #include <OSGBaseTypes.h>
 #include <OSGFieldDescription.h>
 #include <OSGFieldContainer.h>
-#include <OSGClusterDef.h>
-#include <OSGAttachment.h>
-#include <OSGUInt32Fields.h>	// ServerId type
-#include <OSGBoolFields.h>	// Composite type
+
+#include <OSGAttachment.h> // Parent
+
+#include <OSGUInt32Fields.h> // ServerId type
+#include <OSGBoolFields.h> // Composite type
 
 #include <OSGClusterWindowAttFields.h>
 
 OSG_BEGIN_NAMESPACE
 
-//---------------------------------------------------------------------------
-//  Forward References
-//---------------------------------------------------------------------------
-
 class ClusterWindowAtt;
+class BinaryDataHandler;
 
-//---------------------------------------------------------------------------
-//   Types
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//  Class
-//---------------------------------------------------------------------------
-
-/*! ClusterWindowAtt Base Class. */
+/*! \brief ClusterWindowAtt Base Class. */
 
 class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 {
@@ -97,177 +85,138 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
     typedef Attachment Inherited;
 
+    /*==========================  PUBLIC  =================================*/
   public:
 
-    //-----------------------------------------------------------------------
-    //   constants                                                           
-    //-----------------------------------------------------------------------
-    
     enum
     {
-        ServerIdFieldId = Inherited::NextFieldId,
-        CompositeFieldId = ServerIdFieldId + 1,
-        NextFieldId = CompositeFieldId + 1
-
+        ServerIdFieldId  = Inherited::NextFieldId,
+        CompositeFieldId = ServerIdFieldId  + 1,
+        NextFieldId      = CompositeFieldId + 1
     };
 
     static const osg::BitVector ServerIdFieldMask;
     static const osg::BitVector CompositeFieldMask;
 
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Class Get                                 */
+    /*! \{                                                                 */
 
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
+    static const  char               *getClassname(void);
 
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
+    static        FieldContainerType &getClassType    (void); 
+    static        UInt32              getClassTypeId  (void); 
 
-    static const char *getClassname(void) { return "ClusterWindowAttBase"; };
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                       Get                                    */
+    /*! \{                                                                 */
 
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
+    virtual       FieldContainerType &getType  (void); 
+    virtual const FieldContainerType &getType  (void) const; 
 
-    /*-------------- general fieldcontainer declaration --------------------*/
+    virtual       UInt32              getContainerSize(void) const;
 
-    virtual       OSG::FieldContainerType &getType  (void); 
-    virtual const OSG::FieldContainerType &getType  (void) const; 
-    
-    static OSG::FieldContainerType &getClassType    (void); 
-    static OSG::UInt32              getClassTypeId  (void); 
-    static ClusterWindowAttPtr         create          (void); 
-    static ClusterWindowAttPtr         createEmpty     (void); 
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Get                                 */
+    /*! \{                                                                 */
 
-    virtual OSG::FieldContainerPtr  shallowCopy     (void) const; 
-    virtual OSG::UInt32             getContainerSize(void) const;
+    inline       SFUInt32            *getSFServerId       (void);
+    inline       SFBool              *getSFComposite      (void);
 
-    virtual void                    executeSync(      FieldContainer &other,
-                                                const BitVector      &whichField);
+    inline       UInt32              &getServerId       (void);
+    inline const UInt32              &getServerId       (void) const;
+    inline       Bool                &getComposite      (void);
+    inline const Bool                &getComposite      (void) const;
 
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Set                                 */
+    /*! \{                                                                 */
+
+    inline void setServerId       ( const UInt32 &value );
+    inline void setComposite      ( const Bool &value );
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                       Sync                                   */
+    /*! \{                                                                 */
+
+    virtual void         executeSync(      FieldContainer &other,
+                                     const BitVector      &whichField);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Binary Access                              */
+    /*! \{                                                                 */
 
     virtual UInt32       getBinSize (const BitVector    &whichField);
-    virtual MemoryHandle copyToBin  (      MemoryHandle  pMem,
-                                     const BitVector    &whichField);
-    virtual MemoryHandle copyFromBin(      MemoryHandle  pMem,
-                                     const BitVector    &whichField);
-
-    /*--------------------------- access fields ----------------------------*/
-
-    //! Return the fields.
-
-    inline SFUInt32	*getSFServerId(void);
-    inline SFBool	*getSFComposite(void);
-
-    /*----------------------------- access ----------------------------------*/
-
-    //!@{ Return the fields' values.
-
-    inline       UInt32	&getServerId(void);
-    inline const UInt32	&getServerId(void) const;
-    inline       void	         setServerId( const UInt32 &value );
-    inline       Bool	&getComposite(void);
-    inline const Bool	&getComposite(void) const;
-    inline       void	         setComposite( const Bool &value );
+    virtual void copyToBin  (      BinaryDataHandler &pMem,
+                             const BitVector    &whichField);
+    virtual void copyFromBin(      BinaryDataHandler &pMem,
+                             const BitVector    &whichField);
 
 
-    //!@}
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Construction                               */
+    /*! \{                                                                 */
 
-    /*-------------------------- transformation ----------------------------*/
+    static  ClusterWindowAttPtr    create          (void); 
+    static  ClusterWindowAttPtr    createEmpty     (void); 
 
-    /*------------------------------ volume -------------------------------*/
+    /*! \}                                                                 */
 
-    /*------------------------------ dump -----------------------------------*/
+    /*---------------------------------------------------------------------*/
+    /*! \name                       Copy                                   */
+    /*! \{                                                                 */
 
+    virtual FieldContainerPtr     shallowCopy     (void) const; 
+
+    /*! \}                                                                 */
+    /*=========================  PROTECTED  ===============================*/
   protected:
 
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Fields                                  */
+    /*! \{                                                                 */
 
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
+    SFUInt32         	_sfServerId;
+    SFBool           	_sfComposite;
 
-    //-----------------------------------------------------------------------
-    //   class variables                                                     
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   instance variables                                                  
-    //-----------------------------------------------------------------------
-
-    //! The fields storing the data.
-
-    /*! Which server is responsible for the attached Window
-     */
-    SFUInt32	_sfServerId;
-    /*! Should the server send the rendered image back to the client
-     */
-    SFBool	_sfComposite;
-
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Constructors                               */
+    /*! \{                                                                 */
 
     ClusterWindowAttBase(void);
     ClusterWindowAttBase(const ClusterWindowAttBase &source);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Destructors                                */
+    /*! \{                                                                 */
+
     virtual ~ClusterWindowAttBase(void); 
-    
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                       Sync                                   */
+    /*! \{                                                                 */
 
     void executeSyncImpl(      ClusterWindowAttBase *pOther,
                          const BitVector         &whichField);
 
+    /*! \}                                                                 */
+    /*==========================  PRIVATE  ================================*/
   private:
-
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   friend classes                                                      
-    //-----------------------------------------------------------------------
 
     friend class FieldContainer;
 
-    //-----------------------------------------------------------------------
-    //   friend functions                                                    
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   class variables                                                     
-    //-----------------------------------------------------------------------
-
-    static char cvsid[];
-
     static FieldDescription   *_desc[];
-
     static FieldContainerType  _type;
 
-
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
-    
-
-    //-----------------------------------------------------------------------
-    //   instance variables                                                  
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
 
     // prohibit default functions (move to 'public' if you need one)
 
@@ -279,10 +228,10 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 //---------------------------------------------------------------------------
 
 
-/** \brief class pointer
- */
 typedef ClusterWindowAttBase *ClusterWindowAttBaseP;
 
 OSG_END_NAMESPACE
+
+#define OSGCLUSTERWINDOWATTBASE_HEADER_CVSID "@(#)$Id: $"
 
 #endif /* _OSGCLUSTERWINDOWATTBASE_H_ */

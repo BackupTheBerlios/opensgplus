@@ -128,9 +128,6 @@ RemoteAspect::RemoteAspect():
     _changedFunctors()
 {
     FieldContainerType  *type;
-    _buffer    =NULL;
-    _bufferSize=0;
-    _dataSize  =0;
 
     // initialize field filter
     _fieldFilter[Geometry::getClassType().getId()] 
@@ -181,39 +178,36 @@ RemoteAspect::~RemoteAspect(void)
 
 void RemoteAspect::receiveSync(Connection &connection)
 {
+    static int ccc=0;
     Bool finish=false;
-    UInt32 cmd;
+    UInt8  cmd;
     UInt32 remoteTypeId;
     UInt32 localTypeId;
     UInt32 remoteId;
     UInt32 localId;
-    char *name;
+    std::string name;
     FieldContainerFactory *factory=FieldContainerFactory::the();
     FieldContainerType *fcType;
     FieldContainerPtr fcPtr;
     BitVector mask;
-    UInt32 valueSize;
     RemoteAspectFieldContainerMapper mapper;
     ReceivedTypeT::iterator receivedTypeI;
     ReceivedFCT::iterator receivedFCI;
 
-    mapper._remoteAspect=this;
-
     // register mapper into factory
+    mapper._remoteAspect=this;
     factory->setMapper(&mapper);
     do
     {
-        receive(connection);
-        while((!finish) && (_dataPos<_dataSize))
+        connection.getUInt8(cmd);
+        switch(cmd)
         {
-            cmd=getUInt8();
-            switch(cmd)
-            {
             case NEWTYPE:
-                remoteTypeId=getUInt32();
-                name=getString();
+            {
+                connection.getUInt32(remoteTypeId);
+                connection.getString(name);
                 // find local type
-                fcType=FieldContainerFactory::the()->findType(name);
+                fcType=FieldContainerFactory::the()->findType(name.c_str());
                 if(!fcType)
                 {
                     SWARNING << "Unknown Type: " << name << endl; 
@@ -221,15 +215,16 @@ void RemoteAspect::receiveSync(Connection &connection)
                 else
                 {
                     localTypeId=FieldContainerFactory::the()->
-                                findType(name)->getId();
+                        findType(name.c_str())->getId();
                     // insert remote type id into map
                     _receivedType[remoteTypeId]=localTypeId;
                 }
                 break;
-
+            }
             case CREATED:
-                remoteTypeId=getUInt32();
-                remoteId=getUInt32();
+            {
+                connection.getUInt32(remoteTypeId);
+                connection.getUInt32(remoteId);
                 receivedTypeI=_receivedType.find(remoteTypeId);
                 if(receivedTypeI == _receivedType.end())
                 {
@@ -245,9 +240,10 @@ void RemoteAspect::receiveSync(Connection &connection)
                     callCreated(fcPtr);
                 }
                 break;
-
+            }
             case DESTROYED:
-                remoteId=getUInt32();
+            {
+                connection.getUInt32(remoteId);
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
@@ -261,11 +257,11 @@ void RemoteAspect::receiveSync(Connection &connection)
                     subRefCP(fcPtr);
                 }
                 break;
-
+            }
             case CHANGED:
-                remoteId=getUInt32();
-                mask=getUInt32();
-                valueSize=getUInt32();
+            {
+                connection.getUInt32(remoteId);
+                connection.getUInt32(mask);
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
@@ -283,19 +279,21 @@ void RemoteAspect::receiveSync(Connection &connection)
                             cout<< "changed field: " << desc->getName() << endl;
                     }
                     */
-                    fcPtr->copyFromBin(&_buffer[_dataPos],mask);
+                    fcPtr->copyFromBin(connection,mask);
+                    // do we need to call this?
                     changedCP(fcPtr,mask);
                     callChanged(fcPtr);
                 }
-                _dataPos+=valueSize;
                 break;
-
+            }
             case SYNCENDED:
+            {
                 finish=true;
                 break;
-
+            }
             case ADDREFED:
-                remoteId=getUInt32();
+            {
+                connection.getUInt32(remoteId);
                 /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
@@ -307,36 +305,40 @@ void RemoteAspect::receiveSync(Connection &connection)
                 addRefCP(fcPtr);
                 */
                 break;
-
+            }
             case SUBREFED:
-                remoteId=getUInt32();
+            {
+                connection.getUInt32(remoteId);
                 /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
-                    SWARNING << "Can't subref unknown FC:" << remoteId 
-                             << endl; 
-                }
+                SWARNING << "Can't subref unknown FC:" << remoteId 
+                    << endl; 
+                             }
                 fcPtr=factory->getContainer(receivedFCI->second);
                 subRefCP(fcPtr);
                 */
                 break;
             }
+            default:
+            {
+                SFATAL << "Unknown tag:" << (int)cmd << endl;
+            }
         }
     } while(!finish);
     // unregister mapper into factory
     factory->setMapper(NULL);
-
 }
 
 void RemoteAspect::sendSync(Connection &connection,
                             OSG::ChangeList *changeList)
 {
     ChangeList::changed_const_iterator changedI;
-    ChangeList::idrefd_const_iterator createdI;
-    ChangeList::idrefd_const_iterator destroyedI;
-    ChangeList::refd_const_iterator addRefedI;
-    ChangeList::refd_const_iterator subRefedI;
+    ChangeList::idrefd_const_iterator  createdI;
+    ChangeList::idrefd_const_iterator  destroyedI;
+    ChangeList::refd_const_iterator    addRefedI;
+    ChangeList::refd_const_iterator    subRefedI;
     FieldFilterT::iterator filterI;
     FieldContainerFactory *fcFactory = FieldContainerFactory::the();
     FieldContainerPtr fcPtr;
@@ -350,16 +352,13 @@ void RemoteAspect::sendSync(Connection &connection,
         changeList=OSG::Thread::getCurrentChangeList();
     }
 
-    _buffer    =connection.getBuffer();
-    _bufferSize=connection.getBufferSize();
-
     // created fct
     for(createdI =changeList->beginCreated() ;
         createdI!=changeList->endCreated() ;
         createdI++)
     {
         fcPtr=fcFactory->getContainer(*createdI);
-
+        
         if(fcPtr == NullFC)
             continue;
 
@@ -369,31 +368,15 @@ void RemoteAspect::sendSync(Connection &connection,
         {
             // mark type as known
             _sentType.insert(typeId);
-            // send buffer if not enough mem
-            if( int(_dataSize + 
-                    sizeof(UInt8) + 
-                    sizeof(UInt32) + 
-                    strlen(fcPtr->getType().getName().str())+1 ) 
-                > _bufferSize )
-            {
-                send(connection);
-            }
             // send new type
-            putUInt8(NEWTYPE);
-            putUInt32(typeId);
-            putString(fcPtr->getType().getName().str());
+            connection.putUInt8(NEWTYPE);
+            connection.putUInt32(typeId);
+            connection.putString(fcPtr->getType().getName().str());
         }
-        // send buffer if not enough mem
-        if( int(_dataSize +
-                sizeof(UInt8) +
-                sizeof(UInt32) +
-                sizeof(UInt32)) > _bufferSize )
-        {
-            send(connection);
-        }
-        putUInt8(CREATED);
-        putUInt32(typeId);
-        putUInt32(*createdI);
+        // send container to create
+        connection.putUInt8(CREATED);
+        connection.putUInt32(typeId);
+        connection.putUInt32(*createdI);
     }
 
     // changed fields
@@ -401,56 +384,26 @@ void RemoteAspect::sendSync(Connection &connection,
         changedI!=changeList->endChanged() ;
         changedI++)
     {
-        //        FieldContainerPtr fcPtr=*((FieldContainerPtr*)(&changedI->first));
-
         FieldContainerPtr fcPtr = 
             FieldContainerFactory::the()->getContainer(changedI->first);
-
         if(fcPtr == NullFC)
             continue;
-
         mask = changedI->second;
         filterI=_fieldFilter.find(fcPtr->getType().getId());
         // apply field filter
         if(filterI != _fieldFilter.end())
         {
-            cout << "filtet:" << fcPtr->getType().getName() << endl;
+            FDEBUG (( "SyncFieldFilter: :%s \n",fcPtr->getType().getName() ))
             mask &= 0xFFFFFFFF ^ filterI->second;
         }
-
-        int valueSize=fcPtr->getBinSize(mask);
-        int size=sizeof(UInt8) +
-                 sizeof(UInt32) + 
-                 sizeof(UInt32) + 
-                 sizeof(UInt32) + 
-                 valueSize;
-        if(valueSize==0)
-            continue;
-        // send buffer if not enough mem
-        if( int(_dataSize +
-                size) > _bufferSize )
-        {
-            send(connection);
-            if(size > _bufferSize)
-                resize(connection,size);
-        }
-        putUInt8(CHANGED);
-        putUInt32(fcPtr.getFieldContainerId());   // id
-        putUInt32(mask);                          // mask
-        putUInt32(valueSize);
-        res=fcPtr->copyToBin(&_buffer[_dataSize],mask);
-        if(valueSize != (res - (&_buffer[_dataSize])))
-        {
-            SFATAL << "getBinSize differes from written size" 
-                   << valueSize << " <-> "  
-                   << (res - (&_buffer[_dataSize])) << endl;
-        }
-
-        _dataSize+=valueSize;
+        // send changes
+        connection.putUInt8(CHANGED);
+        connection.putUInt32(fcPtr.getFieldContainerId());   // id
+        connection.putUInt32(mask);                          // mask
+        fcPtr->copyToBin(connection,mask);
         FDEBUG (( "Changed: ID:%d Mask:%d Size:%d\n",
                  fcPtr.getFieldContainerId(),
-                 mask,
-                 valueSize ))
+                 mask ))
     }
 
     // destroy fct
@@ -458,19 +411,13 @@ void RemoteAspect::sendSync(Connection &connection,
         destroyedI!=changeList->endDestroyed() ;
         destroyedI++)
     {
-        if( int(_dataSize +
-                sizeof(UInt8) +
-                sizeof(UInt32)) > _bufferSize )
-        {
-            send(connection);
-        }
         /*
           !!! BUG, If it is destroyed, then there is no 
           container ID. -> Bug in opensg sync
 
-        putUInt8(DESTROYED);
-        putUInt32(*destroyedI);
-        FDEBUG (( "Destroyed: ID:%d\n",*destroyedI ))
+          connection.putUInt8(DESTROYED);
+          connection.putUInt32(*destroyedI);
+          FDEBUG (( "Destroyed: ID:%d\n",*destroyedI ))
         */
     }
 
@@ -479,15 +426,8 @@ void RemoteAspect::sendSync(Connection &connection,
         addRefedI!=changeList->endAddRefd();
         addRefedI++)
     {
-        //        id=addRefedI->getFieldContainerId();
-        if( int(_dataSize +
-                sizeof(UInt8) +
-                sizeof(UInt32)) > _bufferSize )
-        {
-            send(connection);
-        }
-        putUInt8(ADDREFED);
-        putUInt32(id);
+        connection.putUInt8(ADDREFED);
+        connection.putUInt32(*addRefedI);
     }
     
     // subref
@@ -495,24 +435,12 @@ void RemoteAspect::sendSync(Connection &connection,
         subRefedI!=changeList->endSubRefd();
         subRefedI++)
     {
-        //        id=subRefedI->getFieldContainerId();
-        if( int(_dataSize +
-                sizeof(UInt8) +
-                sizeof(UInt32)) > _bufferSize )
-        {
-            send(connection);
-        }
-        putUInt8(SUBREFED);
-        putUInt32(id);
+        connection.putUInt8(SUBREFED);
+        connection.putUInt32(*subRefedI);
     }
 
-    // send buffer if not enough mem
-    if( int(_dataSize+sizeof(UInt8)) > _bufferSize )
-    {
-        send(connection);
-    }
-    putUInt8(SYNCENDED);
-    send(connection);
+    connection.putUInt8(SYNCENDED);
+    // write buffer 
     connection.flush();
 }
 
@@ -554,21 +482,6 @@ void RemoteAspect::registerChanged(const FieldContainerType &type,
 /** \brief assignment
  */
 
-RemoteAspect &RemoteAspect::operator = (const RemoteAspect &source)
-{
-	if (this == &source)
-		return *this;
-
-	// copy parts inherited from parent
-
-	// free mem alloced by members of 'this'
-
-	// alloc new mem for members
-
-	// copy 
-    return *this;
-}
-
 /*-------------------------- comparison -----------------------------------*/
 
 /** \brief assignment
@@ -583,77 +496,6 @@ RemoteAspect &RemoteAspect::operator = (const RemoteAspect &source)
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
-
-void RemoteAspect::send(Connection &connection)
-{
-    connection.setDataSize(_dataSize);
-    connection.send();
-    _buffer    =connection.getBuffer();
-    _bufferSize=connection.getBufferSize();
-    _dataSize  =0;
-}
-
-void RemoteAspect::receive(Connection &connection)
-{
-    int size;
-    
-    size=connection.receive();
-    if(size==0)
-    {
-        throw ConnectionClosed();
-    }
-    _buffer    =connection.getBuffer();
-    _bufferSize=connection.getBufferSize();
-    _dataSize  =connection.getDataSize();
-    _dataPos   =0;
-}
-
-void RemoteAspect::resize(Connection &connection,int size)
-{
-    connection.resizeBuffer(size);
-    _buffer    =connection.getBuffer();
-    _bufferSize=connection.getBufferSize();
-    _dataSize  =0;
-    _dataPos   =0;
-}
-
-void RemoteAspect::putUInt8(UInt8 value)
-{
-    _buffer[_dataSize]=value;
-    _dataSize++;
-}
-
-void RemoteAspect::putUInt32(UInt32 value)
-{
-    memcpy(&_buffer[_dataSize],&value,sizeof(UInt32));
-    _dataSize+=sizeof(UInt32);
-}
-
-void RemoteAspect::putString(const char *value)
-{
-    strcpy((char*)&_buffer[_dataSize],value);
-    _dataSize+=strlen(value)+1;
-}
-
-UInt8 RemoteAspect::getUInt8()
-{
-    return _buffer[_dataPos++];
-}
-
-UInt32 RemoteAspect::getUInt32()
-{
-    UInt32 value;
-    memcpy(&value,&_buffer[_dataPos],sizeof(UInt32));
-    _dataPos+=sizeof(UInt32);
-    return value;
-}
-
-char *RemoteAspect::getString()
-{
-    char *res=(char*)&_buffer[_dataPos];
-    _dataPos+=strlen(res)+1;
-    return res;
-}
 
 Bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
 {
@@ -711,7 +553,7 @@ Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
 Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect * aspect)
 {
-    FDEBUG (( "Destroyed:%s %d\n",
+    FDEBUG (( "Destroyed:%s %d\n\n",
               fcp->getType().getName().str(), 
               fcp.getFieldContainerId() ))
     return true;
@@ -720,7 +562,7 @@ Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
 Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect * aspect)
 {
-    FDEBUG (( "Changed:%s %d",
+    FDEBUG (( "Changed:%s %d\n",
               fcp->getType().getName().str(), 
               fcp.getFieldContainerId() ))
     return true;
@@ -735,7 +577,7 @@ UInt32 RemoteAspectFieldContainerMapper::map(UInt32 uiId)
     i=_remoteAspect->_receivedFC.find(uiId);
     if(i==_remoteAspect->_receivedFC.end())
     {
-        SWARNING << "Can't find container id:" << uiId << endl;
+        SWARNING << "Can't find container id:\n" << uiId << endl;
     }
     mappedId=i->second;
     FDEBUG (( "Map: %d to %d\n",uiId,mappedId ))

@@ -62,7 +62,7 @@ OSG::Action::ResultE calcVNormal( OSG::CNodePtr &, OSG::Action * action )
 	OSG::NodePtr node = action->getActNode();
 	OSG::GeometryPtr g = OSG::GeometryPtr::dcast( node->getCore() );
 
-	if ( g->getNormals() == OSG::GeoNormalPtr::NullPtr )
+	if ( g->getNormals() == OSG::NullFC )
 	{
 		OSG::calcVertexNormals( g );
 	}	
@@ -117,7 +117,7 @@ void createSceneGraph(int argc,char **argv)
 	root->addChild( dlight );
 	endEditCP(root);
 	// Load the file
-	NodePtr file = NullNode;
+	NodePtr file = NullFC;
 
     for(i=1;i<argc;i++)
     {
@@ -151,7 +151,7 @@ void createSceneGraph(int argc,char **argv)
                 file = SceneFileHandler::the().read(filename,0);
         }
     }
-	if ( file == NullNode )
+	if ( file == NullFC )
 	{
 		cerr << "Couldn't load file, ignoring" << endl;
 		file = makeTorus( .5, 2, 16, 16 );

@@ -45,8 +45,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "OSGConfig.h"
-#include "OSGStreamSockConnection.h"
+#include <algorithm>
+
+#include <OSGConfig.h>
+#include <OSGLog.h>
+#include <OSGStreamSockConnection.h>
+#include <OSGSelection.h>
 
 OSG_USING_NAMESPACE
 
@@ -74,29 +78,23 @@ OSG_USING_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char StreamSockConnection::cvsid[] = "@(#)$Id: $";
+char StreamSockConnection::cvsid[] = "@(#)$Id:$";
 
 /***************************************************************************\
  *                           Class methods                                 *
 \***************************************************************************/
 
-
-
 /*-------------------------------------------------------------------------*\
  -  public                                                                 -
 \*-------------------------------------------------------------------------*/
-
 
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
-
 /*-------------------------------------------------------------------------*\
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
-
-
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -113,28 +111,23 @@ char StreamSockConnection::cvsid[] = "@(#)$Id: $";
 
 StreamSockConnection::StreamSockConnection():
     Inherited(),
-    _buffer(NULL),
     _sockets()
 {
-    resizeBuffer(4096);
+    _socketBuffer.resize(16000);
+    _zeroCopyThreshold=200;
+    // reserve first bytes for buffer size
+    _buffers.push_back(
+        MemoryBlock(&_socketBuffer[sizeof(SocketBufferHeader)],
+                    _socketBuffer.size()-sizeof(SocketBufferHeader)) );
+    _socketBufferHeader=(SocketBufferHeader*)&_socketBuffer[0];
+    reset();
 }
-
-
-//StreamSockConnection::StreamSockConnection(const StreamSockConnection &source) :
-//	Inherited(source),
-//	  // TODO: initialize members
-//{
-//}
 
 /** \brief Destructor
  */
 
 StreamSockConnection::~StreamSockConnection(void)
 {
-    if(_buffer)
-    {
-        delete [] _buffer;
-    }
 }
 
 /*------------------------------ access -----------------------------------*/
@@ -143,109 +136,133 @@ StreamSockConnection::~StreamSockConnection(void)
 
 /*-------------------------- your_category---------------------------------*/
 
-MemoryHandle StreamSockConnection::getBuffer()
-{
-    return _buffer + sizeof(BlockLenT);
-}
+/** Read data into given memory
+ *
+ * The first socket that provides data is used for read.
+ *
+ * @bug It is not possible to read sync from multible sources 
+ *      with a StreamSockConnection. This is currently not a
+ *      real problem. You have to switch off zero copy to get this work
+ *      MR
+ **/
 
-void StreamSockConnection::resizeBuffer(int size)
+void StreamSockConnection::read(MemoryHandle mem,int size)
 {
-    if(_buffer)
-    {
-        delete [] _buffer;
-    }
-    _bufferSize = size + sizeof(BlockLenT);
-    _buffer = new UInt8[ _bufferSize ];
-    _dataSize = 0;
-}
-
-int StreamSockConnection::getBufferSize()
-{
-    return _bufferSize - sizeof(BlockLenT);
-}
-
-int StreamSockConnection::getDataSize()
-{
-    return _dataSize;
-}
-
-void StreamSockConnection::setDataSize(int size)
-{
-    _dataSize=size;
-}
-
-void StreamSockConnection::send()
-{
-    const int MAXWRITE=16000;
-    int size;
-    int pos;
+    Selection selection;
     SocketsT::iterator i;
-    int maxsize;
+    int len;
 
-    size=_dataSize + sizeof(BlockLenT);
-    *((BlockLenT*)(_buffer))=htonl(size);
-    // send to all receivers
+    // wait for first socket to deliver data
+    for(i=_sockets.begin();i!=_sockets.end();i++)
+        selection.setRead(*i);
+    // select ok ?
+    if(!selection.select(-1))
+    {
+        throw ReadError("no socket selectable");
+    }
+    // get readable socket
+    for(i=_sockets.begin();!selection.isSetRead(*i);i++)
+        if(i==_sockets.end())
+            throw ReadError("no socket readable");
+    StreamSocket socket=*i;
+    // read data
+    len=socket.read(mem,size);
+    if(len==0)
+    {
+        throw ReadError("read got 0 bytes!");
+    }
+}
+
+/** Read next data block
+ *
+ * The first socket that provides data is used for read. 
+ *
+ * @return buffer iterator points behind the last buffer containing data
+ */
+
+BinaryDataHandler::BuffersT::iterator StreamSockConnection::read()
+{
+    SocketsT::iterator i;
+    Selection selection;
+    int readSize;
+    int len;
+
+    // wait for first socket to deliver data
     for(i=_sockets.begin();
         i!=_sockets.end();
         i++)
+        selection.setRead(*i);
+    // select ok ?
+    if(!selection.select(-1))
     {
-        maxsize=i->getWriteBufferSize();
-        size=_dataSize + sizeof(BlockLenT);
-        pos=0;
-        while(size>maxsize)
-        {
-            i->write(_buffer+pos,maxsize);
-            pos+=maxsize;
-            size-=maxsize;
-        }
-        i->write(_buffer+pos,size);
+        throw ReadError("no socket selectable");
     }
-    _dataSize=0;
-}
+    // get readable socket
+    for(i=_sockets.begin();!selection.isSetRead(*i);i++)
+        if(i==_sockets.end())
+            throw ReadError("no socket readable");
+    StreamSocket socket=*i;
+    // read buffer header
+    len=socket.read(&_socketBuffer[0],sizeof(SocketBufferHeader));
+    if(len==0)
+        throw ReadError("peek got 0 bytes!");
+    // read remaining data
+    len=socket.read(_buffers[0].mem,
+                    _socketBufferHeader->size);
+    if(len==0)
+        throw ReadError("read got 0 bytes!");
+    _buffers[0].dataSize = _socketBufferHeader->size;
+    return _buffers.end();
+}    
 
-int StreamSockConnection::receive()
+/** Write data to all destinations
+ *
+ **/
+
+void StreamSockConnection::write(MemoryHandle mem,int size)
 {
-    int size;
-    int blocksize;
-    const int MAXREAD=16000;
-    int pos;
-    int len;
-    int maxsize;
+    SocketsT::iterator socket;
 
-    _dataSize=0;
-    if(_sockets.begin() != _sockets.end())
+    // write to all connected sockets
+    for(socket =_sockets.begin();
+        socket!=_sockets.end();
+        socket++)
     {
-        maxsize=_sockets.begin()->getReadBufferSize();
-        len=_sockets.begin()->peek(_buffer,sizeof(BlockLenT));
-        if(len==0)
-            return 0;
-        blocksize=ntohl(*((BlockLenT*)(_buffer)));
-        if(blocksize>_bufferSize)
-        {
-            resizeBuffer(blocksize);
-        }
-        pos=0;
-        size=blocksize;
-        while(size>maxsize)
-        {
-            len=_sockets.begin()->read(_buffer+pos,maxsize);
-            if(len==0)
-                return 0;
-            pos+=maxsize;
-            size-=maxsize;
-        }
-        len=_sockets.begin()->read(_buffer+pos,size);
-        if(len==0)
-            return 0;
-        _dataSize=blocksize - sizeof(BlockLenT);
+        socket->write(mem,size);
     }
-    return _dataSize;
 }
 
-void StreamSockConnection::flush()
+/** Write buffer
+ *
+ * @param writeEnd  iterator points behind the last buffer containing data
+ *
+ **/
+void StreamSockConnection::write(BuffersT::iterator writeEnd)
 {
+    UInt32 size=0;
+    SocketsT::iterator socket;
+    BuffersT::iterator i;
+
+    // calculate blocklen
+    for(i =_buffers.begin(); i!=writeEnd; ++i)
+    {
+        size+=i->dataSize;
+    }
+    // write size to header
+    _socketBufferHeader->size=size;
+    // write data to all sockets
+    for(socket =_sockets.begin();
+        socket!=_sockets.end();
+        socket++)
+    {
+        // write whole block
+        socket->write(&_socketBuffer[0],size+sizeof(SocketBufferHeader));
+    }
 }
 
+/** add a socket to the connection
+ *
+ **/
 void StreamSockConnection::addSocket(StreamSocket &sock)
 {
     _sockets.push_back(sock);
@@ -255,21 +272,6 @@ void StreamSockConnection::addSocket(StreamSocket &sock)
 
 /** \brief assignment
  */
-
-StreamSockConnection& StreamSockConnection::operator = (const StreamSockConnection &source)
-{
-	if (this == &source)
-		return *this;
-
-	// copy parts inherited from parent
-
-	// free mem alloced by members of 'this'
-
-	// alloc new mem for members
-
-	// copy 
-    return *this;
-}
 
 /*-------------------------- comparison -----------------------------------*/
 

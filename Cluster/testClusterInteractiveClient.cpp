@@ -44,6 +44,7 @@
 #include "OSGRemoteAspect.h"
 #include "OSGStreamSocket.h"
 #include "OSGStreamSockConnection.h"
+#include "OSGClusterWindowAtt.h"
 
 using namespace OSG;
 using namespace std;
@@ -88,7 +89,7 @@ Action::ResultE calcVNormal( CNodePtr &, Action * action )
 	NodePtr node = action->getActNode();
 	GeometryPtr g = GeometryPtr::dcast( node->getCore() );
 
-	if ( g->getNormals() == GeoNormalPtr::NullPtr )
+	if ( g->getNormals() == NullFC )
 	{
 		calcVertexNormals( g );
 	}	
@@ -105,6 +106,7 @@ void createSceneGraph(int argc,char **argv)
     int i;
     char *filename;
     QTWindowPtr window;
+    ClusterWindowAttPtr pWindowAtt;
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
     Color3f bkgndcolor(0,0,1);
@@ -145,7 +147,7 @@ void createSceneGraph(int argc,char **argv)
 	root->addChild( dlight );
 	endEditCP(root);
 	// Load the file
-	NodePtr file = NullNode;
+	NodePtr file = NullFC;
 
     for(i=1;i<argc;i++)
     {
@@ -196,7 +198,7 @@ void createSceneGraph(int argc,char **argv)
                 file = SceneFileHandler::the().read(filename,0);
         }
     }
-	if ( file == NullNode )
+	if ( file == NullFC )
 	{
 		cerr << "Couldn't load file, ignoring" << endl;
 		file = makeTorus( .5, 2, 16, 16 );
@@ -262,8 +264,18 @@ void createSceneGraph(int argc,char **argv)
         vp->setSize( 0,0, 1,1 );
         endEditCP(vp);
 
+        // Server information
+        pWindowAtt = ClusterWindowAtt::create();
+        beginEditCP(pWindowAtt);
+        {
+            pWindowAtt->setServerId(i);
+            pWindowAtt->setComposite(false);
+        }
+        endEditCP(pWindowAtt);
+
         window = QTWindow::create();
         beginEditCP(window);
+        window->addAttachment(pWindowAtt);
         window->addPort( vp );
         window->setSize(width/nhserv,height/nvserv);
         endEditCP(window);

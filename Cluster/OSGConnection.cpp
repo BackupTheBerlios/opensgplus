@@ -50,22 +50,6 @@
 
 OSG_USING_NAMESPACE
 
-/** \enum OSGVecBase::VectorSizeE
- *  \brief 
- */
-
-/** \var OSGVecBase::VectorSizeE OSGVecBase::_iSize
- * 
- */
-
-/** \fn const char *OSGVecBase::getConnection(void)
- *  \brief Connection
- */
-
-/** \var OSGValueTypeT OSGVecBase::_values[iSize];
- *  \brief Value store
- */
-
 /***************************************************************************\
  *                               Types                                     *
 \***************************************************************************/
@@ -74,29 +58,23 @@ OSG_USING_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char Connection::cvsid[] = "@(#)$Id: $";
+char Connection::cvsid[] = "@(#)$Id:$";
 
 /***************************************************************************\
  *                           Class methods                                 *
 \***************************************************************************/
 
-
-
 /*-------------------------------------------------------------------------*\
  -  public                                                                 -
 \*-------------------------------------------------------------------------*/
-
 
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
-
 /*-------------------------------------------------------------------------*\
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
-
-
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -111,16 +89,9 @@ char Connection::cvsid[] = "@(#)$Id: $";
 /** \brief Constructor
  */
 
-Connection::Connection(void) 
+Connection::Connection(void):BinaryDataHandler()
 {
 }
-
-
-//Connection::Connection(const Connection &source) :
-//	Inherited(source),
-//	  // TODO: initialize members
-//{
-//}
 
 /** \brief Destructor
  */
@@ -135,29 +106,10 @@ Connection::~Connection(void)
 
 /*-------------------------- your_category---------------------------------*/
 
-void Connection::flush()
-{
-}
-
 /*-------------------------- assignment -----------------------------------*/
 
 /** \brief assignment
  */
-
-Connection& Connection::operator = (const Connection &source)
-{
-	if (this == &source)
-		return *this;
-
-	// copy parts inherited from parent
-
-	// free mem alloced by members of 'this'
-
-	// alloc new mem for members
-
-	// copy 
-    return *this;
-}
 
 /*-------------------------- comparison -----------------------------------*/
 
@@ -173,7 +125,6 @@ Connection& Connection::operator = (const Connection &source)
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
-
 
 /*-------------------------------------------------------------------------*\
  -  private                                                                -

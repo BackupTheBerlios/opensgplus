@@ -50,10 +50,6 @@
  *****************************************************************************
 \*****************************************************************************/
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
-
 
 #define OSG_COMPILECLUSTERLIB
 #define OSG_COMPILECLUSTERWINDOWATTINST
@@ -66,12 +62,6 @@
 #include "OSGClusterWindowAttBase.h"
 #include "OSGClusterWindowAtt.h"
 
-
-OSG_USING_NAMESPACE
-
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
 
 OSG_BEGIN_NAMESPACE
 
@@ -91,9 +81,24 @@ OSG_DLLEXPORT_DEF1(MField, ClusterWindowAttPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-/***************************************************************************\
- *                           Class variables                               *
-\***************************************************************************/
+OSG_USING_NAMESPACE
+
+#ifdef __sgi
+#pragma set woff 1174
+#endif
+
+namespace
+{
+    static char cvsid_cpp       [] = "@(#)$Id: $";
+    static char cvsid_hpp       [] = OSGCLUSTERWINDOWATTBASE_HEADER_CVSID;
+    static char cvsid_inl       [] = OSGCLUSTERWINDOWATTBASE_INLINE_CVSID;
+
+    static char cvsid_fields_hpp[] = OSGCLUSTERWINDOWATTFIELDS_HEADER_CVSID;
+}
+
+#ifdef __sgi
+#pragma reset woff 1174
+#endif
 
 const OSG::BitVector	ClusterWindowAttBase::ServerIdFieldMask = 
     (1 << ClusterWindowAttBase::ServerIdFieldId);
@@ -103,10 +108,15 @@ const OSG::BitVector	ClusterWindowAttBase::CompositeFieldMask =
 
 
 
-char ClusterWindowAttBase::cvsid[] = "@(#)$Id: $";
+// Field descriptions
 
-/** \brief Group field description
- */
+/*! \var UInt32          ClusterWindowAttBase::_sfServerId
+    Which server is responsible for the attached Window
+*/
+/*! \var Bool            ClusterWindowAttBase::_sfComposite
+    Should the server send the rendered image back to the client
+*/
+//! ClusterWindowAtt description
 
 FieldDescription *ClusterWindowAttBase::_desc[] = 
 {
@@ -122,8 +132,7 @@ FieldDescription *ClusterWindowAttBase::_desc[] =
                      (FieldAccessMethod) &ClusterWindowAttBase::getSFComposite)
 };
 
-/** \brief ClusterWindowAtt type
- */
+//! ClusterWindowAtt type
 
 FieldContainerType ClusterWindowAttBase::_type(
     "ClusterWindowAtt",
@@ -134,32 +143,14 @@ FieldContainerType ClusterWindowAttBase::_type(
     _desc,
     sizeof(_desc));
 
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-/***************************************************************************\
- *                           Instance methods                              *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
 //OSG_FIELD_CONTAINER_DEF(ClusterWindowAttBase, ClusterWindowAttPtr)
+
+/*------------------------------ get -----------------------------------*/
+
+static const char *getClassname(void)
+{
+    return "ClusterWindowAtt"; 
+}
 
 FieldContainerType &ClusterWindowAttBase::getType(void) 
 {
@@ -170,6 +161,7 @@ const FieldContainerType &ClusterWindowAttBase::getType(void) const
 {
     return _type;
 } 
+/*! \}                                                                 */
 
 FieldContainerPtr ClusterWindowAttBase::shallowCopy(void) const 
 { 
@@ -192,30 +184,29 @@ void ClusterWindowAttBase::executeSync(      FieldContainer &other,
     this->executeSyncImpl((ClusterWindowAttBase *) &other, whichField);
 }
 
-/*------------- constructors & destructors --------------------------------*/
+/*------------------------- constructors ----------------------------------*/
 
-/** \brief Constructor
- */
+//! Constructor
 
 ClusterWindowAttBase::ClusterWindowAttBase(void) :
-	_sfServerId	(), 
-	_sfComposite	(), 
+	_sfServerId               (), 
+	_sfComposite              (), 
 	Inherited() 
 {
 }
 
-/** \brief Copy Constructor
- */
+//! Copy Constructor
 
 ClusterWindowAttBase::ClusterWindowAttBase(const ClusterWindowAttBase &source) :
-	_sfServerId		(source._sfServerId), 
-	_sfComposite		(source._sfComposite), 
-	Inherited        (source)
+	_sfServerId               (source._sfServerId               ), 
+	_sfComposite              (source._sfComposite              ), 
+	Inherited                 (source)
 {
 }
 
-/** \brief Destructor
- */
+/*-------------------------- destructors ----------------------------------*/
+
+//! Destructor
 
 ClusterWindowAttBase::~ClusterWindowAttBase(void)
 {
@@ -241,50 +232,41 @@ UInt32 ClusterWindowAttBase::getBinSize(const BitVector &whichField)
     return returnValue;
 }
 
-MemoryHandle ClusterWindowAttBase::copyToBin(      MemoryHandle  pMem,
-                                          const BitVector    &whichField)
+void ClusterWindowAttBase::copyToBin(      BinaryDataHandler &pMem,
+                                  const BitVector         &whichField)
 {
-    pMem = Inherited::copyToBin(pMem, whichField);
+    Inherited::copyToBin(pMem, whichField);
 
     if(FieldBits::NoField != (ServerIdFieldMask & whichField))
     {
-        pMem = _sfServerId.copyToBin(pMem);
+        _sfServerId.copyToBin(pMem);
     }
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
     {
-        pMem = _sfComposite.copyToBin(pMem);
+        _sfComposite.copyToBin(pMem);
     }
 
 
-    return pMem;
 }
 
-MemoryHandle ClusterWindowAttBase::copyFromBin(      MemoryHandle  pMem,
-                                            const BitVector    &whichField)
+void ClusterWindowAttBase::copyFromBin(      BinaryDataHandler &pMem,
+                                    const BitVector    &whichField)
 {
-    pMem = Inherited::copyFromBin(pMem, whichField);
+    Inherited::copyFromBin(pMem, whichField);
 
     if(FieldBits::NoField != (ServerIdFieldMask & whichField))
     {
-        pMem = _sfServerId.copyFromBin(pMem);
+        _sfServerId.copyFromBin(pMem);
     }
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
     {
-        pMem = _sfComposite.copyFromBin(pMem);
+        _sfComposite.copyFromBin(pMem);
     }
 
 
-    return pMem;
 }
-
-/*------------------------------- dump ----------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
 
 void ClusterWindowAttBase::executeSyncImpl(      ClusterWindowAttBase *pOther,
                                         const BitVector         &whichField)
@@ -293,19 +275,11 @@ void ClusterWindowAttBase::executeSyncImpl(      ClusterWindowAttBase *pOther,
     Inherited::executeSyncImpl(pOther, whichField);
 
     if(FieldBits::NoField != (ServerIdFieldMask & whichField))
-    {
         _sfServerId.syncWith(pOther->_sfServerId);
-    }
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
-    {
         _sfComposite.syncWith(pOther->_sfComposite);
-    }
 
 
 }
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 

@@ -48,6 +48,7 @@
 #include "OSGRemoteAspect.h"
 #include "OSGStreamSocket.h"
 #include "OSGStreamSockConnection.h"
+#include "OSGClusterWindowAtt.h"
 
 
 using namespace OSG;
@@ -82,7 +83,7 @@ int winid;
 void addLogoForeground(const char *szFilename);
 
 OSG::UInt32                 uiLogoCount = 0;
-OSG::LogoForegroundPtr      pLogo       = OSG::LogoForegroundPtr::NullPtr;
+OSG::LogoForegroundPtr      pLogo       = OSG::NullFC;
 
 static OSG::Pnt2f           logoPos[2] = { OSG::Pnt2f(0.0, 0.0), 
                                            OSG::Pnt2f(0.8, 0.0) };
@@ -118,7 +119,7 @@ Action::ResultE calcVNormal( CNodePtr &, Action * action )
 	NodePtr node = action->getActNode();
 	GeometryPtr g = GeometryPtr::dcast( node->getCore() );
 
-	if ( g->getNormals() == GeoNormalPtr::NullPtr )
+	if ( g->getNormals() == NullFC )
 	{
 		calcVertexNormals( g );
 	}	
@@ -135,6 +136,7 @@ void createSceneGraph(int argc,char **argv)
     int i;
     char *filename;
     QTWindowPtr window;
+    ClusterWindowAttPtr pWindowAtt;
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
     Color3f bkgndcolor(0,0,1);
@@ -182,7 +184,7 @@ void createSceneGraph(int argc,char **argv)
 	root->addChild( dlight );
 	endEditCP(root);
 	// Load the file
-	NodePtr file = NullNode;
+	NodePtr file = NullFC;
 
 
     animation = OSG::Animation::getAnim();
@@ -245,7 +247,7 @@ void createSceneGraph(int argc,char **argv)
 
         }
     }
-	if ( file == NullNode )
+	if ( file == NullFC )
 	{
 		cerr << "Couldn't load file, ignoring" << endl;
 		file = makeTorus( .5, 2, 16, 16 );
@@ -319,8 +321,18 @@ void createSceneGraph(int argc,char **argv)
 
         endEditCP(vp);
 
+        // Server information
+        pWindowAtt = ClusterWindowAtt::create();
+        beginEditCP(pWindowAtt);
+        {
+            pWindowAtt->setServerId(i);
+            pWindowAtt->setComposite(false);
+        }
+        endEditCP(pWindowAtt);
+
         window = QTWindow::create();
         beginEditCP(window);
+        window->addAttachment(pWindowAtt);
         window->addPort( vp );
         window->setSize(width/nhserv,height/nvserv);
         endEditCP(window);

@@ -49,6 +49,7 @@
 
 #include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
+#include <OSGBinaryDataHandler.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -70,7 +71,7 @@ OSG_BEGIN_NAMESPACE
  *  detailed
  */
 
-class OSG_CLUSTERLIB_DLLMAPPING Connection
+class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
 {
   public:
 
@@ -98,15 +99,6 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection
     virtual ~Connection(void); 
 
     /*------------------------- your_category -------------------------------*/
-
-    virtual MemoryHandle getBuffer()=0;
-    virtual void resizeBuffer(int size)=0;
-    virtual int getBufferSize()=0;
-    virtual int getDataSize()=0;
-    virtual void setDataSize(int size)=0;
-    virtual void send()=0;
-    virtual int receive()=0;
-    virtual void flush();
 
     /*------------------------- your_operators ------------------------------*/
 
@@ -149,6 +141,7 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection
     //-----------------------------------------------------------------------
     //   types                                                               
     //-----------------------------------------------------------------------
+    typedef BinaryDataHandler Inherited;
 
     //-----------------------------------------------------------------------
     //   friend classes                                                      
@@ -177,7 +170,6 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection
     //-----------------------------------------------------------------------
 
 	// prohibit default functions (move to 'public' if you need one)
-
     Connection(const Connection &source);
     Connection& operator =(const Connection &source);
 };
