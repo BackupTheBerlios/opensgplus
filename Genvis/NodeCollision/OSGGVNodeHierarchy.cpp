@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:53:12 $
 //                                                                            
 //=============================================================================
 
@@ -45,9 +45,9 @@ void NodeHierarchy<BasicTraits>::hierarchy ()
 {
    // mark geometry nodes
    std::vector<bool> isLeaf;
-   Cache::EntryIterator it;
+   typename Cache::EntryIterator it;
    for (it = getCache().begin(); it != getCache().end(); ++it) {
-      Cache::CacheData& data = getCache()[*it];
+      CacheData& data = getCache()[*it];
       if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
 	 isLeaf.push_back(false);
       } else {
@@ -58,11 +58,11 @@ void NodeHierarchy<BasicTraits>::hierarchy ()
    std::vector<bool>::const_iterator itLeaf;
    for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 Cache::CacheData& data = getCache()[*it];
+	 CacheData& data = getCache()[*it];
 	 AdapterType* leaf =
 	   static_cast<AdapterType*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   Cache::CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = getCache()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache 
 	     break;
 	   }

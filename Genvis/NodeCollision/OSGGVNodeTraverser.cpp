@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:53:12 $
 //                                                                            
 //=============================================================================
 
@@ -32,7 +32,7 @@ bool NodeAllTraverser<BasicTraits>::apply
    DynamicVolume volume0;
    std::vector<DynamicVolume> volume1; 
    volume1.resize(data1.getAdapter(ObjectAdapterType::getAdapterId()).size());
-   CacheData::AdapterContainer::const_iterator it1;
+   typename CacheData::AdapterContainer::const_iterator it1;
    for (it1=data1.getAdapter(ObjectAdapterType::getAdapterId()).begin(), i=0;
 	it1 != data1.getAdapter(ObjectAdapterType::getAdapterId()).end();
 	++it1, ++i) {
@@ -41,7 +41,7 @@ bool NodeAllTraverser<BasicTraits>::apply
    }
 
    bool result = false;
-   CacheData::AdapterContainer::const_iterator it0;
+   typename CacheData::AdapterContainer::const_iterator it0;
    for (it0 = data0.getAdapter(ObjectAdapterType::getAdapterId()).begin();
 	it0 != data0.getAdapter(ObjectAdapterType::getAdapterId()).end();
 	++it0) {

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:31 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:54:06 $
 //                                                                            
 //=============================================================================
 
@@ -53,7 +53,7 @@ bool RAPIDAllTraverser<BasicTraits>::apply   (const OSG::NodePtr& node0, const O
    RAPIDScale   s0, s1;
 
    bool result = false;
-   for (CacheData::AdapterContainer::const_iterator 
+   for (typename CacheData::AdapterContainer::const_iterator 
         it0 = data0.getAdapter(ObjectAdapterType::getAdapterId()).begin();
 	it0 != data0.getAdapter(ObjectAdapterType::getAdapterId()).end();
 	++it0) {
@@ -68,7 +68,7 @@ bool RAPIDAllTraverser<BasicTraits>::apply   (const OSG::NodePtr& node0, const O
       r0[1][0] = m0[0][1]/s0; r0[1][1] = m0[1][1]/s0; r0[1][2] = m0[2][1]/s0; t0[1] = m0[3][1]/s0;
       r0[2][0] = m0[0][2]/s0; r0[2][1] = m0[1][2]/s0; r0[2][2] = m0[2][2]/s0; t0[2] = m0[3][2]/s0;
 
-      for (CacheData::AdapterContainer::const_iterator 
+      for (typename CacheData::AdapterContainer::const_iterator 
 	   it1=data1.getAdapter(ObjectAdapterType::getAdapterId()).begin();
 	   it1 != data1.getAdapter(ObjectAdapterType::getAdapterId()).end();
 	   ++it1) {
