@@ -1,0 +1,21 @@
+
+- This package needs the package Sockets
+
+- The following line must be copied in to CommonConf/common.libs.in  
+
+ac_gdz_package[7]="Cluster:1:Cluster@ : Sockets Action Action/DrawAction Base Field FieldContainer Loader Log MultiThreading Image State Material Nodes/Misc Nodes/Geometry Nodes/Light Experimental/ScanParseSkel Experimental/OSGLoader Experimental/VRMLLoader Experimental/VRMLWriter Window Window/@WINDOWSYSTEM@ Window/QT QT GL: Window@WINDOWSYSTEM@Lib WindowQTLib SystemLib BaseLib SocketsLib ::QT GL TIF JPG:"
+
+- Server start
+
+testClusterServer_qt [Port]
+if no port is given then 7878 is used
+
+- Client start
+
+testClusterClient -fbeetle_stripe.fhs localhost:2001 localhost:2002 -w400 -h200
+
+-f            File to load
+-w            Window width. Each server renders a window of width/servers
+-h            Window height
+hostname:port If no port is given 7878 is used
+
