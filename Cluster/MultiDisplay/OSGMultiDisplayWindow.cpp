@@ -40,10 +40,10 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#include <GL/gl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <OSGConfig.h>
+#include <GL/gl.h>
 #include <OSGViewport.h>
 #include <OSGTileCameraDecorator.h>
 #include "OSGMultiDisplayWindow.h"
