@@ -31,7 +31,7 @@
 #include <OSGAttachment.h>
 #include <OSGMFVecTypes.h>
 #include <OSGAction.h>
-#include <OSGDrawAction.h>
+#include <OSGRenderAction.h>
 #include <OSGSceneFileHandler.h>
 #include <OSGDirectionalLight.h>
 #include <OSGSimpleGeometry.h>
@@ -76,7 +76,7 @@ using namespace OSG;
 UInt32           windowsCreated=0;
 UInt32           serverNr=0;
 MyOSGQGLWidget  *glWidget=NULL;
-DrawAction	    *ract;
+RenderAction	    *ract;
 QApplication    *app;
 bool             doSync=false;
 StreamSocket     client;
@@ -108,7 +108,7 @@ void MyOSGQGLWidget::paintGL ( void )
     if(osgWin==NullFC)
         return;
 	osgWin->frameInit();	            // frame-cleanup
-	osgWin->drawAllViewports( ract );	// draw the viewports     
+	osgWin->renderAllViewports( ract );	// draw the viewports     
 
     // sunc with render client
     if(doSync)
@@ -145,7 +145,7 @@ Bool WindowCreatedFunction(FieldContainerPtr& fcp,
 {
     if(windowsCreated==serverNr)
     {
-        ract = DrawAction::create();
+        ract = RenderAction::create();
         glWidget = new MyOSGQGLWidget();
         app->setMainWidget( glWidget );
         glWidget->osgWin = QTWindowPtr::dcast( fcp );

@@ -48,7 +48,6 @@
 #include "OSGConfig.h"
 #include "OSGClusterException.h"
 #include "OSGFieldDescription.h"
-#include "OSGFieldContainerPtr.h"
 #include "OSGRemoteAspect.h"
 #include "OSGFieldContainer.h"
 #include "OSGLog.h"
@@ -83,7 +82,7 @@ OSG_USING_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char RemoteAspect::cvsid[] = "@(#)$Id: $";
+char RemoteAspect::cvsid[] = "@(#)$Id: OSGRemoteAspect.cpp,v 1.1 2001/08/12 20:34:25 dirk Exp $";
 
 /***************************************************************************\
  *                           Class methods                                 *
@@ -341,6 +340,7 @@ void RemoteAspect::sendSync(Connection &connection,
     {
         changeList=OSG::Thread::getCurrentChangeList();
     }
+
     _buffer    =connection.getBuffer();
     _bufferSize=connection.getBufferSize();
 
@@ -350,8 +350,9 @@ void RemoteAspect::sendSync(Connection &connection,
         createdI++)
     {
         fcPtr=fcFactory->getContainer(*createdI);
-        if ( fcPtr == FieldContainerPtr::NullPtr ) // already deleted, ignore
-			continue;
+
+        if(fcPtr == NullFC)
+            continue;
 
         typeId = fcPtr->getTypeId();
         // type unknown by remote context ?
@@ -393,10 +394,13 @@ void RemoteAspect::sendSync(Connection &connection,
     {
         //        FieldContainerPtr fcPtr=*((FieldContainerPtr*)(&changedI->first));
 
-        FieldContainerPtr fcPtr=fcFactory->getContainer(changedI->first);
-        if ( fcPtr == FieldContainerPtr::NullPtr ) // already deleted, ignore
-			continue;
-		mask = changedI->second;
+        FieldContainerPtr fcPtr = 
+            FieldContainerFactory::the()->getContainer(changedI->first);
+
+        if(fcPtr == NullFC)
+            continue;
+
+        mask = changedI->second;
         filterI=_fieldFilter.find(fcPtr->getType().getId());
         // apply field filter
         if(filterI != _fieldFilter.end())

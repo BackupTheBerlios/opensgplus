@@ -222,11 +222,11 @@ class OSG_CLUSTER_DLLMAPPING RemoteAspect
     //   class functions                                                     
     //-----------------------------------------------------------------------
 
-    static Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
+    static Bool _defaultCreatedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
-    static Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
+    static Bool _defaultDestroyedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
-    static Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
+    static Bool _defaultChangedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
 
     //-----------------------------------------------------------------------
