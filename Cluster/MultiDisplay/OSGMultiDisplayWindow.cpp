@@ -151,18 +151,17 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
     Int32 bottom = row    * height;
     Int32 right  = left   + width  - 1;
     Int32 top    = bottom + height - 1;
-
-    Real32 scaleCWidth  = (width  * getHServers()) / (double)getWidth();
-    Real32 scaleCHeight = (height * getVServers()) / (double)getHeight();
+    Real32 scaleCWidth  = width  * getHServers() -1;
+    Real32 scaleCHeight = height * getVServers() -1;
 
     // duplicate viewports
     for(cv=0,sv=0;cv<getPort().size();cv++)
     {
         clientPort = getPort()[cv];
-        cleft   = (Int32)(clientPort->getPixelLeft()   * scaleCWidth);
-        cbottom = (Int32)(clientPort->getPixelBottom() * scaleCHeight);
-        cright  = (Int32)(clientPort->getPixelRight()  * scaleCWidth);
-        ctop    = (Int32)(clientPort->getPixelTop()    * scaleCHeight);
+        cleft   = (Int32)(clientPort->getLeft()   * scaleCWidth);
+        cbottom = (Int32)(clientPort->getBottom() * scaleCHeight);
+        cright  = (Int32)(clientPort->getRight()  * scaleCWidth);
+        ctop    = (Int32)(clientPort->getTop()    * scaleCHeight);
         if(cright  < left   ||
            cleft   > right  ||
            ctop    < bottom ||
