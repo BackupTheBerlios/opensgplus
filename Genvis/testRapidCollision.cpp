@@ -16,7 +16,6 @@
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
 
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVRAPIDTraverser.h"
 #include "OSGGVRAPIDCollision.h"
 #include "OSGGVRAPIDHierarchy.h"

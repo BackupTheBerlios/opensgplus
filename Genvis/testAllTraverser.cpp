@@ -19,7 +19,6 @@
 #include "OSGSimpleGeometry.h"
 
 #include "OSGGVCache.h"
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVSingleBVolHierarchy.h"
 #include "OSGGVDoubleTraverserBinary.h"
 #include "OSGGVDoubleTraverserBinaryCoherent.h"

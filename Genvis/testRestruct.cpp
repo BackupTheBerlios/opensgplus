@@ -23,7 +23,6 @@
 #include "OSGSceneFileHandler.h"
 
 #include "OSGGVCache.h"
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVBVolHierarchy.h"
 #include "OSGGVSpatialize.h"
 #include "OSGGVFaceSpatialize.h"

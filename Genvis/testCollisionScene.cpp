@@ -21,7 +21,6 @@
 #include "OSGSceneFileHandler.h"
 
 #include "OSGGVCache.h"
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVSingleBVolHierarchy.h"
 #include "OSGGVDoubleTraverserBinary.h"
 #include "OSGGVPruningTraverser.h"

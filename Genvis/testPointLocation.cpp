@@ -15,7 +15,6 @@
 #include "OSGSceneFileHandler.h"
 
 #include "OSGGVCache.h"
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVBVolHierarchy.h"
 #include "OSGGVBVolPointLocation.h"
 

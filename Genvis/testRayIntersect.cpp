@@ -17,7 +17,6 @@
 #include "OSGSceneFileHandler.h"
 
 #include "OSGGVCache.h"
-#include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVBVolHierarchy.h"
 #include "OSGGVBVolRayIntersect.h"
 #include "OSGGVRegularGrid.h"

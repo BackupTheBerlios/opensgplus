@@ -136,66 +136,26 @@ int main(int argc, char **argv)
         /*
             All scene file loading is handled via the SceneFileHandler.
         */
-        scene = SceneFileHandler::the().read(argv[1]);
 	SLOG << "scene '" << argv[1] << "' loaded" << std::endl;
-	if (scene == NullFC) {
-	  SFATAL << "scene == NullFC!" << std::endl;
-	}
+	GeometryClusteredPtr geom;
+	scene = makeCoredNode<GeometryClustered>(&geom);
+        beginEditCP(geom, GeometryClustered::MaterialFieldMask
+		    | GeometryClustered::ModelFilenameFieldMask
+		    | GeometryClustered::NumCellsFieldMask
+		    | GeometryClustered::NormalScaleFieldMask);
+        geom->setMaterial(getDefaultMaterial());
+	geom->setModelFilename(argv[1]);
+	geom->setNumCells(numCells);
+	geom->setNormalScale(-1.0f);
+	endEditCP(geom, GeometryClustered::MaterialFieldMask
+		    | GeometryClustered::ModelFilenameFieldMask
+		    | GeometryClustered::NumCellsFieldMask
+		    | GeometryClustered::NormalScaleFieldMask);
     }
     addRefCP(scene);
 
     // clone original scene
-#if 1
-    sceneOrg = cloneTree(scene);
-    addRefCP(sceneOrg);
-    if (sceneOrg == NullFC) {
-      SFATAL << "sceneOrg == NullFC!" << std::endl;
-    }
-
-    Vec3f minBound, maxBound;
-    const DynamicVolume& vol = sceneOrg->getVolume(true);
-    vol.getBounds(minBound, maxBound);
-
-    NodePtr trfNode = Node::create();
-    ComponentTransformPtr trf = ComponentTransform::create();
-    beginEditCP(trf);
-    trf->setTranslation(Vec3f((maxBound[0]-minBound[0]),0,0));
-    endEditCP(trf);
-    beginEditCP(trfNode);
-    trfNode->setCore(trf);
-    trfNode->addChild(sceneOrg);
-    endEditCP(trfNode);
-    sceneOrg = trfNode;
-
-    // make group of scene and sceneOrg
-    NodePtr groupNode = Node::create();
-    beginEditCP(groupNode);
-    groupNode->setCore(Group::create());
-    groupNode->addChild(scene);
-    groupNode->addChild(sceneOrg);
-    endEditCP(groupNode);
-#else
     NodePtr groupNode = scene;
-#endif
-
-    // change to GeometryClustered
-    {
-       ChangeGeometry2GeometryClustered actor;
-       traverse(scene, 
-		osgTypedMethodFunctor1ObjPtrCPtrRef<
-		Action::ResultE,
-		ChangeGeometry2GeometryClustered,
-		NodePtr        >(&actor, &ChangeGeometry2GeometryClustered::enter));    
-    }
-    // set grid parameters
-    {
-       AssignGridParameter actor(numCells);
-       traverse(scene, 
-		osgTypedMethodFunctor1ObjPtrCPtrRef<
-		Action::ResultE,
-		AssignGridParameter,
-		NodePtr        >(&actor, &AssignGridParameter::enter));    
-    }
 
     // create the SimpleSceneManager helper
     mgr = new SimpleSceneManager;
@@ -314,8 +274,9 @@ int setupGLUT(int *argc, char *argv[])
     glutMotionFunc(motion);
     glutKeyboardFunc(keyboard);
 
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glDisable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 
     return winid;
 }
