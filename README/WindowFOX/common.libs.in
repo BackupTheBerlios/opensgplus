@@ -1,0 +1,12 @@
+ac_gdz_packages="${ac_gdz_packages} WindowFOX"
+ac_gdz_package_order="${ac_gdz_package_order} WindowFOXLib"
+ac_gdz_package_order_test="${ac_gdz_package_order_test} WindowFOXTest"
+
+ac_gdz_package_name_WindowFOX="WindowFOX" 
+ac_gdz_package_fact_init_WindowFOX="1" 
+ac_gdz_package_dirs_WindowFOX="WindowFOX@" 
+ac_gdz_package_inc_dep_WindowFOX="@Base@ @System@ Window/@WINDOWSYSTEM@ GL" 
+ac_gdz_package_link_dep_WindowFOX="Window@WINDOWSYSTEM@Lib SystemLib BaseLib GL TIF JPG PNG MNG" 
+ac_gdz_package_testinc_dep_WindowFOX="BaseLib SystemLib WindowFOX GL" 
+ac_gdz_package_testlink_dep_WindowFOX="WindowFOXLib SystemLib BaseLib GL TIF JPG PNG MNG" 
+ac_gdz_package_def_WindowFOX="OSG_COMPILEWINDOWFOXLIB" 

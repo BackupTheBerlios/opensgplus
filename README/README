@@ -1,0 +1,30 @@
+
+OpenSG PLUS CVS Repository
+==========================
+
+Thsi CVS repository contains the working code of the OpenSG PLUS project.
+
+OpenSG PLUS is based on the OpenSG Open Source scene graph library, and the
+developments from this project will eventually be folded into the official
+OpenSG source tree.
+
+For details on OpenSG and OpenSG PLUS please visit www.opensg.org.
+
+This repository contains a number of modules that can be used independently.
+
+OcclusionTest           Occlusion Culling
+WindowFOX               Bindings to use OpenSg with the FOX window library
+HowToExtend             instructions how to add a new directory to OpenSG
+
+To integrate these modules into the OpenSG source tree go into the
+Experimental directory and check them out using "cvs -z3
+-d:pserver:anonymous@cvs.OpenSGPLUS.berlios.de:/cvsroot/opensgplus co
+modulename". 
+
+After adding one of these modules to your source tree you will have to
+reconfigure and recompile. This will compile and link the new features into
+OpenSG.
+
+If you have general questions about OpenSG and OpenSG PLUS send email to
+info@opensg.org. For questions about the specific modules, check the README
+files in the module directories.
