@@ -50,6 +50,7 @@
 #include "OSGSortFirstWindow.h"
 #include "OSGViewBufferHandler.h"
 #include "OSGConnection.h"
+#include "OSGGeoLoad.h"
 
 OSG_USING_NAMESPACE
 
@@ -387,19 +388,11 @@ void SortFirstWindow::clientSwap( void )
 
 void SortFirstWindow::distributeWork()
 {
-    CameraPtr camera=getPort()[0]->getCamera();
     NodePtr   root  =getPort()[0]->getRoot();
-
-    Matrix proj,view;
-
-    camera->getProjection(proj,getWidth(),getHeight());
-    camera->getViewing(view,getWidth(),getHeight());
-    proj.mult(view);
-
-    traverseGeometry(root,proj);
+    traverseGeometry(root,getPort()[0]);
 }
 
-void SortFirstWindow::traverseGeometry(NodePtr np,Matrix &proj)
+void SortFirstWindow::traverseGeometry(NodePtr np,ViewportPtr port)
 {
     MFNodePtr::iterator nodei;
     NodeCorePtr core;
@@ -416,34 +409,16 @@ void SortFirstWindow::traverseGeometry(NodePtr np,Matrix &proj)
         geom=GeometryPtr::dcast(core);
         if(geom!=NullFC)
         {
-            Matrix m=np->getToWorld();
-            m.mult(proj);
-            const BoxVolume *vol = (OSG::BoxVolume *)&np->getVolume();
-            vol->getBounds(min, max);
-            m.multFullMatrixPnt(Pnt3f( min[0] , min[1] , min[2]) , pnt[0]);
-            m.multFullMatrixPnt(Pnt3f( min[0] , min[1] , max[2]) , pnt[1]);
-            m.multFullMatrixPnt(Pnt3f( min[0] , max[1] , min[2]) , pnt[2]);
-            m.multFullMatrixPnt(Pnt3f( min[0] , max[1] , max[2]) , pnt[3]);
-            m.multFullMatrixPnt(Pnt3f( max[0] , min[1] , min[2]) , pnt[4]);
-            m.multFullMatrixPnt(Pnt3f( max[0] , min[1] , max[2]) , pnt[5]);
-            m.multFullMatrixPnt(Pnt3f( max[0] , max[1] , min[2]) , pnt[6]);
-            m.multFullMatrixPnt(Pnt3f( max[0] , max[1] , max[2]) , pnt[7]);
-            maxx=minx=pnt[0][0];
-            maxy=miny=pnt[0][1];
-            for(i=1;i<8;i++)
-            {
-                if(minx > pnt[i][0]) minx = pnt[i][0];
-                if(miny > pnt[i][1]) miny = pnt[i][1];
-                if(maxx < pnt[i][0]) maxx = pnt[i][0];
-                if(maxy < pnt[i][1]) maxy = pnt[i][1];
-            }
+            GeoLoad load(np,geom);
+            load.update(port);
+            load.dump();
         }
     }
     for(nodei =np->getMFChildren()->begin();
         nodei!=np->getMFChildren()->end();
         nodei++)
     {
-        traverseGeometry(*nodei,proj);
+        traverseGeometry(*nodei,port);
     }
 }
 

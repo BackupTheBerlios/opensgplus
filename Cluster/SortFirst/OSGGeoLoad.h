@@ -36,116 +36,133 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _OSGSORTFIRSTWINDOW_H_
-#define _OSGSORTFIRSTWINDOW_H_
+#ifndef _GEOLOAD_H_
+#define _GEOLOAD_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <OSGConfig.h>
-#include <OSGViewBufferHandler.h>
-#include <OSGSortFirstWindowBase.h>
+#include <OSGBaseTypes.h>
+#include <OSGClusterDef.h>
+#include <OSGGeometry.h>
 #include <OSGCamera.h>
+#include <OSGViewport.h>
 
 OSG_BEGIN_NAMESPACE
 
-/*! \brief *put brief class description here* 
- */
+//! Brief
+//! \ingroup clusterlib
 
-class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
+class OSG_CLUSTERLIB_DLLMAPPING GeoLoad 
 {
-  private:
-
-    typedef SortFirstWindowBase Inherited;
-
     /*==========================  PUBLIC  =================================*/
   public:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Sync                                    */
+    /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    virtual void changed(BitVector  whichField, 
-                         ChangeMode from);
+    GeoLoad(NodePtr node,GeometryPtr geo);
+    GeoLoad(const GeoLoad &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                     Output                                   */
+    /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual void dump(      UInt32     uiIndent = 0, 
-                      const BitVector  bvFlags  = 0) const;
+    virtual ~GeoLoad(void);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                  load calculation                            */
+    /*! \{                                                                 */
+
+    void update            ( ViewportPtr prt );
+    Real32 getServerLoad   ( UInt32 min[2],
+                             UInt32 max[2],
+                             Bool clientRendering);
+    Real32 getClientLoad   ( UInt32 min[2],
+                             UInt32 max[2],
+                             Bool clientRendering);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Set                                     */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   your_operators                             */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Assignment                                */
+    /*! \{                                                                 */
+
+    GeoLoad& operator = (const GeoLoad &source);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Comparison                                */
+    /*! \{                                                                 */
+
+    Bool operator < (const GeoLoad &other) const;
+    //Bool operator == (const GeoLoad &other) const;
+    //Bool operator != (const GeoLoad &other) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                        Dump                                  */
+    /*! \{                                                                 */
+
+    void dump(void);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name      client window funcitons                                 */
+    /*! \name                     utilities                                */
     /*! \{                                                                 */
 
-    virtual void clientInit              ( void                        );
-    virtual void clientPreSync           ( void                        );
-    virtual void clientRender            ( RenderAction *action        );
-    virtual void clientSwap              ( void                        );
+    void GeoLoad::clipLine(int from,
+                           Real32 near,
+                           vector<Pnt3f> &pnt,
+                           vector<Pnt3f> &clip);
 
     /*! \}                                                                 */
+
     /*---------------------------------------------------------------------*/
-    /*! \name      server window funcitons                                 */
+    /*! \name                        Members                               */
     /*! \{                                                                 */
 
-    virtual void serverInit              ( WindowPtr window,UInt32 id  );
-    virtual void serverRender            ( WindowPtr window,UInt32 id,
-                                           RenderAction *action        );
-    virtual void serverSwap              ( WindowPtr window,UInt32 id  );
+    NodePtr               _node;
+    GeometryPtr           _geometry;
+    UInt32                _faces;
+    UInt32                _min[2];
+    UInt32                _max[2];
+    Bool                  _visible;
 
     /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                  Constructors                                */
-    /*! \{                                                                 */
 
-    SortFirstWindow(void);
-    SortFirstWindow(const SortFirstWindow &source);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Destructors                                */
-    /*! \{                                                                 */
-
-    virtual ~SortFirstWindow(void); 
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                utilities                                     */
-    /*! \{                                                                 */
-
-    void distributeWork(void);
-    void traverseGeometry(NodePtr root,ViewportPtr port);
-
-    /*! \}                                                                 */
-    
     /*==========================  PRIVATE  ================================*/
   private:
 
-    static ViewBufferHandler _bufferHandler;
+    /*---------------------------------------------------------------------*/
+    /*! \name                static configuration                          */
+    /*! \{                                                                 */
 
-    friend class FieldContainer;
-    friend class SortFirstWindowBase;
+    static Real32        _primRenderPerSec;
+    static Real32        _primTransformPerSec;
+    static Real32        _pixelReadPerSec;
+    static Real32        _pixelWritePerSec;
 
-    static void initMethod(void);
-
-    // prohibit default functions (move to 'public' if you need one)
-
-    void operator =(const SortFirstWindow &source);
+    /*! \}                                                                 */
 };
-
-typedef SortFirstWindow *SortFirstWindowP;
 
 OSG_END_NAMESPACE
 
-#include <OSGSortFirstWindow.inl>
-#include <OSGSortFirstWindowBase.inl>
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.1 2002/01/11 18:00:01 marcus Exp $"
 
-#define OSGSORTFIRSTWINDOW_HEADER_CVSID "@(#)$Id: $"
-
-#endif /* _OSGSORTFIRSTWINDOW_H_ */
+#endif /* _GEOLOAD_H_ */
