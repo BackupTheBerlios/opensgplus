@@ -523,7 +523,7 @@ OSG_END_NAMESPACE
 #if 0
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionLPBase.cpp,v 1.3 2004/05/11 09:44:07 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionLPBase.cpp,v 1.4 2004/05/11 10:37:18 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID;
 

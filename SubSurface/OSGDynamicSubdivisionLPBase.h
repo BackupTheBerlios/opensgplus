@@ -297,6 +297,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLPBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.3 2004/05/11 09:44:07 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.4 2004/05/11 10:37:18 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLPBASE_H_ */

@@ -373,5 +373,5 @@ void DynamicSubdivisionCCBase<MESH>::setTesselator(const OpenMeshTesselatorP &va
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.4 2004/05/11 09:44:07 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $"
 
