@@ -40,9 +40,6 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#define OSG_COMPILECLUTERLIB
-
-
 // do we have Myrinet configured in?
 #ifdef OSG_WITH_MYRINET
 
