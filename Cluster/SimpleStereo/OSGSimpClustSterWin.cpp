@@ -59,7 +59,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.4 2002/01/20 11:03:34 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.5 2002/01/21 16:08:48 marcus Exp $";
     static char cvsid_hpp[] = OSGSCLUSTSTERWIN_HEADER_CVSID;
     static char cvsid_inl[] = OSGSCLUSTSTERWIN_INLINE_CVSID;
 }
@@ -185,8 +185,8 @@ void SimpClustSterWin::serverRender(WindowPtr window,UInt32 id,
     beginEditCP(svp);
     svp->setBackground ( cvp->getBackground() );
     svp->getForegrounds().clear();
-    for(MFForegroundPtr::iterator fp=svp->getForegrounds().begin();
-        fp!=svp->getForegrounds().end();
+    for(MFForegroundPtr::iterator fp=cvp->getForegrounds().begin();
+        fp!=cvp->getForegrounds().end();
         fp++)
     {
         svp->getForegrounds().push_back(*fp);
