@@ -57,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.11 2002/05/05 11:19:27 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.12 2002/06/08 20:33:34 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -77,9 +77,10 @@ namespace
 /*! Constructor
  */
 
-GeoLoad::GeoLoad(NodePtr node):
+GeoLoad::GeoLoad(NodePtr node,bool useFaceDistribution=true):
     _node(node),
-    _faces(0)
+    _faces(0),
+    _useFaceDistribution(useFaceDistribution)
 {
     _faceDistribution.resize(FACE_DISTRIBUTION_SAMPLING_COUNT);
     updateGeometry();
@@ -89,7 +90,8 @@ GeoLoad::GeoLoad(NodePtr node):
  */
 
 GeoLoad::GeoLoad(const GeoLoad &source):
-    _node(source._node)
+    _node(source._node),
+    _useFaceDistribution(source._useFaceDistribution)
 {
     _min[0]           = source._min[0];
     _min[1]           = source._min[1];
@@ -98,6 +100,7 @@ GeoLoad::GeoLoad(const GeoLoad &source):
     _faces            = source._faces;
     _visible          = source._visible;
     _faceDistribution = source._faceDistribution;
+    _areaSize         = source._areaSize;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -191,10 +194,15 @@ void GeoLoad::updateView(Matrix &viewing,
         _max[0]=(Int32)(width * ( maxx + 1.0 ) / 2.0);
         _min[1]=(Int32)(height * ( miny + 1.0 ) / 2.0);
         _max[1]=(Int32)(height * ( maxy + 1.0 ) / 2.0);
+        _areaSize = 
+            ( _max[0] - _min[0] + 1 ) *
+            ( _max[1] - _min[1] + 1 );
+        /* Don't clip!
         if(_min[0]<0) _min[0]=0;
         if(_min[1]<0) _min[1]=0;
         if(_max[0]>=width ) _max[0]=width-1;
         if(_max[1]>=height) _max[1]=height-1;
+        */
         _visible = true;
     }
 }
@@ -236,62 +244,65 @@ void GeoLoad::updateGeometry()
         ++_faces;
     }
 
-    // get face distribution
-    Plane plane[6]={
-        Plane(Vec3f( 1, 0, 0)            ,Pnt3f(0,0,0)),
-        Plane(Vec3f( 0, 1, 0)            ,Pnt3f(0,0,0)),
-        Plane(Vec3f( 0, 0, 1)            ,Pnt3f(0,0,0)),
-        Plane(Vec3f( 1, 1, 1)*(1/sqrt(3.0)),Pnt3f(0,0,0)),
-        Plane(Vec3f(-1, 1, 1)*(1/sqrt(3.0)),Pnt3f(1,0,0)),
-        Plane(Vec3f( 1,-1, 1)*(1/sqrt(3.0)),Pnt3f(0,1,0))
-    };
-    // clear tab
-    for(i=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
-        faceStart[i]=0;
-    // get volume min,max
-    volume->getBounds(vmin,vmax);
-    // get distribution for x,y,z axis and the three main diagonals
-    for(f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
+    if(_useFaceDistribution)
     {
-        for(i=0;i<6;i++)
+        // get face distribution
+        Plane plane[6]={
+            Plane(Vec3f( 1, 0, 0)            ,Pnt3f(0,0,0)),
+            Plane(Vec3f( 0, 1, 0)            ,Pnt3f(0,0,0)),
+            Plane(Vec3f( 0, 0, 1)            ,Pnt3f(0,0,0)),
+            Plane(Vec3f( 1, 1, 1)*(1/sqrt(3.0)),Pnt3f(0,0,0)),
+            Plane(Vec3f(-1, 1, 1)*(1/sqrt(3.0)),Pnt3f(1,0,0)),
+            Plane(Vec3f( 1,-1, 1)*(1/sqrt(3.0)),Pnt3f(0,1,0))
+        };
+        // clear tab
+        for(i=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
+            faceStart[i]=0;
+        // get volume min,max
+        volume->getBounds(vmin,vmax);
+        // get distribution for x,y,z axis and the three main diagonals
+        for(f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
         {
-            for(p=0;p<f.getLength();p++)
+            for(i=0;i<6;i++)
             {
-                pos=f.getPosition(p) - vmin;
-                pos[0]/=vmax[0]-vmin[0];
-                pos[1]/=vmax[1]-vmin[1];
-                pos[2]/=vmax[2]-vmin[2];
-                if(p==0)
+                for(p=0;p<f.getLength();p++)
                 {
-                    max=min=plane[i].distance(pos);
+                    pos=f.getPosition(p) - vmin;
+                    pos[0]/=vmax[0]-vmin[0];
+                    pos[1]/=vmax[1]-vmin[1];
+                    pos[2]/=vmax[2]-vmin[2];
+                    if(p==0)
+                    {
+                        max=min=plane[i].distance(pos);
+                    }
+                    else
+                    {
+                        max=osgMax(max,plane[i].distance(pos));
+                        min=osgMin(min,plane[i].distance(pos));
+                    }
+                    //
                 }
-                else
+                if(i>=3)
                 {
-                    max=osgMax(max,plane[i].distance(pos));
-                    min=osgMin(min,plane[i].distance(pos));
+                    min/=sqrt(3.0);
+                    max/=sqrt(3.0);
                 }
-                //
+                faceStart[ (int)(ceil(min*
+                                      (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
+                faceStart[ (int)(ceil((1-max)*
+                                      (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
+                faceCount+=2;
             }
-            if(i>=3)
-            {
-                min/=sqrt(3.0);
-                max/=sqrt(3.0);
-            }
-            faceStart[ (int)(ceil(min*
-                                  (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
-            faceStart[ (int)(ceil((1-max)*
-                                  (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
-            faceCount+=2;
+        }
+        // cummulate distribution
+        for(i=0,sum=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
+        {
+            sum+=(faceStart[i]/(float)faceCount);
+            _faceDistribution[i]=sum;
         }
     }
-    // cummulate distribution
-    for(i=0,sum=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
-    {
-        sum+=(faceStart[i]/(float)faceCount);
-        _faceDistribution[i]=sum;
-    }
 }
-    
+
 /*-------------------------------------------------------------------------*/
 /*                             Assignment                                  */
 
@@ -301,14 +312,17 @@ GeoLoad& GeoLoad::operator = (const GeoLoad &source)
 {
     if(this == &source)
         return *this;
-    _min[0]           = source._min[0];
-    _min[1]           = source._min[1];
-    _max[0]           = source._max[0];
-    _max[1]           = source._max[1];
-    _faces            = source._faces;
-    _visible          = source._visible;
-    _faceDistribution = source._faceDistribution;
-    _node = source._node;
+    _min[0]              = source._min[0];
+    _min[1]              = source._min[1];
+    _max[0]              = source._max[0];
+    _max[1]              = source._max[1];
+    _faces               = source._faces;
+    _visible             = source._visible;
+    _faceDistribution    = source._faceDistribution;
+    _node                = source._node;
+    _useFaceDistribution = source._useFaceDistribution;
+    _areaSize            = source._areaSize;
+
     return *this;
 }
 
@@ -375,7 +389,7 @@ Real32 GeoLoad::getVisibleFraction( const Int32 wmin[2],
                                           Int32 viswmin[2],
                                           Int32 viswmax[2] )
 {
-    Real32 faceFraction,x,y;
+    Real32 x,y;
 
     if(_visible==false)
         return 0;
@@ -392,20 +406,25 @@ Real32 GeoLoad::getVisibleFraction( const Int32 wmin[2],
        viswmax[0] == _min[0] &&
        viswmax[1] == _min[1])
     {
-        faceFraction=1;
+        return 1;
     }
-    else
+
+    if(_useFaceDistribution)
     {
         x=1.0/(_max[0]-_min[0]+1);
         y=1.0/(_max[1]-_min[1]+1);
-        faceFraction =
+        return
             (getFaceDistribution(1.0 - (viswmin[0] - _min[0]    ) * x) +
              getFaceDistribution(      (viswmax[0] - _min[0] + 1) * x) - 1) *
             (getFaceDistribution(1.0 - (viswmin[1] - _min[1]    ) * y) +
              getFaceDistribution(      (viswmax[1] - _min[1] + 1) * y) - 1);
     }
-
-    return faceFraction;
+    else
+    {
+        return 
+            ((viswmax[0] - viswmin[0] + 1) *
+             (viswmax[1] - viswmin[1] + 1)) / _areaSize;
+    }
 }
 
 /** Which area overlaps the given region

@@ -47,8 +47,7 @@ inline GeoLoadManager::RegionLoad::RegionLoad(GeoLoad *load):
 
 /** Update region dependent values
  **/
-inline void GeoLoadManager::RegionLoad::updateCost(bool useFaceDistribution,
-                                                   const Int32 wmin[2],
+inline void GeoLoadManager::RegionLoad::updateCost(const Int32 wmin[2],
                                                    const Int32 wmax[2])
 {
     Real32 faces  =_load->getFaces();
@@ -56,17 +55,7 @@ inline void GeoLoadManager::RegionLoad::updateCost(bool useFaceDistribution,
     Int32 vismin[2];
     Int32 vismax[2];
 
-    if(useFaceDistribution)
-    {
-        visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
-    }
-    else
-    {
-        if(_load->getVisibleArea(wmin,wmax,vismin,vismax))
-            visible=1;
-        else
-            visible=0;
-    }
+    visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
     if(visible)
     {
         _visibleFaces=faces*visible;
@@ -101,7 +90,6 @@ inline Real32 GeoLoadManager::RegionLoad::getCost(const RenderNode &renderNode)
  * \param wmax        top, right corner of the area
  **/
 inline Real32 GeoLoadManager::RegionLoad::getCost(const RenderNode &renderNode,
-                                                  bool useFaceDistribution,
                                                   const Int32 wmin[2],
                                                   const Int32 wmax[2]) const
 {
@@ -109,23 +97,14 @@ inline Real32 GeoLoadManager::RegionLoad::getCost(const RenderNode &renderNode,
     Int32 vismax[2];
     Real32 visibleFaces;
     Real32 invisibleFaces;
+    Real32 visible;
 
     Real32 faces  =_load->getFaces();
-    if(useFaceDistribution)
-    {
-        Real32 visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
-        if(visible==0.0)
-            return 0.0;
-        visibleFaces=faces*visible;
-        invisibleFaces=faces-visibleFaces;
-    }
-    else
-    {
-        if(!_load->getVisibleArea(wmin,wmax,vismin,vismax))
-            return 0.0;
-        visibleFaces=faces;
-        invisibleFaces=0;
-    }
+    visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
+    if(visible==0.0)
+        return 0.0;
+    visibleFaces=faces*visible;
+    invisibleFaces=faces-visibleFaces;
     Real32 pixel=
         (vismax[0] - vismin[0] + 1)*
         (vismax[1] - vismin[1] + 1);

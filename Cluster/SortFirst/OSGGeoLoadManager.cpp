@@ -70,7 +70,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.13 2002/05/07 07:27:28 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.14 2002/06/08 20:33:34 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -235,7 +235,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     // calculate region cost
     for(vi=visible.begin();vi!=visible.end();vi++)
     {
-        vi->updateCost(_useFaceDistribution,wmin,wmax);
+        vi->updateCost(wmin,wmax);
     }
     if(_renderNode.size()>1)
     {
@@ -317,7 +317,7 @@ void GeoLoadManager::updateSubtree(NodePtr &node,GeoLoadMapT &loadMap)
         GeoLoadMapT::iterator mI=loadMap.find(node.getFieldContainerId());
         if(mI==loadMap.end())
         {
-            _geoLoad.push_back(GeoLoad(node));
+            _geoLoad.push_back(GeoLoad(node,_useFaceDistribution));
         }
         else
         {
@@ -401,10 +401,8 @@ void GeoLoadManager::splitRegion(UInt32          rnFrom,
                 {
                     visibleA.push_back(*vi);
                     visibleB.push_back(*vi);
-                    visibleA.rbegin()->updateCost(_useFaceDistribution,
-                                                  wmin,maxA);
-                    visibleB.rbegin()->updateCost(_useFaceDistribution,
-                                                  minB,wmax);
+                    visibleA.rbegin()->updateCost(wmin,maxA);
+                    visibleB.rbegin()->updateCost(minB,wmax);
                 }
         }
     }
@@ -467,10 +465,8 @@ Real32 GeoLoadManager::findBestCut (const RenderNode &renderNodeA,
                         costB+=vi->getCost(renderNodeB);
                     else
                     {
-                        costA+=vi->getCost(renderNodeA,_useFaceDistribution,
-                                           wmin,maxA);
-                        costB+=vi->getCost(renderNodeB,_useFaceDistribution,
-                                           minB,wmax);
+                        costA+=vi->getCost(renderNodeA,wmin,maxA);
+                        costB+=vi->getCost(renderNodeB,minB,wmax);
                     }
                 
             }

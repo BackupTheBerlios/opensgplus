@@ -61,7 +61,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    GeoLoad(NodePtr node);
+    GeoLoad(NodePtr node,bool useFaceDistribution=true);
     GeoLoad(const GeoLoad &source);
 
     /*! \}                                                                 */
@@ -160,6 +160,8 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     Int32                 _max[2];
     vector<Real32>        _faceDistribution;
     bool                  _visible;
+    bool                  _useFaceDistribution;
+    Real32                _areaSize;
 
     /*! \}                                                                 */
 
@@ -170,6 +172,6 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.7 2002/04/30 16:37:12 marcus Exp $"
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.8 2002/06/08 20:33:34 marcus Exp $"
 
 #endif /* _GEOLOAD_H_ */
