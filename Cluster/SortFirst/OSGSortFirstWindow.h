@@ -67,8 +67,8 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    virtual void changed(BitVector  whichField, 
-                         ChangeMode from);
+    virtual void changed(BitVector whichField, 
+                         UInt32    origin    );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

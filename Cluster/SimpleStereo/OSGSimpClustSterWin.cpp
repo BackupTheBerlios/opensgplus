@@ -59,7 +59,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.5 2002/01/21 16:08:48 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.6 2002/06/01 11:19:59 vossg Exp $";
     static char cvsid_hpp[] = OSGSCLUSTSTERWIN_HEADER_CVSID;
     static char cvsid_inl[] = OSGSCLUSTSTERWIN_INLINE_CVSID;
 }
@@ -112,7 +112,7 @@ void SimpClustSterWin::initMethod (void)
 
 //! react to field changes
 
-void SimpClustSterWin::changed(BitVector, ChangeMode)
+void SimpClustSterWin::changed(BitVector, UInt32)
 {
 }
 

@@ -58,7 +58,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.4 2002/01/10 08:23:05 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.5 2002/06/01 11:19:59 vossg Exp $";
     static char cvsid_hpp[] = OSGSTEREOCAMERA_HEADER_CVSID;
     static char cvsid_inl[] = OSGSTEREOCAMERA_INLINE_CVSID;
 }
@@ -103,7 +103,7 @@ void StereoCamera::initMethod (void)
 
 //! react to field changes
 
-void StereoCamera::changed(BitVector, ChangeMode)
+void StereoCamera::changed(BitVector, UInt32)
 {
 }
 

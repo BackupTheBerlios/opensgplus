@@ -118,7 +118,7 @@ void SortFirstWindow::initMethod (void)
 
 //! react to field changes
 
-void SortFirstWindow::changed(BitVector, ChangeMode)
+void SortFirstWindow::changed(BitVector, UInt32)
 {
 }
 

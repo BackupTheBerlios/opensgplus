@@ -138,7 +138,7 @@ void ClusterWindow::initMethod (void)
 
 //! react to field changes
 
-void ClusterWindow::changed(BitVector, ChangeMode)
+void ClusterWindow::changed(BitVector, UInt32)
 {
 }
 

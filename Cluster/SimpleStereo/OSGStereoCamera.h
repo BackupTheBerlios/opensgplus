@@ -64,8 +64,8 @@ class OSG_CLUSTERLIB_DLLMAPPING StereoCamera : public StereoCameraBase
     /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    virtual void changed(BitVector  whichField, 
-                         ChangeMode from);
+    virtual void changed(BitVector whichField, 
+                         UInt32    origin    );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -121,6 +121,6 @@ OSG_END_NAMESPACE
 #include <OSGStereoCamera.inl>
 #include <OSGStereoCameraBase.inl>
 
-#define OSGSTEREOCAMERA_HEADER_CVSID "@(#)$Id: OSGStereoCamera.h,v 1.1 2001/12/21 15:10:29 marcus Exp $"
+#define OSGSTEREOCAMERA_HEADER_CVSID "@(#)$Id: OSGStereoCamera.h,v 1.2 2002/06/01 11:19:59 vossg Exp $"
 
 #endif /* _OSGSTEREOCAMERA_H_ */

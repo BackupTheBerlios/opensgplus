@@ -65,8 +65,8 @@ class OSG_CLUSTERLIB_DLLMAPPING SimpClustSterWin :
     /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    virtual void changed(BitVector  whichField, 
-                         ChangeMode from);
+    virtual void changed(BitVector whichField, 
+                         UInt32    origin    );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -134,7 +134,7 @@ OSG_END_NAMESPACE
 #include <OSGSimpClustSterWin.inl>
 #include <OSGSimpClustSterWinBase.inl>
 
-#define OSGSCLUSTSTERWIN_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWin.h,v 1.2 2002/01/02 16:41:27 marcus Exp $"
+#define OSGSCLUSTSTERWIN_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWin.h,v 1.3 2002/06/01 11:19:59 vossg Exp $"
 
 #endif /* _OSGMULTIDISPLAYCONFIG_H_ */
 

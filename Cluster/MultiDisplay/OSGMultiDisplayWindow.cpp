@@ -106,7 +106,7 @@ void MultiDisplayWindow::initMethod (void)
 
 //! react to field changes
 
-void MultiDisplayWindow::changed(BitVector, ChangeMode)
+void MultiDisplayWindow::changed(BitVector, UInt32)
 {
 }
 
