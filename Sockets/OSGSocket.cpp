@@ -116,49 +116,49 @@ string Socket::getErrorStr()
 #ifdef WIN32
     switch(getError())
     {
-        case WSAEINTR: err= "WSAEINTR"; 
-        case WSAEBADF: err= "WSAEBADF"; 
-        case WSAEFAULT: err= "WSAEFAULT"; 
-        case WSAEINVAL: err= "WSAEINVAL"; 
-        case WSAEMFILE: err= "WSAEMFILE"; 
-        case WSAEWOULDBLOCK: err= "WSAEWOULDBLOCK"; 
-        case WSAEINPROGRESS: err= "WSAEINPROGRESS"; 
-        case WSAEALREADY: err= "WSAEALREADY"; 
-        case WSAENOTSOCK: err= "WSAENOTSOCK"; 
-        case WSAEDESTADDRREQ: err= "WSAEDESTADDRREQ"; 
-        case WSAEMSGSIZE: err= "WSAEMSGSIZE"; 
-        case WSAEPROTOTYPE: err= "WSAEPROTOTYPE"; 
-        case WSAENOPROTOOPT: err= "WSAENOPROTOOPT"; 
-        case WSAEPROTONOSUPPORT: err= "WSAEPROTONOSUPPORT"; 
-        case WSAESOCKTNOSUPPORT: err= "WSAESOCKTNOSUPPORT"; 
-        case WSAEOPNOTSUPP: err= "WSAEOPNOTSUPP"; 
-        case WSAEPFNOSUPPORT: err= "WSAEPFNOSUPPORT"; 
-        case WSAEAFNOSUPPORT: err= "WSAEAFNOSUPPORT"; 
-        case WSAEADDRINUSE: err= "WSAEADDRINUSE"; 
-        case WSAEADDRNOTAVAIL: err= "WSAEADDRNOTAVAIL"; 
-        case WSAENETDOWN: err= "WSAENETDOWN"; 
-        case WSAENETUNREACH: err= "WSAENETUNREACH"; 
-        case WSAENETRESET: err= "WSAENETRESET"; 
-        case WSAECONNABORTED: err= "WSAECONNABORTED"; 
-        case WSAECONNRESET: err= "WSAECONNRESET"; 
-        case WSAENOBUFS: err= "WSAENOBUFS"; 
-        case WSAEISCONN: err= "WSAEISCONN"; 
-        case WSAENOTCONN: err= "WSAENOTCONN"; 
-        case WSAESHUTDOWN: err= "WSAESHUTDOWN"; 
-        case WSAETOOMANYREFS: err= "WSAETOOMANYREFS"; 
-        case WSAETIMEDOUT: err= "WSAETIMEDOUT"; 
-        case WSAECONNREFUSED: err= "WSAECONNREFUSED"; 
-        case WSAELOOP: err= "WSAELOOP"; 
-        case WSAENAMETOOLONG: err= "WSAENAMETOOLONG"; 
-        case WSAEHOSTDOWN: err= "WSAEHOSTDOWN"; 
-        case WSAEHOSTUNREACH: err= "WSAEHOSTUNREACH"; 
-        case WSASYSNOTREADY: err= "WSASYSNOTREADY"; 
-        case WSAVERNOTSUPPORTED: err= "WSAVERNOTSUPPORTED"; 
-        case WSANOTINITIALISED: err= "WSANOTINITIALISED"; 
-        case WSAHOST_NOT_FOUND: err= "WSAHOST_NOT_FOUND"; 
-        case WSATRY_AGAIN: err= "WSATRY_AGAIN"; 
-        case WSANO_RECOVERY: err= "WSANO_RECOVERY"; 
-        case WSANO_DATA: err= "WSANO_DATA"; 
+        case WSAEINTR: err= "WSAEINTR"; break;
+        case WSAEBADF: err= "WSAEBADF"; break;
+        case WSAEFAULT: err= "WSAEFAULT"; break; 
+        case WSAEINVAL: err= "WSAEINVAL"; break; 
+        case WSAEMFILE: err= "WSAEMFILE"; break; 
+        case WSAEWOULDBLOCK: err= "WSAEWOULDBLOCK"; break; 
+        case WSAEINPROGRESS: err= "WSAEINPROGRESS"; break; 
+        case WSAEALREADY: err= "WSAEALREADY"; break; 
+        case WSAENOTSOCK: err= "WSAENOTSOCK"; break; 
+        case WSAEDESTADDRREQ: err= "WSAEDESTADDRREQ"; break; 
+        case WSAEMSGSIZE: err= "WSAEMSGSIZE"; break; 
+        case WSAEPROTOTYPE: err= "WSAEPROTOTYPE"; break; 
+        case WSAENOPROTOOPT: err= "WSAENOPROTOOPT"; break; 
+        case WSAEPROTONOSUPPORT: err= "WSAEPROTONOSUPPORT"; break; 
+        case WSAESOCKTNOSUPPORT: err= "WSAESOCKTNOSUPPORT"; break; 
+        case WSAEOPNOTSUPP: err= "WSAEOPNOTSUPP"; break; 
+        case WSAEPFNOSUPPORT: err= "WSAEPFNOSUPPORT"; break; 
+        case WSAEAFNOSUPPORT: err= "WSAEAFNOSUPPORT"; break; 
+        case WSAEADDRINUSE: err= "WSAEADDRINUSE"; break; 
+        case WSAEADDRNOTAVAIL: err= "WSAEADDRNOTAVAIL"; break; 
+        case WSAENETDOWN: err= "WSAENETDOWN"; break; 
+        case WSAENETUNREACH: err= "WSAENETUNREACH"; break; 
+        case WSAENETRESET: err= "WSAENETRESET"; break; 
+        case WSAECONNABORTED: err= "WSAECONNABORTED"; break; 
+        case WSAECONNRESET: err= "WSAECONNRESET"; break; 
+        case WSAENOBUFS: err= "WSAENOBUFS"; break; 
+        case WSAEISCONN: err= "WSAEISCONN"; break; 
+        case WSAENOTCONN: err= "WSAENOTCONN"; break; 
+        case WSAESHUTDOWN: err= "WSAESHUTDOWN"; break; 
+        case WSAETOOMANYREFS: err= "WSAETOOMANYREFS"; break; 
+        case WSAETIMEDOUT: err= "WSAETIMEDOUT"; break; 
+        case WSAECONNREFUSED: err= "WSAECONNREFUSED"; break; 
+        case WSAELOOP: err= "WSAELOOP"; break; 
+        case WSAENAMETOOLONG: err= "WSAENAMETOOLONG"; break; 
+        case WSAEHOSTDOWN: err= "WSAEHOSTDOWN"; break; 
+        case WSAEHOSTUNREACH: err= "WSAEHOSTUNREACH"; break; 
+        case WSASYSNOTREADY: err= "WSASYSNOTREADY"; break; 
+        case WSAVERNOTSUPPORTED: err= "WSAVERNOTSUPPORTED"; break; 
+        case WSANOTINITIALISED: err= "WSANOTINITIALISED"; break; 
+        case WSAHOST_NOT_FOUND: err= "WSAHOST_NOT_FOUND"; break; 
+        case WSATRY_AGAIN: err= "WSATRY_AGAIN"; break; 
+        case WSANO_RECOVERY: err= "WSANO_RECOVERY"; break; 
+        case WSANO_DATA: err= "WSANO_DATA"; break; 
     }
 #else
     err=strerror(getError());
@@ -303,6 +303,13 @@ int Socket::peek(void *buf,int size)
             if(getError()==WSAECONNRESET)
             {
                 throw SocketConnReset("peek");
+            }
+            if(getError()==WSAEMSGSIZE)
+            {
+                // there is more data than we whanted to peek
+                // I think this is not an error.
+                readSize=size;
+                break;
             }
 #endif
             throw SocketError("peek");
