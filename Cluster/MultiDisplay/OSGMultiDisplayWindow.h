@@ -80,23 +80,21 @@ class OSG_CLUSTERLIB_DLLMAPPING MultiDisplayWindow : public MultiDisplayWindowBa
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name      client window funcitons                                 */
-    /*! \{                                                                 */
-
-    virtual void serverInit              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-    virtual void serverSwap              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void clientInit              ( WindowPtr window,
-                                           Connection *connection          );
-    virtual void clientSwap              ( WindowPtr window,
-                                           Connection *connection          );
+    virtual void serverInit              ( WindowPtr window,UInt32 id  );
+    virtual void serverRender            ( WindowPtr window,UInt32 id,
+                                           RenderAction *action        );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id  );
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name      client window funcitons                                 */
+    /*! \{                                                                 */
+
+    virtual void clientInit              ( void                        );
+    virtual void clientSwap              ( void                        );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

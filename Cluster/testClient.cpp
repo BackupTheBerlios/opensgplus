@@ -4,11 +4,9 @@
 #include <iostream>
 #include <OSGLog.h>
 #include <OSGStreamSockConnection.h>
-#include <OSGClusterClient.h>
 #include <OSGTransform.h>
 #include <OSGGroup.h>
 #include <OSGNode.h>
-#include <OSGClusterClient.h>
 #include <OSGClusterWindow.h>
 #include <OSGSceneFileHandler.h>
 #include <OSGDirectionalLight.h>
@@ -36,7 +34,6 @@ int                   winwidth=0, winheight=0;
 NodePtr		          root;
 TransformPtr          cam_trans;
 PerspectiveCameraPtr  cam;
-ClusterClient        *client;
 ClusterWindowPtr      clusterWindow;
 RenderAction         *ract,*ract1,*ract2;
 GLUTWindowPtr         clientWindow;
@@ -88,6 +85,8 @@ void display(void)
     try
     {
         clusterWindow->render( ract );	
+        // clear changelist from prototypes
+        OSG::Thread::getCurrentChangeList()->clearAll();
 	}
     catch(exception &e)
     {
@@ -218,7 +217,6 @@ void key(unsigned char key, int /*x*/, int /*y*/)
             }
             break;
         case 27:	// should kill the clients here
-            delete client;
             osgExit(); 
             exit(0);
 	}
@@ -370,7 +368,6 @@ void init(vector<char *> &filenames)
 	beginEditCP(clusterWindow);
     clusterWindow->setSize( glvp[2], glvp[3] );
     clusterWindow->addPort( vp );
-    clusterWindow->init();
 	endEditCP(clusterWindow);
 
     // tball
@@ -522,25 +519,17 @@ int main(int argc,char **argv)
         // create client window
         clientWindow=GLUTWindow::create();
         clientWindow->setWinID(winid);
-        clientWindow->init();
 
         // init scene graph
         init(filenames);
 
         // init client
+        clusterWindow->setConnectionType(connectionType);
         if(clientRendering)
         {
-            client = new ClusterClient(clusterWindow,
-                                       clientWindow,
-                                       connectionType);
+            clusterWindow->setClientWindow(clientWindow);
         }
-        else
-        {
-            client = new ClusterClient(clusterWindow,
-                                       NullFC,
-                                       connectionType);
-        }
-        client->start();
+        clusterWindow->init();
 
         glutMainLoop();
     } 

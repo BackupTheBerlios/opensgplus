@@ -60,6 +60,8 @@
 #include <OSGNodeCoreFieldDataType.h>
 #include <OSGClusterDef.h>
 
+#include <OSGClusterWindowFields.h>
+
 OSG_BEGIN_NAMESPACE
 
 class SimpClustSterWin;
@@ -71,6 +73,6 @@ typedef FCPtr<ClusterWindowPtr, SimpClustSterWin> SimpClustSterWinPtr;
 
 OSG_END_NAMESPACE
 
-#define OSGSIMPCLUSTSTERWINFIELDS_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWinFields.h,v 1.1 2001/12/21 15:10:29 marcus Exp $"
+#define OSGSIMPCLUSTSTERWINFIELDS_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWinFields.h,v 1.2 2002/01/02 16:41:27 marcus Exp $"
 
 #endif /* _OSGSIMPCLUSTSTERWINFIELDS_H_ */

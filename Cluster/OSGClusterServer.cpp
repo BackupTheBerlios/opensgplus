@@ -86,9 +86,9 @@ ClusterServer::ClusterServer(WindowPtr window,
     _clusterWindow(),
     _serviceName(serviceName),
     _servicePort(servicePort),
-    _needUpdate(false),
     _serverId(0),
-    _address(address)
+    _address(address),
+    _needUpdate(false)
 {
     _connection = ConnectionFactory::the().create(connectionType);
     if(_connection == NULL)
@@ -115,8 +115,10 @@ ClusterServer::~ClusterServer(void)
 /*! start server
  */
 
-void ClusterServer::start()
+void ClusterServer::init()
 {
+    OSG::FieldContainerType *fct;
+
     // bind connection
     _address = _connection->bind(_address);
 
@@ -124,20 +126,20 @@ void ClusterServer::start()
     _serviceThread=dynamic_cast<Thread*>(ThreadManager::the()->getThread(NULL));
     _serviceThread->run( serviceProc, 0, (void *) (this) );
 
-    // accept incomming client and wait for cluster configuration
-    accept();
-
-    // get server id
-    for(_serverId=0;
-        _clusterWindow->getServers()[_serverId] != _serviceName &&
-        _serverId<_clusterWindow->getServers().size();
-        _serverId++);
-
-    SINFO << "Start server " << _serviceName 
-          << " with id " << _serverId << endl;
-    
-    // initialize server window 
-    _clusterWindow->serverInit(_window,_serverId,_connection);
+    // register interrest for all changed cluster windows
+    for(UInt32 i=0;i<OSG::TypeFactory::the()->getNumTypes();++i)
+    {
+        fct=OSG::FieldContainerFactory::the()->findType(i);
+        if(fct && fct->isDerivedFrom(ClusterWindow::getClassType()))
+        {
+            _aspect.registerChanged(
+                *fct,
+                osgMethodFunctor2Ptr(this,
+                                     &ClusterServer::configChanged));
+        }
+    }
+    // accept incomming connections
+    _connection->accept();
 }
 
 /*! render server window
@@ -145,42 +147,34 @@ void ClusterServer::start()
 
 void ClusterServer::render(RenderAction *action)
 {
-    frameInit();
-    renderAllViewports(action);
-    swap();
-    frameExit();
-}
-
-/*! frame init server window
- */
-
-void ClusterServer::frameInit(void)
-{
-    _clusterWindow->serverFrameInit( _window,_serverId,_connection,&_aspect );
-}
-
-/*! render all viewports
- */
-
-void ClusterServer::renderAllViewports(RenderAction *action)
-{
-    _clusterWindow->serverRenderAllViewports( _window,_serverId,_connection,action );
-}
-
-/*! frame exit server window
- */
-
-void ClusterServer::frameExit(void)
-{
-    _clusterWindow->serverFrameExit( _window,_serverId,_connection );
-}
-
-/*! swap server window
- */
-
-void ClusterServer::swap(void)
-{
-    _clusterWindow->serverSwap( _window,_serverId,_connection );
+    // do we have a cluster window?
+    if(_clusterWindow==NullFC)
+    {
+        do
+        {
+            // recive 
+            _aspect.receiveSync(*_connection);
+        }
+        while(_clusterWindow==NullFC);
+        // get server id
+        for(_serverId=0;
+            _clusterWindow->getServers()[_serverId] != _serviceName &&
+                _serverId<_clusterWindow->getServers().size();
+            _serverId++);
+        // server connected and cluster window found
+        SINFO << "Start server " << _serviceName 
+              << " with id " << _serverId << endl;
+        // initialize server window 
+        _clusterWindow->_connection = _connection;
+        _clusterWindow->serverInit(_window,_serverId);
+    }
+    else
+    {
+        // sync with render clinet
+        _aspect.receiveSync(*_connection);
+    }
+    _clusterWindow->serverRender( _window,_serverId,action );
+    _clusterWindow->serverSwap  ( _window,_serverId );
 }
 
 /*! configuration chagne callback
@@ -201,34 +195,6 @@ Bool ClusterServer::configChanged(FieldContainerPtr& fcp,
     _needUpdate=true;
     _clusterWindow=config;
     return true;
-}
-
-/*! wait for clients
- */
-
-void ClusterServer::accept(void)
-{
-    OSG::FieldContainerType *fct;
-    UInt32 i;
-
-    for(i=0;i<OSG::TypeFactory::the()->getNumTypes();i++)
-    {
-        fct=OSG::FieldContainerFactory::the()->findType(i);
-        if(fct && fct->isDerivedFrom(ClusterWindow::getClassType()))
-        {
-            _aspect.registerChanged(
-                *fct,
-                osgMethodFunctor2Ptr(this,
-                                     &ClusterServer::configChanged));
-        }
-    }
-    _connection->accept();
-    do
-    {
-        // recive first 
-        _aspect.receiveSync(*_connection);
-    }
-    while(_clusterWindow==NullFC);
 }
 
 /*! tell address of server requested over multicast
@@ -268,6 +234,11 @@ void *ClusterServer::serviceProc(void *arg)
         }
     }
 }
+
+
+
+
+
 
 
 

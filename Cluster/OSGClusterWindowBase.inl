@@ -98,6 +98,78 @@ MFString *ClusterWindowBase::getMFServers(void)
     return &_mfServers;
 }
 
+OSG_CLUSTERLIB_DLLMAPPING
+SFString *ClusterWindowBase::getSFConnectionType(void)
+{
+    return &_sfConnectionType;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFWindowPtr *ClusterWindowBase::getSFClientWindow(void)
+{
+    return &_sfClientWindow;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFUInt32 *ClusterWindowBase::getSFServicePort(void)
+{
+    return &_sfServicePort;
+}
+
+
+OSG_CLUSTERLIB_DLLMAPPING
+string &ClusterWindowBase::getConnectionType(void)
+{
+    return _sfConnectionType.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const string &ClusterWindowBase::getConnectionType(void) const
+{
+    return _sfConnectionType.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowBase::setConnectionType(const string &value)
+{
+    _sfConnectionType.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+WindowPtr &ClusterWindowBase::getClientWindow(void)
+{
+    return _sfClientWindow.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const WindowPtr &ClusterWindowBase::getClientWindow(void) const
+{
+    return _sfClientWindow.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowBase::setClientWindow(const WindowPtr &value)
+{
+    _sfClientWindow.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+UInt32 &ClusterWindowBase::getServicePort(void)
+{
+    return _sfServicePort.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const UInt32 &ClusterWindowBase::getServicePort(void) const
+{
+    return _sfServicePort.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowBase::setServicePort(const UInt32 &value)
+{
+    _sfServicePort.setValue(value);
+}
 
 
 OSG_CLUSTERLIB_DLLMAPPING

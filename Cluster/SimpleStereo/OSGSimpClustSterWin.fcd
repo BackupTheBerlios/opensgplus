@@ -15,6 +15,7 @@ Cluster rendering configuration for a two server stereo display
 		type="Real32"
 		cardinality="single"
 		visibility="external"
+		access="public"
 	>
 	The vertical field of view, in radians.
 	</Field>
@@ -23,17 +24,27 @@ Cluster rendering configuration for a two server stereo display
 		type="Real32"
 		cardinality="single"
 		visibility="external"
+		access="public"
 	>
-    Eye distance
+	Eye distance
 	</Field>
 	<Field
 		name="zeroparallax"
 		type="Real32"
 		cardinality="single"
 		visibility="external"
+		access="public"
 	>
-    zero paralax
+	zero paralax
+	</Field>
+	<Field
+		name="syncSwap"
+		type="Bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Sync swap if true
 	</Field>
 </FieldContainer>
-
-

@@ -124,12 +124,10 @@ void SortFirstWindow::dump(      UInt32    ,
  */
 
 void SortFirstWindow::serverInit( WindowPtr window,
-                                  UInt32 ,
-                                  Connection *)
+                                  UInt32 )
 {
     ViewportPtr            svp,cvp;
     TileCameraDecoratorPtr deco;
-    GLint                  glvp[4];
 
     // do some checks 
     if(window == NullFC)
@@ -142,11 +140,6 @@ void SortFirstWindow::serverInit( WindowPtr window,
         SWARNING << "Cluster window has no viewport" << endl;
         return;
     }
-
-    // get server window size. The server window must be the active 
-    // window 
-    glGetIntegerv( GL_VIEWPORT, glvp );
-    window->setSize( glvp[2], glvp[3] );
 
     // get cluster viewport. Currently there is only one viewport
     // fore each window allowed!
@@ -180,13 +173,9 @@ void SortFirstWindow::serverInit( WindowPtr window,
 /*! update server window
  */
 
-void SortFirstWindow::serverFrameInit( WindowPtr window,UInt32 id,
-                                       Connection *connection,
-                                       RemoteAspect *aspect )
+void SortFirstWindow::serverRender( WindowPtr window,UInt32 id,
+                                    RenderAction *action        )
 {
-    // do data sync
-    Inherited::serverFrameInit(window,id,connection,aspect);
-
     ViewportPtr vp=window->getPort()[0];
     TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
 
@@ -231,27 +220,27 @@ void SortFirstWindow::serverFrameInit( WindowPtr window,UInt32 id,
     {
         _bufferHandler.setSubtileSize(getSubtileSize());
     }
+    Inherited::serverRender(window,id,action);
 }
 
 /*! send image to client
  */
 
 void SortFirstWindow::serverSwap( WindowPtr window,
-                                  UInt32 ,
-                                  Connection *connection )
+                                  UInt32 )
 {
     ViewportPtr vp=window->getPort()[0];
     TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
     
     // send image
     _bufferHandler.send(
-        *connection,
+        *_connection,
         ViewBufferHandler::RGB,
         deco->getLeft()   * deco->getFullWidth(),
         deco->getBottom() * deco->getFullHeight());
 
     // test only
-//    window->swap();
+    //   window->swap();
 }
 
 /*----------------------------- client methods ----------------------------*/
@@ -259,10 +248,9 @@ void SortFirstWindow::serverSwap( WindowPtr window,
 /*! init client window
  */
 
-void SortFirstWindow::clientInit( WindowPtr window,
-                                  Connection * )
+void SortFirstWindow::clientInit( void )
 {
-    if(window == NullFC ||
+    if(getClientWindow() == NullFC ||
        getPort().size()==0)
         return;
 
@@ -287,37 +275,35 @@ void SortFirstWindow::clientInit( WindowPtr window,
     vp->setRoot      ( cvp->getRoot() );
     vp->setSize      ( 0,
                        0, 
-                       1.0 * getWidth () / window->getWidth (),
-                       1.0 * getHeight() / window->getHeight());
-    beginEditCP(window);
-    window->addPort(vp);
-    endEditCP(window);
+                       1.0 * getWidth () / getClientWindow()->getWidth (),
+                       1.0 * getHeight() / getClientWindow()->getHeight());
+    beginEditCP(getClientWindow());
+    getClientWindow()->addPort(vp);
+    endEditCP(getClientWindow());
     endEditCP(vp);
-
 }
 
 /*! client frame init
  */
 
-void SortFirstWindow::clientFrameInit( WindowPtr window,
-                                       Connection *connection,
-                                       RemoteAspect *aspect )
+void SortFirstWindow::clientPreSync( void )
 {
     SortFirstWindowPtr ptr=SortFirstWindowPtr(this);
-    if(window == NullFC)
+    if(getClientWindow() == NullFC)
     {
         SFATAL << "No client window given" << endl;
         return;
     }
-
-    if(getWidth()  != window->getWidth() ||
-       getHeight() != window->getHeight())
+    
+    if(getWidth()  != getClientWindow()->getWidth() ||
+       getHeight() != getClientWindow()->getHeight())
     {
         beginEditCP(ptr,
                     Window::WidthFieldMask|
                     Window::HeightFieldMask);
         {
-            setSize(window->getWidth(),window->getHeight());
+            setSize(getClientWindow()->getWidth(),
+                    getClientWindow()->getHeight());
         }
         endEditCP(ptr,
                   Window::WidthFieldMask|
@@ -351,7 +337,7 @@ void SortFirstWindow::clientFrameInit( WindowPtr window,
               SortFirstWindow::BottomFieldMask);
 
     // client viewport
-    ViewportPtr vp=window->getPort()[0];
+    ViewportPtr vp=getClientWindow()->getPort()[0];
     TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
     vp->setSize( ((Int32)(getLeft  ()[num-1] * getWidth ())),
                  ((Int32)(getBottom()[num-1] * getHeight())), 
@@ -365,22 +351,39 @@ void SortFirstWindow::clientFrameInit( WindowPtr window,
     deco->setFullHeight( getHeight() );
 
     distributeWork();
+}
 
-    Inherited::clientFrameInit( window,connection,aspect );
+/*! client rendering
+ *  
+ *  one tile is rendered by the client
+ */
+
+void SortFirstWindow::clientRender( RenderAction *action )
+{
+    Inherited::clientRender(action);
 }
 
 /*! show data
  */
 
-void SortFirstWindow::clientSwap( WindowPtr window,
-                                  Connection *connection )
+void SortFirstWindow::clientSwap( void )
 {
-    glViewport(0,0,window->getWidth(),window->getHeight());
-    glScissor(0,0,window->getWidth(),window->getHeight());
-    _bufferHandler.recv(*connection);
-    Inherited::clientSwap(window,connection);
+    if(getClientWindow()!=NullFC)
+    {
+        glViewport(0,0,
+                   getClientWindow()->getWidth(),
+                   getClientWindow()->getHeight());
+        glScissor(0,0,
+                  getClientWindow()->getWidth(),
+                  getClientWindow()->getHeight());
+        _bufferHandler.recv(*_connection);
+        Inherited::clientSwap();
+    }
+    else
+    {
+        SFATAL << "Client window missing" << endl;
+    }
 }
-
 
 void SortFirstWindow::distributeWork()
 {
@@ -434,10 +437,6 @@ void SortFirstWindow::traverseGeometry(NodePtr np,Matrix &proj)
                 if(maxx < pnt[i][0]) maxx = pnt[i][0];
                 if(maxy < pnt[i][1]) maxy = pnt[i][1];
             }
-            cout << minx << " "
-                 << miny << " "
-                 << maxx << " "
-                 << maxy << endl;
         }
     }
     for(nodei =np->getMFChildren()->begin();
@@ -446,9 +445,5 @@ void SortFirstWindow::traverseGeometry(NodePtr np,Matrix &proj)
     {
         traverseGeometry(*nodei,proj);
     }
-
-
-
-
 }
 

@@ -59,7 +59,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.1 2001/12/21 15:10:29 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.2 2002/01/02 16:41:27 marcus Exp $";
     static char cvsid_hpp[] = OSGSCLUSTSTERWIN_HEADER_CVSID;
     static char cvsid_inl[] = OSGSCLUSTSTERWIN_INLINE_CVSID;
 }
@@ -134,35 +134,42 @@ void SimpClustSterWin::dump(      UInt32    ,
  *  
  *  !param window     server render window
  *  !param id         server id
- *  !param connection connection to client
- *  !param aspect     remote aspect
- */
+ *  !param action     action
+*/
 
-void SimpClustSterWin::serverFrameInit(WindowPtr window,
-                                           UInt32 id,
-                                           Connection *connection,
-                                           RemoteAspect *aspect )
+void SimpClustSterWin::serverRender(WindowPtr window,UInt32 id,
+                                    RenderAction *action)
 {
-    Inherited::serverFrameInit(window,id,connection,aspect);
-
     // get client cam
     if(window == NullFC ||
        window->getPort().size()==0)
+    {
+        SWARNING << "No window or no viewport" << endl;
         return;
-    ViewportPtr cvp=window->getPort()[0];
+    }
+    ViewportPtr cvp=getPort()[0];
     PerspectiveCameraPtr clientCam=
         PerspectiveCameraPtr::dcast(cvp->getCamera());
     if(clientCam==NullFC)
+    {
+        SWARNING << "Client has no camera" << endl;
         return;
+    }
 
     // get server cam
     if(getPort().size()==0)
+    {
+        SWARNING << "Server has no port" << endl;
         return;
-    ViewportPtr svp=getPort()[0];
+    }
+    ViewportPtr svp=window->getPort()[0];
     StereoCameraPtr serverCam=
         StereoCameraPtr::dcast(svp->getCamera());
     if(serverCam==NullFC)
+    {
+        SWARNING << "Server has no camera" << endl;
         return;
+    }
 
     // update camera params
     beginEditCP(serverCam);
@@ -174,9 +181,10 @@ void SimpClustSterWin::serverFrameInit(WindowPtr window,
     serverCam->setZeroparallax(getZeroparallax());
     serverCam->setWhicheye(id);
     endEditCP(serverCam);
+
+    // server rendering
+    Inherited::serverRender(window,id,action);
 }
-
-
 
 /*! initialize server window
  *
@@ -185,8 +193,7 @@ void SimpClustSterWin::serverFrameInit(WindowPtr window,
  */
 
 void SimpClustSterWin::serverInit( WindowPtr window,
-                                   UInt32 id,
-                                   Connection * )
+                                   UInt32 id )
 {
     ViewportPtr            svp,cvp;
 
@@ -251,11 +258,13 @@ void SimpClustSterWin::serverInit( WindowPtr window,
 /*! swap server window
  */
 
-void SimpClustSterWin::serverSwap( WindowPtr window,UInt32 id,
-                                   Connection *connection )
+void SimpClustSterWin::serverSwap( WindowPtr window,UInt32 id )
 {
-    connection->wait();
-    Inherited::serverSwap(window,id,connection);
+    if(getSyncSwap())
+    {
+        _connection->wait();
+    }
+    Inherited::serverSwap(window,id);
 }
 
 /*----------------------------- client methods ----------------------------*/
@@ -263,11 +272,10 @@ void SimpClustSterWin::serverSwap( WindowPtr window,UInt32 id,
 /*! init client window
  */
 
-void SimpClustSterWin::clientInit( WindowPtr window,
-                                   Connection * )
+void SimpClustSterWin::clientInit( void )
 {
     ViewportPtr cvp;
-    if(window == NullFC ||
+    if(getClientWindow() == NullFC ||
        getPort().size()==0)
         return;
     cvp=getPort()[0];
@@ -280,23 +288,33 @@ void SimpClustSterWin::clientInit( WindowPtr window,
     vp->setBackground( cvp->getBackground() );
     vp->setRoot( cvp->getRoot() );
     vp->setSize( 0,0, 1,1 );
-    beginEditCP(window);
-    window->addPort(vp);
-    endEditCP(window);
+    beginEditCP(getClientWindow());
+    getClientWindow()->addPort(vp);
+    endEditCP(getClientWindow());
     endEditCP(vp);
 }
 
 /*! render client window
  */
 
-void SimpClustSterWin::clientSwap( WindowPtr window,
-                                   Connection *connection )
+void SimpClustSterWin::clientSwap(void)
 {
     // sync all servers
-    connection->signal();
+    if(getSyncSwap())
+    {
+        _connection->signal();
+    }
     // show client window 
-    Inherited::clientSwap(window,connection);
+    Inherited::clientSwap();
 }
+
+
+
+
+
+
+
+
 
 
 

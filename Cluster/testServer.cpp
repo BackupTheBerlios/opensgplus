@@ -19,6 +19,8 @@ void display()
     try
     {
         server->render(ract);
+        // clear changelist from prototypes
+        OSG::Thread::getCurrentChangeList()->clearAll();
     } 
     catch(exception &e)
     {
@@ -30,6 +32,7 @@ void display()
 }
 void reshape( int width, int height )
 {
+    cout << "reshape " << width << " " << height << endl;
 	window->resize( width, height );
 }
 
@@ -90,7 +93,7 @@ int main(int argc,char **argv)
         server     = new ClusterServer(window,
                                        name,
                                        connectionType);
-        server->start();
+        server->init();
         glutMainLoop();
     } 
     catch(exception &e)

@@ -84,26 +84,20 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \name      client window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void clientInit              ( WindowPtr window,
-                                           Connection *connection          );
-    virtual void clientFrameInit         ( WindowPtr window,
-                                           Connection *connection,
-                                           RemoteAspect *aspect            );
-    virtual void clientSwap              ( WindowPtr window,
-                                           Connection *connection          );
+    virtual void clientInit              ( void                        );
+    virtual void clientPreSync           ( void                        );
+    virtual void clientRender            ( RenderAction *action        );
+    virtual void clientSwap              ( void                        );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void serverInit              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-    virtual void serverFrameInit         ( WindowPtr window,UInt32 id,
-                                           Connection *connection,
-                                           RemoteAspect *aspect            );
-    virtual void serverSwap              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
+    virtual void serverInit              ( WindowPtr window,UInt32 id  );
+    virtual void serverRender            ( WindowPtr window,UInt32 id,
+                                           RenderAction *action        );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id  );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

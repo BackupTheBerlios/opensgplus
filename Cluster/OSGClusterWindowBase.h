@@ -68,6 +68,9 @@
 #include <OSGWindow.h> // Parent
 
 #include <OSGStringFields.h> // Servers type
+#include <OSGStringFields.h> // ConnectionType type
+#include <OSGWindowFields.h> // ClientWindow type
+#include <OSGUInt32Fields.h> // ServicePort type
 
 #include <OSGClusterWindowFields.h>
 
@@ -89,11 +92,17 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowBase : public Window
 
     enum
     {
-        ServersFieldId = Inherited::NextFieldId,
-        NextFieldId    = ServersFieldId + 1
+        ServersFieldId        = Inherited::NextFieldId,
+        ConnectionTypeFieldId = ServersFieldId        + 1,
+        ClientWindowFieldId   = ConnectionTypeFieldId + 1,
+        ServicePortFieldId    = ClientWindowFieldId   + 1,
+        NextFieldId           = ServicePortFieldId    + 1
     };
 
     static const osg::BitVector ServersFieldMask;
+    static const osg::BitVector ConnectionTypeFieldMask;
+    static const osg::BitVector ClientWindowFieldMask;
+    static const osg::BitVector ServicePortFieldMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -118,7 +127,16 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowBase : public Window
     /*! \{                                                                 */
 
     inline       MFString            *getMFServers        (void);
+    inline       SFString            *getSFConnectionType (void);
+    inline       SFWindowPtr         *getSFClientWindow   (void);
+    inline       SFUInt32            *getSFServicePort    (void);
 
+    inline       string              &getConnectionType (void);
+    inline const string              &getConnectionType (void) const;
+    inline       WindowPtr           &getClientWindow   (void);
+    inline const WindowPtr           &getClientWindow   (void) const;
+    inline       UInt32              &getServicePort    (void);
+    inline const UInt32              &getServicePort    (void) const;
     inline       string              &getServers        (UInt32 index);
     inline       MFString            &getServers        (void);
     inline const MFString            &getServers        (void) const;
@@ -128,6 +146,9 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowBase : public Window
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
+    inline void setConnectionType ( const string &value );
+    inline void setClientWindow   ( const WindowPtr &value );
+    inline void setServicePort    ( const UInt32 &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -174,6 +195,9 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowBase : public Window
     /*! \{                                                                 */
 
     MFString            _mfServers;
+    SFString            _sfConnectionType;
+    SFWindowPtr         _sfClientWindow;
+    SFUInt32            _sfServicePort;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

@@ -88,13 +88,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void start             (void);
+    void init              (void);
     void render            (RenderAction *action);
-
-    void frameInit         (void);
-    void renderAllViewports(RenderAction *action);
-    void swap              (void);
-    void frameExit         (void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -114,7 +109,6 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void accept       (void);
     Bool configChanged(FieldContainerPtr& fcp,
                        RemoteAspect *);
 
@@ -131,8 +125,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     string           _serviceName;
     UInt32           _servicePort;
     Thread          *_serviceThread;
-    Bool             _needUpdate;
     UInt32           _serverId;
+    Bool             _needUpdate; 
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/

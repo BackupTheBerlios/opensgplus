@@ -60,6 +60,8 @@
 #include <OSGNodeCoreFieldDataType.h>
 #include <OSGClusterDef.h>
 
+#include <OSGWindowFields.h>
+
 OSG_BEGIN_NAMESPACE
 
 class ClusterWindow;
@@ -68,9 +70,11 @@ class ClusterWindow;
 
 typedef FCPtr<WindowPtr, ClusterWindow> ClusterWindowPtr;
 
-/*! \ingroup FieldLib ClusterWindow
- *  ClusterWindowPtr field traits 
- */
+/*! \brief ClusterWindowPtr field traits 
+    \ingroup FieldLib
+    \ingroup SingleFields
+    \ingroup MultiFields
+*/
 
 template <>
 struct FieldDataTraits<ClusterWindowPtr> : 
@@ -88,6 +92,7 @@ struct FieldDataTraits<ClusterWindowPtr> :
 };
 
 //! SFClusterWindowPtr
+//! \ingroup SingleFields
 
 typedef SField<ClusterWindowPtr> SFClusterWindowPtr;
 
@@ -104,6 +109,7 @@ OSG_DLLEXPORT_DECL1(SField, ClusterWindowPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
 #endif
 
 //! MFClusterWindowPtr
+//! \ingroup MultiFields
 
 typedef MField<ClusterWindowPtr> MFClusterWindowPtr;
 

@@ -88,11 +88,11 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp       [] = "@(#)$Id: $";
-    static char cvsid_hpp       [] = OSGCLUSTERWINDOWBASE_HEADER_CVSID;
-    static char cvsid_inl       [] = OSGCLUSTERWINDOWBASE_INLINE_CVSID;
+    static Char8 cvsid_cpp       [] = "@(#)$Id: $";
+    static Char8 cvsid_hpp       [] = OSGCLUSTERWINDOWBASE_HEADER_CVSID;
+    static Char8 cvsid_inl       [] = OSGCLUSTERWINDOWBASE_INLINE_CVSID;
 
-    static char cvsid_fields_hpp[] = OSGCLUSTERWINDOWFIELDS_HEADER_CVSID;
+    static Char8 cvsid_fields_hpp[] = OSGCLUSTERWINDOWFIELDS_HEADER_CVSID;
 }
 
 #ifdef __sgi
@@ -102,12 +102,30 @@ namespace
 const OSG::BitVector  ClusterWindowBase::ServersFieldMask = 
     (1 << ClusterWindowBase::ServersFieldId);
 
+const OSG::BitVector  ClusterWindowBase::ConnectionTypeFieldMask = 
+    (1 << ClusterWindowBase::ConnectionTypeFieldId);
+
+const OSG::BitVector  ClusterWindowBase::ClientWindowFieldMask = 
+    (1 << ClusterWindowBase::ClientWindowFieldId);
+
+const OSG::BitVector  ClusterWindowBase::ServicePortFieldMask = 
+    (1 << ClusterWindowBase::ServicePortFieldId);
+
 
 
 // Field descriptions
 
 /*! \var string          ClusterWindowBase::_mfServers
     List of all symbolic server names
+*/
+/*! \var string          ClusterWindowBase::_sfConnectionType
+    How to connect to the servers
+*/
+/*! \var WindowPtr       ClusterWindowBase::_sfClientWindow
+    Window for client rendering
+*/
+/*! \var UInt32          ClusterWindowBase::_sfServicePort
+    Broadcastport used for server search
 */
 //! ClusterWindow description
 
@@ -117,7 +135,22 @@ FieldDescription *ClusterWindowBase::_desc[] =
                      "servers", 
                      ServersFieldId, ServersFieldMask,
                      false,
-                     (FieldAccessMethod) &ClusterWindowBase::getMFServers)
+                     (FieldAccessMethod) &ClusterWindowBase::getMFServers),
+    new FieldDescription(SFString::getClassType(), 
+                     "connectionType", 
+                     ConnectionTypeFieldId, ConnectionTypeFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowBase::getSFConnectionType),
+    new FieldDescription(SFWindowPtr::getClassType(), 
+                     "clientWindow", 
+                     ClientWindowFieldId, ClientWindowFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowBase::getSFClientWindow),
+    new FieldDescription(SFUInt32::getClassType(), 
+                     "servicePort", 
+                     ServicePortFieldId, ServicePortFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowBase::getSFServicePort)
 };
 
 //! ClusterWindow type
@@ -177,6 +210,9 @@ void ClusterWindowBase::executeSync(      FieldContainer &other,
 
 ClusterWindowBase::ClusterWindowBase(void) :
     _mfServers                (), 
+    _sfConnectionType         (), 
+    _sfClientWindow           (), 
+    _sfServicePort            (UInt32(8437)), 
     Inherited() 
 {
 }
@@ -189,6 +225,9 @@ ClusterWindowBase::ClusterWindowBase(void) :
 
 ClusterWindowBase::ClusterWindowBase(const ClusterWindowBase &source) :
     _mfServers                (source._mfServers                ), 
+    _sfConnectionType         (source._sfConnectionType         ), 
+    _sfClientWindow           (source._sfClientWindow           ), 
+    _sfServicePort            (source._sfServicePort            ), 
     Inherited                 (source)
 {
 }
@@ -212,6 +251,21 @@ UInt32 ClusterWindowBase::getBinSize(const BitVector &whichField)
         returnValue += _mfServers.getBinSize();
     }
 
+    if(FieldBits::NoField != (ConnectionTypeFieldMask & whichField))
+    {
+        returnValue += _sfConnectionType.getBinSize();
+    }
+
+    if(FieldBits::NoField != (ClientWindowFieldMask & whichField))
+    {
+        returnValue += _sfClientWindow.getBinSize();
+    }
+
+    if(FieldBits::NoField != (ServicePortFieldMask & whichField))
+    {
+        returnValue += _sfServicePort.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -224,6 +278,21 @@ void ClusterWindowBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (ServersFieldMask & whichField))
     {
         _mfServers.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ConnectionTypeFieldMask & whichField))
+    {
+        _sfConnectionType.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ClientWindowFieldMask & whichField))
+    {
+        _sfClientWindow.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ServicePortFieldMask & whichField))
+    {
+        _sfServicePort.copyToBin(pMem);
     }
 
 
@@ -239,6 +308,21 @@ void ClusterWindowBase::copyFromBin(      BinaryDataHandler &pMem,
         _mfServers.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (ConnectionTypeFieldMask & whichField))
+    {
+        _sfConnectionType.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ClientWindowFieldMask & whichField))
+    {
+        _sfClientWindow.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ServicePortFieldMask & whichField))
+    {
+        _sfServicePort.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -250,6 +334,15 @@ void ClusterWindowBase::executeSyncImpl(      ClusterWindowBase *pOther,
 
     if(FieldBits::NoField != (ServersFieldMask & whichField))
         _mfServers.syncWith(pOther->_mfServers);
+
+    if(FieldBits::NoField != (ConnectionTypeFieldMask & whichField))
+        _sfConnectionType.syncWith(pOther->_sfConnectionType);
+
+    if(FieldBits::NoField != (ClientWindowFieldMask & whichField))
+        _sfClientWindow.syncWith(pOther->_sfClientWindow);
+
+    if(FieldBits::NoField != (ServicePortFieldMask & whichField))
+        _sfServicePort.syncWith(pOther->_sfServicePort);
 
 
 }

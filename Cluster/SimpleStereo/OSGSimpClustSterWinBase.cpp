@@ -71,11 +71,11 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp       [] = "@(#)$Id: OSGSimpClustSterWinBase.cpp,v 1.1 2001/12/21 15:10:29 marcus Exp $";
-    static char cvsid_hpp       [] = OSGSIMPCLUSTSTERWINBASE_HEADER_CVSID;
-    static char cvsid_inl       [] = OSGSIMPCLUSTSTERWINBASE_INLINE_CVSID;
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGSimpClustSterWinBase.cpp,v 1.2 2002/01/02 16:41:27 marcus Exp $";
+    static Char8 cvsid_hpp       [] = OSGSIMPCLUSTSTERWINBASE_HEADER_CVSID;
+    static Char8 cvsid_inl       [] = OSGSIMPCLUSTSTERWINBASE_INLINE_CVSID;
 
-    static char cvsid_fields_hpp[] = OSGSIMPCLUSTSTERWINFIELDS_HEADER_CVSID;
+    static Char8 cvsid_fields_hpp[] = OSGSIMPCLUSTSTERWINFIELDS_HEADER_CVSID;
 }
 
 #ifdef __sgi
@@ -91,6 +91,9 @@ const OSG::BitVector  SimpClustSterWinBase::EyedistanceFieldMask =
 const OSG::BitVector  SimpClustSterWinBase::ZeroparallaxFieldMask = 
     (1 << SimpClustSterWinBase::ZeroparallaxFieldId);
 
+const OSG::BitVector  SimpClustSterWinBase::SyncSwapFieldMask = 
+    (1 << SimpClustSterWinBase::SyncSwapFieldId);
+
 
 
 // Field descriptions
@@ -103,6 +106,9 @@ const OSG::BitVector  SimpClustSterWinBase::ZeroparallaxFieldMask =
 */
 /*! \var Real32          SimpClustSterWinBase::_sfZeroparallax
     zero paralax
+*/
+/*! \var Bool            SimpClustSterWinBase::_sfSyncSwap
+    Sync swap if true
 */
 //! SimpClustSterWin description
 
@@ -122,7 +128,12 @@ FieldDescription *SimpClustSterWinBase::_desc[] =
                      "zeroparallax", 
                      ZeroparallaxFieldId, ZeroparallaxFieldMask,
                      false,
-                     (FieldAccessMethod) &SimpClustSterWinBase::getSFZeroparallax)
+                     (FieldAccessMethod) &SimpClustSterWinBase::getSFZeroparallax),
+    new FieldDescription(SFBool::getClassType(), 
+                     "syncSwap", 
+                     SyncSwapFieldId, SyncSwapFieldMask,
+                     false,
+                     (FieldAccessMethod) &SimpClustSterWinBase::getSFSyncSwap)
 };
 
 //! SimpClustSterWin type
@@ -184,6 +195,7 @@ SimpClustSterWinBase::SimpClustSterWinBase(void) :
     _sfFov                    (), 
     _sfEyedistance            (), 
     _sfZeroparallax           (), 
+    _sfSyncSwap               (Bool(true)), 
     Inherited() 
 {
 }
@@ -198,6 +210,7 @@ SimpClustSterWinBase::SimpClustSterWinBase(const SimpClustSterWinBase &source) :
     _sfFov                    (source._sfFov                    ), 
     _sfEyedistance            (source._sfEyedistance            ), 
     _sfZeroparallax           (source._sfZeroparallax           ), 
+    _sfSyncSwap               (source._sfSyncSwap               ), 
     Inherited                 (source)
 {
 }
@@ -231,6 +244,11 @@ UInt32 SimpClustSterWinBase::getBinSize(const BitVector &whichField)
         returnValue += _sfZeroparallax.getBinSize();
     }
 
+    if(FieldBits::NoField != (SyncSwapFieldMask & whichField))
+    {
+        returnValue += _sfSyncSwap.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -253,6 +271,11 @@ void SimpClustSterWinBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (ZeroparallaxFieldMask & whichField))
     {
         _sfZeroparallax.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (SyncSwapFieldMask & whichField))
+    {
+        _sfSyncSwap.copyToBin(pMem);
     }
 
 
@@ -278,6 +301,11 @@ void SimpClustSterWinBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfZeroparallax.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (SyncSwapFieldMask & whichField))
+    {
+        _sfSyncSwap.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -295,6 +323,9 @@ void SimpClustSterWinBase::executeSyncImpl(      SimpClustSterWinBase *pOther,
 
     if(FieldBits::NoField != (ZeroparallaxFieldMask & whichField))
         _sfZeroparallax.syncWith(pOther->_sfZeroparallax);
+
+    if(FieldBits::NoField != (SyncSwapFieldMask & whichField))
+        _sfSyncSwap.syncWith(pOther->_sfSyncSwap);
 
 
 }

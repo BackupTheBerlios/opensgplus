@@ -81,27 +81,21 @@ class OSG_CLUSTERLIB_DLLMAPPING SimpClustSterWin :
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name      client window funcitons                                 */
-    /*! \{                                                                 */
-
-    virtual void serverInit              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-    virtual void serverFrameInit         ( WindowPtr window,
-                                           UInt32 id,
-                                           Connection *connection,
-                                           RemoteAspect *aspect );
-    virtual void serverSwap              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void clientInit              ( WindowPtr window,
-                                           Connection *connection          );
-    virtual void clientSwap              ( WindowPtr window,
-                                           Connection *connection          );
+    virtual void serverInit              ( WindowPtr window,UInt32 id  );
+    virtual void serverRender            ( WindowPtr window,UInt32 id,
+                                           RenderAction *action        );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id  );
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name      client window funcitons                                 */
+    /*! \{                                                                 */
+
+    virtual void clientInit              ( void                        );
+    virtual void clientSwap              ( void                        );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -140,7 +134,7 @@ OSG_END_NAMESPACE
 #include <OSGSimpClustSterWin.inl>
 #include <OSGSimpClustSterWinBase.inl>
 
-#define OSGSCLUSTSTERWIN_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWin.h,v 1.1 2001/12/21 15:10:29 marcus Exp $"
+#define OSGSCLUSTSTERWIN_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWin.h,v 1.2 2002/01/02 16:41:27 marcus Exp $"
 
 #endif /* _OSGMULTIDISPLAYCONFIG_H_ */
 

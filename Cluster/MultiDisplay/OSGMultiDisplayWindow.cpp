@@ -121,12 +121,10 @@ void MultiDisplayWindow::dump(      UInt32    ,
  */
 
 void MultiDisplayWindow::serverInit( WindowPtr window,
-                                     UInt32 id,
-                                     Connection * )
+                                     UInt32 id )
 {
     ViewportPtr            svp,cvp;
     TileCameraDecoratorPtr deco;
-    GLint                  glvp[4];
     UInt32                 row,column;
 
     if(window == NullFC)
@@ -148,11 +146,6 @@ void MultiDisplayWindow::serverInit( WindowPtr window,
         return;
     }
 
-    // get server window size. The server window must be the active 
-    // window now!
-    glGetIntegerv( GL_VIEWPORT, glvp );
-    window->setSize( glvp[2], glvp[3] );
-
     // position of this server
     row   =id/getHServers();
     column=id%getHServers();
@@ -169,8 +162,8 @@ void MultiDisplayWindow::serverInit( WindowPtr window,
                    1.0/getVServers() * row,
                    1.0/getHServers() * (column+1),
                    1.0/getVServers() * (row   +1) );
-    deco->setFullWidth ( glvp[2] * getHServers() );
-    deco->setFullHeight( glvp[3] * getVServers() );
+    deco->setFullWidth ( window->getWidth() * getHServers() );
+    deco->setFullHeight( window->getHeight() * getVServers() );
     endEditCP(deco);
 
     // create new server viewport
@@ -186,14 +179,46 @@ void MultiDisplayWindow::serverInit( WindowPtr window,
     endEditCP(svp);
 }
 
+/*! render server window
+ *  
+ *  default action is to render all viewports with the given action
+ *  
+ *  !param window     server render window
+ *  !param id         server id
+ *  !param action     action
+ */
+
+void MultiDisplayWindow::serverRender( WindowPtr window,
+                                       UInt32 id,
+                                       RenderAction *action )
+{
+    ViewportPtr            svp;
+    TileCameraDecoratorPtr deco;
+    
+    // adjust window size
+    if(getPort().size()>0)
+    {
+        ViewportPtr vp=window->getPort()[0];
+        TileCameraDecoratorPtr deco=
+            TileCameraDecoratorPtr::dcast(vp->getCamera());
+        if(deco != NullFC)
+        {
+            beginEditCP(deco);
+            deco->setFullWidth ( window->getWidth() * getHServers() );
+            deco->setFullHeight( window->getHeight() * getVServers() );
+            endEditCP(deco);
+        }
+    }
+    Inherited::serverRender(window,id,action);
+}
+
 /*! swap server window
  */
 
-void MultiDisplayWindow::serverSwap( WindowPtr window,UInt32 id,
-                                     Connection *connection )
+void MultiDisplayWindow::serverSwap( WindowPtr window,UInt32 id )
 {
-    connection->wait();
-    Inherited::serverSwap(window,id,connection);
+    _connection->wait();
+    Inherited::serverSwap(window,id);
 }
 
 /*----------------------------- client methods ----------------------------*/
@@ -201,11 +226,10 @@ void MultiDisplayWindow::serverSwap( WindowPtr window,UInt32 id,
 /*! init client window
  */
 
-void MultiDisplayWindow::clientInit( WindowPtr window,
-                                     Connection * )
+void MultiDisplayWindow::clientInit( void )
 {
     ViewportPtr cvp;
-    if(window == NullFC ||
+    if(getClientWindow() == NullFC ||
        getPort().size()==0)
         return;
     cvp=getPort()[0];
@@ -218,20 +242,30 @@ void MultiDisplayWindow::clientInit( WindowPtr window,
     vp->setBackground( cvp->getBackground() );
     vp->setRoot( cvp->getRoot() );
     vp->setSize( 0,0, 1,1 );
-    beginEditCP(window);
-    window->addPort(vp);
-    endEditCP(window);
+    beginEditCP(getClientWindow());
+    getClientWindow()->addPort(vp);
+    endEditCP(getClientWindow());
     endEditCP(vp);
 }
 
 /*! render client window
  */
 
-void MultiDisplayWindow::clientSwap( WindowPtr window,
-                                     Connection *connection )
+void MultiDisplayWindow::clientSwap( void )
 {
     // sync all servers
-    connection->signal();
+    _connection->signal();
     // show client window 
-    Inherited::clientSwap(window,connection);
+    Inherited::clientSwap();
 }
+
+
+
+
+
+
+
+
+
+
+

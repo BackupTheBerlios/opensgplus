@@ -43,7 +43,6 @@
 #endif
 
 #include <OSGConfig.h>
-
 #include <OSGClusterWindowBase.h>
 
 OSG_BEGIN_NAMESPACE
@@ -97,8 +96,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     virtual void    init              ( void );
     virtual void    render            ( RenderAction *action = NULL );
     virtual void    renderAllViewports( RenderAction *action = NULL );
-    virtual void    frameInit        (void);
-    virtual void    frameExit        (void);
+    virtual void    frameInit         ( void );
+    virtual void    frameExit         ( void );
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
@@ -108,36 +107,20 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     /*! \name      client window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void clientInit              ( WindowPtr window,
-                                           Connection *connection          );
-    virtual void clientFrameInit         ( WindowPtr window,
-                                           Connection *connection,
-                                           RemoteAspect *aspect            );
-    virtual void clientRenderAllViewports( WindowPtr window,
-                                           Connection *connection,
-                                           RenderAction *action            );
-    virtual void clientSwap              ( WindowPtr window,
-                                           Connection *connection          );
-    virtual void clientFrameExit         ( WindowPtr window,
-                                           Connection *connection          );
+    virtual void clientInit              ( void                        );
+    virtual void clientPreSync           ( void                        );
+    virtual void clientRender            ( RenderAction *action        );
+    virtual void clientSwap              ( void                        );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void serverInit              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-    virtual void serverFrameInit         ( WindowPtr window,UInt32 id,
-                                           Connection *connection,
-                                           RemoteAspect *aspect            );
-    virtual void serverRenderAllViewports( WindowPtr window,UInt32 id,
-                                           Connection *connection,
-                                           RenderAction *action            );
-    virtual void serverSwap              ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
-    virtual void serverFrameExit         ( WindowPtr window,UInt32 id,
-                                           Connection *connection          );
+    virtual void serverInit              ( WindowPtr window,UInt32 id  );
+    virtual void serverRender            ( WindowPtr window,UInt32 id,
+                                           RenderAction *action        );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id  );
 
     /*! \}                                                                 */
 
@@ -157,6 +140,15 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
 
     /*! \}                                                                 */
     
+    /*---------------------------------------------------------------------*/
+    /*! \name               unsynced thread variables                      */
+    /*! \{                                                                 */
+
+    Connection      *_connection;
+    RemoteAspect    *_remoteAspect;
+
+    /*! \}                                                                 */
+
     /*==========================  PRIVATE  ================================*/
   private:
 
@@ -166,7 +158,6 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     friend class ClusterClient;
 
     static void initMethod(void);
-
     // prohibit default functions (move to 'public' if you need one)
 
     void operator =(const ClusterWindow &source);
