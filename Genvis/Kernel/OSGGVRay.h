@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -45,13 +45,14 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
+   inline Ray ();
    inline Ray (const PointClass& origin, const VectorClass& dir);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Intersection.                                                */
    /*! \{                                                                 */
    inline bool calcIntersect (const PointClass& p0, const PointClass& p1, const PointClass& p2, 
-			      Real& t, VectorClass& normal) const;
+			      Real& t, VectorClass* normal) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
@@ -68,6 +69,9 @@ private:
    VectorClass m_dir;
 };
 
+inline Ray::Ray ()
+{
+}
 inline Ray::Ray (const PointClass& origin, const VectorClass& dir)
   : m_origin(origin), m_dir(dir)
 {
@@ -91,7 +95,7 @@ inline const VectorClass&  Ray::getDirection () const
 }
 
 inline bool Ray::calcIntersect (const PointClass& p0, const PointClass& p1, const PointClass& p2, 
-				Real& t, VectorClass& normal) const
+				Real& t, VectorClass* normal) const
 {
    static FloatingComparator<Real> comp(1E-6f);
 
@@ -106,8 +110,8 @@ inline bool Ray::calcIntersect (const PointClass& p0, const PointClass& p1, cons
    Real u = b.dot( a );
    Real v;
 
-   if (comp.positive(d)) {
-      if ( u < 0 || u > d ) {
+   if (comp.positive(d)) { // p1 positive side acc to plane (p0, a)
+      if ( u < 0 || u > d ) { // ray.getOrigin() not in slab
 	 return false;
       }
 
@@ -131,13 +135,13 @@ inline bool Ray::calcIntersect (const PointClass& p0, const PointClass& p1, cons
    }
 
    // intersection case
-   Real id = 1.f / d;
-   t        = dir2.dot( c ) * id;
+   t = dir2.dot(c)/d;
    if (t < 0) {
       return false;
    }
-
-   normal   = a;
+   if (normal != NULL) {
+      *normal = dir1.cross(dir2);
+   }
    return true;
 }
 

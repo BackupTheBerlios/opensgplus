@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:28:31 $
 //                                                                            
 //=============================================================================
 
@@ -32,15 +32,15 @@ template <class BasicTraits>
 OpenSGRAPIDFaceAdapter<BasicTraits>::OpenSGRAPIDFaceAdapter (InternalObjectType* adapter)
   : Inherited()
 {
-   CacheData& data = getCache()[adapter->getOriginal()];
+   CacheData& data = Cache::the()[adapter->getOriginal()];
    setObjectAdapter(&data);
 }
 template <class BasicTraits>
 OpenSGRAPIDFaceAdapter<BasicTraits>::OpenSGRAPIDFaceAdapter (InternalObjectType* adapter,
-							     int id)
+							     i32 id)
   : Inherited()
 {
-   CacheData& data = getCache()[adapter->getOriginal()];
+   CacheData& data = Cache::the()[adapter->getOriginal()];
    setObjectAdapter(&data);
    setOriginalId(id);
 }
@@ -103,7 +103,7 @@ void  OpenSGRAPIDAdapter<BasicTraits>::init (const GeomObjectType& obj)
 
    m_model = new RAPID_model;
    m_model->BeginModel();
-   Int32 i=0;
+   i32 i=0;
    TriangleIterator end = geom->endTriangles();
    RAPIDVector3 p0, p1, p2;
    for (OSG::TriangleIterator iter = geom->beginTriangles(); 
@@ -113,14 +113,12 @@ void  OpenSGRAPIDAdapter<BasicTraits>::init (const GeomObjectType& obj)
       p1[0] = (double)iter.getPosition(1)[0]; p1[1] = (double)iter.getPosition(1)[1]; p1[2] = (double)iter.getPosition(1)[2]; 
       p2[0] = (double)iter.getPosition(2)[0]; p2[1] = (double)iter.getPosition(2)[1]; p2[2] = (double)iter.getPosition(2)[2]; 
       m_model->AddTri(p0, p1, p2, i);
-      //m_tris.push_back(iter);
    }
    m_model->EndModel();
 #endif
 }
 template <class BasicTraits>
-void  OpenSGRAPIDAdapter<BasicTraits>::init (const TransformType& m2w,
-					     const GeomObjectType& obj)
+void  OpenSGRAPIDAdapter<BasicTraits>::init (const TransformType& m2w, const GeomObjectType& obj)
 {
    init(obj);
    //setTransform(m2w);
@@ -129,8 +127,7 @@ void  OpenSGRAPIDAdapter<BasicTraits>::init (const TransformType& m2w,
 template <class BasicTraits>
 std::ostream& OpenSGRAPIDAdapter<BasicTraits>::dump (std::ostream& os) const
 {
-   os << "OpenSGRAPIDAdapter("
-      << ")";
+   os << "OpenSGRAPIDAdapter";
    return os;
 }
 

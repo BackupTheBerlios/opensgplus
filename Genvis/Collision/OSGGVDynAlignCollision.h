@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -37,9 +37,9 @@
 #include "OSGGVBase.h"
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
-#include "OSGGVBVolAdapterExt.h"
-#include "OSGGVKDop.h"
 #include "OSGGVDoubleTraverser.h"
+#include "OSGGVGroup.h"
+#include "OSGGVBVolAdapterExt.h"
 #include "OSGGVBVolCollision.h"
 #include "OSGGVBVolFunctions.h"
 
@@ -53,14 +53,24 @@ class OSG_GENVISLIB_DLLMAPPING DynamicAlignCollision
 : public BVolCollisionBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef BVolCollisionBase<BasicTraits>                        Inherited;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangle2BVol<BasicTraits,BVOL>                 AdapterType;
    typedef BVolGroup<BVOL>                                       GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
    typedef BVOL                                                  BVol;
    typedef unsigned                                              SupportArray[3];
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -70,11 +80,11 @@ public:
    /*! \name Traversal functions.                                         */
    /*! \{                                                                 */
    /*! Init for the single pair in the arguments.                         */
-   bool    InitDouble        (GroupType* root0, const TransformType& m0, 
-			      GroupType* root1, const TransformType& m1);
+   bool    InitDouble        (GroupType* root0, const TransformType& m0, const TransformType& f0, 
+			      GroupType* root1, const TransformType& m1, const TransformType& f1);
    /*! Leave for the single pair in the arguments.                        */
-   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, 
-			    GroupType* root1, const TransformType& m1);
+   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
 
    /*! Operation for inner nodes in the arguments.                        */
    ResultT BVolBVolCollision (GroupType* b0, GroupType* b1);
@@ -112,9 +122,9 @@ protected:
 };
 
 template <class BasicTraits, class BVOL>
-inline bool DynamicAlignCollision<BasicTraits,BVOL>::LeaveDouble (
-GroupType*, const TransformType&, 
-GroupType*, const TransformType&)
+inline bool DynamicAlignCollision<BasicTraits,BVOL>::LeaveDouble 
+(GroupType*, const TransformType&, const TransformType&, 
+ GroupType*, const TransformType&, const TransformType&)
 {
    return false;
 }

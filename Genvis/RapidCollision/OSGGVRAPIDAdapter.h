@@ -1,3 +1,33 @@
+//=============================================================================
+//                                                                            
+//                               Genvis                                     
+//        Copyright (C) 2001 by Institute of Computer Graphics, TU Braunschweig
+//                           graphics.tu-bs.de                                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//                                License                                     
+//                                                                            
+//   This library is free software; you can redistribute it and/or modify it 
+//   under the terms of the GNU Library General Public License as published  
+//   by the Free Software Foundation, version 2.                             
+//                                                                             
+//   This library is distributed in the hope that it will be useful, but       
+//   WITHOUT ANY WARRANTY; without even the implied warranty of                
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         
+//   Library General Public License for more details.                          
+//                                                                            
+//   You should have received a copy of the GNU Library General Public         
+//   License along with this library; if not, write to the Free Software       
+//   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:28:31 $
+//                                                                            
+//=============================================================================
+
 #ifndef OSGGVRAPIDADAPTER_H
 #define OSGGVRAPIDADAPTER_H
 
@@ -20,8 +50,15 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef OpenSGTriangleBase<BasicTraits> Inherited;
-   typedef OpenSGObjectBase<BasicTraits>   InternalObjectType;
+   typedef OpenSGTriangleBase<BasicTraits>           InheritedData;
+   typedef Adapter                                   Inherited;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomTriangleType  GeomTriangleType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+
+   typedef OpenSGObjectBase<BasicTraits>             InternalObjectType;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -29,7 +66,7 @@ public:
    OpenSGRAPIDFaceAdapter ();
    OpenSGRAPIDFaceAdapter (InternalObjectType* adapter);
    OpenSGRAPIDFaceAdapter (InternalObjectType* adapter,
-			   int                id);
+			   i32                id);
    ~OpenSGRAPIDFaceAdapter ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -53,9 +90,16 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef OpenSGObjectBase<BasicTraits>       Inherited;
-   typedef OpenSGRAPIDAdapter<BasicTraits>     SelfType;
-   typedef FactoryHeap<SelfType>               FactoryType;
+   typedef OpenSGObjectBase<BasicTraits>             InheritedData;
+   typedef Adapter                                   Inherited;
+   typedef OpenSGRAPIDAdapter<BasicTraits>           Self;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomObjectType    GeomObjectType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+
+   typedef FactoryHeap<Self>                         FactoryType;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -86,7 +130,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Identifier of adapter type.                                  */
    /*! \{                                                                 */
-   static unsigned       getAdapterId ();
+   static u32       getAdapterId ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:27:49 $
 //                                                                            
 //=============================================================================
 
@@ -53,6 +53,11 @@ public:
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef SingleBVolHierarchyBase<BasicTraits>     Inherited;
+   typedef typename Inherited::TransformType        TransformType;
+   typedef typename Inherited::GeomObjectType       GeomObjectType;
+   typedef typename Inherited::Cache                Cache;
+   typedef typename Inherited::CacheData            CacheData;
+
    typedef OpenSGNodeAdapter<BasicTraits>           AdapterType;
    typedef typename AdapterType::FactoryType        FactoryType;
    /*! \}                                                                 */
@@ -76,15 +81,15 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy creation.                                          */
    /*! \{                                                                 */
-   virtual void hierarchy ();
+   virtual void process (const GeomObjectType& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Registration for traversal with cache.                       */
    /*! \{                                                                 */
    virtual void registerFunctors ();
-   static void staticEnterGeometry (osg::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry (osg::CNodePtr&, OSGStaticInput*);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterGeometry       (osg::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry       (osg::CNodePtr&, OSGStaticInput*);
 #endif
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/

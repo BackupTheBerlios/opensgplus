@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:27:49 $
 //                                                                            
 //=============================================================================
 
@@ -43,15 +43,21 @@ BEGIN_GENVIS_NAMESPACE
     in OpenSG nodes (without any hierarchy).
  */
 template <class BasicTraits>
-class OSG_GENVISLIB_DLLMAPPING NodeCollision 
-: public DataBase<BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING NodeCollision : public DataBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef DataBase<BasicTraits>               Inherited;
+   typedef typename Inherited::Cache           Cache;
+   typedef typename Inherited::CacheData       CacheData;
+
    typedef typename BasicTraits::TransformType TransformType;
    typedef OpenSGNodeAdapter<BasicTraits>      AdapterType;
    typedef CollisionData<AdapterType>          CollisionPair;
    typedef std::vector<CollisionPair>          CollisionContainer;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -60,22 +66,22 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Collision statistics.                                        */
    /*! \{                                                                 */   
-   inline unsigned                  getNumPrimTests  () const;
-   inline unsigned                  getNumMixedTests () const;
-   inline unsigned&                 getNumBVolTests  ();
-   inline const unsigned&           getNumBVolTests  () const;
+   inline u32                  getNumPrimTests  () const;
+   inline u32                  getNumMixedTests () const;
+   inline u32&                 getNumBVolTests  ();
+   inline const u32&           getNumBVolTests  () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Collision results.                                           */
    /*! \{                                                                 */   
-   inline unsigned                  getNumContacts () const;
+   inline u32                  getNumContacts () const;
    inline CollisionContainer&       getContacts ();
    inline const CollisionContainer& getContacts () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 private:
-   unsigned           m_numTests;
+   u32           m_numTests;
    CollisionContainer m_contacts;
 };
 typedef  NodeCollision<OpenSGTraits>    OSGNodeCollision;
@@ -86,38 +92,38 @@ inline NodeCollision<BasicTraits>::NodeCollision ()
 }
 
 template <class BasicTraits>
-inline unsigned NodeCollision<BasicTraits>::getNumPrimTests () const
+inline u32 NodeCollision<BasicTraits>::getNumPrimTests () const
 {
    return 0;
 }
 template <class BasicTraits>
-inline unsigned NodeCollision<BasicTraits>::getNumMixedTests () const
+inline u32 NodeCollision<BasicTraits>::getNumMixedTests () const
 {
    return 0;
 }
 template <class BasicTraits>
-inline unsigned& NodeCollision<BasicTraits>::getNumBVolTests ()
+inline u32& NodeCollision<BasicTraits>::getNumBVolTests ()
 {
    return m_numTests;
 }
 template <class BasicTraits>
-inline const unsigned& NodeCollision<BasicTraits>::getNumBVolTests () const
+inline const u32& NodeCollision<BasicTraits>::getNumBVolTests () const
 {
    return m_numTests;
 }
 template <class BasicTraits>
-inline unsigned NodeCollision<BasicTraits>::getNumContacts () const
+inline u32 NodeCollision<BasicTraits>::getNumContacts () const
 {
    return m_contacts.size();
 }
 template <class BasicTraits>
-inline NodeCollision<BasicTraits>::CollisionContainer& 
+inline typename NodeCollision<BasicTraits>::CollisionContainer& 
 NodeCollision<BasicTraits>::getContacts ()
 {
    return m_contacts;
 }
 template <class BasicTraits>
-inline const NodeCollision<BasicTraits>::CollisionContainer& 
+inline const typename NodeCollision<BasicTraits>::CollisionContainer& 
 NodeCollision<BasicTraits>::getContacts () const
 {
    return m_contacts;

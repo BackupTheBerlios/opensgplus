@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:31 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:31:38 $
 //                                                                            
 //=============================================================================
 
@@ -22,7 +22,7 @@ template class OSG_GENVISLIB_DLLMAPPING SpatializeTraits<OpenSGTraits>;
 
 template <class BasicTraits>
 Spatialize<BasicTraits>::Spatialize ()
-  : m_level(0)
+  : m_depth(0)
 {
    if (getGroupCore() == NullFC) {
       setGroupCore(Group::create());
@@ -53,14 +53,14 @@ NodePtr Spatialize<BasicTraits>::getRoot () const
    return m_root;
 }
 template <class BasicTraits>
-void         Spatialize<BasicTraits>::setLevel (unsigned level)
+void         Spatialize<BasicTraits>::setDepth (unsigned depth)
 {
-   m_level = level;
+   m_depth = depth;
 }
 template <class BasicTraits>
-unsigned     Spatialize<BasicTraits>::getLevel () const
+unsigned     Spatialize<BasicTraits>::getDepth () const
 {
-   return m_level;
+   return m_depth;
 }
 
 template <class BasicTraits>
@@ -78,10 +78,10 @@ bool     Spatialize<BasicTraits>::InitLeave  (GeneralType*,
    return true;
 }
 template <class BasicTraits>
-Spatialize<BasicTraits>::ResultT  
+typename Spatialize<BasicTraits>::ResultT  
 Spatialize<BasicTraits>::InnerEnter (GroupType*)
 {
-  if (m_current <= m_level) {
+  if (m_current <= m_depth) {
      NodePtr root = Node::create();
      if (m_current > 0) {
         m_rootLevel->addChild(root);
@@ -97,11 +97,11 @@ Spatialize<BasicTraits>::InnerEnter (GroupType*)
   return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits>
-Spatialize<BasicTraits>::ResultT  
+typename Spatialize<BasicTraits>::ResultT  
 Spatialize<BasicTraits>::InnerLeave (GroupType*)
 {
   --m_current;
-  if (m_current <= m_level) {
+  if (m_current <= m_depth) {
      endEditCP(m_rootLevel);
      m_rootStack.pop_back();
      if (m_rootStack.size() > 0) {
@@ -111,7 +111,7 @@ Spatialize<BasicTraits>::InnerLeave (GroupType*)
   return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits>
-Spatialize<BasicTraits>::ResultT  
+typename Spatialize<BasicTraits>::ResultT  
 Spatialize<BasicTraits>::LeafEnter  (AdapterType* node)
 {
    // create new node with transformed positions and normals
@@ -132,38 +132,40 @@ Spatialize<BasicTraits>::LeafEnter  (AdapterType* node)
 
 
 template <class BasicTraits>
-SpatializeTraits<BasicTraits>::InitFunctorT  
+typename SpatializeTraits<BasicTraits>::InitFunctorT  
 SpatializeTraits<BasicTraits>::createInitFunctor  (ObjectT* obj)
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::InitEnter);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::InitEnter);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits>
-SpatializeTraits<BasicTraits>::InitFunctorT  
+typename SpatializeTraits<BasicTraits>::InitFunctorT  
 SpatializeTraits<BasicTraits>::createInitLeaveFunctor  (ObjectT* obj)
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::InitLeave);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::InitLeave);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits>
-SpatializeTraits<BasicTraits>::InnerFunctorT 
+typename SpatializeTraits<BasicTraits>::InnerFunctorT 
 SpatializeTraits<BasicTraits>::createInnerFunctor (ObjectT* obj)
 {
-   InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerEnter);
+   typename InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerEnter);
    return InnerFunctorT(obj, f);
 }
 template <class BasicTraits>
-SpatializeTraits<BasicTraits>::InnerFunctorT 
+typename SpatializeTraits<BasicTraits>::InnerFunctorT 
 SpatializeTraits<BasicTraits>::createInnerLeaveFunctor (ObjectT* obj)
 {
-   InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerLeave);
+   typename InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerLeave);
    return InnerFunctorT(obj, f);
 }
 template <class BasicTraits>
-SpatializeTraits<BasicTraits>::LeafFunctorT  
+typename SpatializeTraits<BasicTraits>::LeafFunctorT  
 SpatializeTraits<BasicTraits>::createLeafFunctor  (ObjectT* obj)
 {
-   LeafFunctorT::DispatchMethodT f = &(ObjectT::LeafEnter);
+   typename LeafFunctorT::DispatchMethodT f = &(ObjectT::LeafEnter);
    return LeafFunctorT(obj, f);
 }
+
+
 

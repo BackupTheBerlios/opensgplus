@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -34,12 +34,12 @@ bool BVolGroupInterface::isLeaf () const
 BVolGroupBase::~BVolGroupBase ()
 {
 }
-BVolAdapterBase* BVolGroupBase::getSon (unsigned i) const
+BVolAdapterBase* BVolGroupBase::getSon (u32 i) const
 {
    assert(i < m_sons.size());
    return m_sons[i];
 }
-unsigned BVolGroupBase::size () const
+u32 BVolGroupBase::size () const
 {
    return m_sons.size();
 }
@@ -61,16 +61,15 @@ std::ostream& BVolGroupBase::dump (std::ostream& os) const
 
 // template class BVolGroup<BVOL>
 template <class BVOL>
-bool    BVolGroup<BVOL>::calcIntersect     (Intersection& hit)
+bool    BVolGroup<BVOL>::calcIntersect     (Intersection& in)
 {
-   const Ray& ray = hit.getRay();
-   if (checkIntersect(ray)) {
-      hit.setDist(-1);
+   if (checkIntersect(in)) {
+      in.setDist(-1);
       bool result = false;
       for (Iterator iter = getSons().begin();   
 	   iter != getSons().end(); 
 	   ++iter) {
-	 if ((*iter)->calcIntersect(hit)) {
+	 if ((*iter)->calcIntersect(in)) {
 	    result = true;
 	 }
       }

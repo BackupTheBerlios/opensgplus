@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -71,7 +71,7 @@ public:
        \return		Self-Reference
        \warning	only sorts IEEE floating-point values
    */
-   RadixSort& Sort(const float* input, u32 nb);
+   RadixSort& Sort(const Real* input, u32 nb);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Access to results.                                           */
@@ -151,12 +151,20 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING PruningTraverser : public AllTraverserBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef AllTraverserBase<BasicTraits>       Inherited;
+   typedef typename Inherited::Cache           Cache;
+   typedef typename Inherited::CacheData       CacheData;
+   typedef typename Inherited::GeomObjectType  GeomObjectType;
+   typedef typename Inherited::DoubleTraverser DoubleTraverser;
+
    typedef typename BasicTraits::TransformType TransformType;
    typedef std::pair<unsigned, unsigned>       PairsPair;
    typedef std::vector<PairsPair>              PairsContainer;
    typedef std::vector<Real>                   PosContainer;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -173,36 +181,31 @@ protected:
    /*---------------------------------------------------------------------*/
    /*! \name Compute projection interval.                                 */
    /*! \{                                                                 */   
-   void calcInterval (CacheData& data, 
-		      BVolAdapterBase* adapter,
-		      unsigned         axis, 
-		      Real&            minBound, 
-		      Real&            maxBound);
-   void calcInterval (CacheData& data, 
-		      BVolAdapterBase*   adapter,
-		      const VectorClass& axisDir,
-		      Real&              minBound, 
-		      Real&              maxBound);
+   static void calcInterval (CacheData& data, 
+			     BVolAdapterBase* adapter,
+			     u32              axis, 
+			     Real&            minBound, 
+			     Real&            maxBound);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Pruning.                                                     */
    /*! \{                                                                 */   
-   bool bipartitePruning (CacheData& data0, 
-			  const typename CacheData::AdapterContainer& list0, 
-			  CacheData& data1, 
-			  const typename CacheData::AdapterContainer& list1, 
-			  unsigned           axis,
-			  const VectorClass& axisDir,
-			  PairsContainer&    result);
-   bool completePruning  (CacheData& data0,
-			  const typename CacheData::AdapterContainer& list0, 
-			  unsigned           axis,
-			  const VectorClass& axisDir,
-			  PairsContainer&    result);
+   bool bipartitePruning (CacheData& data0, const typename CacheData::AdapterContainer& list0, 
+			  CacheData& data1, const typename CacheData::AdapterContainer& list1, 
+			  PairsContainer& result);
+   bool completePruning  (CacheData& data0, const typename CacheData::AdapterContainer& list0, 
+			  PairsContainer& result);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
    PairsContainer m_pairs;
+   i32            m_axis;
+   u32            m_minNumPairs;
+   u32            m_maxNumPairs;
+   i32            m_minAxis;
+   bool           m_refresh;
+   u32            m_axisRefresh;
+   static u32     s_axisRefresh;
    PosContainer   m_MinPosList0;
    PosContainer   m_MinPosList1;
    PosContainer   m_MaxPosList0;
@@ -215,6 +218,11 @@ template <class BasicTraits>
 inline PruningTraverser<BasicTraits>::PruningTraverser ()
   : Inherited ()
 {
+   m_axis    = 3;
+   m_minAxis = -1;
+   m_minNumPairs = u32(-1);
+   m_refresh = true;
+   m_axisRefresh = s_axisRefresh;
 }
 
 END_GENVIS_NAMESPACE

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:27:49 $
 //                                                                            
 //=============================================================================
 
@@ -46,10 +46,20 @@ class OSG_GENVISLIB_DLLMAPPING OpenSGNodeAdapter
 : public OpenSGObjectBase<BasicTraits>, public Adapter
 {
 public:
-   typedef OpenSGObjectBase<BasicTraits>       Inherited;
-   typedef OpenSGNodeAdapter<BasicTraits>      SelfType;
-   typedef FactoryHeap<SelfType>               FactoryType;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef OpenSGObjectBase<BasicTraits>             InheritedData;
+   typedef Adapter                                   Inherited;
+   typedef OpenSGNodeAdapter<BasicTraits>            Self;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomObjectType    GeomObjectType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
 
+   typedef FactoryHeap<Self>                         FactoryType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -70,7 +80,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Identifier of adapter type.                                  */
    /*! \{                                                                 */
-   static unsigned       getAdapterId ();
+   static u32 getAdapterId ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 };

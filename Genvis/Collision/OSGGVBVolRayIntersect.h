@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -49,24 +49,29 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING BVolRayIntersectBase
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef typename BasicTraits::GeomObjectType      GeomObjectType;
    typedef typename BasicTraits::GeomFaceType        GeomFaceType;
    typedef typename BasicTraits::TransformType       TransformType;
-
+   typedef BVolAdapterBase                           GeneralType; 
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    inline BVolRayIntersectBase ();
+   virtual inline ~BVolRayIntersectBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */   
-   virtual inline BVolAdapterBase* getHit () const;
-   inline Real               getHitDist () const;
-   inline PointClass          getHitPoint () const;
-   inline void                setIntersect (Intersection& in);
-   inline Intersection&       getIntersect () const;
-   inline const Ray&          getRay () const;
+   virtual inline GeneralType* getHit () const;
+   inline Real                 getHitDist () const;
+   inline PointClass           getHitPoint () const;
+   inline void                 setIntersect (Intersection& in);
+   inline Intersection&        getIntersect () const;
+   inline const Ray&           getRay () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -79,9 +84,14 @@ inline BVolRayIntersectBase<BasicTraits>::BVolRayIntersectBase ()
   : m_intersect(NULL)
 {
 }
+template <class BasicTraits>
+inline BVolRayIntersectBase<BasicTraits>::~BVolRayIntersectBase ()
+{
+}
 
 template <class BasicTraits>
-inline BVolAdapterBase*    BVolRayIntersectBase<BasicTraits>::getHit () const
+inline typename BVolRayIntersectBase<BasicTraits>::GeneralType*    
+BVolRayIntersectBase<BasicTraits>::getHit () const
 {
    assert(m_intersect != NULL);
    return m_intersect->getTo();
@@ -125,12 +135,20 @@ class OSG_GENVISLIB_DLLMAPPING BVolRayIntersect
 : public BVolRayIntersectBase<BasicTraits>
 {
 public:
-   typedef BoundingVolume<Real>                         BVol;
-   typedef SingleTraverserBase<BasicTraits>::ResultType ResultT;
-   typedef BVolAdapterBase                              AdapterType;
-   typedef BVolGroupInterface                           GroupType;
-   typedef BVolAdapterBase                              GeneralType; 
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef BVolRayIntersectBase<BasicTraits>                     Inherited;
+   typedef typename Inherited::GeomObjectType                    GeomObjectType;
+   typedef typename Inherited::GeomFaceType                      GeomFaceType;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::GeneralType                       GeneralType; 
 
+   typedef BoundingVolume<Real>                                  BVol;
+   typedef typename SingleTraverserBase<BasicTraits>::ResultType ResultT;
+   typedef BVolAdapterBase                                       AdapterType;
+   typedef BVolGroupInterface                                    GroupType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -162,26 +180,28 @@ inline BVolRayIntersect<BasicTraits>::BVolRayIntersect ()
 {
 }
 template <class BasicTraits>
-inline BVolRayIntersect<BasicTraits>::AdapterType* 
+inline typename BVolRayIntersect<BasicTraits>::AdapterType* 
 BVolRayIntersect<BasicTraits>::getHitTyped () const
 {
-   return (AdapterType*)getHit();
+   return static_cast<AdapterType*>(getHit());
 }
 template <class BasicTraits>
-inline BVolRayIntersect<BasicTraits>::ResultT  
-BVolRayIntersect<BasicTraits>::InnerLeaveRayIntersect 
-(GroupType*)
+inline typename BVolRayIntersect<BasicTraits>::ResultT  
+BVolRayIntersect<BasicTraits>::InnerLeaveRayIntersect (GroupType*)
 {
    return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 
 
-/*! \brief Traits class for ray intersection.
+/*! \brief Traits class for BVolRayIntersect.
 */
 template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING BVolRayIntersectTraits
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef typename BVolRayIntersect<BasicTraits>::BVol          BVol;
    typedef typename BVolRayIntersect<BasicTraits>::ResultT       ResultT;
    typedef BVolRayIntersect<BasicTraits>                         ObjectT;
@@ -193,12 +213,17 @@ public:
    typedef InitSingleFunctor2<bool,GeneralType,TransformType,ObjectT> InitFunctorT;
    typedef SingleFunctor<ResultT,GroupType,ObjectT>                   InnerFunctorT;
    typedef SingleFunctor<ResultT,AdapterType,ObjectT>                 LeafFunctorT;
-
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Functor creation.                                            */
+   /*! \{                                                                 */
    static  InitFunctorT  createInitFunctor      (ObjectT* obj);
    static  InitFunctorT  createInitLeaveFunctor (ObjectT* obj);
    static  InnerFunctorT createInnerFunctor     (ObjectT* obj);
    static  InnerFunctorT createInnerLeaveFunctor(ObjectT* obj);
    static  LeafFunctorT  createLeafFunctor      (ObjectT* obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 END_GENVIS_NAMESPACE

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:43:27 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -49,7 +49,7 @@ bool ContactDistanceCalc<BasicTraits,BVOL,Metric>::Init ()
 #ifdef GV_WITH_LINEGEOMETRY
    if (getLineGeometry() != NullFC) {
       beginEditCP(getLineGeometry());
-      for (unsigned k=0; k<getLineGeometry()->size(); ++k) {
+      for (u32 k=0; k<getLineGeometry()->size(); ++k) {
 	 getLineGeometry()->setValue(Pnt3f::Null, k);
       }
       endEditCP(getLineGeometry());
@@ -59,9 +59,9 @@ bool ContactDistanceCalc<BasicTraits,BVOL,Metric>::Init ()
 }
 
 template<class BasicTraits, class BVOL, class Metric>
-bool ContactDistanceCalc<BasicTraits,BVOL,Metric>::InitDouble (
-GroupType* g0, const TransformType& m0, 
-GroupType* g1, const TransformType& m1)
+bool ContactDistanceCalc<BasicTraits,BVOL,Metric>::InitDouble 
+(GroupType* g0, const TransformType& m0, const TransformType& f0, 
+ GroupType* g1, const TransformType& m1, const TransformType& f1)
 {
    // transformation matrix model1 to model0
    // m0^(-1) * m1
@@ -73,12 +73,7 @@ GroupType* g1, const TransformType& m1)
    m_M0ToM1.invertFrom(m_M1ToM0);
    m_M0 = m0;
 
-   unsigned k, kk;
-   for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
-      m_M1ToM0.mult(BVOL::getDirection()[k], m_M1Direction[k]);
-      m_M1Direction[kk] = -m_M1Direction[k]; 
-   }
-
+   u32 k, kk;
    VectorClass trans(m_M1ToM0[3][0], m_M1ToM0[3][1], m_M1ToM0[3][2]);
    VectorClass dirX(m_M1ToM0[0][0], m_M1ToM0[0][1], m_M1ToM0[0][2]);
    VectorClass dirY(m_M1ToM0[1][0], m_M1ToM0[1][1], m_M1ToM0[1][2]);
@@ -90,14 +85,22 @@ GroupType* g1, const TransformType& m1)
       m_M1Offset[k] = BVOL::getDirection()[k].dot(trans);
    }
 
-   unsigned i;
+#if 0
+   for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
+      m_M1ToM0.mult(BVOL::getDirection()[k], m_M1Direction[k]);
+      m_M1Direction[kk] = -m_M1Direction[k]; 
+   }
+#endif
+   m_scale = m_proj[0].length();
+
+   u32 i;
    Real value, maxValue, sx, sy;
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
       // calc remapping m_perm
       m_perm[k] = 0;
-      maxValue = BVOL::getDirection()[k].dot(m_M1Direction[0]); 
+      maxValue = m_proj[k].dot(BVOL::getDirection()[0]); 
       for (i=1; i<2*BVOL::Size; ++i) {
-	 if ((value=BVOL::getDirection()[k].dot(m_M1Direction[i])) > maxValue) {
+	 if ((value=m_proj[k].dot(BVOL::getDirection()[i])) > maxValue) {
 	    maxValue  = value;
 	    m_perm[k] = i;
 	 }
@@ -108,6 +111,7 @@ GroupType* g1, const TransformType& m1)
 	 m_perm[kk] = m_perm[k]-BVOL::Size;
       }
 
+      maxValue /= m_scale;
       // mask
       for (m_mask[k]=0; m_mask[k]<OccTableHighestBit; ++m_mask[k]) {
 	 if (maxValue >= BVOL::unitDopAngleTable()[m_mask[k]]) {
@@ -116,16 +120,16 @@ GroupType* g1, const TransformType& m1)
       }
       m_mask[kk] = m_mask[k];
 #ifdef GV_WITH_SUBCONES
-      // submask
-      dirZ = BVOL::getDirection()[k]-maxValue*m_M1Direction[m_perm[k]];
+      // calc ring section index m_submask[k],m_submask[kk]
+      dirZ = BVOL::getDirection()[m_perm[k]]-(maxValue*m_scale)*m_proj[k];
       m_M1ToM0.mult(BVOL::BVolGeometry::getFrameX()[m_perm[k]], dirX);
-      //dirX -= dirX.dot(BVOL::getDirection()[k])*m_M1Direction[m_perm[k]];
+      //dirX -= dirX.dot(BVOL::getDirection()[k])*M1Direction[m_perm[k]];
       //dirX = BVOL::BVolGeometry::getFrameX()[k];
       m_M1ToM0.mult(BVOL::BVolGeometry::getFrameY()[m_perm[k]], dirY);
-      //dirY -= dirY.dot(BVOL::getDirection()[k])*m_M1Direction[m_perm[k]];
+      //dirY -= dirY.dot(BVOL::getDirection()[k])*M1Direction[m_perm[k]];
       //dirY = BVOL::BVolGeometry::getFrameY()[k];
-      sx = dirZ.dot(dirX);
-      sy = dirZ.dot(dirY);
+      sx = dirZ.dot(dirX)/(dirZ.length()*dirX.length());
+      sy = dirZ.dot(dirY)/(dirZ.length()*dirY.length());
       //std::cout << "k=" << k << ": (" << sx << ", " << sy << ")" << std::endl;
       m_submask[k] = (sx < 0 ? 2 : 0) 
 	+ (sx <  0 && sy >= 0 ? 1 : 0) 
@@ -144,15 +148,10 @@ GroupType* g1, const TransformType& m1)
    return true;
 }
 
-/**
- *	Recursive collision query for normal AABB trees.
- *	\param		b0		[in] collision node from first tree
- *	\param		b1		[in] collision node from second tree
- */
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolBVolCollision 
-(GroupType* g0, GroupType* g1)
+typename ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
+ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolBVolCollision (GroupType* g0, 
+								 GroupType* g1)
 {
    ++m_numBVolBVolTests;
    // perform BV-BV overlap test
@@ -160,7 +159,7 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolBVolCollision
    const BVOL& dop2 = g1->getBVol();
    const Real* center = g1->getData().getRotationCenter();
 
-   unsigned   k, kk, mink, maxk;
+   u32   k, kk, mink, maxk;
    Real correct;
    Real min2, max2;
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
@@ -174,8 +173,9 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolBVolCollision
 	 max2 = -dop2.minVector()[mink] + center[mink];
 	 min2 = -dop2.maxVector()[mink] + center[mink];
       }
+      min2 *= m_scale;
+      max2 *= m_scale;
       correct = m_proj[k].dot(g1->getCenter());
-      //center[0]*m_proj10[k] + center[1]*m_proj11[k] + center[2]*m_proj12[k];
 #ifdef GV_WITH_SUBCONES
       min2 = min2*BVOL::unitDopAngleTable(g1->getData().getOccupancy(mink)[m_submask[kk]], 
 					  m_mask[kk], 
@@ -210,15 +210,10 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolBVolCollision
    return DoubleTraverserBase<BasicTraits>::CONTINUE;
 }
 
-/**
- *	Leaf-leaf test for two primitive indices.
- *	\param		p0		[in] index from first leaf-triangle
- *	\param		p1		[in] index from second leaf-triangle
- */
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision 
-(AdapterType* p0, AdapterType* p1)
+typename ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
+ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision (AdapterType* p0, 
+								 AdapterType* p1)
 {
    // Transform from model space 1 to model space 0
    PointClass tp1[3];
@@ -236,7 +231,7 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision
 	setDistance(dist);
 	// keep track of contact pairs
 	m_contacts.insert(m_contacts.begin(), CollisionPair(p0, p1));
-	m_contacts[0].setData(new Distance());
+	//m_contacts[0].setData(new Distance());
 	CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance> result(m_contacts[0]);
 	result.getData().distance = dist;
 	m_M0.mult(min0, result.getData().p1);
@@ -252,7 +247,7 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision
       } else {
 	// keep track of contact pairs
 	m_contacts.push_back(CollisionPair(p0, p1));
-	m_contacts[m_contacts.size()-1].setData(new Distance());
+	//m_contacts[m_contacts.size()-1].setData(new Distance());
 	CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance> result(m_contacts[m_contacts.size()-1]);
 	result.getData().distance = dist;
       }
@@ -261,9 +256,9 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision
 }
 
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolPrimCollision 
-(GroupType*   g0, AdapterType* p1)
+typename ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
+ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolPrimCollision (GroupType*   g0, 
+								 AdapterType* p1)
 {
    ++m_numBVolPrimTests;
    // perform BV-BV overlap test
@@ -271,7 +266,7 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolPrimCollision
    const BVOL& dop2 = p1->getBVol();
    const Real* center = p1->getData().getRotationCenter();
 
-   unsigned   k, kk, mink, maxk;
+   u32   k, kk, mink, maxk;
    Real correct;
    Real min2, max2;
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
@@ -285,8 +280,9 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolPrimCollision
 	 max2 = -dop2.minVector()[mink] + center[mink];
 	 min2 = -dop2.maxVector()[mink] + center[mink];
       }
+      min2 *= m_scale;
+      max2 *= m_scale;
       correct = m_proj[k].dot(p1->getCenter());
-      //center[0]*m_proj10[k] + center[1]*m_proj11[k] + center[2]*m_proj12[k];
 #ifdef GV_WITH_SUBCONES
       min2 = min2*BVOL::unitDopAngleTable(p1->getData().getOccupancy(mink)[m_submask[kk]], 
 					  m_mask[kk], 
@@ -321,9 +317,9 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::BVolPrimCollision
    return DoubleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
-ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimBVolCollision 
-(AdapterType* p0, GroupType*   g1)
+typename ContactDistanceCalc<BasicTraits,BVOL,Metric>::ResultT
+ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimBVolCollision (AdapterType* p0, 
+								 GroupType*   g1)
 {
    ++m_numPrimBVolTests;
    // perform BV-BV overlap test
@@ -331,7 +327,7 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimBVolCollision
    const BVOL& dop2 = g1->getBVol();
    const Real* center = g1->getData().getRotationCenter();
 
-   unsigned   k, kk, mink, maxk;
+   u32   k, kk, mink, maxk;
    Real correct;
    Real min2, max2;
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
@@ -345,8 +341,9 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimBVolCollision
 	 max2 = -dop2.minVector()[mink] + center[mink];
 	 min2 = -dop2.maxVector()[mink] + center[mink];
       }
+      min2 *= m_scale;
+      max2 *= m_scale;
       correct = m_proj[k].dot(g1->getCenter());
-      //center[0]*m_proj10[k] + center[1]*m_proj11[k] + center[2]*m_proj12[k];
 #ifdef GV_WITH_SUBCONES
       min2 = min2*BVOL::unitDopAngleTable(g1->getData().getOccupancy(mink)[m_submask[kk]], 
 					  m_mask[kk], 
@@ -383,93 +380,52 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimBVolCollision
 
 
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::InitFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::InitFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createInitFunctor (ObjectT* obj) 
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::Init);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::Init);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::InitDoubleFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::InitDoubleFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createInitDoubleFunctor (ObjectT* obj) 
 {
-   InitDoubleFunctorT::InitMethodT f = &(ObjectT::InitDouble);
+   typename InitDoubleFunctorT::InitMethodT f = &(ObjectT::InitDouble);
    return InitDoubleFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::LeaveDoubleFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::LeaveDoubleFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createLeaveDoubleFunctor (ObjectT* obj) 
 {
-   LeaveDoubleFunctorT::InitMethodT f = &(ObjectT::LeaveDouble);
+   typename LeaveDoubleFunctorT::InitMethodT f = &(ObjectT::LeaveDouble);
    return LeaveDoubleFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::BVolBVolFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::BVolBVolFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createBVolBVolFunctor (ObjectT* obj) 
 {
-   BVolBVolFunctorT::DispatchMethodT f = &(ObjectT::BVolBVolCollision);
+   typename BVolBVolFunctorT::DispatchMethodT f = &(ObjectT::BVolBVolCollision);
    return BVolBVolFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::PrimBVolFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::PrimBVolFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createPrimBVolFunctor (ObjectT* obj) 
 {
-   PrimBVolFunctorT::DispatchMethodT f = &(ObjectT::PrimBVolCollision);
+   typename PrimBVolFunctorT::DispatchMethodT f = &(ObjectT::PrimBVolCollision);
    return PrimBVolFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::BVolPrimFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::BVolPrimFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createBVolPrimFunctor (ObjectT* obj) 
 {
-   BVolPrimFunctorT::DispatchMethodT f = &(ObjectT::BVolPrimCollision);
+   typename BVolPrimFunctorT::DispatchMethodT f = &(ObjectT::BVolPrimCollision);
    return BVolPrimFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL, class Metric>
-ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::PrimPrimFunctorT 
+typename ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::PrimPrimFunctorT 
 ContactDistanceCalcTraits<BasicTraits,BVOL,Metric>::createPrimPrimFunctor (ObjectT* obj) 
 {
-   PrimPrimFunctorT::DispatchMethodT f = &(ObjectT::PrimPrimCollision);
+   typename PrimPrimFunctorT::DispatchMethodT f = &(ObjectT::PrimPrimCollision);
    return PrimPrimFunctorT(obj, f);
 }
 
-#if 0
-#include "OSGGVDoubleTraverser.cpp"
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K6Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K14Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K18Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K26Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K12Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K20Dop,EuclideanMetric> >;
-
-#include "OSGGVDoubleTraverserCoherent.cpp"
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K6Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K14Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K18Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K26Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K12Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K20Dop,EuclideanMetric> >;
-
-#include "OSGGVDoubleTraverserBinary.cpp"
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K6Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K14Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K18Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K26Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K12Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K20Dop,EuclideanMetric> >;
-
-#include "OSGGVDoubleTraverserBinaryCoherent.cpp"
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K6Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K14Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K18Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K26Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K12Dop,EuclideanMetric> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K20Dop,EuclideanMetric> >;
-
-#include "OSGGVDoubleTraverserFixed.cpp"
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K6Dop,EuclideanMetric>, 6, 6>;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K14Dop,EuclideanMetric>, 6, 6>;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K18Dop,EuclideanMetric>, 6, 6>;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K26Dop,EuclideanMetric>, 6, 6>;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K12Dop,EuclideanMetric>, 6, 6>;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed<OpenSGTraits,ContactDistanceCalcTraits<OpenSGTraits,K20Dop,EuclideanMetric>, 6, 6>;
-#endif

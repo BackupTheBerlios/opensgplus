@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/25 16:19:44 $
+//   $Revision: 1.4 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -40,27 +40,37 @@
 
 BEGIN_GENVIS_NAMESPACE
 
-/*! \brief Base class for double traversal up to fixed depths.
+/*! \brief Base class for parallel traversal of two bounding volume hierarchies 
+    down to fixed depths.
  */
 template <class BasicTraits>
-class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixedBase 
+class DoubleTraverserFixedBase 
 : public DoubleTraverserBase<BasicTraits>
 {
 public:
-   typedef DoubleTraverserBase<BasicTraits>   Inherited;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef DoubleTraverserBase<BasicTraits>    Inherited;
+   typedef typename Inherited::Cache           Cache;
+   typedef typename Inherited::CacheData       CacheData;
+   typedef typename Inherited::GeomObjectType  GeomObjectType;
+   typedef typename Inherited::TransformType   TransformType;
+   typedef typename Inherited::ResultType      ResultType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Depth.                                                       */
    /*! \{                                                                 */
    /*! Maximum depth in first hierarchy. */
-   virtual inline unsigned getDepth0 () const = 0;
+   virtual inline u32 getDepth0 () const = 0;
    /*! Maximum depth in second hierarchy. */
-   virtual inline unsigned getDepth1 () const = 0;
+   virtual inline u32 getDepth1 () const = 0;
    /*! Current depth in first hierarchy. Method should only be called during 
        a traversal! */
-   virtual inline unsigned getCurrentDepth0 () const = 0;
+   virtual inline u32 getCurrentDepth0 () const = 0;
    /*! Current depth in second hierarchy. Method should only be called during 
        a traversal! */
-   virtual inline unsigned getCurrentDepth1 () const = 0;
+   virtual inline u32 getCurrentDepth1 () const = 0;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 };
@@ -68,17 +78,13 @@ public:
 typedef DoubleTraverserFixedBase<OpenSGTraits>         OSGDoubleTraverserFixed;
 
 
-/*! \brief Double traverser for pairwise collision detection on binary hierarchies.
+/*! \brief Depth-first traversal of two binary bounding volume hierarchies.
     The template argument DoubleTraits is used to define the traversal semantics.
     The traversal proceeds down to depths D0, D1 given in the remaining template 
     arguments.
-    For this class there are two different implementations:
-    If GV_META_DEPTHCOUNT is defined, then the depth counting is done 
-    at compile-time with template member functions.
-    Otherwise depth counting is done during traversal.
  */
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-class OSG_GENVISLIB_DLLMAPPING DoubleTraverserFixed 
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+class DoubleTraverserFixed 
 : public DoubleTraverserFixedBase<BasicTraits>
 {
 public:
@@ -86,6 +92,12 @@ public:
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef DoubleTraverserFixedBase<BasicTraits>   Inherited;
+   typedef typename Inherited::Cache               Cache;
+   typedef typename Inherited::CacheData           CacheData;
+   typedef typename Inherited::GeomObjectType      GeomObjectType;
+   typedef typename Inherited::TransformType       TransformType;
+   typedef typename Inherited::ResultType          ResultType;
+
    typedef typename DoubleTraits::BVol             BVol;
    typedef typename DoubleTraits::AdapterType      AdapterType;
    typedef typename DoubleTraits::GroupType        GroupType;
@@ -115,17 +127,22 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Depth.                                                       */
    /*! \{                                                                 */
-   virtual inline unsigned getDepth0 () const;
-   virtual inline unsigned getDepth1 () const;
-   virtual inline unsigned getCurrentDepth0 () const;
-   virtual inline unsigned getCurrentDepth1 () const;
+   inline void        setDepth0 (u32 value);
+   inline void        setDepth1 (u32 value);
+   virtual inline u32 getDepth0 () const;
+   virtual inline u32 getDepth1 () const;
+   virtual inline u32 getCurrentDepth0 () const;
+   virtual inline u32 getCurrentDepth1 () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */
-   virtual inline bool apply   (const OSG::NodePtr& node0, const OSG::NodePtr& node1);
-   virtual inline bool apply   (CacheData& data0, BVolAdapterBase* node0, const TransformType& m0,
-				CacheData& data1, BVolAdapterBase* node1, const TransformType& m1);
+   virtual inline bool apply   (const GeomObjectType& node0, 
+				const GeomObjectType& node1);
+   virtual inline bool apply   (CacheData& parent0, CacheData& data0, BVolAdapterBase* node0, 
+				CacheData& parent1, CacheData& data1, BVolAdapterBase* node1, 
+				const TransformType& m0 = TransformType::identity(), 
+				const TransformType& m1 = TransformType::identity());
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -133,26 +150,28 @@ protected:
    /*---------------------------------------------------------------------*/
    /*! \name Dispatching.                                                 */
    /*! \{                                                                 */
-   inline void traverse (GeneralType* b0, AdapterType* p1);
-   inline void traverse (AdapterType* p0, GeneralType* b1);
-   inline void traverse (GeneralType* b0, GroupType*   g1);
-   inline void traverse (GroupType*   g0, GeneralType* b1);
-   inline void traverse (GeneralType* b0, GeneralType* b1);
+   inline void traverseGeneralLeaf   (GeneralType* b0, AdapterType* p1);
+   inline void traverseLeafGeneral   (AdapterType* p0, GeneralType* b1);
+   inline void traverseGeneralInner  (GeneralType* b0, GroupType*   g1);
+   inline void traverseInnerGeneral  (GroupType*   g0, GeneralType* b1);
+   inline void traverseGeneralGeneral(GeneralType* b0, GeneralType* b1);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Final.                                                       */
    /*! \{                                                                 */
-   inline void traverse (GroupType* g0,   GroupType* g1);
-   inline void traverse (GroupType* g0,   AdapterType* p1);
-   inline void traverse (AdapterType* p0, GroupType* g1);
-   inline void traverse (AdapterType* p0, AdapterType* p1);
+   inline void traverseInnerInner(GroupType* g0,   GroupType* g1);
+   inline void traverseInnerLeaf (GroupType* g0,   AdapterType* p1);
+   inline void traverseLeafInner (AdapterType* p0, GroupType* g1);
+   inline void traverseLeafLeaf  (AdapterType* p0, AdapterType* p1);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 private:
    ObjectT          m_data;
-   unsigned         m_d0;
-   unsigned         m_d1;
+   u32              m_d0;
+   u32              m_d1;
+   u32              m_current0;
+   u32              m_current1;
    InitFunctorT        initFunc;
    InitDoubleFunctorT  initDoubleFunc;
    LeaveDoubleFunctorT leaveDoubleFunc;
@@ -162,208 +181,239 @@ private:
    PrimPrimFunctorT ppFunc;
 };
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth0 () const
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline void DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::setDepth0 (u32 value)
 {
-   return D0;
+   m_d0 = value;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth1 () const
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline void DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::setDepth1 (u32 value)
 {
-   return D1;
+   m_d1 = value;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth0 () const
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline u32 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth0 () const
 {
    return m_d0;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth1 () const
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline u32 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth1 () const
 {
    return m_d1;
 }
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline u32 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth0 () const
+{
+   return m_current0;
+}
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline u32 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth1 () const
+{
+   return m_current1;
+}
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void   
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse 
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseInnerInner
 (GroupType* g0,   GroupType* g1)
 {
    if (bbFunc.call(g0, g1) == CONTINUE) {
-      const typename GroupType::Container& sons0 = g0->getSons();
-      const typename GroupType::Container& sons1 = g1->getSons();
-
-      unsigned i0 = m_d0+1;
-      unsigned i1 = m_d1+1;
-      if (i0 <= getDepth0()) {	  
- 	 assert(sons1.size() >= 2);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[0], (GeneralType*)sons1[0]);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[0], (GeneralType*)sons1[1]);
+      u32 i0 = m_current0+1;
+      u32 i1 = m_current1+1;
+      if (i0 > getDepth0() || i1 > getDepth1()) {	  
+	 return;
       }
-      if (i1 <= getDepth1()) {	  
-	 assert(sons0.size() >= 2);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[1], (GeneralType*)sons1[0]);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[1], (GeneralType*)sons1[1]);
+
+      assert(g0->size() >= 2);
+      GeneralType *son00, *son01;
+      if (i0 <= getDepth0()) {
+	 son00 = (GeneralType*)g0->getSon(0);
+	 son01 = (GeneralType*)g0->getSon(1);
+      } else {
+	 son00 = son01 = (GeneralType*)g0;
+      }
+      assert(g1->size() >= 2);
+      GeneralType *son10, *son11;
+      if (i1 <= getDepth1()) {
+	 son10 = (GeneralType*)g1->getSon(0);
+	 son11 = (GeneralType*)g1->getSon(1);
+      } else {
+	 son10 = son11 = (GeneralType*)g1;
+      }
+      if (i1 <= getDepth1()) {
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralGeneral(son00, son10);
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralGeneral(son00, son11);
+      }
+      if (i0 <= getDepth0()) {	  
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralGeneral(son01, son10);
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralGeneral(son01, son11);
       }
       return;
    }
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void   
-  DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (GroupType* g0,   AdapterType* p1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseInnerLeaf 
+(GroupType* g0,   AdapterType* p1)
 {
    if (bpFunc.call(g0, p1) == CONTINUE) {
-      const typename GroupType::Container& sons0 = g0->getSons();
-      
-      unsigned i0 = m_d0+1;
-      unsigned i1 = m_d1;
+      u32 i0 = m_current0+1;
+      u32 i1 = m_current1;
       if (i0 <= getDepth0()) {	  
-	 assert(sons0.size() >= 2);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[0], p1);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse((GeneralType*)sons0[1], p1);
+	 assert(g0->size() >= 2);
+	 GeneralType* son00 = (GeneralType*)g0->getSon(0);
+	 GeneralType* son01 = (GeneralType*)g0->getSon(1);
+
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralLeaf(son00, p1);
+	 m_current0 = i0; m_current1 = i1;
+	 traverseGeneralLeaf(son01, p1);
       }
       return;
    }
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void   
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (AdapterType* p0, GroupType* g1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseLeafInner 
+(AdapterType* p0, GroupType* g1)
 {
    if (pbFunc.call(p0, g1) == CONTINUE) {
-      const typename GroupType::Container& sons1 = g1->getSons();
-      
-      unsigned i0 = m_d0;
-      unsigned i1 = m_d1+1;
+      u32 i0 = m_current0;
+      u32 i1 = m_current1+1;
       if (i1 <= D1) {	  
-	 assert(sons1.size() >= 2);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse(p0, (GeneralType*)sons1[0]);
-	 m_d0 = i0; m_d1 = i1;
-	 traverse(p0, (GeneralType*)sons1[1]);
+	 assert(g1->size() >= 2);
+	 GeneralType* son10 = (GeneralType*)g1->getSon(0);
+	 GeneralType* son11 = (GeneralType*)g1->getSon(1);
+
+	 m_current0 = i0; m_current1 = i1;
+	 traverseLeafGeneral(p0, son10);
+	 m_current0 = i0; m_current1 = i1;
+	 traverseLeafGeneral(p0, son11);
       }
       return;
    }
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void   
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (AdapterType* p0, AdapterType* p1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseLeafLeaf 
+(AdapterType* p0, AdapterType* p1)
 {
    bool result = (ppFunc.call(p0, p1) == CONTINUE);
    return;
 }
 
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void 
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (GeneralType* b0, AdapterType* p1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseGeneralLeaf 
+(GeneralType* b0, AdapterType* p1)
 {
 #ifdef GV_DISPATCHBYCAST
    if (dynamic_cast<AdapterType*>(b0) != NULL) {
 #else
    if (b0->isLeaf()) {
 #endif
-      traverse((AdapterType*)b0, p1);	
+      traverseLeafLeaf((AdapterType*)(b0), p1);	
    } else {
-      traverse((GroupType*)b0,   p1);	
+      traverseInnerLeaf((GroupType*)(b0),   p1);	
    }
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void 
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse  (AdapterType* p0, GeneralType* b1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseLeafGeneral  
+(AdapterType* p0, GeneralType* b1)
 {
 #ifdef GV_DISPATCHBYCAST
    if (dynamic_cast<AdapterType*>(b1) != NULL) {
 #else
    if (b1->isLeaf()) {
 #endif
-      traverse(p0, (AdapterType*)b1);	
+      traverseLeafLeaf(p0, (AdapterType*)(b1));	
    } else {
-      traverse(p0, (GroupType*)b1);	
+      traverseLeafInner(p0, (GroupType*)(b1));	
    }
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void 
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse  (GeneralType* b0, GroupType* g1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseGeneralInner
+(GeneralType* b0, GroupType* g1)
 {
 #ifdef GV_DISPATCHBYCAST
    if (dynamic_cast<AdapterType*>(b0) != NULL) {
 #else
    if (b0->isLeaf()) {
 #endif
-      traverse((AdapterType*)b0, g1);	
+      traverseLeafInner((AdapterType*)(b0), g1);	
    } else {
-      traverse((GroupType*)b0,   g1); 	
+      traverseInnerInner((GroupType*)(b0),   g1); 	
    }
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void 
-  DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse  (GroupType* g0, GeneralType* b1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseInnerGeneral
+(GroupType* g0, GeneralType* b1)
 {
 #ifdef GV_DISPATCHBYCAST
    if (dynamic_cast<AdapterType*>(b1) != NULL) {
 #else
    if (b1->isLeaf()) {
 #endif
-      traverse(g0, (AdapterType*)b1);	
+      traverseInnerLeaf(g0, (AdapterType*)(b1));	
    } else {
-      traverse(g0, (GroupType*)b1);	
+      traverseInnerInner(g0, (GroupType*)(b1));	
    }
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline void 
-  DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse  (GeneralType* b0, GeneralType* b1)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverseGeneralGeneral
+(GeneralType* b0, GeneralType* b1)
 {
 #ifdef GV_DISPATCHBYCAST
    if (dynamic_cast<AdapterType*>(b0) != NULL) {
 #else
    if (b0->isLeaf()) {
 #endif
-      traverse((AdapterType*)b0, b1);	
+      traverseLeafGeneral((AdapterType*)(b0), b1);	
    } else {
-      traverse((GroupType*)b0,   b1);	
+      traverseInnerGeneral((GroupType*)(b0),   b1);	
    }
 }
 
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline const DataBase<BasicTraits>& 
 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getData () const
 {
    return m_data;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline DataBase<BasicTraits>& 
 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getData ()
 {
    return m_data;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline const DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::ObjectT& 
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline const typename DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::ObjectT& 
 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDataTyped () const
 {
    return m_data;
 }
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::ObjectT& 
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
+inline typename DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::ObjectT& 
 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDataTyped ()
 {
    return m_data;
 }
 
 
-#ifdef GV_PROFILED
-#include <pgouser.h>
-#endif
-
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::DoubleTraverserFixed ()
   : Inherited(),
     m_data(),
@@ -375,83 +425,68 @@ inline DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::DoubleTraverserFixe
     bpFunc(DoubleTraits::createBVolPrimFunctor(&m_data)),
     ppFunc(DoubleTraits::createPrimPrimFunctor(&m_data))
 {
+   m_d0 = D0;
+   m_d1 = D1;
    getData().setTraverser(this);
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply 
-(const NodePtr& node0, const NodePtr& node1)
+(const GeomObjectType& node0, const GeomObjectType& node1)
 {
-   CacheData& data0 = getCache()[node0];
-   CacheData& data1 = getCache()[node1];
+   CacheData& data0 = Cache::the()[node0];
+   CacheData& data1 = Cache::the()[node1];
 
-   GroupType* root0 = static_cast<GroupType*>(*data0.getAdapter(BVolAdapterBase::getAdapterId()).begin());
-   GroupType* root1 = static_cast<GroupType*>(*data1.getAdapter(BVolAdapterBase::getAdapterId()).begin());
+   GroupType* root0 = static_cast<GroupType*>(*data0.getAdapter(AdapterType::getAdapterId()).begin());
+   GroupType* root1 = static_cast<GroupType*>(*data1.getAdapter(AdapterType::getAdapterId()).begin());
    assert(root0 != NULL);
    assert(root1 != NULL);
 
    TransformType m0;
-   if (data0.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
+   if (data0.getAdapterMatrix(AdapterType::getAdapterId()) == TransformType::identity()) {
       m0.setValue(data0.getToWorldMatrix());
    } else {
-      m0.invertFrom(data0.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
+      m0.invertFrom(data0.getAdapterMatrix(AdapterType::getAdapterId()));
       m0.multLeft(data0.getToWorldMatrix());
    }
    TransformType m1; 
-   if (data1.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
+   if (data1.getAdapterMatrix(AdapterType::getAdapterId()) == TransformType::identity()) {
       m1.setValue(data1.getToWorldMatrix());
    } else {
-      m1.invertFrom(data1.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
+      m1.invertFrom(data1.getAdapterMatrix(AdapterType::getAdapterId()));
       m1.multLeft(data1.getToWorldMatrix());
    }
-   m_d0 = m_d1 = 0;
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Reset();
-#endif
+   m_current0 = m_current1 = 0;
    if (initFunc.call() &&
-       initDoubleFunc.call(root0, m0, root1, m1)) { 
-      traverse(root0, root1);
-      leaveDoubleFunc.call(root0, m0, root1, m1);
-
-#ifdef GV_PROFILED
-      _PGOPTI_Prof_Dump();
-#endif
+       initDoubleFunc.call(root0, m0, data0.getFrameMatrix(),
+			   root1, m1, data1.getFrameMatrix())) { 
+      traverseInnerInner(root0, root1);
+      leaveDoubleFunc.call(root0, m0, data0.getFrameMatrix(),
+			   root1, m1, data1.getFrameMatrix());
       return true;
    } 
-
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Dump();
-#endif
    return false;
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
+template <class BasicTraits, class DoubleTraits, u32 D0, u32 D1>
 inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply   
-(CacheData&, BVolAdapterBase* node0, const TransformType& m0,
- CacheData&, BVolAdapterBase* node1, const TransformType& m1)
+(CacheData& parent0, CacheData& data0, BVolAdapterBase* node0,
+ CacheData& parent1, CacheData& data1, BVolAdapterBase* node1,
+ const TransformType& m0, const TransformType& m1)
 {
    GroupType* root0 = static_cast<GroupType*>(node0);
    GroupType* root1 = static_cast<GroupType*>(node1);
    assert(root0 != NULL);
    assert(root1 != NULL);
 
-   m_d0 = m_d1 = 0;
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Reset();
-#endif
-   if (initDoubleFunc.call(root0, m0, root1, m1)) { 
-      traverse(root0, root1);
-      leaveDoubleFunc.call(root0, m0, root1, m1);
-
-#ifdef GV_PROFILED
-      _PGOPTI_Prof_Dump();
-#endif
+   m_current0 = m_current1 = 0;
+   if (initDoubleFunc.call(root0, m0, parent0.getFrameMatrix(), 
+			   root1, m1, parent1.getFrameMatrix())) { 
+      traverseInnerInner(root0, root1);
+      leaveDoubleFunc.call(root0, m0, parent0.getFrameMatrix(), 
+			   root1, m1, parent1.getFrameMatrix());
       return true;
    } 
-
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Dump();
-#endif
    return false;
 }
 

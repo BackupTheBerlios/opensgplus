@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -56,11 +56,11 @@ public:
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
-//protected:
+protected:
    /*---------------------------------------------------------------------*/
    /*! \name Identifier Generator.                                        */
    /*! \{                                                                 */
-   static  inline unsigned getNextId  ();
+   static u32 getNextId  ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 };
@@ -68,7 +68,6 @@ public:
 inline Adapter::Adapter() 
 {
 }
-
 inline Adapter::~Adapter() 
 {
 }
@@ -81,14 +80,6 @@ inline std::ostream& operator << (std::ostream& os, const Adapter& object)
 inline std::ostream& Adapter::dump (std::ostream& os) const
 {
   return os;
-}
-
-inline unsigned Adapter::getNextId ()
-{
-   static unsigned nextId = 0;
-   unsigned id = nextId++;
-   assert(id < GV_MAX_NUM_ADAPTER);
-   return id;
 }
 
 END_GENVIS_NAMESPACE

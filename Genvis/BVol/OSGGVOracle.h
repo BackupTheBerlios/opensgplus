@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -32,6 +32,7 @@
 #define OSGGVORACLE_H
 
 #include "OSGGVBase.h"
+#include "OSGGVSingleton.h"
 #include "OSGGVIndices.h"
 #include "OSGGVBVolAdapterBase.h"
 #include "OSGGVBVolFunctions.h"
@@ -40,6 +41,7 @@ BEGIN_GENVIS_NAMESPACE
 
 /*! Interface for partitioning adapter vectors into two groups.
 */
+template <class BVOL>
 class OSG_GENVISLIB_DLLMAPPING Oracle
 {
 public:
@@ -50,17 +52,22 @@ public:
    virtual inline ~Oracle ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
+   /*! \name Description.                                                 */
+   /*! \{                                                                 */
+   virtual const char* getDescription () const = 0;
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
    /*! \name Partitioning.                                                */
    /*! \{                                                                 */
    /*! Number of index lists, the optimizer creates for the adapter list. */
-   virtual unsigned dimensions () = 0;
+   virtual u32 getDimension () const = 0;
    /*! Sort index list for dimension d. 
        @param index(out)   Index list for dimension d.
        @param allNodes(in) Adapter list from cache.
        @param d(in)        Dimension to be processed. */
-   virtual void sortIndexList (std::vector<unsigned>&       index,
+   virtual void sortIndexList (std::vector<u32>&       index,
 			       const std::vector<Adapter*>& allNodes,
-			       unsigned                     d) = 0;
+			       u32                     d) = 0;
    /*! Choose splitting of a subrange of the adapter list.
        @param index(in)    Index lists.
        @param allNodes(in) Adapter list from cache. 
@@ -69,88 +76,137 @@ public:
        @param d(out)       Dimension to be splitted.
        @param i(out)       Splitting index.  
        @return true iff splitting should be performed. */  
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
+   virtual bool doSplitting (std::vector< std::vector<u32> >& index,
 			     const std::vector<Adapter*>&          allNodes,
 			     const VectorIndices&                  range,
 			     const BoundingVolume<Real>&           bvol,
-			     unsigned&                             d, 
-			     unsigned&                             i) = 0;
+			     u32&                             d, 
+			     u32&                             i) = 0;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   static void  calcBoundingVolume (std::vector< std::vector<unsigned> >& index,
+   /*! \name Registration.                                                */
+   /*! \{                                                                 */
+   /*! Oracle classes are always singletons. The base class Oracle<BVOL> keeps a
+       list of all singletons. With registerOracle the singleton is registered with
+       this list. */
+   static void                              registerOracle (Oracle<BVOL>* instance);
+   /*! Get list of all registered oracles. */
+   static const std::vector<Oracle<BVOL>*>& getOracles ();
+   /*! Get singleton with identifier id. 
+       @return Returns NULL if not existing. */
+   static Oracle<BVOL>*                     getOracle (u32 id);
+   /*! Get singleton with name desc. 
+       @return Returns NULL if not existing. */
+   static Oracle<BVOL>*                     getOracle (const char* desc);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! Helper function. Calculates the bounding volume bvol by unifying the bounding volumes 
+       in the given range of the index list index. */
+   static void  calcBoundingVolume (std::vector< std::vector<u32> >& index,
 				    const std::vector<Adapter*>&          allNodes,
 				    const VectorIndices&  range,
 				    BoundingVolume<Real>& bvol);
-   virtual void calcBVOL (std::vector< std::vector<unsigned> >& index,
+
+   /*! Calculates the bounding volume bvol for the given range of the index list index. 
+       Default implementation here uses the static method calcBoundingVolume. */
+   virtual void calcBVol (std::vector< std::vector<u32> >& index,
 			  const std::vector<Adapter*>&          allNodes,
 			  const VectorIndices&  range,
 			  BoundingVolume<Real>& bvol);
+   /*! Updates the bounding volume bvol for range so that it is a valid bounding volume 
+       for subdivRange (created by subdividing in dimension dim). 
+       Default implementation here uses the static method calcBoundingVolume for subdivRange. */
+   virtual void updateBVol (std::vector< std::vector<u32> >& index,
+			    const std::vector<Adapter*>&          allNodes,
+			    const VectorIndices&  range,
+			    u32 dim,
+			    const VectorIndices&  subdivRange,
+			    BoundingVolume<Real>& bvol);
 
-   virtual void     setMinimum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol);
-   virtual void     setMaximum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol);
+protected:
+   static std::vector<Oracle<BVOL>*> s_instances;
 };
 
-inline Oracle::Oracle ()
+template <class BVOL>
+inline Oracle<BVOL>::Oracle ()
 {
 }
-inline Oracle::~Oracle ()
+template <class BVOL>
+inline Oracle<BVOL>::~Oracle ()
 {
 }
-inline void Oracle::calcBoundingVolume (std::vector< std::vector<unsigned> >& index,
-					const std::vector<Adapter*>&          allNodes,
-					const VectorIndices&  range,
-					BoundingVolume<Real>& bvol)
+template <class BVOL>
+inline void Oracle<BVOL>::calcBoundingVolume (std::vector< std::vector<u32> >& index,
+					      const std::vector<Adapter*>&          allNodes,
+					      const VectorIndices&  range,
+					      BoundingVolume<Real>& bvol)
 {
    bvol.setEmpty();
-   for (unsigned j=range.first; j<range.last; ++j) {
+   for (u32 j=range.first; j<range.last; ++j) {
       bvol.unify(static_cast<BVolAdapterBase*>(allNodes[index[0][j]])->getBoundingVolume());
    }
 }
-inline void Oracle::calcBVOL (std::vector< std::vector<unsigned> >& index,
-		      const std::vector<Adapter*>&          allNodes,
-		      const VectorIndices&  range,
-		      BoundingVolume<Real>& bvol)
+
+#if 1
+template <class BVOL>
+inline void Oracle<BVOL>::calcBVol (std::vector< std::vector<u32> >& index,
+				    const std::vector<Adapter*>&          allNodes,
+				    const VectorIndices&  range,
+				    BoundingVolume<Real>& bvol)
 {
-   return calcBoundingVolume(index, allNodes, range, bvol);
+   calcBoundingVolume(index, allNodes, range, bvol);
 }
 
-inline void Oracle::setMinimum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol)
+template <class BVOL>
+inline void Oracle<BVOL>::updateBVol (std::vector< std::vector<u32> >& index,
+				      const std::vector<Adapter*>&          allNodes,
+				      const VectorIndices&,
+				      u32,
+				      const VectorIndices&  subdivRange,
+				      BoundingVolume<Real>& bvol)
 {
-   calcBVOL (index, allNodes, range, bvol);
+   calcBoundingVolume(index, allNodes, subdivRange, bvol);
 }
-inline void Oracle::setMaximum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol)
+#else
+template <class BVOL>
+inline void Oracle<BVOL>::updateBVol (std::vector< std::vector<u32> >& index,
+				      const std::vector<Adapter*>&          allNodes,
+				      const VectorIndices&,
+				      u32 d,
+				      const VectorIndices&  subdivRange,
+				      BoundingVolume<Real>& bvol)
 {
-   calcBVOL (index, allNodes, range, bvol);
+  const BVOL& bv0 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][subdivRange.first]])->getBVol();
+  const BVOL& bv1 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][subdivRange.last-1]])->getBVol();
+  bvol.minVector()[d] = bv0.minVector()[d];
+  bvol.maxVector()[d] = bv1.maxVector()[d];
 }
-
+template <class BVOL>
+inline void Oracle<BVOL>::calcBVol (std::vector< std::vector<u32> >& index,
+				    const std::vector<Adapter*>&          allNodes,
+				    const VectorIndices&  range,
+				    BoundingVolume<Real>& bvol)
+{
+   bvol.setEmpty();
+   BVOL& dop = static_cast<BVOL&>(bvol);
+   for (u32 j=range.first; j<range.last; ++j) {
+      unify(dop, static_cast<BVolAdapter<BVOL>*>(allNodes[index[0][j]])->getBVol());
+   }
+}
+#endif
 
 /*! Base for partitioning adapter vector into two groups
     using sorted lists of projections to the main axes.
 */
 template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING MainAxesSorted : public Oracle
+class OSG_GENVISLIB_DLLMAPPING MainAxesSorted : public Oracle<BVOL>
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
    inline MainAxesSorted ();
+   virtual inline u32 getDimension () const { return 3; }
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Partitioning.                                                */
@@ -159,272 +215,48 @@ public:
        @param index(out)   Index list for dimension d.
        @param allNodes(in) Adapter list from cache.
        @param d(in)        Dimension to be processed. */
-   virtual void sortIndexList (std::vector<unsigned>&       index,
+   virtual void sortIndexList (std::vector<u32>&       index,
 				const std::vector<Adapter*>& allNodes,
-				unsigned                     d);
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			     const std::vector<Adapter*>&          allNodes,
-			     const VectorIndices&                  range,
-			     const BoundingVolume<Real>&           bvol,
-			     unsigned&                             d, 
-			     unsigned&                             i);
+				u32                     d);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-#if 0
-   virtual void     setMinimum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned d,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol);
-   virtual void     setMaximum (std::vector< std::vector<unsigned> >& index,
-				const std::vector<Adapter*>&          allNodes,
-				unsigned d,
-				const VectorIndices&  range,
-				BoundingVolume<Real>& bvol);
-#endif
-   virtual void calcBVOL (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&  range,
-			  BoundingVolume<Real>& bvol);
 };
 
 template <class BVOL>
 inline MainAxesSorted<BVOL>::MainAxesSorted ()
 {
 }
-#if 0
-template <class BVOL>
-inline void MainAxesSorted<BVOL>::setMinimum (std::vector< std::vector<unsigned> >& index,
-			const std::vector<Adapter*>&          allNodes,
-			unsigned d,
-			const VectorIndices&  range,
-			BoundingVolume<Real>& bvol)
-{
-  const BVOL& bv0 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][range.first]])->getBVol();
-  const BVOL& bv1 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][range.last-1]])->getBVol();
-  bvol.minVector()[d] = bv0.minVector()[d];
-  bvol.maxVector()[d] = bv1.maxVector()[d];
-}
-template <class BVOL>
-inline void MainAxesSorted<BVOL>::setMaximum (std::vector< std::vector<unsigned> >& index,
-		 const std::vector<Adapter*>&          allNodes,
-		 unsigned d,
-		 const VectorIndices&  range,
-		 BoundingVolume<Real>& bvol)
-{
-  const BVOL& bv0 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][range.first]])->getBVol();
-  const BVOL& bv1 = static_cast<BVolAdapter<BVOL>*>(allNodes[index[d][range.last-1]])->getBVol();
-  bvol.minVector()[d] = bv0.minVector()[d];
-  bvol.maxVector()[d] = bv1.maxVector()[d];
-}
-#endif
-template <class BVOL>
-inline void MainAxesSorted<BVOL>::calcBVOL (std::vector< std::vector<unsigned> >& index,
-		      const std::vector<Adapter*>&          allNodes,
-		      const VectorIndices&  range,
-		      BoundingVolume<Real>& bvol)
-{
-   bvol.setEmpty();
-   BVOL& dop = static_cast<BVOL&>(bvol);
-   for (unsigned j=range.first; j<range.last; ++j) {
-      unify(dop, static_cast<BVolAdapter<BVOL>*>(allNodes[index[0][j]])->getBVol());
-   }
-}
 
 
-/*! Partitioning adapter vector into two groups
-    by evaluating a surface-intersection-cost metric 
-    (evaluates surface area of bounding volume). The adapter vector
-    is then partitioned according to the minimum.
+/*! Base for partitioning adapter vector into two groups
+    using sorted lists of projections to all axes.
 */
 template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING MinimumSIC : public MainAxesSorted<BVOL>
+class OSG_GENVISLIB_DLLMAPPING AllAxesSorted : public Oracle<BVOL>
 {
 public:
-   inline MinimumSIC ();
-
-   virtual unsigned dimensions () { return 3; }
-
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&                  range,
-			  const BoundingVolume<Real>&           bvol,
-			  unsigned&                             d, 
-			  unsigned&                             i);
-
-protected:
-   virtual Real splitCosts (const std::vector<unsigned>& nodes,
-			    const std::vector<Adapter*>& allNodes,
-			    const VectorIndices&  range,
-			    unsigned&             position);
-
-   std::vector<Real> m_leftCosts;
-   std::vector<Real> m_rightCosts;
+   /*---------------------------------------------------------------------*/
+   /*! \name Constructor.                                                 */
+   /*! \{                                                                 */
+   inline AllAxesSorted ();
+   virtual inline u32 getDimension () const { return BVOL::Size; }
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Partitioning.                                                */
+   /*! \{                                                                 */
+   /*! Sort index list for dimension d. 
+       @param index(out)   Index list for dimension d.
+       @param allNodes(in) Adapter list from cache.
+       @param d(in)        Dimension to be processed. */
+   virtual void sortIndexList (std::vector<u32>&       index,
+				const std::vector<Adapter*>& allNodes,
+				u32                     d);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 template <class BVOL>
-inline MinimumSIC<BVOL>::MinimumSIC ()
-  : MainAxesSorted<BVOL>()
-{
-}
-
-
-/*! Partitioning adapter vector into two groups
-     by evaluating the volume of the bounding volume. The adapter vector
-    is then partitioned according to the minimum.
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING MinimumVolume : public MinimumSIC<BVOL>
-{
-public:
-   inline MinimumVolume ();
-
-   virtual unsigned dimensions () { return 3; }
-
-protected:
-   virtual Real splitCosts (const std::vector<unsigned>& nodes,
-			    const std::vector<Adapter*>& allNodes,
-			    const VectorIndices&  range,
-			    unsigned&             position);
-};
-
-template <class BVOL>
-inline MinimumVolume<BVOL>::MinimumVolume ()
-  : MinimumSIC<BVOL>()
-{
-}
-
-
-/*! Partitioning adapter vector into two groups
-    by subdividing the list of longest extent at the median.
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING LongestSideMedian : public MainAxesSorted<BVOL>
-{
-public:
-   inline LongestSideMedian ();
-
-   virtual unsigned dimensions () { return 3; }
-
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&                  range,
-			  const BoundingVolume<Real>&                 bvol,
-			  unsigned&                             d, 
-			  unsigned&                             i);
-};
-
-template <class BVOL>
-inline LongestSideMedian<BVOL>::LongestSideMedian ()
-{
-}
-
-
-/*! Partitioning adapter vector into two groups
-    by subdividing the list of longest extent at the mean.
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING LongestSideMean : public LongestSideMedian<BVOL>
-{
-public:
-   inline LongestSideMean ();
-
-   virtual unsigned dimensions () { return 3; }
-
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&                  range,
-			  const BoundingVolume<Real>&                 bvol,
-			  unsigned&                             d, 
-			  unsigned&                             i);
-};
-
-template <class BVOL>
-inline LongestSideMean<BVOL>::LongestSideMean ()
-{
-}
-
-/*! Partitioning adapter vector into two groups
-    by subdividing the list of longest extent at the median. This version
-    of LongestSideMedian uses all k axes instead of only the main axes.
-    For k-DOPs only!
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING LongestSideMedian2 : public LongestSideMedian<BVOL>
-{
-public:
-   inline LongestSideMedian2 ();
-
-   virtual inline unsigned dimensions () { return BVOL::Size; }
-   
-   virtual void sortIndexList (std::vector<unsigned>& index,
-				const std::vector<Adapter*>&  allNodes,
-				unsigned dimension);
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&                  range,
-			  const BoundingVolume<Real>&                 bvol,
-			  unsigned&                             dimension, 
-			  unsigned&                             split);
-};
-
-template <class BVOL>
-inline LongestSideMedian2<BVOL>::LongestSideMedian2 ()
-{
-}
-
-
-/*! Partitioning adapter vector into two groups
-    by subdividing the list of longest extent at the mean. This version
-    of LongestSideMean uses all k axes instead of only the main axes.
-    For k-DOPs only!
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING LongestSideMean2 : public LongestSideMedian2<BVOL>
-{
-public:
-   inline LongestSideMean2 ();
-
-   virtual inline unsigned dimensions () { return BVOL::Size; }
-
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			  const std::vector<Adapter*>&          allNodes,
-			  const VectorIndices&                  range,
-			  const BoundingVolume<Real>&                 bvol,
-			  unsigned&                             dimension, 
-			  unsigned&                             split);
-};
-
-template <class BVOL>
-inline LongestSideMean2<BVOL>::LongestSideMean2 ()
-{
-}
-
-/*! Partitioning adapter vector into two groups
-    by iterating over the vector and choosing the one possibility (of two)
-    where the bounding volume has smaller surface area approximation.
-*/
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING HeuristicGrouping : public Oracle
-{
-public:
-   inline HeuristicGrouping ();
-
-   virtual inline unsigned dimensions () { return BVOL::Size; }
-   
-   virtual void sortIndexList (std::vector<unsigned>& index,
-				const std::vector<Adapter*>&  allNodes,
-				unsigned dimension);
-   virtual bool doSplitting (std::vector< std::vector<unsigned> >& index,
-			     const std::vector<Adapter*>&          allNodes,
-			     const VectorIndices&                  range,
-			     const BoundingVolume<Real>&           bvol,
-			     unsigned&                             dimension, 
-			     unsigned&                             split);
-};
-
-template <class BVOL>
-inline HeuristicGrouping<BVOL>::HeuristicGrouping ()
+inline AllAxesSorted<BVOL>::AllAxesSorted ()
 {
 }
 

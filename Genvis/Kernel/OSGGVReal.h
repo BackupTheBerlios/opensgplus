@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// File:    $Id: OSGGVReal.h,v 1.1 2003/09/11 16:20:30 fuenfzig Exp $
+// File:    $Id: OSGGVReal.h,v 1.2 2004/03/12 13:23:23 fuenfzig Exp $
 // Author:  Gordon Mueller, <gordon@vrroom.de>
 // ---------------------------------------------------------------
 
@@ -11,8 +11,8 @@
 
 BEGIN_GENVIS_NAMESPACE
 
-const double PRECISION_DEFAULT = 1e-6;
-const double PRECISION_FLOAT   = 1e-6;
+const float  PRECISION_DEFAULT = 1e-6;
+const float  PRECISION_FLOAT   = 1e-6;
 const double PRECISION_DOUBLE  = 1e-11;
 
 template <class REAL>
@@ -22,7 +22,7 @@ inline int sign_pm (REAL a)
 }
 
 template <class REAL>
-class OSG_GENVISLIB_DLLMAPPING FloatingComparator
+class FloatingComparator
 {
  public:
    FloatingComparator(REAL precision = REAL(PRECISION_DEFAULT));

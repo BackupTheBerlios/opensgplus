@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -16,54 +16,7 @@
 #include "OSGGVBase.h"
 USING_GENVIS_NAMESPACE
 
-#if defined(WIN32)
-void genvis::getProcessVMConsumption(SIZE_T& processVMSize, SIZE_T& processVMUsed)
-{
-  // Get my process memory status counters:
-  MEMORYSTATUS processMemoryStatus;
-  GlobalMemoryStatus(&processMemoryStatus);
-  
-  processVMSize = processMemoryStatus.dwTotalVirtual;
-  
-  SIZE_T processVMFree = processMemoryStatus.dwAvailVirtual;
-  processVMUsed = processVMSize - processVMFree;
-}
-
-bool genvis::getProcessHeapMemoryConsumption(unsigned int& heapBlocksUsed, unsigned int& heapMemoryUsed)
-{
-  bool retVal = false;
-  heapBlocksUsed = 0;
-  heapMemoryUsed = 0;
-  
-  _HEAPINFO hinfo;
-  hinfo._pentry = NULL; // NULL means a pointer to the beginning of the heap.
-  
-  // Iterate on the heap entries and count the allocated memory blocks:
-  // -----------------------------------------------------------------
-  // Get the first heap entry:
-  int heapstatus = _heapwalk(&hinfo);
-  
-  while (heapstatus == _HEAPOK) {
-      // If this is a "Used" entry:
-      if (hinfo._useflag == _USEDENTRY)
-                {
-		  // Accumulate the current entry and its size:
-		  heapBlocksUsed++;
-		  heapMemoryUsed += hinfo._size;
-                }
-      
-      // Get the next heap entry:
-      heapstatus = _heapwalk(&hinfo);
-  }
-  
-  // Return true iff we manage to traverse the entire heap:
-  if (heapstatus == _HEAPEND) {
-    retVal = true;
-  }
-  
-  return retVal;
-}
-#endif
+std::ostream& genvis::GV_stream = std::cout;
 
 #ifdef GV_VERBOSE
 bool genvis::evalVerbosity ()
@@ -73,11 +26,11 @@ bool genvis::evalVerbosity ()
       if ((strcmp(env, "true")==0) 
 	  || (strcmp(env, "TRUE")==0)
 	  || (strcmp(env, "True")==0)) {
-	 std::cout << "GENVIS: verbose mode due to GV_VERBOSE=true"
+	 GV_stream << "GENVIS: verbose mode due to GV_VERBOSE=true"
 		   << std::endl; 
 	 return true;
       } else {
-	 std::cout << "GENVIS: silent mode due to GV_VERBOSE!=true"
+	 GV_stream << "GENVIS: silent mode due to GV_VERBOSE!=true"
 		   << std::endl; 
 	 return false;
       }

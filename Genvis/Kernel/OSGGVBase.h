@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:52:15 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -39,9 +39,6 @@ OSG_USING_NAMESPACE
 // OSGGVCache.h/.cpp:
 // cache implementation uses HashMap instead of OpenSG Attachment
 #define GV_CACHE_HASHMAP
-// OSGGVDoubleTraverser.h/.cpp:
-// case dispatch by dynamic_cast instead of virtual function
-#undef  GV_DISPATCHBYCAST
 // storing of bvol in adapter classes 
 // instead of lazy generation
 #undef  GV_STOREDBVOL_FACE
@@ -51,11 +48,11 @@ OSG_USING_NAMESPACE
 #undef  GV_STOREDCOORDS_FACE
 #undef  GV_STOREDCOORDS_PRIMITIVE
 #undef  GV_STOREDCOORDS_TRIANGLE
-// OSGGVBVolCollision.h/.cpp only:
-// realign also dop1 in local-coordsystem of dop2
-#define GV_WITH_CLASS2
 // use bounding-volumes in mixed tests
-#undef  GV_BVOLS_IN_MIXEDTESTS
+#define GV_BVOLS_IN_MIXEDTESTS
+// OSGGVBVolCollision.h/.cpp:
+// dynamic collision detection for translations
+#define GV_COLDYNAMIC
 // OSGGVTriangleAdapterAligned.h/.cpp:
 // use subcones (currently 4 subcones per direction)
 #define GV_WITH_SUBCONES
@@ -73,13 +70,8 @@ OSG_USING_NAMESPACE
 // activate code for collision detection with RAPID
 #undef  GV_WITH_RAPID
 
-#ifdef WIN32
-// remark #383: value copied to temporary, reference to temporary used
-#pragma warning (disable : 383)
-// remark #869: parameter was never referenced
-#pragma warning (disable : 869)
-
 // Windows Style DEBUG or NDEBUG macros
+#ifdef WIN32
 # if defined(OSG_DEBUG) && !defined(_DEBUG)
 #  define _DEBUG
 # endif
@@ -87,17 +79,6 @@ OSG_USING_NAMESPACE
 #  define NDEBUG
 # endif
 #endif
-
-// Adapter constants
-// constant with the size of the AdapterVectorArray
-const unsigned GV_MAX_NUM_ADAPTER = 4;
-// constant for the number of objects
-const unsigned GV_MAX_NUM  = 100000; //10000;
-const unsigned GV_MAX_NUM_OBJECTS  = 1000; //10000;
-// constant for the number of faces
-const unsigned GV_MAX_NUM_FACES    = 100000; //400000;
-// constant for the number of faces
-const unsigned GV_MAX_NUM_TRIANGLES= 100000; //400000;
 
 // GENVIS namespace
 #define BEGIN_GENVIS_NAMESPACE namespace genvis {
@@ -121,21 +102,10 @@ const unsigned GV_MAX_NUM_TRIANGLES= 100000; //400000;
 
 BEGIN_GENVIS_NAMESPACE
 
+extern std::ostream& GV_stream;
 #ifdef GV_VERBOSE
-extern bool GV_verbose;
-bool        evalVerbosity ();
-#endif
-
-// Specialities
-#ifdef WIN32
-extern "C++" {
- 
-void OSG_GENVISLIB_DLLTMPLMAPPING getProcessVMConsumption         
-(SIZE_T& processVMSize, SIZE_T& processVMUsed);
-bool OSG_GENVISLIB_DLLTMPLMAPPING getProcessHeapMemoryConsumption 
-(unsigned int& heapBlocksUsed, unsigned int& heapMemoryUsed);
-
-}
+extern bool          GV_verbose;
+bool                 evalVerbosity ();
 #endif
 
 // Types
@@ -161,6 +131,15 @@ typedef PointInterface<Real32, VecStorage2<Real32> >  PointClass2;
 
 // Constants
 const Real infinity = 1e16;
+// Adapter Constants
+// constant with the size of the AdapterVectorArray
+const u32  GV_MAX_NUM_ADAPTER = 4;
+// OSGGVAdapterFactory.h
+// capacity of factory FactoryArray<AdapterType>
+const u32  GV_MAX_NUM      = 100000;
+// OSGGVRapidCollision.h/.cpp
+// capacity of contact containers
+const u32  GV_MAX_CONTACTS = 1000;
 
 // Missing functions of namespace std
 template<class TYPE> 
@@ -185,6 +164,54 @@ template <class REAL>
 inline REAL cos2sin (const REAL& v)
 {
    return sqrt(1-v*v);
+}
+
+template <class TYPE>
+inline u32 stdLog2 (TYPE arg)
+{
+   u32 result = 0;
+   while (arg > 1) {
+      arg >>= 1;
+      ++result;
+   }
+   return result;
+}
+template <class TYPE>
+inline u32 stdFloorPower2 (TYPE arg)
+{
+   return 1 << (stdLog2(arg));
+}
+template <class TYPE>
+inline u32 stdCeilPower2 (TYPE arg)
+{
+   return 1 << (stdLog2(arg)+1);
+}
+
+template <class TYPE>
+inline TYPE stdDouble (const TYPE& arg)
+{
+   return (arg==0 ? 1 : arg*2);
+}
+template <class TYPE>
+inline TYPE stdHalf (const TYPE& arg)
+{
+   return arg/2;
+}
+template <class TYPE>
+inline TYPE stdDouble (const TYPE& arg, u32 i)
+{
+   return arg<<i;
+}
+template <class TYPE>
+inline TYPE stdHalf (const TYPE& arg, u32 i)
+{
+   return arg>>i;
+}
+
+template <class TYPE>
+inline bool operator!= (const TYPE& a, const TYPE& b)
+{
+   return !(a == b);
 }
 
 END_GENVIS_NAMESPACE

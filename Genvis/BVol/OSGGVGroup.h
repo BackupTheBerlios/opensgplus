@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -48,7 +48,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolAdapterBase Inherited;
+   typedef BVolAdapterBase          Inherited;
+   typedef BoundingVolume<Real>     BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
@@ -58,19 +59,29 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Interface BVolAdapterBase.                                   */
    /*! \{                                                                 */
-   virtual bool             isLeaf() const;
+   virtual bool isLeaf() const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Accessing child nodes.                                       */
    /*! \{                                                                 */
-   virtual unsigned         size () const = 0;
-   virtual BVolAdapterBase* getSon (unsigned i) const = 0;
+   virtual u32                     size () const = 0;
+   virtual BVolAdapterBase*        getSon (u32 i) const = 0;
+   /*! \brief One leaf node of this group. */
+   virtual inline BVolAdapterBase* findLeaf () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 };
 
 inline BVolGroupInterface::BVolGroupInterface ()
 {   
+}
+inline BVolAdapterBase* BVolGroupInterface::findLeaf () const
+{
+   BVolAdapterBase* node = getSon(0);
+   while (node != NULL && node->isInner()) {
+      node = ((BVolGroupInterface*)node)->getSon(0);
+   }
+   return node;
 }
 
 
@@ -82,8 +93,10 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolGroupBase                 Self;
    typedef BVolGroupInterface            Inherited;
+   typedef BVolGroupBase                 Self;
+   typedef BoundingVolume<Real>          BVol;
+
    typedef std::vector<BVolAdapterBase*> Container;
    typedef Container::iterator           Iterator;
    typedef Container::const_iterator     ConstIterator;
@@ -97,18 +110,17 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Member.                                                      */
    /*! \{                                                                 */
-   inline void             setValid (bool valid=true);
-   inline bool             isValid  () const;
-   inline unsigned         getNumLeafs() const;
-   inline unsigned         getDepth() const;
-   inline Container&       getSons ();
-   inline const Container& getSons () const;
+   inline void              setValid (bool valid=true);
+   inline bool              isValid  () const;
+   inline u32               getNumLeafs() const;
+   inline Container&        getSons ();
+   inline const Container&  getSons () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Interface BVolGroupInterface.                                */
    /*! \{                                                                 */
-   virtual unsigned         size () const;
-   virtual BVolAdapterBase* getSon (unsigned i) const;
+   virtual u32              size () const;
+   virtual BVolAdapterBase* getSon (u32 i) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Dump.                                                        */
@@ -145,9 +157,9 @@ inline bool BVolGroupBase::isValid () const
    return m_valid;
 }
 
-inline unsigned BVolGroupBase::getNumLeafs() const
+inline u32 BVolGroupBase::getNumLeafs() const
 {
-   unsigned leafs = 0;
+   u32 leafs = 0;
    for (ConstIterator iter = getSons().begin();
 	iter != getSons().end(); 
 	++iter) {
@@ -158,16 +170,6 @@ inline unsigned BVolGroupBase::getNumLeafs() const
      }
    }
    return leafs;
-}
-inline unsigned BVolGroupBase::getDepth () const
-{
-   unsigned depth = 0;
-   BVolAdapterBase* parent = getParent();
-   while (parent->isInner()) {
-      ++depth;
-      parent = parent->getParent();
-   }
-   return depth;
 }
 
 
@@ -181,10 +183,10 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolGroup<BVOL>       Self;
    typedef BVolGroupBase         Inherited;
-   typedef BVOL                  BVol;
+   typedef BVolGroup<BVOL>       Self;
    typedef FactoryHeap<Self>     FactoryType;
+   typedef BVOL                  BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
@@ -194,12 +196,10 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Update bounding volume.                                      */
    /*! \{                                                                 */
-   inline void         init (unsigned first,
-			     unsigned last,
-			     const std::vector< std::vector<unsigned> >& index,
-			     const std::vector<Adapter*>&                nodes);
-   inline void                                 updateBoundingVolume ();
-   virtual inline void                         update ();
+   inline void init (u32 first, u32 last,
+		     const std::vector< std::vector<u32> >& index,
+		     const std::vector<Adapter*>&           nodes);
+   virtual inline void update ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Bounding volume.                                             */
@@ -227,7 +227,14 @@ public:
    /*---------------------------------------------------------------------*/
 
 protected:
-   BVOL  m_bvol;
+   /*---------------------------------------------------------------------*/
+   /*! \name Internal Methods.                                            */
+   /*! \{                                                                 */
+   inline void updateBoundingVolume ();
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+
+   BVOL m_bvol;
 };
 
 template <class BVOL>
@@ -235,9 +242,9 @@ inline BVolGroup<BVOL>::BVolGroup ()
 {   
 }
 template <class BVOL>
-inline void BVolGroup<BVOL>::init (unsigned,
-				   unsigned,
-				   const std::vector< std::vector<unsigned> >&,
+inline void BVolGroup<BVOL>::init (u32,
+				   u32,
+				   const std::vector< std::vector<u32> >&,
 				   const std::vector<Adapter*>&)
 {   
 }

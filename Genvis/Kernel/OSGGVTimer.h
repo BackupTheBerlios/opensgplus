@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -117,18 +117,14 @@ inline genvis::i64 Timer::getCurrentTime ()
 #ifdef WIN32
    LARGE_INTEGER count; 
    if (QueryPerformanceCounter(&count)) {
-      return (genvis::i64)count.LowPart; 
+      return genvis::i64(count.LowPart); 
    } else {
-      return timeGetTime();
+      return genvis::i64(timeGetTime());
    }
 #else
-   long s;
-   long us;
    struct timeval stop;
    gettimeofday(&stop, NULL);
-   s = stop.tv_sec;
-   us = stop.tv_usec; 
-   return us+s*1000;
+   return genvis::i64(stop.tv_usec + stop.tv_sec*1000);
 #endif
 }
 inline Real Timer::getTimeUnits ()
@@ -136,12 +132,12 @@ inline Real Timer::getTimeUnits ()
 #ifdef WIN32
    LARGE_INTEGER freq; 
    if (QueryPerformanceFrequency(&freq)) {
-      return 1000.0/(freq.HighPart*pow(2, 32)+freq.LowPart);
+      return 1000.0f/(Real(freq.HighPart*pow(2, 32))+Real(freq.LowPart));
    } else {
-      return 1.0;
+      return 1.0f;
    }
 #else
-   return 1.0;
+   return 1.0f;
 #endif
 }
 

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:43:27 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -37,9 +37,8 @@
 #include "OSGGVBase.h"
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
-#include "OSGGVTriangleAdapterAligned.h"
-#include "OSGGVKDop.h"
 #include "OSGGVDoubleTraverser.h"
+#include "OSGGVTriangleAdapterAligned.h"
 #include "OSGGVBVolDistance.h"
 
 BEGIN_GENVIS_NAMESPACE
@@ -52,12 +51,23 @@ class OSG_GENVISLIB_DLLMAPPING MinimumDistanceCalc
 : public BVolDistanceBase<BasicTraits,Metric>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef BVolDistanceBase<BasicTraits,Metric>                  Inherited;
-   typedef BVOL                                                  BVol;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+   typedef typename Inherited::MetricType                        MetricType; 
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangleAligned<BasicTraits,BVOL>               AdapterType;
    typedef BVolGroupAligned<BVOL>                                GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
+   typedef BVOL                                                  BVol;
 #ifdef GV_PRECOMPUTEDREALIGN_32BIT
    enum { OccTableHighestBit = 31, OccTableBits = 32 };
    typedef u32                                                   OccTableType;
@@ -66,7 +76,7 @@ public:
    typedef u64                                                   OccTableType;
 #endif
    typedef DataAligned<Real,BVOL::Size>                          Data;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -77,11 +87,11 @@ public:
    /*! \{                                                                 */
    virtual bool   Init ();
    /*! Init for the single pair in the arguments.                         */
-   bool        InitDouble        (GroupType* root0, const TransformType& d0, 
-				  GroupType* root1, const TransformType& d1);
+   bool        InitDouble        (GroupType* root0, const TransformType& d0, const TransformType& f0, 
+				  GroupType* root1, const TransformType& d1, const TransformType& f1);
    /*! Leave for the single pair in the arguments.                        */
-   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, 
-			    GroupType* root1, const TransformType& m1);
+   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
 
    /*! Operation for inner nodes in the arguments.                        */
    ResultT BVolBVolCollision (GroupType* b0, GroupType* b1);
@@ -103,20 +113,23 @@ public:
 
 protected:
    TransformType      m_M0;
-   VectorClass        m_M1Direction[2*BVOL::Size];
-   VectorClass        m_proj[BVOL::Size];
-   Real               m_M1Offset[BVOL::Size];
    TransformType      m_M1ToM0;
    TransformType      m_M0ToM1;
+
+   Real               m_scale;
+
+   VectorClass        m_proj[BVOL::Size];
+   Real               m_M1Offset[BVOL::Size];
+
    unsigned           m_perm[2*BVOL::Size];
    unsigned           m_mask[2*BVOL::Size];
    unsigned           m_submask[2*BVOL::Size];
 };
 
 template <class BasicTraits, class BVOL, class Metric>
-inline bool MinimumDistanceCalc<BasicTraits,BVOL,Metric>::LeaveDouble (
-GroupType*, const TransformType&, 
-GroupType*, const TransformType&)
+inline bool MinimumDistanceCalc<BasicTraits,BVOL,Metric>::LeaveDouble 
+(GroupType*, const TransformType&, const TransformType&, 
+ GroupType*, const TransformType&, const TransformType&)
 {
    return false;
 }
@@ -127,10 +140,15 @@ inline void MinimumDistanceCalc<BasicTraits,BVOL,Metric>::dump (std::ostream& os
 }
 
 
+/*! \brief Traits class for usage of MinimumDistanceCalcTraits with double traverser.
+ */
 template <class BasicTraits, class BVOL, class Metric=EuclideanMetric>
 class OSG_GENVISLIB_DLLMAPPING MinimumDistanceCalcTraits
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef typename MinimumDistanceCalc<BasicTraits,BVOL,EuclideanMetric>::CacheData   CacheData;
    typedef typename MinimumDistanceCalc<BasicTraits,BVOL,EuclideanMetric>::ResultT     ResultT;
    typedef MinimumDistanceCalc<BasicTraits,BVOL,EuclideanMetric>                       ObjectT;
@@ -147,7 +165,10 @@ public:
    typedef DispatchFunctor<ResultT,AdapterType,GroupType,ObjectT> PrimBVolFunctorT;
    typedef DispatchFunctor<ResultT,GroupType,AdapterType,ObjectT> BVolPrimFunctorT;
    typedef DispatchFunctor<ResultT,AdapterType,AdapterType,ObjectT> PrimPrimFunctorT;
-
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Functor creation.                                            */
+   /*! \{                                                                 */
    static  InitFunctorT        createInitFunctor       (ObjectT* obj);
    static  InitDoubleFunctorT  createInitDoubleFunctor (ObjectT* obj);
    static  LeaveDoubleFunctorT createLeaveDoubleFunctor (ObjectT* obj);
@@ -155,6 +176,8 @@ public:
    static  PrimBVolFunctorT createPrimBVolFunctor (ObjectT* obj);
    static  BVolPrimFunctorT createBVolPrimFunctor (ObjectT* obj);
    static  PrimPrimFunctorT createPrimPrimFunctor (ObjectT* obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 END_GENVIS_NAMESPACE

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -54,7 +54,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
-   Optimizer (Oracle*                      oracle,
+   Optimizer (Oracle<BVol>*                      oracle,
 	      const std::vector<Adapter*>& leafNodes,
 	      unsigned                     maxDepth = 50,
 	      unsigned                     minObjects = 256);
@@ -102,7 +102,7 @@ protected:
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
-   Oracle*  m_oracle;
+   Oracle<BVol>*  m_oracle;
    unsigned m_maxLevel;
    unsigned m_currentLevel;
    unsigned m_minObjects;
@@ -125,7 +125,7 @@ inline void Optimizer<GROUP>::setDataStore (std::vector<GroupType*>* store)
    m_store = store;
 }
 template <class GROUP>
-inline std::vector<Optimizer<GROUP>::GroupType*>& 
+inline std::vector<typename Optimizer<GROUP>::GroupType*>& 
 Optimizer<GROUP>::getDataStore () const
 {
    assert(m_store != NULL);

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:43:27 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -36,12 +36,17 @@
 #include "OSGGVBase.h"
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
-#include "OSGGVTriangleAdapterAligned.h"
-#include "OSGGVKDop.h"
 #include "OSGGVDoubleTraverser.h"
+#include "OSGGVTriangleAdapterAligned.h"
 #include "OSGGVBVolDistance.h"
+#include "OSGGVDoubleTraverserFixed.h"
 
 BEGIN_GENVIS_NAMESPACE
+
+// get node depth in hierarchy by counting
+#undef   GV_COUNT_DEPTH
+
+template <class BasicTraits> class DoubleTraverserFixedBase;
 
 /*! \brief Minimum distance computation using the k-DOPs at a fixed level 
     as primitives.
@@ -52,12 +57,23 @@ class OSG_GENVISLIB_DLLMAPPING MinimumDistanceBVol
 : public BVolDistanceBase<BasicTraits,Metric>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef BVolDistanceBase<BasicTraits,Metric>                  Inherited;
-   typedef BVOL                                                  BVol;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+   typedef typename Inherited::MetricType                        MetricType; 
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangleAligned<BasicTraits,BVOL>               AdapterType;
    typedef BVolGroupAligned<BVOL>                                GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
+   typedef BVOL                                                  BVol;
 #ifdef GV_PRECOMPUTEDREALIGN_32BIT
    enum { OccTableHighestBit = 31, OccTableBits = 32 };
    typedef u32                                                   OccTableType;
@@ -66,7 +82,7 @@ public:
    typedef u64                                                   OccTableType;
 #endif
    typedef DataAligned<Real,BVOL::Size>                          Data;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -82,11 +98,11 @@ public:
    /*! \{                                                                 */
    virtual bool        Init ();
    /*! Init for the single pair in the arguments.                         */
-   bool    InitDouble        (GroupType* root0, const TransformType& d0, 
-			      GroupType* root1, const TransformType& d1);
+   bool    InitDouble        (GroupType* root0, const TransformType& d0, const TransformType& f0, 
+			      GroupType* root1, const TransformType& d1, const TransformType& f1);
    /*! Leave for the single pair in the arguments.                        */
-   bool    LeaveDouble       (GroupType* root0, const TransformType& d0, 
-			      GroupType* root1, const TransformType& d1);
+   bool    LeaveDouble       (GroupType* root0, const TransformType& d0, const TransformType& f0, 
+			      GroupType* root1, const TransformType& d1, const TransformType& f1);
    /*! Operation for inner nodes in the arguments.                        */
    ResultT BVolBVolCollision (GroupType* b0, GroupType* b1);
    /*! Operation for a leaf node in the first and an inner node 
@@ -115,14 +131,8 @@ protected:
 			  const Data& data2,
 			  PointClass* store1 = NULL,
 			  PointClass* store2 = NULL);
-   Real     bvolDistanceIntersect (const BVOL& dop1,
-				   const BVOL& dop2,
-				   const Data& data1,
-				   const Data& data2,
-				   PointClass* store1 = NULL,
-				   PointClass* store2 = NULL);
    void     edgePolygonDistance (const PointClass* p1,
-				 unsigned jmax, const PointClass* p2,
+				 u32 jmax, const PointClass* p2,
 				 const VectorClass& dirZ,
 				 Real& result,
 				 PointClass* store1,
@@ -134,19 +144,19 @@ protected:
 			     Real& result,
 			     PointClass* store1,
 			     PointClass* store2);
-   void     allEdgesDistance (unsigned imax, const PointClass* p1,
-			      unsigned jmax, const PointClass* p2,
+   void     allEdgesDistance (u32 imax, const PointClass* p1,
+			      u32 jmax, const PointClass* p2,
 			      Real& result,
 			      PointClass* store1,
 			      PointClass* store2);
-   bool     intersectProjection (unsigned imax, const PointClass* p1, 
-				 unsigned jmax, const PointClass* p2,
+   bool     intersectProjection (u32 imax, const PointClass* p1, 
+				 u32 jmax, const PointClass* p2,
 				 const VectorClass& dirX, 
 				 const VectorClass& dirY,
-				 std::vector<unsigned>& enter, 
-				 std::vector<unsigned>& leave);
-   bool     intersectProjection (unsigned imax, const PointClass* p1,
-				 unsigned jmax, const PointClass* p2,
+				 std::vector<u32>& enter, 
+				 std::vector<u32>& leave);
+   bool     intersectProjection (u32 imax, const PointClass* p1,
+				 u32 jmax, const PointClass* p2,
 				 const VectorClass& dirX,
 				 const VectorClass& dirY,
 				 const VectorClass& dirZ,
@@ -170,8 +180,10 @@ protected:
    /*---------------------------------------------------------------------*/
    /*! \name Adapter depth.                                               */
    /*! \{                                                                 */
-   unsigned getCurrentDepth0 (GroupType* adapter) const;
-   unsigned getCurrentDepth1 (GroupType* adapter) const;
+   inline u32 getCurrentDepth0 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+				GroupType* adapter) const;
+   inline u32 getCurrentDepth1 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+				GroupType* adapter) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -179,15 +191,20 @@ protected:
    std::vector<GroupType*> m_root1;
    bool                    m_thisIntersect;
 
-   VectorClass        m_M1Direction[2*BVOL::Size];
-   VectorClass        m_proj[BVOL::Size];
-   Real               m_M1Offset[BVOL::Size];
    TransformType      m_M0;
    TransformType      m_M1ToM0;
    TransformType      m_M0ToM1;
-   unsigned           m_perm[2*BVOL::Size];
-   unsigned           m_mask[2*BVOL::Size];
-   unsigned           m_submask[2*BVOL::Size];
+
+   Real               m_scale;
+   VectorClass        m_M1Direction[2*BVOL::Size];
+   Real               m_metric[BVOL::Size];
+
+   VectorClass        m_proj[BVOL::Size];
+   Real               m_M1Offset[BVOL::Size];
+
+   u32                m_perm[2*BVOL::Size];
+   u32                m_mask[2*BVOL::Size];
+   u32                m_submask[2*BVOL::Size];
 };
 
 template <class BasicTraits, class BVOL, class Metric>
@@ -203,15 +220,37 @@ inline void MinimumDistanceBVol<BasicTraits,BVOL,Metric>::setDistance (Real dist
    collisionData.getData().distance = (isIntersecting() ? -dist : dist);
 }
 template<class BasicTraits, class BVOL, class Metric>
-inline void MinimumDistanceBVol<BasicTraits,BVOL,Metric>::updatePoints 
-(const PointClass& p1,
- const PointClass& p2,
- PointClass* store1,
- PointClass* store2)
+inline void MinimumDistanceBVol<BasicTraits,BVOL,Metric>::updatePoints (const PointClass& p1,
+									const PointClass& p2,
+									PointClass* store1,
+									PointClass* store2)
 {
    if (store1 != NULL) { store1->setValue(p1); }
    if (store2 != NULL) { store2->setValue(p2); } 
 }
+template<class BasicTraits, class BVOL, class Metric>
+inline u32 MinimumDistanceBVol<BasicTraits,BVOL,Metric>::getCurrentDepth0 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+									   GroupType* adapter) const
+{
+#ifdef GV_COUNT_DEPTH
+   return adapter->getDepth();
+#else
+   assert(trav != NULL);
+   return trav->getCurrentDepth0();
+#endif
+}
+template<class BasicTraits, class BVOL, class Metric>
+inline u32 MinimumDistanceBVol<BasicTraits,BVOL,Metric>::getCurrentDepth1 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+									   GroupType* adapter) const
+{
+#ifdef GV_COUNT_DEPTH
+   return adapter->getDepth();
+#else
+   assert(trav != NULL);
+   return trav->getCurrentDepth1();
+#endif
+}
+
 
 /*! \brief Traits class for usage of MinimumDistanceBVol with double traverser.
  */

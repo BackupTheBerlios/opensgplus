@@ -28,18 +28,6 @@ public:
    typedef typename BasicTraits::GeomFaceType   GeomFaceType;
    typedef typename BasicTraits::Cache          Cache;
    typedef typename BasicTraits::CacheData      CacheData;
-
-   enum SplitAlgorithm {
-      // LongestSideMedian or LongestSideMedian2
-      LongestSideMedianId=0,
-      // LongestSideMean
-      LongestSideMeanId, 
-      // MinimumSIC
-      MinimumSICId, 
-      // MinimumVolume 
-      MinimumVolumeId,
-      LastId
-   };
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -50,10 +38,11 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Cache.                                                       */
    /*! \{                                                                 */
-   static inline Cache& getCache ();
    /*! Register functors at the cache. The adapter objects are created by
        this functors, which are node type-specific. */
    virtual void registerFunctors () = 0;
+   /*! Process called after each cache application. */
+   virtual inline void process (const GeomObjectType& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Memory management.                                           */
@@ -90,10 +79,10 @@ inline void   StaticInput<BasicTraits>::destroy ()
 }
 
 template <class BasicTraits>
-inline StaticInput<BasicTraits>::Cache& StaticInput<BasicTraits>::getCache ()
+inline void StaticInput<BasicTraits>::process (const GeomObjectType&)
 {
-   return Cache::the();
 }
 
 END_GENVIS_NAMESPACE
 #endif
+

@@ -23,14 +23,15 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
 #ifndef OSGGVINDICES_H
 #define OSGGVINDICES_H
 
+#include <assert.h>
 #include "OSGGVBase.h"
 
 BEGIN_GENVIS_NAMESPACE
@@ -65,29 +66,31 @@ class OSG_GENVISLIB_DLLMAPPING VectorIndices
 {
 public:
    inline VectorIndices ();
-   inline VectorIndices (unsigned f, unsigned l);
-   inline unsigned size() const;
+   inline VectorIndices (u32 f, u32 l);
+   inline u32 size() const;
 
    inline bool operator== (const VectorIndices& i) const;
 
-   unsigned first;
-   unsigned last;
+   u32 first;
+   u32 last;
 };
 
 inline VectorIndices::VectorIndices ()
 {
 }
-inline VectorIndices::VectorIndices (unsigned f, unsigned l)
+inline VectorIndices::VectorIndices (u32 f, u32 l)
   : first(f), last(l)
 {
 }
-inline unsigned VectorIndices::size() const
+inline u32 VectorIndices::size() const
 {   
+   assert(last >= first);
    return last - first;   
 }
-inline bool VectorIndices::operator== (const VectorIndices& i) const
+inline bool VectorIndices::operator== (const VectorIndices& second) const
 {
-   return (first == i.first && last == i.last);
+   return (first == second.first 
+	   && last == second.last);
 }
 
 END_GENVIS_NAMESPACE

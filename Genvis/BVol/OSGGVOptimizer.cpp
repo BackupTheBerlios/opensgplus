@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -27,12 +27,10 @@ template class OSG_GENVISLIB_DLLMAPPING Optimizer<BVolGroup<K20Dop> >;
 template <class GROUP>
 Optimizer<GROUP>::~Optimizer ()
 {
-   // m_oracle is not deleted by this object!
-   // This is the responsibility of the user!
 }
 
 template <class GROUP>
-Optimizer<GROUP>::Optimizer (Oracle*                oracle,
+Optimizer<GROUP>::Optimizer (Oracle<BVol>*                oracle,
 			     const std::vector<Adapter*>& leafNodes,
 			     unsigned maxDepth,
 			     unsigned minObjects)
@@ -42,7 +40,12 @@ Optimizer<GROUP>::Optimizer (Oracle*                oracle,
    m_currentLevel = 0;
    m_maxLevel   = maxDepth;
    m_minObjects = minObjects;
-   m_oracle = oracle;
+   if (oracle == NULL) { // no oracle given
+      // get the first one available
+      m_oracle = Oracle<BVol>::getOracle(u32(0));
+   } else {
+      m_oracle = oracle;
+   }
 }
 
 template <class GROUP>
@@ -64,34 +67,23 @@ GROUP* Optimizer<GROUP>::optimize ()
    fullRange.first = 0;
    fullRange.last  = getLeafNodes().size();
 
-   // create m_oracle->dimensions() index arrays m_nodes
-#if 0
-   unsigned dim;
-   m_nodes.resize(m_oracle->dimensions());
-   for (dim=0; dim<m_oracle->dimensions(); ++dim) {
-      m_nodes[dim].resize(getLeafNodes().size());
-      for (unsigned s=0; s<getLeafNodes().size(); ++s) {
-         m_nodes[dim][s] = s;
-      }
-   }
-#else
+   // create m_oracle->getDimension() index arrays m_nodes
    unsigned d;
-   m_nodes.resize(m_oracle->dimensions());
+   m_nodes.resize(m_oracle->getDimension());
    m_nodes[0].reserve(getLeafNodes().size());
    for (unsigned s=0; s<getLeafNodes().size(); ++s) {
       m_nodes[0].push_back(s);
    }
-   for (d=1; d<m_oracle->dimensions(); ++d) {
+   for (d=1; d<m_oracle->getDimension(); ++d) {
       m_nodes[d].resize(getLeafNodes().size());
       std::copy(m_nodes[0].begin(), m_nodes[0].end(), m_nodes[d].begin());
    }
-#endif
 
-   for (d = 0; d<m_oracle->dimensions(); ++d) {
+   for (d = 0; d<m_oracle->getDimension(); ++d) {
       m_oracle->sortIndexList(m_nodes[d], getLeafNodes(), d);
    }
    BVol bvol; 
-   m_oracle->calcBVOL(m_nodes, getLeafNodes(), fullRange, bvol);
+   m_oracle->calcBVol(m_nodes, getLeafNodes(), fullRange, bvol);
 
    m_currentLevel = 0;
    return static_cast<GroupType*>(optimize(fullRange, bvol, 0));
@@ -111,13 +103,11 @@ BVolAdapterBase* Optimizer<GROUP>::optimize (const VectorIndices& range,
       GroupType* base = FactoryType::the().newObject();
       getDataStore().push_back(base);
       base->init(range.first, range.last, m_nodes, getLeafNodes());
-      //base->getBoundingVolumeInternal() = bvol;
-      //base->setValid();
       // find split position
       unsigned pos, dim;
       if (!m_oracle->doSplitting(m_nodes, getLeafNodes(), range, bvol, dim, pos)) {
 	 std::vector<BVolAdapterBase*>& sons = base->getSons(); sons.reserve(range.size());
-	 for (unsigned i=range.first; i<range.last; ++i) {
+	 for (u32 i=range.first; i<range.last; ++i) {
 	    sons.push_back(static_cast<BVolAdapterBase*>(getLeafNodes()[m_nodes[0][i]]));
 	    static_cast<BVolAdapterBase*>(getLeafNodes()[m_nodes[0][i]])->setParent(base);
 	 }
@@ -131,9 +121,9 @@ BVolAdapterBase* Optimizer<GROUP>::optimize (const VectorIndices& range,
       // continue on sublists
       BVol& bvolLeft(bvol);
       BVol  bvolRight(bvol);
-      m_oracle->setMinimum(m_nodes, getLeafNodes(), dim, range1, bvolLeft);
+      m_oracle->updateBVol(m_nodes, getLeafNodes(), range, dim, range1, bvolLeft);
       BVolAdapterBase* left  = optimize(range1, bvolLeft,  level+1);
-      m_oracle->setMaximum(m_nodes, getLeafNodes(), dim, range2, bvolRight);
+      m_oracle->updateBVol(m_nodes, getLeafNodes(), range, dim, range2, bvolRight);
       BVolAdapterBase* right = optimize(range2, bvolRight, level+1);
 
       left ->setParent(base);
@@ -152,10 +142,8 @@ BVolAdapterBase* Optimizer<GROUP>::optimize (const VectorIndices& range,
    GroupType* base = FactoryType::the().newObject();
    getDataStore().push_back(base);
    base->init(range.first, range.last, m_nodes, getLeafNodes());
-   //base->getBoundingVolumeInternal() = bvol;
-   //base->setValid();
    std::vector<BVolAdapterBase*>& sons = base->getSons(); sons.reserve(range.size());
-   for (unsigned i=range.first; i<range.last; ++i) {
+   for (u32 i=range.first; i<range.last; ++i) {
       sons.push_back(static_cast<BVolAdapterBase*>(getLeafNodes()[m_nodes[0][i]]));
       static_cast<BVolAdapterBase*>(getLeafNodes()[m_nodes[0][i]])->setParent(base);
    }
@@ -180,7 +168,7 @@ void Optimizer<GROUP>::subdivSorted (const VectorIndices& range,
    }
 
    std::vector<unsigned> temp; temp.resize(getLeafNodes().size());
-   for (unsigned d=0; d<m_oracle->dimensions(); ++d) {
+   for (unsigned d=0; d<m_oracle->getDimension(); ++d) {
       if (d == dim) {
 	 continue;
       }
@@ -204,3 +192,5 @@ void Optimizer<GROUP>::subdivSorted (const VectorIndices& range,
    range1.last  = range2.first = range.first + pos;
    range2.last  = range.last;
 }
+
+

@@ -12,8 +12,11 @@
 //=============================================================================
 
 #include "OSGGVFaceSpatialize.h"
+#include "OSGGVBVolAdapter.h"
 
 #include "OSGMaterial.h"
+#include "OSGMaterialGroup.h"
+#include "OSGGeoFunctions.h"
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
 
@@ -21,63 +24,83 @@ USING_GENVIS_NAMESPACE
 template class OSG_GENVISLIB_DLLMAPPING FaceSpatialize<OpenSGTraits>;
 template class OSG_GENVISLIB_DLLMAPPING FaceSpatializeTraits<OpenSGTraits>;
 
-
-void CategoryRaw::begin (const FaceIterator& face)
+// internal classes 
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryRaw::begin (const FaceIterator& face)
 {
    m_coord  = GeoPositions3f::create();
-   m_normal = GeoNormals3f::create();
    m_index  = GeoIndicesUI32::create();	
    m_len    = GeoPLengthsUI32::create();	
    m_type   = GeoPTypesUI8::create();	
-
+   // store material of this geometry
    m_material = face.getGeometry()->getMaterial();
+   // create geometry node
    m_node = Node::create();
-   GeometryPtr geom = Geometry::create();
+   m_geom = Geometry::create();
    beginEditCP(m_node);
-   m_node->setCore(geom);
+   m_node->setCore(m_geom);
    endEditCP(m_node);
-   beginEditCP(geom);
-   geom->setMaterial(m_material);
-   geom->setPositions(m_coord);
-   geom->setNormals(m_normal);
-   geom->setIndices(m_index);
-   geom->setTypes(m_type);
-   geom->setLengths(m_len);
-   endEditCP(geom);
+   // assign geometry fields
+   beginEditCP(m_geom);
+   m_geom->setMaterial(m_material);
+   m_geom->setPositions(m_coord);
+   {
+   //if (m_hasNormal) {
+      m_normal = GeoNormals3f::create();
+      m_geom->setNormals(m_normal);
+   }
+   m_geom->setIndices(m_index);
+   m_geom->setTypes(m_type);
+   m_geom->setLengths(m_len);
+   endEditCP(m_geom);
+   // edit geometry field contents
    beginEditCP(m_coord);
    beginEditCP(m_normal);
    beginEditCP(m_index);
    beginEditCP(m_type);
    beginEditCP(m_len);
-   m_faceLength = face.getLength();
+   // store face type of this geometry
+   //m_faceLength = face.getLength();
    GeoPTypesUI8::StoredFieldType* t = m_type->getFieldPtr();
-   t->addValue((m_faceLength==3 ? GL_TRIANGLES : GL_QUADS));
+   //t->addValue((m_faceLength==3 ? GL_TRIANGLES : GL_QUADS));
+   t->addValue(GL_TRIANGLES); t->addValue(GL_QUADS);
+   m_quadOffset = 0;
 }
-void CategoryRaw::end ()
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryRaw::end ()
 {
+   // store length of index sequence #PRIMS * (3 resp. 4)
    GeoPLengthsUI32::StoredFieldType* l = m_len->getFieldPtr();
-   l->addValue(m_index->getSize());   
+   //l->addValue(m_index->getSize());   
+   l->addValue(m_quadOffset); l->addValue(m_index->getSize()-m_quadOffset);
+   // end edit geometry field contents
    endEditCP(m_len);
    endEditCP(m_type);
    endEditCP(m_index);
    endEditCP(m_normal);
    endEditCP(m_coord);
 }
-void CategoryRaw::addData (OpenSGFaceBase<OpenSGTraits>* node,
-			   const FaceIterator&           )
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryRaw::addData (OpenSGFaceBase<OpenSGTraits>* node,
+							const FaceIterator&           face)
 {
    GeoPositions3f::StoredFieldType*  p = m_coord->getFieldPtr();
    GeoNormals3f::StoredFieldType*    n = m_normal->getFieldPtr();
-   GeoIndicesUI32::StoredFieldType*  i = m_index->getFieldPtr();
+   //GeoIndicesUI32::StoredFieldType*  i = m_index->getFieldPtr();
 
    GeoPositionsPtr faceP = node->getPositions();
    addRefCP(faceP);
-   int k;
+   u32 k;
    for (k=0; k<faceP->getSize(); ++k) {
       p->addValue(faceP->getValue(k));
-      i->addValue(p->size()-1);
+      if (face.getLength()==3) { 
+	 m_index->insertValue(p->size()-1, m_quadOffset++);
+      } else {
+	 m_index->addValue(p->size()-1);
+      }
    }
    if (!m_hasNormal) {
+#if 1
       Vec3f p0(faceP->getValue(0));
       Vec3f p1(faceP->getValue(1));
       Vec3f p2(faceP->getValue(2));
@@ -89,6 +112,7 @@ void CategoryRaw::addData (OpenSGFaceBase<OpenSGTraits>* node,
 	 p2.crossThis(p0); p2.normalize();
 	 n->addValue(p2);
       }
+#endif
    } else { // per-vertex normals or per-face normals
       GeoNormalsPtr faceN = node->getNormals();
       addRefCP(faceN);
@@ -99,9 +123,11 @@ void CategoryRaw::addData (OpenSGFaceBase<OpenSGTraits>* node,
    }
    subRefCP(faceP);
 }
-CategoryRaw::CategoryRaw (NodePtr root,
-			  const FaceIterator& face)
-  :  m_ccw(true), m_faceLength(0),
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryRaw::CategoryRaw (NodePtr root,
+						       const FaceIterator& face)
+  :  m_ccw(true), 
+     //m_faceLength(0),
      m_hasNormal(hasNormalAttributes(face)), 
      m_hasColor(hasColorAttributes(face)),
      m_hasTex(hasTexAttributes(face))
@@ -111,12 +137,14 @@ CategoryRaw::CategoryRaw (NodePtr root,
    root->addChild(m_node);
    endEditCP(root);
 }
-CategoryRaw::~CategoryRaw ()
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryRaw::~CategoryRaw ()
 {
    CategoryRaw::end();
 }
 
-std::ostream&   CategoryRaw::print (std::ostream& os) const
+template <class BasicTraits>
+std::ostream& FaceSpatialize<BasicTraits>::CategoryRaw::dump (std::ostream& os) const
 {
    os << "CategoryRaw(material=" << m_material 
       << ", ";
@@ -141,93 +169,126 @@ std::ostream&   CategoryRaw::print (std::ostream& os) const
    return os;
 }
 
-void CategoryColor::begin (const FaceIterator&)
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryColor::begin (const FaceIterator&)
 {
    if (m_hasColor) {
       m_color = GeoColors3f::create();
 
-      GeometryPtr geom = GeometryPtr::dcast(m_node->getCore());
-      beginEditCP(geom);
-      geom->setColors(m_color);
-      endEditCP(geom);
+      beginEditCP(m_geom);
+      m_geom->setColors(m_color);
+      endEditCP(m_geom);
       beginEditCP(m_color);
    }
 }
-void CategoryColor::end ()
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryColor::end ()
 {
    if (m_hasColor) {
       endEditCP(m_color);
    }
 }
-void CategoryColor::addData (OpenSGFaceBase<OpenSGTraits>* node,
-			     const FaceIterator&           face)
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryColor::addData (OpenSGFaceBase<OpenSGTraits>* node,
+							  const FaceIterator&           face)
 {
    CategoryRaw::addData(node, face);
    if (m_hasColor) {
       GeoColors3f::StoredFieldType* c = m_color->getFieldPtr();
-      for (int k=0; k<face.getLength(); ++k) {
+      for (u32 k=0; k<face.getLength(); ++k) {
 	 c->addValue(face.getColor(k));
       }
       assert(m_coord->getSize() == m_color->getSize());
    }
 }
-CategoryColor::CategoryColor (NodePtr root,
-			      const FaceIterator& face)
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryColor::CategoryColor (NodePtr root,
+							   const FaceIterator& face)
   : CategoryRaw(root, face)
 {
    CategoryColor::begin(face);
 }
-CategoryColor::~CategoryColor ()
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryColor::~CategoryColor ()
 {
    CategoryColor::end();
 }
 
 
-void CategoryGeneral::begin (const FaceIterator&)
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryGeneral::begin (const FaceIterator&)
 {
    if (m_hasTex) {
       m_texCoord = GeoTexCoords2f::create();
 
-      GeometryPtr geom = GeometryPtr::dcast(m_node->getCore());
-      beginEditCP(geom);
-      geom->setTexCoords(m_texCoord);
-      endEditCP(geom);
+      beginEditCP(m_geom);
+      m_geom->setTexCoords(m_texCoord);
+      endEditCP(m_geom);
       beginEditCP(m_texCoord);
    }
 }
-void    CategoryGeneral::end ()
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryGeneral::end ()
 {
    if (m_hasTex) {
       endEditCP(m_texCoord);
    }
 }
-void         CategoryGeneral::addData (OpenSGFaceBase<OpenSGTraits>* node,
-				       const FaceIterator& face)
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::CategoryGeneral::addData (OpenSGFaceBase<OpenSGTraits>* node,
+							    const FaceIterator& face)
 {
    CategoryColor::addData(node, face);
    if (m_hasTex) {
       GeoTexCoords2f::StoredFieldType* t = m_texCoord->getFieldPtr();
-      for (int k=0; k<face.getLength(); ++k) {
+      for (u32 k=0; k<face.getLength(); ++k) {
 	 t->addValue(face.getTexCoords(k));
       }
       assert(m_coord->getSize() == m_texCoord->getSize());
    }
 }
-CategoryGeneral::CategoryGeneral (NodePtr root,
-				  const FaceIterator& face)
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryGeneral::CategoryGeneral (NodePtr root,
+							       const FaceIterator& face)
   : CategoryColor(root, face)
 {
    CategoryGeneral::begin(face); 
 }
-CategoryGeneral::~CategoryGeneral ()
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::CategoryGeneral::~CategoryGeneral ()
 {
    CategoryGeneral::end();
 }
 
 
-void    Category::addData (OpenSGFaceBase<OpenSGTraits>* arg)
+template <class BasicTraits>
+void FaceSpatialize<BasicTraits>::Category::addData (OpenSGFaceBase<OpenSGTraits>* arg)
 {
    FaceIterator face = arg->getOriginal();
+   if (
+       face.getGeometry()->getMaterial()->isTransparent() // transparent face
+       && m_trans.find(arg->getObjectAdapter().getNode()) != m_trans.end() // not processed
+       ) { 
+      OSGObjectBase convert(arg->getObjectAdapter().getNode());
+      convert.setObjectAdapter(&arg->getObjectAdapter());
+      NodePtr             newNode = Node::create();
+      m_trans[convert.getOriginal()] = newNode;
+      GeometryPtr         oldCore = GeometryPtr::dcast(convert.getOriginal()->getCore());
+      GeometryPtr         newCore = oldCore->clone();
+      beginEditCP(newNode);
+      newNode->setCore(newCore);
+      endEditCP(newNode);
+      beginEditCP(newCore);
+      newCore->setPositions(convert.getPositions());
+      newCore->setNormals  (convert.getNormals());
+      endEditCP(newCore);
+
+      beginEditCP(m_root);
+      m_root->addChild(newNode);
+      endEditCP(m_root);
+
+      return;
+   }
    ++m_totalFaces;
 
    CategoryList::iterator c;
@@ -239,21 +300,38 @@ void    Category::addData (OpenSGFaceBase<OpenSGTraits>* arg)
       }
    }
    if (c == m_all.end()) { // new category
+#if 0
+      MaterialGroupPtr mat = MaterialGroup::create();
+      beginEditCP(mat);
+      mat->setMaterial(face.getGeometry()->getMaterial());
+      endEditCP(mat);
+      NodePtr matNode = Node::create();
+      beginEditCP(matNode);
+      matNode->setCore(mat);
+      endEditCP(matNode);
+      beginEditCP(m_root);
+      m_root->addChild(matNode);
+      endEditCP(m_root);
+      c = m_all.insert(m_all.end(), new CategoryGeneral(matNode, face));
+#else
       c = m_all.insert(m_all.end(), new CategoryGeneral(m_root, face));
+#endif
       ++m_numGeom;
    }
    (*c)->addData(arg, face);
 }
 
-Category::Category (NodePtr root)
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::Category::Category (NodePtr root)
   : m_root(root), m_totalFaces(0), m_numGeom(0)
 {
 }
-Category::~Category ()
+template <class BasicTraits>
+FaceSpatialize<BasicTraits>::Category::~Category ()
 {
 #ifdef GV_VERBOSE
   if (GV_verbose && m_numGeom > 0) {
-      std::cout << "Category statistics: " 
+      GV_stream << "Category statistics: " 
 		<< std::endl
 		<< m_totalFaces/Real(m_numGeom) << " faces per geometry node"
 		<< std::endl;
@@ -266,15 +344,17 @@ Category::~Category ()
    }
 }
 
-NodePtr Category::getRoot () const
+template <class BasicTraits>
+NodePtr FaceSpatialize<BasicTraits>::Category::getRoot () const
 {
    return m_root;
 }
 
 
+
 template <class BasicTraits>
 FaceSpatialize<BasicTraits>::FaceSpatialize ()
-  : m_ifs(NULL), m_level(0), m_flat(false)
+  : m_ifs(NULL), m_depth(0), m_flat(false)
 {
 #if 1
    if (getGroupCore() == NullFC) {
@@ -308,14 +388,14 @@ NodePtr FaceSpatialize<BasicTraits>::getRoot () const
    return m_root;
 }
 template <class BasicTraits>
-void         FaceSpatialize<BasicTraits>::setLevel (unsigned level)
+void         FaceSpatialize<BasicTraits>::setDepth (unsigned depth)
 {
-   m_level = level;
+   m_depth = depth;
 }
 template <class BasicTraits>
-unsigned     FaceSpatialize<BasicTraits>::getLevel () const
+unsigned     FaceSpatialize<BasicTraits>::getDepth () const
 {
-   return m_level;
+   return m_depth;
 }
 
 template <class BasicTraits>
@@ -332,7 +412,7 @@ bool         FaceSpatialize<BasicTraits>::getFlat () const
 template <class BasicTraits>
 bool     FaceSpatialize<BasicTraits>::InitEnter  (GeneralType*, const TransformType&)
 {
-   m_current = 0;
+   m_level = 0;
    Thread::getCurrentChangeList()->clearAll();
    return true;
 }
@@ -343,11 +423,12 @@ bool     FaceSpatialize<BasicTraits>::InitLeave  (GeneralType*, const TransformT
    return true;
 }
 template <class BasicTraits>
-FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::InnerEnter (GroupType*)
+typename FaceSpatialize<BasicTraits>::ResultT  
+FaceSpatialize<BasicTraits>::InnerEnter (GroupType*)
 {
-  if (m_current <= m_level) {
+  if (m_level <= m_depth) {
      if (m_flat) {
-       if (m_current == 0) {
+       if (m_level == 0) {
 	  m_root = Node::create();
 	  m_rootLevel = m_root;
 	  beginEditCP(m_root);
@@ -358,7 +439,7 @@ FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::InnerEnter (G
        m_ifs = new Category(m_root);
      } else {
        NodePtr root = Node::create();
-       if (m_current > 0) {
+       if (m_level > 0) {
 	 m_rootLevel->addChild(root);
        } else {
 	 m_root = root;
@@ -370,14 +451,15 @@ FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::InnerEnter (G
      }
      m_ifsStack.push_back(m_ifs);
   }
-  ++m_current;
+  ++m_level;
   return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits>
-FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::InnerLeave (GroupType*)
+typename FaceSpatialize<BasicTraits>::ResultT  
+FaceSpatialize<BasicTraits>::InnerLeave (GroupType*)
 {
-  --m_current;
-  if (m_current <= m_level) {
+  --m_level;
+  if (m_level <= m_depth) {
      delete m_ifs;
      endEditCP(m_rootLevel);
      m_ifsStack.pop_back();
@@ -389,7 +471,8 @@ FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::InnerLeave (G
   return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits>
-FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::LeafEnter  (AdapterType* p0)
+typename FaceSpatialize<BasicTraits>::ResultT  
+FaceSpatialize<BasicTraits>::LeafEnter  (AdapterType* p0)
 {
    m_ifs->addData(p0);
    return SingleTraverserBase<BasicTraits>::CONTINUE;
@@ -397,37 +480,37 @@ FaceSpatialize<BasicTraits>::ResultT  FaceSpatialize<BasicTraits>::LeafEnter  (A
 
 
 template <class BasicTraits>
-FaceSpatializeTraits<BasicTraits>::InitFunctorT  
+typename FaceSpatializeTraits<BasicTraits>::InitFunctorT  
 FaceSpatializeTraits<BasicTraits>::createInitFunctor  (ObjectT* obj)
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::InitEnter);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::InitEnter);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits>
-FaceSpatializeTraits<BasicTraits>::InitFunctorT  
+typename FaceSpatializeTraits<BasicTraits>::InitFunctorT  
 FaceSpatializeTraits<BasicTraits>::createInitLeaveFunctor  (ObjectT* obj)
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::InitLeave);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::InitLeave);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits>
-FaceSpatializeTraits<BasicTraits>::InnerFunctorT 
+typename FaceSpatializeTraits<BasicTraits>::InnerFunctorT 
 FaceSpatializeTraits<BasicTraits>::createInnerFunctor (ObjectT* obj)
 {
-   InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerEnter);
+   typename InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerEnter);
    return InnerFunctorT(obj, f);
 }
 template <class BasicTraits>
-FaceSpatializeTraits<BasicTraits>::InnerFunctorT 
+typename FaceSpatializeTraits<BasicTraits>::InnerFunctorT 
 FaceSpatializeTraits<BasicTraits>::createInnerLeaveFunctor (ObjectT* obj)
 {
-   InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerLeave);
+   typename InnerFunctorT::DispatchMethodT f = &(ObjectT::InnerLeave);
    return InnerFunctorT(obj, f);
 }
 template <class BasicTraits>
-FaceSpatializeTraits<BasicTraits>::LeafFunctorT  
+typename FaceSpatializeTraits<BasicTraits>::LeafFunctorT  
 FaceSpatializeTraits<BasicTraits>::createLeafFunctor  (ObjectT* obj)
 {
-   LeafFunctorT::DispatchMethodT f = &(ObjectT::LeafEnter);
+   typename LeafFunctorT::DispatchMethodT f = &(ObjectT::LeafEnter);
    return LeafFunctorT(obj, f);
 }

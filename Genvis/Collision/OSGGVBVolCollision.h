@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -37,8 +37,9 @@
 #include "OSGGVReal.h"
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
-#include "OSGGVBVolAdapterExt.h"
 #include "OSGGVDoubleTraverser.h"
+#include "OSGGVGroup.h"
+#include "OSGGVBVolAdapterExt.h"
 #include "OSGGVCollisionData.h"
 
 BEGIN_GENVIS_NAMESPACE
@@ -47,15 +48,22 @@ BEGIN_GENVIS_NAMESPACE
            reporting collision results and collision statistics.
  */
 template <class BasicTraits>
-class OSG_GENVISLIB_DLLMAPPING BVolCollisionBase : public DataBase<BasicTraits>
+class BVolCollisionBase : public DataBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef DataBase<BasicTraits>               Inherited;
+   typedef typename Inherited::Cache           Cache;
+   typedef typename Inherited::CacheData       CacheData;
+   typedef typename Inherited::DoubleTraverser DoubleTraverser;
+
    typedef typename BasicTraits::TransformType TransformType;
    typedef OpenSGTriangleBase<BasicTraits>     AdapterType;
    typedef CollisionData<AdapterType>          CollisionPair;
    typedef std::vector<CollisionPair>          CollisionContainer;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -77,18 +85,18 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Collision statistics.                                        */
    /*! \{                                                                 */   
-   virtual inline unsigned                  getNumPrimTests () const;
-   virtual inline unsigned                  getNumMixedTests () const;
-   virtual inline unsigned                  getNumBVolTests () const;
-   inline unsigned&                         getPrimPrimTests ();
-   inline unsigned&                         getBVolPrimTests ();
-   inline unsigned&                         getPrimBVolTests ();
-   inline unsigned&                         getBVolBVolTests ();
+   virtual inline u32                  getNumPrimTests () const;
+   virtual inline u32                  getNumMixedTests () const;
+   virtual inline u32                  getNumBVolTests () const;
+   inline u32&                         getPrimPrimTests ();
+   inline u32&                         getBVolPrimTests ();
+   inline u32&                         getPrimBVolTests ();
+   inline u32&                         getBVolBVolTests ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Collision results.                                           */
    /*! \{                                                                 */   
-   virtual inline unsigned                  getNumContacts () const;
+   virtual inline u32                  getNumContacts () const;
    virtual inline CollisionContainer&       getContacts    ();
    virtual inline const CollisionContainer& getContacts    () const;
    /*! \}                                                                 */
@@ -98,10 +106,10 @@ protected:
    bool               m_stopFirst;
    GeoPositionsPtr    m_pos;
    CollisionContainer m_contacts;
-   unsigned           m_numPrimPrimTests;
-   unsigned           m_numPrimBVolTests;
-   unsigned           m_numBVolPrimTests;
-   unsigned           m_numBVolBVolTests;
+   u32           m_numPrimPrimTests;
+   u32           m_numPrimBVolTests;
+   u32           m_numBVolPrimTests;
+   u32           m_numBVolBVolTests;
 };
 
 typedef  BVolCollisionBase<OpenSGTraits>  OSGBVolCollision;
@@ -126,37 +134,37 @@ inline void BVolCollisionBase<BasicTraits>::setStopFirst (bool flag)
    m_stopFirst = flag;
 }
 template <class BasicTraits>
-inline unsigned BVolCollisionBase<BasicTraits>::getNumPrimTests () const
+inline u32 BVolCollisionBase<BasicTraits>::getNumPrimTests () const
 {
    return m_numPrimPrimTests;
 }
 template <class BasicTraits>
-inline unsigned BVolCollisionBase<BasicTraits>::getNumMixedTests () const
+inline u32 BVolCollisionBase<BasicTraits>::getNumMixedTests () const
 {
    return m_numPrimBVolTests+m_numBVolPrimTests;
 }
 template <class BasicTraits>
-inline unsigned BVolCollisionBase<BasicTraits>::getNumBVolTests () const
+inline u32 BVolCollisionBase<BasicTraits>::getNumBVolTests () const
 {
    return m_numBVolBVolTests;
 }
 template <class BasicTraits>
-inline unsigned& BVolCollisionBase<BasicTraits>::getPrimPrimTests ()
+inline u32& BVolCollisionBase<BasicTraits>::getPrimPrimTests ()
 {
    return m_numPrimPrimTests;
 }
 template <class BasicTraits>
-inline unsigned& BVolCollisionBase<BasicTraits>::getBVolPrimTests ()
+inline u32& BVolCollisionBase<BasicTraits>::getBVolPrimTests ()
 {
    return m_numBVolPrimTests;
 }
 template <class BasicTraits>
-inline unsigned& BVolCollisionBase<BasicTraits>::getPrimBVolTests ()
+inline u32& BVolCollisionBase<BasicTraits>::getPrimBVolTests ()
 {
    return m_numPrimBVolTests;
 }
 template <class BasicTraits>
-inline unsigned& BVolCollisionBase<BasicTraits>::getBVolBVolTests ()
+inline u32& BVolCollisionBase<BasicTraits>::getBVolBVolTests ()
 {
    return m_numBVolBVolTests;
 }
@@ -166,17 +174,19 @@ inline BVolCollisionBase<BasicTraits>::BVolCollisionBase ()
 {
 }
 template <class BasicTraits>
-inline unsigned BVolCollisionBase<BasicTraits>::getNumContacts () const
+inline u32 BVolCollisionBase<BasicTraits>::getNumContacts () const
 {
    return m_contacts.size();
 }
 template <class BasicTraits>
-inline const BVolCollisionBase<BasicTraits>::CollisionContainer& BVolCollisionBase<BasicTraits>::getContacts () const
+inline const typename BVolCollisionBase<BasicTraits>::CollisionContainer& 
+BVolCollisionBase<BasicTraits>::getContacts () const
 {
    return m_contacts;
 }
 template <class BasicTraits>
-inline BVolCollisionBase<BasicTraits>::CollisionContainer& BVolCollisionBase<BasicTraits>::getContacts ()
+inline typename BVolCollisionBase<BasicTraits>::CollisionContainer& 
+BVolCollisionBase<BasicTraits>::getContacts ()
 {
    return m_contacts;
 }
@@ -193,6 +203,8 @@ inline GeoPositionsPtr BVolCollisionBase<BasicTraits>::getLineGeometry () const
 }
 
 
+template <class BasicTraits> class DoubleTraverserFixedBase;
+
 /*! \brief Pairwise collision detection using only the major axis directions 0, 1, 2
     for realigning the k-DOPs in the second hierarchy.
  */
@@ -200,13 +212,25 @@ template <class BasicTraits, class BVOL>
 class OSG_GENVISLIB_DLLMAPPING BVolCollision : public BVolCollisionBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef BVolCollision<BasicTraits,BVOL>                       Self;
    typedef BVolCollisionBase<BasicTraits>                        Inherited;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangle2BVol<BasicTraits,BVOL>                 AdapterType;
    typedef BVolGroup<BVOL>                                       GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
    typedef BVOL                                                  BVol;
-
+   typedef Real (Self::*PrimIntersectTest) (AdapterType*, AdapterType*);
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -216,11 +240,11 @@ public:
    /*! \name Traversal functions.                                         */
    /*! \{                                                                 */
    /*! Init for the single pair in the arguments.                         */
-   bool        InitDouble  (GroupType* root0, const TransformType& m0, 
-			    GroupType* root1, const TransformType& m1);
+   bool        InitDouble  (GroupType* root0, const TransformType& m0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
    /*! Leave for the single pair in the arguments.                        */
-   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, 
-			    GroupType* root1, const TransformType& m1);
+   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
    /*! Operation for inner nodes in the arguments.                        */
    ResultT BVolBVolCollision (GroupType* b0, GroupType* b1);
    /*! Operation for a leaf node in the first and an inner node 
@@ -241,9 +265,25 @@ public:
 
 private:
    /*---------------------------------------------------------------------*/
-   /*! \name Intersection test (with realignment).                        */
+   /*! \name Adapter depth.                                               */
    /*! \{                                                                 */
-   bool testIntersect (const BVOL& dop0, const BVOL& dop1);
+   u32 getCurrentDepth0 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+			 GroupType* adapter) const;
+   u32 getCurrentDepth1 (const DoubleTraverserFixedBase<BasicTraits>* trav,
+			 GroupType* adapter) const;
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Intersection tests.                                          */
+   /*! \{                                                                 */
+   /*! Intersection test of two bounding volumes. This includes realignment
+       of model 1 in model space 0. */
+   Real bvolIntersect (const BVOL& dop0, const BVOL& dop1);
+   /*! Intersection tests of two primitives (here triangles). Returns collision
+       time of primitives; -1 if no collision occurs. */
+   Real primIntersectStatic (AdapterType*  p0, AdapterType*  p1);
+   /*! Intersection tests of two primitives (here triangles). Returns collision
+       time of primitives; -1 if no collision occurs. */
+   Real primIntersectDynamic  (AdapterType*  p0, AdapterType*  p1);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -259,6 +299,11 @@ private:
    Real              m_proj11[BVOL::Size];
    Real              m_proj12[BVOL::Size];
    Real              m_M1Offset[BVOL::Size];
+   Real              m_proj0[2*BVOL::Size];
+   Real              m_proj1[2*BVOL::Size];
+   VectorClass       m_t0;
+   VectorClass       m_t1;
+   PrimIntersectTest f_primIntersect; 
 };
 
 template <class BasicTraits, class BVOL>
@@ -268,8 +313,8 @@ inline BVolCollision<BasicTraits,BVOL>::BVolCollision ()
 }
 template <class BasicTraits, class BVOL>
 inline bool BVolCollision<BasicTraits,BVOL>::LeaveDouble (
-GroupType*, const TransformType&, 
-GroupType*, const TransformType&)
+GroupType*, const TransformType&, const TransformType&,  
+GroupType*, const TransformType&, const TransformType&)
 {
    return false;
 }

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:27:49 $
 //                                                                            
 //=============================================================================
 
@@ -34,9 +34,9 @@ OpenSGNodeAdapter<BasicTraits>::~OpenSGNodeAdapter ()
 }
 
 template <class BasicTraits>
-unsigned OpenSGNodeAdapter<BasicTraits>::getAdapterId ()
+u32 OpenSGNodeAdapter<BasicTraits>::getAdapterId ()
 {
-   static unsigned id = Adapter::getNextId();
+   static u32 id = Adapter::getNextId();
    return id;
 }
 
@@ -56,9 +56,7 @@ void  OpenSGNodeAdapter<BasicTraits>::init (const GeomObjectType& obj)
 template <class BasicTraits>
 std::ostream& OpenSGNodeAdapter<BasicTraits>::dump (std::ostream& os) const
 {
-   os << "OpenSGNodeAdapter(";
-   //Inherited::dump(os);
-   os << ")";
+   os << "OpenSGNodeAdapter";
    return os;
 }
 

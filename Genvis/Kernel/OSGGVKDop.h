@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -103,10 +103,10 @@ public:
    /*! Boundary representation (explicit representation) of KDop.         */
    BVolGeometry&              getGeometry () const;
 
-   inline VectorClass         getNormal   (unsigned i) const;
-   inline VectorClass         planeNormal (int i) const;
-   inline REAL                getScalar   (unsigned i) const;
-   inline REAL                planeScalar (int i) const;
+   inline VectorClass         getNormal   (u32 i) const;
+   inline VectorClass         planeNormal (i32 i) const;
+   inline REAL                getScalar   (u32 i) const;
+   inline REAL                planeScalar (i32 i) const;
 
    /*! Array of KDop scalars to directions Size,..,2*Size-1.              */
    virtual inline REAL*       minVector ();
@@ -117,17 +117,17 @@ public:
    /*! Array of KDop scalars to directions 0,..,Size-1.                   */
    virtual inline const REAL* maxVector () const;
    /*! KDop scalar to direction i, i in 0,..,2*Size-1                     */
-   inline REAL                getVector (unsigned i) const;
+   inline REAL                getVector (u32 i) const;
    /*! KDop scalar to slab i, i in 0,..,Size-1.                           */
-   inline REAL                getMinVector (unsigned i) const;
+   inline REAL                getMinVector (u32 i) const;
    /*! KDop scalar to slab i, i in 0,..,Size-1.                           */
-   inline REAL                getMaxVector (unsigned i) const;
+   inline REAL                getMaxVector (u32 i) const;
    /*! Slab thickness for slab i, i in 0,..,Size-1.                       */
-   virtual inline REAL        difference (unsigned k) const;
+   virtual inline REAL        difference (u32 k) const;
    /*! Slab middle for slab i, i in 0,..,Size-1.                          */
-   virtual inline REAL        average    (unsigned k) const;
+   virtual inline REAL        average    (u32 k) const;
    /*! Two times the result of difference(k).                             */
-   virtual inline REAL        addition   (unsigned k) const;
+   virtual inline REAL        addition   (u32 k) const;
    /*! Array of KDop directions.                                          */
    inline const VectorClass*  direction () const;
    /*! \}                                                                 */
@@ -142,26 +142,28 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Intersection tests.                                          */
    /*! \{                                                                 */
+   virtual bool checkIntersect (const PointClass&  origin, 
+				const VectorClass& dir,
+				const REAL& dist) const;
    /*! Calculate intersection with ray defined by origin, direction.
        Returns true iff ray intersects kdop at distance dist.
    */
-   virtual bool testIntersect (const PointClass&  origin, 
+   virtual bool calcIntersect (const PointClass&  origin, 
 			       const VectorClass& dir,
-			       REAL& dist, 
-			       double precision=0.01) const;
+			       REAL& dist) const;
    /*! Test for intersection with point. */
-   virtual bool testIntersect (const PointClass& point) const;
+   virtual bool checkIntersect (const PointClass& point) const;
    /*! Test for intersection with another bounding volume. */
-   virtual bool testIntersect (const BoundingVolume<REAL>& box) const;
-   /*! Test for intersection with another kdop. */
-   virtual bool testIntersect (const KDop<REAL,SIZE>& dop2) const;
-   /*! Test for intersection with a translated kdop. */
-   virtual bool testIntersect (const KDop<REAL,SIZE>& dop2,
-			       REAL*                  offset) const;
+   virtual bool checkIntersect (const BoundingVolume<REAL>& box) const;
    /*! Test for intersection with a triangle (p1, p2, p3). */
-   virtual bool testIntersect (const PointClass& p1,
-			       const PointClass& p2,
-			       const PointClass& p3) const;
+   virtual bool checkIntersect (const PointClass& p1,
+				const PointClass& p2,
+				const PointClass& p3) const;
+   /*! Test for intersection with another kdop. */
+   bool checkIntersect (const KDop<REAL,SIZE>& dop2) const;
+   /*! Test for intersection with a translated kdop. */
+   bool checkIntersect (const KDop<REAL,SIZE>& dop2,
+			REAL*                  offset) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Unification.                                                 */
@@ -194,9 +196,9 @@ public:
        chosen.                                                            */
    static bool                      createDirections ();
    /*! Array of KDop directions.                                          */
-   static inline const VectorClass* getDirection ();
+   static const VectorClass* getDirection ();
    /*! Set array of KDop directions.                                      */
-   static inline void               setDirection (VectorClass* dir);
+   static void               setDirection (VectorClass* dir);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Specialities.                                                */
@@ -216,7 +218,7 @@ public:
    static const REAL*               unitDopAngleTable  ();
    /*! */
    static REAL                      unitDopAngleTable (const OccTableType& mask, 
-						       int                 p,
+						       i32                 p,
 						       REAL                out);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -244,20 +246,6 @@ typedef KDop<Real,10>        K20Dop;
 typedef KDop<Real,6>         Dodecahedron;
 typedef KDop<Real,6>         K12Dop;
 
-
-template <class REAL, int SIZE>
-inline void KDop<REAL,SIZE>::setDirection (VectorClass* dir)
-{
-   for (int k=0; k<SIZE+SIZE; ++k) {
-      s_direction[k].setValue(dir[k]);
-   } 
-}
-template <class REAL, int SIZE>
-inline const VectorClass* KDop<REAL,SIZE>::getDirection ()
-{
-   return s_direction;
-}
-
 template <class REAL, int SIZE>
 inline REAL* KDop<REAL,SIZE>::minVector ()
 {
@@ -279,7 +267,7 @@ inline const REAL* KDop<REAL,SIZE>::maxVector () const
    return m_max;
 }
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::getVector (unsigned i) const
+inline REAL KDop<REAL,SIZE>::getVector (u32 i) const
 {
    assert(i < 2*SIZE);
    if (i < SIZE) {
@@ -289,7 +277,7 @@ inline REAL KDop<REAL,SIZE>::getVector (unsigned i) const
    }
 }
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::getMinVector (unsigned i) const
+inline REAL KDop<REAL,SIZE>::getMinVector (u32 i) const
 {
    assert(i < 2*SIZE);
    if (i < SIZE) {
@@ -299,7 +287,7 @@ inline REAL KDop<REAL,SIZE>::getMinVector (unsigned i) const
    }
 }
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::getMaxVector (unsigned i) const
+inline REAL KDop<REAL,SIZE>::getMaxVector (u32 i) const
 {
    assert(i < 2*SIZE);
    if (i < SIZE) {
@@ -310,7 +298,7 @@ inline REAL KDop<REAL,SIZE>::getMaxVector (unsigned i) const
 }
 
 template <class REAL, int SIZE>
-inline VectorClass KDop<REAL,SIZE>::planeNormal (int i) const
+inline VectorClass KDop<REAL,SIZE>::planeNormal (i32 i) const
 {
    assert(stdAbs(i) <= SIZE);
    if (i > 0) {
@@ -320,13 +308,13 @@ inline VectorClass KDop<REAL,SIZE>::planeNormal (int i) const
    }
 }
 template <class REAL, int SIZE>
-inline VectorClass KDop<REAL,SIZE>::getNormal   (unsigned i) const
+inline VectorClass KDop<REAL,SIZE>::getNormal   (u32 i) const
 {
    assert(i < 2*SIZE);
    return getDirection()[i];
 }
 template <class REAL, int SIZE>
-inline REAL              KDop<REAL,SIZE>::planeScalar (int i) const
+inline REAL              KDop<REAL,SIZE>::planeScalar (i32 i) const
 {
    assert(stdAbs(i) <= SIZE);
    if (i > 0) {
@@ -336,7 +324,7 @@ inline REAL              KDop<REAL,SIZE>::planeScalar (int i) const
    }
 }
 template <class REAL, int SIZE>
-inline REAL              KDop<REAL,SIZE>::getScalar (unsigned i) const
+inline REAL              KDop<REAL,SIZE>::getScalar (u32 i) const
 {
    assert(i < 2*SIZE);
    if (i < SIZE) {
@@ -347,19 +335,19 @@ inline REAL              KDop<REAL,SIZE>::getScalar (unsigned i) const
 }
 
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::difference (unsigned k) const
+inline REAL KDop<REAL,SIZE>::difference (u32 k) const
 {
    return m_max[k]-m_min[k];
 }
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::addition (unsigned k) const
+inline REAL KDop<REAL,SIZE>::addition (u32 k) const
 {
    return m_max[k]+m_min[k];
 }
 template <class REAL, int SIZE>
-inline REAL KDop<REAL,SIZE>::average (unsigned k) const
+inline REAL KDop<REAL,SIZE>::average (u32 k) const
 {
-   return 0.5*(m_max[k]+m_min[k]);
+   return 0.5f*(m_max[k]+m_min[k]);
 }
 template <class REAL, int SIZE>
 inline REAL KDop<REAL,SIZE>::getDiameter () const

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/21 15:05:06 $
+//   $Revision: 1.4 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -41,14 +41,25 @@ template <class REAL, int SIZE>
 bool KDopGeometry<REAL,SIZE>::s_init = createFrames();
 
 template <class REAL, int SIZE>
+VectorClass* KDopGeometry<REAL,SIZE>::getFrameX ()
+{
+   return s_x;
+}
+template <class REAL, int SIZE>
+VectorClass* KDopGeometry<REAL,SIZE>::getFrameY ()
+{
+   return s_y;
+}
+template <class REAL, int SIZE>
 bool KDopGeometry<REAL,SIZE>::createFrames()
 {
-   for (int i=0; i<SIZE; ++i) {
-      const VectorClass& normal = BVol::getDirection()[i]; 
-      s_x[i].setValue(calcNormal(normal)); 
-      s_y[i].setValue(normal.cross(s_x[i])); 
-      s_x[i+SIZE].setValue(-s_x[i]);
-      s_y[i+SIZE].setValue(-s_y[i]); 
+   u32 k, kk;
+   for (k=0, kk=SIZE; k<SIZE; ++k, ++kk) {
+      const VectorClass& normal = BVol::getDirection()[k]; 
+      s_x[k].setValue(calcNormal(normal)); 
+      s_y[k].setValue(normal.cross(s_x[k])); 
+      s_x[kk].setValue(-s_x[k]);
+      s_y[kk].setValue(-s_y[k]); 
    }
    return true;
 }
@@ -61,7 +72,7 @@ void KDopGeometry<float,3>::calcGeometry ()
 void KDopGeometry<float,10>::calcGeometry ()
 {
    createSlab(getBVol(), m_geom);
-   unsigned i;
+   u32 i;
    for (i=1; i<Size; ++i) {
       cutHalfspace(i,      getBVol(), m_geom);
       cutHalfspace(i+Size, getBVol(), m_geom);
@@ -79,7 +90,7 @@ void KDopGeometry<float,10>::calcGeometry ()
 void KDopGeometry<float,6>::calcGeometry ()
 {
    createSlab(getBVol(), m_geom);
-   unsigned i;
+   u32 i;
    for (i=1; i<Size; ++i) {
       cutHalfspace(i,      getBVol(), m_geom);
       cutHalfspace(i+Size, getBVol(), m_geom);
@@ -98,7 +109,7 @@ template <class REAL, int SIZE>
 void KDopGeometry<REAL,SIZE>::calcGeometry ()
 {
    createBox(getBVol(), m_geom);
-   unsigned i;
+   u32 i;
    for (i=3; i<SIZE; ++i) {
       cutHalfspace(i,      getBVol(), m_geom);
       cutHalfspace(i+SIZE, getBVol(), m_geom);
@@ -108,7 +119,7 @@ void KDopGeometry<REAL,SIZE>::calcGeometry ()
 template <class REAL, int SIZE>
 void KDopGeometry<REAL,SIZE>::draw ()          const
 {
-   unsigned f=0;
+   u32 f=0;
    for (Polygon3SetIndexed::Container::const_iterator itF=m_geom.faces.begin(); 
 	itF != m_geom.faces.end(); 
 	++itF) { 
@@ -125,7 +136,7 @@ void KDopGeometry<REAL,SIZE>::draw ()          const
 template <class REAL, int SIZE>
 void KDopGeometry<REAL,SIZE>::drawWireframe ()          const
 {
-   unsigned f=0;
+   u32 f=0;
    for (Polygon3SetIndexed::Container::const_iterator itF=m_geom.faces.begin(); 
 	itF != m_geom.faces.end(); 
 	++itF) { 
@@ -159,7 +170,7 @@ void       KDopGeometry<REAL,SIZE>::createSlab (const BVol& bvol,
    geom.attribs.points[6].setValue(offset + xOffset - yOffset);
    geom.attribs.points[7].setValue(offset + xOffset + yOffset);
 
-   for (unsigned i=0; i<2*SIZE+4; ++i) {
+   for (u32 i=0; i<2*SIZE+4; ++i) {
       geom.newFace();
    }
    // CCW orientation
@@ -256,7 +267,7 @@ void       KDopGeometry<REAL,SIZE>::createBox   (const BVol& bvol,
    face->newEdge()->point = 7;
    face->newEdge()->point = 3;
 
-   unsigned i;
+   u32 i;
    for (i=3; i<SIZE; ++i) {
       geom.newFace();
    }
@@ -306,7 +317,7 @@ void       KDopGeometry<REAL,SIZE>::createBox   (const BVol& bvol,
 }
 
 template <class REAL, int SIZE>
-void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
+void KDopGeometry<REAL,SIZE>::cutHalfspace(u32 i,
 					   const BVol& bvol,
 					   Polygon3SetIndexed& geom)
 {
@@ -344,12 +355,12 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
    REAL sum = in + out;
    geom.attribs.points.push_back((in/sum)*VectorClass(firstStart->getPoint()) 
 				 + (out/sum)*VectorClass(firstStart->getOpposit()->getPoint()));
-   unsigned firstPoint = geom.attribs.points.size()-1;
-   unsigned point      = firstPoint;
+   u32 firstPoint = geom.attribs.points.size()-1;
+   u32 point      = firstPoint;
    while (true) {
       // find first in-out edge
 #ifdef GV_DEBUG
-      std::cout << "(start=" << start
+      GV_stream << "(start=" << start
 		<< ", " << in
 		<< ", " << out
 		<< ")"
@@ -363,7 +374,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
 	    break;
 	 }
 #ifdef GV_DEBUG
-	 std::cout << " (" << end 
+	 GV_stream << " (" << end 
 		   << ", " << in
 		   << ", " << out
 		   << ")"
@@ -372,7 +383,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
 	 end = end->getNext();
       }
 #ifdef GV_DEBUG
-      std::cout << std::endl;
+      GV_stream << std::endl;
 #endif
       if (start == end) {
 	 Polygon3EdgeIndexed* newEdge = newFace->newEdge();
@@ -382,7 +393,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
 	 oppEdge->point = firstPoint;
 	 newEdge->setOpposit(oppEdge);
 	 if (newFace->size() < 3) {
-	    std::cout << "Warning: Face " << i << ": "
+	    GV_stream << "Warning: Face " << i << ": "
 		      << newFace->size() << " edges!" 
 		      << std::endl;
 	 }
@@ -403,7 +414,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
 	 oppEdge->point = firstPoint;
 	 newEdge->setOpposit(oppEdge);
 	 if (newFace->size() < 3) {
-	    std::cout << "Warning: Face " << i << ": "
+	    GV_stream << "Warning: Face " << i << ": "
 		      << newFace->size() << " edges!" 
 		      << std::endl;
 	 }
@@ -435,7 +446,7 @@ template <class REAL, int SIZE>
 REAL KDopGeometry<REAL,SIZE>::getSurfaceArea () const
 {
    REAL area = 0.0;
-   unsigned f = 0;
+   u32 f = 0;
    for (Polygon3SetIndexed::Container::const_iterator itF=m_geom.faces.begin(); 
 	itF != m_geom.faces.end(); 
 	++itF, ++f) { 
@@ -460,8 +471,8 @@ REAL KDopGeometry<REAL,SIZE>::getSurfaceArea () const
       }
       area += lastY*lastX;
    }
-   assert(area >= 0.0);
-   return 0.5*area;
+   assert(area >= 0.0f);
+   return 0.5f*area;
 }
 
 template <class REAL, int SIZE>

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/21 15:05:48 $
+//   $Revision: 1.4 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Radix sorting and pruning based on code 
@@ -256,7 +256,7 @@ RadixSort& RadixSort::Sort(const u32* input, u32 nb, bool signedvalues)
    return *this;
 }
 
-RadixSort& RadixSort::Sort(const float* input2, u32 nb)
+RadixSort& RadixSort::Sort(const Real* input2, u32 nb)
 {
    // Checkings
    if(!input2 || !nb || nb&0x80000000)	return *this;
@@ -283,7 +283,7 @@ RadixSort& RadixSort::Sort(const float* input2, u32 nb)
    // is dreadful, this is surprisingly not such a performance hit - well, I suppose that's a big one on first
    // generation Pentiums....We can't make comparison on integer representations because, as Chris said, it just
    // wouldn't work with mixed positive/negative values....
-   { CREATE_HISTOGRAMS(float, input2); }
+   { CREATE_HISTOGRAMS(Real, input2); }
 
    // Compute #negative values involved if needed
    u32 NbNegativeValues = 0;
@@ -291,11 +291,14 @@ RadixSort& RadixSort::Sort(const float* input2, u32 nb)
    // last values of the last histogram. Last histogram because that's the one for the Most Significant Byte,
    // responsible for the sign. 128 last values because the 128 first ones are related to positive numbers.
    u32* h3= &mHistogram[768];
-   for(u32 i=128;i<256;i++)	NbNegativeValues += h3[i];	// 768 for last histogram, 128 for negative part
+   u32 i;
+   for (i=128; i<256; ++i) {// 768 for last histogram, 128 for negative part
+      NbNegativeValues += h3[i];	
+   }
 
    // Radix sort, j is the pass number (0=LSB, 3=MSB)
-   u32 i, j;
-   for (j=0;j<4;j++) {
+   u32 j;
+   for (j=0; j<4; ++j) {
       // Should we care about negative values?
       if (j!=3) {
 	 // Here we deal with positive values only
@@ -304,23 +307,28 @@ RadixSort& RadixSort::Sort(const float* input2, u32 nb)
 	 if (PerformPass) {
 	    // Create offsets
 	    mOffset[0] = 0;
-	    for(i=1;i<256;i++)		mOffset[i] = mOffset[i-1] + CurCount[i-1];
+	    for (i=1; i<256; ++i) {
+	       mOffset[i] = mOffset[i-1] + CurCount[i-1];
+	    }
 	    // Perform Radix Sort
 	    u8* InputBytes = (u8*)input;
 	    InputBytes += j;
 	    if (INVALID_RANKS) {
-	       for(i=0;i<nb;i++)	mRanks2[mOffset[InputBytes[i<<2]]++] = i;
+	       for (i=0; i<nb; ++i) {
+		  mRanks2[mOffset[InputBytes[i<<2]]++] = i;
+	       }
 	       VALIDATE_RANKS;
 	    } else {
-	       u32* Indices		= mRanks;
-	       u32* IndicesEnd	= &mRanks[nb];
+	       u32* Indices    = mRanks;
+	       u32* IndicesEnd = &mRanks[nb];
 	       while (Indices!=IndicesEnd) {
 		  u32 id = *Indices++;
 		  mRanks2[mOffset[InputBytes[id<<2]]++] = id;
 	       }
 	    }
-	    // Swap pointers for next pass. Valid indices - the most recent ones - are in mRanks after the swap.
-	    u32* Tmp	= mRanks;	mRanks = mRanks2; mRanks2 = Tmp;
+	    // Swap pointers for next pass. 
+	    // Valid indices - the most recent ones - are in mRanks after the swap.
+	    std::swap(mRanks, mRanks2); 
 	 }
       } else {
 	 // This is a special case to correctly handle negative values
@@ -328,44 +336,61 @@ RadixSort& RadixSort::Sort(const float* input2, u32 nb)
 	 
 	 if (PerformPass) {
 	    // Create biased offsets, in order for negative numbers to be sorted as well
-	    mOffset[0] = NbNegativeValues;												// First positive number takes place after the negative ones
-	    for(i=1;i<128;i++)		mOffset[i] = mOffset[i-1] + CurCount[i-1];	// 1 to 128 for positive numbers
+	    mOffset[0] = NbNegativeValues; // First positive number takes place after the negative ones
+	    for (i=1; i<128; ++i) { // 1 to 128 for positive numbers
+	       mOffset[i] = mOffset[i-1] + CurCount[i-1];
+	    }
 	    // We must reverse the sorting order for negative numbers!
 	    mOffset[255] = 0;
-	    for(i=0;i<127;i++)		mOffset[254-i] = mOffset[255-i] + CurCount[255-i];	// Fixing the wrong order for negative values
-	    for(i=128;i<256;i++)	mOffset[i] += CurCount[i];							// Fixing the wrong place for negative values
+	    for (i=0; i<127; ++i) { // Fixing the wrong order for negative values
+		mOffset[254-i] = mOffset[255-i] + CurCount[255-i];
+	    }
+	    for (i=128; i<256; ++i) { // Fixing the wrong place for negative values
+	      mOffset[i] += CurCount[i];	
+	    }
 	    // Perform Radix Sort
 	    if (INVALID_RANKS) {
-	       for (i=0;i<nb;i++) {
-		  u32 Radix = input[i]>>24;							// Radix byte, same as above. AND is useless here (unsigned).
+	       for (i=0; i<nb; ++i) {
+		  u32 Radix = input[i]>>24; // Radix byte, same as above. AND is useless here (unsigned).
 		  // ### cmp to be killed. Not good. Later.
-		  if(Radix<128)		mRanks2[mOffset[Radix]++] = i;		// Number is positive, same as above
-		  else				mRanks2[--mOffset[Radix]] = i;		// Number is negative, flip the sorting order
+		  if(Radix<128)	{
+		     mRanks2[mOffset[Radix]++] = i; // Number is positive, same as above
+		  } else {
+		     mRanks2[--mOffset[Radix]] = i; // Number is negative, flip the sorting order
+		  }
 	       }
 	       VALIDATE_RANKS;
 	    } else {
-	       for (i=0;i<nb;i++) {
-		  u32 Radix = input[mRanks[i]]>>24;							// Radix byte, same as above. AND is useless here (unsigned).
+	       for (i=0; i<nb; ++i) {
+		  u32 Radix = input[mRanks[i]]>>24; // Radix byte, same as above. AND is useless here (unsigned).
 		  // ### cmp to be killed. Not good. Later.
-		  if(Radix<128)		mRanks2[mOffset[Radix]++] = mRanks[i];		// Number is positive, same as above
-		  else				mRanks2[--mOffset[Radix]] = mRanks[i];		// Number is negative, flip the sorting order
+		  if (Radix<128) {
+		     mRanks2[mOffset[Radix]++] = mRanks[i];		// Number is positive, same as above
+		  } else {
+		     mRanks2[--mOffset[Radix]] = mRanks[i];		// Number is negative, flip the sorting order
+		  }
 	       }
 	    }
-	    // Swap pointers for next pass. Valid indices - the most recent ones - are in mRanks after the swap.
-	    u32* Tmp	= mRanks;	mRanks = mRanks2; mRanks2 = Tmp;
+	    // Swap pointers for next pass. 
+	    // Valid indices - the most recent ones - are in mRanks after the swap.
+	    std::swap(mRanks, mRanks2);
 	 } else	{
 	    // The pass is useless, yet we still have to reverse the order of current list if all values are negative.
-	    if (UniqueVal>=128) {
+	    if (UniqueVal >= 128) {
 	       if (INVALID_RANKS) {
 		  // ###Possible?
-		  for(i=0;i<nb;i++)	mRanks2[i] = nb-i-1;
+		  for (i=0;i<nb;i++) {
+		     mRanks2[i] = nb-i-1;
+		  }
 		  VALIDATE_RANKS;
 	       } else {
-		  for(i=0;i<nb;i++)	mRanks2[i] = mRanks[nb-i-1];
+		  for (i=0; i<nb; ++i) {
+		     mRanks2[i] = mRanks[nb-i-1];
+		  }
 	       }
 	       
 	       // Swap pointers for next pass. Valid indices - the most recent ones - are in mRanks after the swap.
-	       u32* Tmp	= mRanks;	mRanks = mRanks2; mRanks2 = Tmp;
+	       std::swap(mRanks, mRanks2);
 	    }
 	 }
       }
@@ -377,9 +402,7 @@ RadixSort& RadixSort::Sort(const float* input2, u32 nb)
 template <class BasicTraits>
 bool PruningTraverser<BasicTraits>::completePruning
 (CacheData& data0, const typename CacheData::AdapterContainer& list0, 
- unsigned           axis,
- const VectorClass& axisDir,
- PairsContainer&    result)
+ PairsContainer& result)
 {
    // Checks
    if (list0.size() == 0) {
@@ -391,16 +414,10 @@ bool PruningTraverser<BasicTraits>::completePruning
    m_MaxPosList0.resize(list0.size());
 
    // 1) Build main list using the primary axis
-   unsigned i;
-   if (axis < 3) {
-     for (i=0; i<list0.size(); ++i) 
+   u32 i;
+   for (i=0; i<list0.size(); ++i) {
        calcInterval(data0,
-		    static_cast<BVolAdapterBase*>(list0[i]), axis, 
-		    m_MinPosList0[i], m_MaxPosList0[i]);
-   } else {
-     for (i=0; i<list0.size(); ++i) 
-       calcInterval(data0, 
-		    static_cast<BVolAdapterBase*>(list0[i]), axisDir, 
+		    static_cast<BVolAdapterBase*>(list0[i]), m_axis, 
 		    m_MinPosList0[i], m_MaxPosList0[i]);
    }
 
@@ -414,18 +431,24 @@ bool PruningTraverser<BasicTraits>::completePruning
    const u32* RunningAddress = Sorted0;
    u32 Index0, Index1;
    while (RunningAddress<LastSorted && Sorted0<LastSorted) {
-      Index0 = *Sorted0++;
+      Index0 = *Sorted0; ++Sorted0;
       
+      // for Index0 search first entry *RunningAddress, 
+      // so that m_MinPosList0[*RunningAddress]>=m_MinPosList0[Index0]
       while (RunningAddress<LastSorted 
-	     && m_MinPosList0[*RunningAddress++]<m_MinPosList0[Index0]);
+	     && m_MinPosList0[*RunningAddress]<m_MinPosList0[Index0]) {
+	 ++RunningAddress;
+      }
 
+      // for Index0 generate pairs(Index0, Index1)
+      // with m_MinPosList0[Index1=*RunningAddress2]<=m_MaxPosList0[Index0]
       const u32* RunningAddress2 = RunningAddress;
-
       while (RunningAddress2<LastSorted 
-	     && m_MinPosList0[Index1 = *RunningAddress2++]<=m_MaxPosList0[Index0]) {
-	if (Index0!=Index1) {
-	   result.push_back(PairsPair(Index0, Index1));
-	}
+	     && m_MinPosList0[Index1 = *RunningAddress2]<=m_MaxPosList0[Index0]) {
+	 if (Index0 != Index1) {
+	    result.push_back(PairsPair(Index0, Index1));
+	 }
+	 ++RunningAddress2;
       }
    }
    return true;
@@ -435,9 +458,7 @@ template <class BasicTraits>
 bool PruningTraverser<BasicTraits>::bipartitePruning
 (CacheData& data0, const typename CacheData::AdapterContainer& list0, 
  CacheData& data1, const typename CacheData::AdapterContainer& list1, 
- unsigned           axis,
- const VectorClass& axisDir,
- PairsContainer&    result)
+ PairsContainer& result)
 {
    // Checkings
   if (list0.size() == 0 || list1.size() == 0) {
@@ -451,20 +472,13 @@ bool PruningTraverser<BasicTraits>::bipartitePruning
   m_MaxPosList1.resize(list1.size());
   
   // 1) Build main lists using the primary axis
-  unsigned i;
-  if (axis < 3) {
-    for (i=0; i<list0.size(); ++i) 
-      calcInterval(data0, static_cast<BVolAdapterBase*>(list0[i]), axis, 
+  u32 i;
+  for (i=0; i<list0.size(); ++i) {
+      calcInterval(data0, static_cast<BVolAdapterBase*>(list0[i]), m_axis, 
 		   m_MinPosList0[i], m_MaxPosList0[i]);
-    for (i=0; i<list1.size(); ++i) 
-      calcInterval(data1, static_cast<BVolAdapterBase*>(list1[i]), axis, 
-		   m_MinPosList1[i], m_MaxPosList1[i]);
-  } else {
-    for (i=0; i<list0.size(); ++i) 
-      calcInterval(data0, static_cast<BVolAdapterBase*>(list0[i]), axisDir, 
-		   m_MinPosList0[i], m_MaxPosList0[i]);
-    for (i=0; i<list1.size(); ++i) 
-      calcInterval(data1, static_cast<BVolAdapterBase*>(list1[i]), axisDir, 
+  }
+  for (i=0; i<list1.size(); ++i) {
+      calcInterval(data1, static_cast<BVolAdapterBase*>(list1[i]), m_axis, 
 		   m_MinPosList1[i], m_MaxPosList1[i]);
   }
   
@@ -476,46 +490,65 @@ bool PruningTraverser<BasicTraits>::bipartitePruning
   // 3) Prune the lists
   u32 Index0, Index1;
   
-  const u32* const LastSorted0 = &Sorted0[list0.size()];
-  const u32* const LastSorted1 = &Sorted1[list1.size()];
+  const u32* const LastSorted0  = &Sorted0[list0.size()];
+  const u32* const LastSorted1  = &Sorted1[list1.size()];
+  const u32* const FirstSorted0 = Sorted0;
+  const u32* const FirstSorted1 = Sorted1;
   const u32* RunningAddress0 = Sorted0;
   const u32* RunningAddress1 = Sorted1;
 
   while (RunningAddress1<LastSorted1 && Sorted0<LastSorted0) {
-    Index0 = *Sorted0++;
+    Index0 = *Sorted0; ++Sorted0;
     
+    // for Index0 search first entry *RunningAddress1, 
+    // so that m_MinPosList1[*RunningAddress1]>=m_MinPosList0[Index0]
     while (RunningAddress1<LastSorted1 
 	   && m_MinPosList1[*RunningAddress1]<m_MinPosList0[Index0]) {
-      RunningAddress1++;
+       ++RunningAddress1;
     }
     
+    // generate pairs (Index0, Index1)
+    // so that m_MinPosList1[Index1=*RunningAddress2_1]<=m_MaxPosList0[Index0]
     const u32* RunningAddress2_1 = RunningAddress1;
-    
     while (RunningAddress2_1<LastSorted1 
-	   && m_MinPosList1[Index1 = *RunningAddress2_1++]<=m_MaxPosList0[Index0]) {
-      result.push_back(PairsPair(Index0, Index1));
+	   && m_MinPosList1[Index1 = *RunningAddress2_1]<=m_MaxPosList0[Index0]) {
+       result.push_back(PairsPair(Index0, Index1));
+       ++RunningAddress2_1;
     }
   }
-  
-  ////
+  // O(list0.size()+list1.size())
+  if (RunningAddress1 == FirstSorted1 && result.size() == 0) {
+     result.push_back(PairsPair(*(Sorted0-1), *FirstSorted1));
+  }
+
   while (RunningAddress0<LastSorted0 && Sorted1<LastSorted1) {
-    Index0 = *Sorted1++;
+    Index0 = *Sorted1; ++Sorted1;
     
+    // for Index0 search first entry *RunningAddress0, 
+    // so that m_MinPosList0[*RunningAddress0]>m_MinPosList1[Index0]
     while(RunningAddress0<LastSorted0 
 	  && m_MinPosList0[*RunningAddress0]<=m_MinPosList1[Index0]) {
-      RunningAddress0++;
+       ++RunningAddress0;
     }
     
+    // generate pairs (Index1, Index0)
+    // so that m_MinPosList0[Index1=*RunningAddress2_0]<=m_MaxPosList1[Index0]
     const u32* RunningAddress2_0 = RunningAddress0;
-    
     while(RunningAddress2_0<LastSorted0 
-	  && m_MinPosList0[Index1 = *RunningAddress2_0++]<=m_MaxPosList1[Index0]) {
-      result.push_back(PairsPair(Index1, Index0));
+	  && m_MinPosList0[Index1 = *RunningAddress2_0]<=m_MaxPosList1[Index0]) {
+       result.push_back(PairsPair(Index1, Index0));
+       ++RunningAddress2_0;
     }
-  } 
-  return true;
+  }
+  // O(list0.size()+list1.size())
+  if (RunningAddress0 == FirstSorted0 && result.size() == 0) {
+     result.push_back(PairsPair(*FirstSorted1, *(Sorted1-1)));
+  }
+  // In total each intersecting pair is in the list atmost two times
+  return true; 
 }
 
+#if 0
 template <class BasicTraits>
 void PruningTraverser<BasicTraits>::calcInterval (CacheData& data, 
 						  BVolAdapterBase*   adapter,
@@ -528,6 +561,9 @@ void PruningTraverser<BasicTraits>::calcInterval (CacheData& data,
    // get cache data for adapter
    CacheData&    d = getCacheData(data, adapter);
    TransformType m = d.getToWorldMatrix(); m.mult(center);
+   VectorClass   trans(d.getFrameMatrix()[3][0], 
+		       d.getFrameMatrix()[3][1], 
+		       d.getFrameMatrix()[3][2]);
 #if 0
    Vec3f dir0(m[0][0], m[0][1], m[0][2]); 
    Vec3f dir1(m[1][0], m[1][1], m[1][2]); 
@@ -543,19 +579,38 @@ void PruningTraverser<BasicTraits>::calcInterval (CacheData& data,
    minBound -= diam; 
    maxBound += diam; 
 #else
-   Real diam = bvol.getDiameter()/m.det3();   
-   minBound = maxBound = axisDir.dot(center);
+   Real diam = bvol.getDiameter()/m.det3(); 
+   //m.det3() is pow(m[0].length(), 3)
+   Real t;
+   if ((t=axisDir.dot(trans)) >= 0) {
+      minBound = axisDir.dot(center);
+      maxBound = minBound+t;
+   } else {
+      maxBound = axisDir.dot(center);
+      minBound = maxBound+t;
+   }
    minBound -= diam; 
    maxBound += diam; 
 #endif
 }
+#endif
+
 template <class BasicTraits>
 void PruningTraverser<BasicTraits>::calcInterval (CacheData& data, 
 						  BVolAdapterBase*   adapter,
-						  unsigned           axis, 
+						  u32                axis, 
 						  Real&              minBound, 
 						  Real&              maxBound)
 {
+#if 0
+   NodePtr       node = data.getOriginal();
+   DynamicVolume vol; node->getWorldVolume(vol);
+   VectorClass minVector, maxVector;
+   vol.getBounds(minVector, maxVector);
+   assert(axis < 3);
+   minBound = minVector[axis];
+   maxBound = maxVector[axis];
+#else
    const BoundingVolume<Real>& bvol = adapter->getBoundingVolume();
    PointClass center(bvol.getCenter());
    // get cache data for adapter
@@ -571,19 +626,30 @@ void PruningTraverser<BasicTraits>::calcInterval (CacheData& data,
    minBound -= diam; 
    maxBound += diam; 
 #else
-   Real diam = bvol.getDiameter()/m.det3();   
-   minBound = maxBound = center[axis];
+   Real diam = bvol.getDiameter()/m.det3(); 
+   //m.det3() is pow(m[0].length(), 3)
+   if (d.getFrameMatrix()[3][axis] >= 0) {
+      minBound = center[axis];
+      maxBound = center[axis]+d.getFrameMatrix()[3][axis];
+   } else {
+      minBound = center[axis]+d.getFrameMatrix()[3][axis];
+      maxBound = center[axis];
+   }
    minBound -= diam; 
    maxBound += diam; 
 #endif
+#endif
 }
+
+template <class BasicTraits>
+u32 PruningTraverser<BasicTraits>::s_axisRefresh = 20;
 
 template <class BasicTraits>
 bool PruningTraverser<BasicTraits>::apply 
 (const OSG::NodePtr& node0, const OSG::NodePtr& node1)
 {
-   CacheData& data0 = getCache()[node0];
-   CacheData& data1 = getCache()[node1];
+   CacheData& data0 = Cache::the()[node0];
+   CacheData& data1 = Cache::the()[node1];
 
    Profiler::the().StartProfile("PruningTraverser.Init");
    getData().Init();
@@ -593,44 +659,40 @@ bool PruningTraverser<BasicTraits>::apply
      data0.getAdapter(BVolAdapterBase::getAdapterId());
    const typename CacheData::AdapterContainer& list1 = 
      data1.getAdapter(BVolAdapterBase::getAdapterId());
-   unsigned maxNumPairs = list0.size()*list1.size();
+   m_maxNumPairs = list0.size()*list1.size();
    Profiler::the().EndProfile("PruningTraverser.Init");
 
    Profiler::the().StartProfile("PruningTraverser.Pruning");
    Profiler::the().StartProfile("PruningTraverser.DetermineAxis");
-   static int         axis = 3;
-   static VectorClass axisDir(1.0f, 0.0f, 0.0f);
-   static unsigned    minNumPairs = maxNumPairs;
-   static int         minAxis = -1;
-   static unsigned    refresh = true;
-   static unsigned    axisRefresh = 100;
-   // try all three axes 2, 1, 0 and find minimum number of pairs
-   if (refresh && axis > 0) {
-      --axis; 
-   } else {
-      refresh = false;
-      axis = minAxis;
+   // refresh cycle: try all three axes 2, 1, 0 and find minimum number of pairs
+   if (m_refresh && m_axis > 0) {
+      --m_axis; 
+   } else { // normal path
+      m_refresh = false;
+      m_axis    = m_minAxis;
    }
    Profiler::the().EndProfile("PruningTraverser.DetermineAxis");
    if (node0 == node1) {
       Profiler::the().StartProfile("PruningTraverser.CompletePruning");
-      completePruning(data0, list0, axis, axisDir, m_pairs);
+      completePruning(data0, list0, m_pairs);
       Profiler::the().EndProfile("PruningTraverser.CompletePruning");
    } else {
       Profiler::the().StartProfile("PruningTraverser.BipartitePruning");
-      bipartitePruning(data0, list0, data1, list1, axis, axisDir, m_pairs);
+      bipartitePruning(data0, list0, data1, list1, m_pairs);
       Profiler::the().EndProfile("PruningTraverser.BipartitePruning");
    }
    Profiler::the().StartProfile("PruningTraverser.DetermineAxis");
-   if (--axisRefresh == 0) {
-      refresh     = true;
-      axisRefresh = 100;
-      minNumPairs = maxNumPairs;
-      minAxis = -1;
-      axis    = 3;
-   } else if (refresh && minNumPairs > m_pairs.size()) {
-      minNumPairs = m_pairs.size();
-      minAxis     = axis;
+   if (--m_axisRefresh == 0) { 
+      // find new axis
+      m_refresh   = true;
+      m_axisRefresh = s_axisRefresh;
+      m_minNumPairs = m_maxNumPairs + 1;
+      m_minAxis = -1;
+      m_axis    = 3;
+   } else if (m_refresh && m_minNumPairs > m_pairs.size()) { 
+      // during refresh cycle update m_minNumPairs and m_minAxis
+      m_minNumPairs = m_pairs.size();
+      m_minAxis     = m_axis;
    }
    Profiler::the().EndProfile("PruningTraverser.DetermineAxis");
    Profiler::the().EndProfile("PruningTraverser.Pruning");
@@ -656,8 +718,9 @@ bool PruningTraverser<BasicTraits>::apply
       Profiler::the().EndProfile("PruningTraverser.Prepare");
 
       Profiler::the().StartProfile("PruningTraverser.DoubleTraverser");
-      bool thisResult = getDoubleTraverser().apply(d0, first,  m0, 
-						   d1, second, m1);
+      bool thisResult = getDoubleTraverser().apply(data0, d0, first,  
+						   data1, d1, second, 
+						   m0, m1);
       Profiler::the().EndProfile("PruningTraverser.DoubleTraverser");
       result |= thisResult;
    }

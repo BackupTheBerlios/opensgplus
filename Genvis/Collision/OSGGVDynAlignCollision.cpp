@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -39,16 +39,15 @@ template <class BasicTraits, class BVOL>
 DynamicAlignCollision<BasicTraits,BVOL>::DynamicAlignCollision ()
   : Inherited()
 {
-   for (unsigned i=0; i<BVOL::Size; ++i) {
+   for (u32 i=0; i<BVOL::Size; ++i) {
       m_support[i][0] = m_support[i][1] = m_support[i][2] = i;
       m_support[i+BVOL::Size][0] = m_support[i+BVOL::Size][1] = m_support[i+BVOL::Size][2] = i+BVOL::Size;
    }
 }
 
 template<class BasicTraits, class BVOL>
-bool DynamicAlignCollision<BasicTraits,BVOL>::InitDouble (
-GroupType* g0, const TransformType& m0, 
-GroupType* g1, const TransformType& m1)
+bool DynamicAlignCollision<BasicTraits,BVOL>::InitDouble (GroupType* g0, const TransformType& m0, const TransformType& f0,  
+							  GroupType* g1, const TransformType& m1, const TransformType& f1)
 {
    const BVOL& dop2 = g1->getBVol();
    // transformation matrix model1 to model0
@@ -60,36 +59,22 @@ GroupType* g1, const TransformType& m1)
    // m1^(-1) * m0
    m_M0ToM1.invertFrom(m_M1ToM0);
 
-   unsigned k, kk;
+   u32 k, kk;
    VectorClass dir[2*BVOL::Size];
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
       m_M1ToM0.mult(BVOL::getDirection()[k], m_M1Direction[k]);
       m_M1Direction[kk] = -m_M1Direction[k]; 
 
-#if 0
-      dir[k]  = BVOL::getDirection()[k];
-      dir[kk] = -dir[k]; 
-#else
       m_M0ToM1.mult(BVOL::getDirection()[k], dir[k]);
       dir[kk] = -dir[k]; 
-#endif
    }
    VectorClass trans(m_M1ToM0[3][0], m_M1ToM0[3][1], m_M1ToM0[3][2]);
-#if 0
-   if (getLineGeometry() != NullFC) {
-      beginEditCP(getLineGeometry());
-      for (k=0; k<26; ++k) {
-	 getLineGeometry()->setValue(Pnt3f::Null, k);
-      }
-   }
-#endif
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
       m_M1Translate[k]  = BVOL::getDirection()[k].dot(trans);
       m_M1Translate[kk] = -m_M1Translate[k];
    }
 
    // do realigning only if sufficiently rotated
-   // CF to be checked
    if (   m_M1Direction[0] == BVOL::getDirection()[0]
        && m_M1Direction[1] == BVOL::getDirection()[1]
        && m_M1Direction[2] == BVOL::getDirection()[2]) {
@@ -99,25 +84,8 @@ GroupType* g1, const TransformType& m1)
 
    m_realign = true;
    // precomputation for realigning
-#if 0
-   // transform vertices of unitDop with m_M1ToM0
-   static Real unitMin[] =
-   {-1, -1, -1, -1,  -1, -1, -1, -1,  -1, -1, -1, -1, -1};
-   static Real unitMax[] =
-   {+1, +1, +1, +1,  +1, +1, +1, +1,  +1, +1, +1, +1, +1};
-   BVOL unitDop(dop2.minVector(), dop2.maxVector());
-   Polygon3SetIndexed& geom = unitDop.getGeometry().getPolygonSet();
-   for (Polygon3Attribs::Container::iterator itP = geom.attribs.points.begin(); 
-	itP != geom.attribs.points.end(); 
-	++itP) {
-      Vec3f p(*itP);
-      m_M1ToM0.mult(p);
-      itP->setValue(p);
-   }
-#else
    // transform directions BVOL::getDirection()[k] with m_M0ToM1 instead
    Polygon3SetIndexed& geom = BVOL::unitDop().getGeometry().getPolygonSet();
-#endif
    for (k=0; k<geom.size(); ++k) {
       Polygon3EdgeIndexed* maxEdge = NULL;
       float maxValue = -1e10;
@@ -142,14 +110,7 @@ GroupType* g1, const TransformType& m1)
       m_support[k][1] = maxEdge->face->index;
       maxEdge = maxEdge->getCW();
       m_support[k][2] = maxEdge->face->index;
-#if 0
-      if (getLineGeometry() != NullFC) {
-	 getLineGeometry()->setValue(Pnt3f(dir[k])+trans,       2*k);
-	 getLineGeometry()->setValue(maxEdge->getPoint()+trans, 2*k+1);
-      }
-#endif
-#if 0
-      //def GV_DEBUG
+#ifdef GV_DEBUG
       std::cout << "support " << k << ": (" 
 		<< m_support[k][0] << ", "
 		<< m_support[k][1] << ", "
@@ -158,9 +119,9 @@ GroupType* g1, const TransformType& m1)
 		<< std::endl;
 #endif
       TransformType dinv(m_M1Direction[m_support[k][0]][0], m_M1Direction[m_support[k][0]][1], m_M1Direction[m_support[k][0]][2], 0,
-		  m_M1Direction[m_support[k][1]][0], m_M1Direction[m_support[k][1]][1], m_M1Direction[m_support[k][1]][2], 0,
-		  m_M1Direction[m_support[k][2]][0], m_M1Direction[m_support[k][2]][1], m_M1Direction[m_support[k][2]][2], 0,
-		   0, 0, 0, 1); 
+				  m_M1Direction[m_support[k][1]][0], m_M1Direction[m_support[k][1]][1], m_M1Direction[m_support[k][1]][2], 0,
+				  m_M1Direction[m_support[k][2]][0], m_M1Direction[m_support[k][2]][1], m_M1Direction[m_support[k][2]][2], 0,
+				  0, 0, 0, 1); 
       //std::cout << "det=" << dinv.det3() << std::endl;
       bool isInvertable = dinv.invert3(); assert(isInvertable);
       dinv.transpose();
@@ -180,11 +141,6 @@ GroupType* g1, const TransformType& m1)
       dinv.mult(BVOL::getDirection()[k], m_direction[k]);
 #endif
    }
-#if 0
-   if (getLineGeometry() != NullFC) {
-      endEditCP(getLineGeometry());
-   }
-#endif
 
 #if 0
    if (getStream() != NULL) {
@@ -192,7 +148,7 @@ GroupType* g1, const TransformType& m1)
       const BVOL& dop2 = g1->getBVol();
 
       VectorClass s;
-      unsigned k, kk;
+      u32 k, kk;
       Real min2, max2;
       for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
  	 s.setValues(dop2.getScalar(m_support[kk][0]),
@@ -216,11 +172,10 @@ GroupType* g1, const TransformType& m1)
 /* Test for intersection with an Eulerian-transformed kdop
    (see Zachmann). */
 template<class BasicTraits, class BVOL>
-bool DynamicAlignCollision<BasicTraits,BVOL>::testIntersect (
-const BVOL& dop1, const BVOL& dop2)
+bool DynamicAlignCollision<BasicTraits,BVOL>::testIntersect (const BVOL& dop1, const BVOL& dop2)
 {
    VectorClass s;
-   unsigned k, kk;
+   u32 k, kk;
    Real min2, max2;
    for (k=0, kk=BVOL::Size; k<BVOL::Size; ++k, ++kk) {
       s.setValues(dop2.getScalar(m_support[kk][0]),
@@ -241,15 +196,9 @@ const BVOL& dop1, const BVOL& dop2)
    return true;
 }
 
-/**
- *	Recursive collision query for normal AABB trees.
- *	\param		b0		[in] collision node from first tree
- *	\param		b1		[in] collision node from second tree
- */
 template <class BasicTraits, class BVOL>
-DynamicAlignCollision<BasicTraits,BVOL>::ResultT
-DynamicAlignCollision<BasicTraits,BVOL>::BVolBVolCollision (GroupType* g0, 
-							    GroupType* g1)
+typename DynamicAlignCollision<BasicTraits,BVOL>::ResultT
+DynamicAlignCollision<BasicTraits,BVOL>::BVolBVolCollision (GroupType* g0, GroupType* g1)
 {
    // check if first collision already found
    if (getStopFirst() && getNumContacts()>0) {
@@ -258,7 +207,7 @@ DynamicAlignCollision<BasicTraits,BVOL>::BVolBVolCollision (GroupType* g0,
    ++m_numBVolBVolTests;
    // perform BV-BV overlap test
    if (!m_realign) {
-      if (!g0->getBVol().testIntersect(
+      if (!g0->getBVol().checkIntersect(
 		    g1->getBVol(), 
 		    m_M1Translate)) {
 	 return DoubleTraverserBase<BasicTraits>::QUIT;
@@ -271,18 +220,12 @@ DynamicAlignCollision<BasicTraits,BVOL>::BVolBVolCollision (GroupType* g0,
    return DoubleTraverserBase<BasicTraits>::CONTINUE;
 }
 
-/**
- *	Leaf-leaf test for two primitive indices.
- *	\param		p0		[in] index from first leaf-triangle
- *	\param		p1		[in] index from second leaf-triangle
- */
 template <class BasicTraits, class BVOL>
-DynamicAlignCollision<BasicTraits,BVOL>::ResultT
-DynamicAlignCollision<BasicTraits,BVOL>::PrimPrimCollision (AdapterType* p0, 
-							    AdapterType* p1)
+typename DynamicAlignCollision<BasicTraits,BVOL>::ResultT
+DynamicAlignCollision<BasicTraits,BVOL>::PrimPrimCollision (AdapterType* p0, AdapterType* p1)
 {
    // Transform from model space 1 to model space 0
-   Pnt3f d0, d1, d2;
+   PointClass d0, d1, d2;
    m_M1ToM0.mult(p1->getPosition(0), d0);
    m_M1ToM0.mult(p1->getPosition(1), d1);
    m_M1ToM0.mult(p1->getPosition(2), d2);
@@ -302,142 +245,93 @@ DynamicAlignCollision<BasicTraits,BVOL>::PrimPrimCollision (AdapterType* p0,
 }
 
 template <class BasicTraits, class BVOL>
-DynamicAlignCollision<BasicTraits,BVOL>::ResultT
-DynamicAlignCollision<BasicTraits,BVOL>::BVolPrimCollision (GroupType*   g0, 
-							    AdapterType* p1)
+typename DynamicAlignCollision<BasicTraits,BVOL>::ResultT
+DynamicAlignCollision<BasicTraits,BVOL>::BVolPrimCollision (GroupType* g0, AdapterType* p1)
 {
    // check if first collision already found
    if (getStopFirst() && getNumContacts()>0) {
       return DoubleTraverserBase<BasicTraits>::QUIT;
    }
    ++m_numBVolPrimTests;
-   // perform BV-BV overlap test
-#ifdef GV_BVOLS_IN_MIXEDTESTS
-   if (!m_realign) {
-      if (!g0->getBVol().testIntersect(p1->getBVol(), 
-				       m_M1Translate)) {
-	 return DoubleTraverserBase<BasicTraits>::QUIT;
-      }
-      return DoubleTraverserBase<BasicTraits>::CONTINUE;
-   }
-   if (!testIntersect(g0->getBVol(), p1->getBVol())) {
-      return DoubleTraverserBase<BasicTraits>::QUIT;
-   }
-#else
    // Transform from model space 1 to model space 0
    OSG::Pnt3f d0, d1, d2;
    m_M1ToM0.mult(p1->getPosition(0), d0);
    m_M1ToM0.mult(p1->getPosition(1), d1);
    m_M1ToM0.mult(p1->getPosition(2), d2);
 
-   if (!g0->getBVol().testIntersect(d0, d1, d2)) {
+   if (!g0->getBVol().checkIntersect(d0, d1, d2)) {
       return DoubleTraverserBase<BasicTraits>::QUIT;
    }
-#endif
    return DoubleTraverserBase<BasicTraits>::CONTINUE;
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollision<BasicTraits,BVOL>::ResultT
-DynamicAlignCollision<BasicTraits,BVOL>::PrimBVolCollision (AdapterType* p0, 
-							    GroupType*   g1)
+typename DynamicAlignCollision<BasicTraits,BVOL>::ResultT
+DynamicAlignCollision<BasicTraits,BVOL>::PrimBVolCollision (AdapterType* p0, GroupType*   g1)
 {
    // check if first collision already found
    if (getStopFirst() && getNumContacts()>0) {
       return DoubleTraverserBase<BasicTraits>::QUIT;
    }
    ++m_numPrimBVolTests;
-   // perform BV-BV overlap test
-#ifdef GV_BVOLS_IN_MIXEDTESTS
-   if (!m_realign) {
-      if (!p0->getBVol().testIntersect(g1->getBVol(), 
-				       m_M1Translate)) {
-	 return DoubleTraverserBase<BasicTraits>::QUIT;
-      }
-      return DoubleTraverserBase<BasicTraits>::CONTINUE;
-   }
-   if (!testIntersect(p0->getBVol(), g1->getBVol())) {
-      return DoubleTraverserBase<BasicTraits>::QUIT;
-   }
-#else
    // Transform from model space 0 to model space 1
    OSG::Pnt3f d0, d1, d2;
    m_M0ToM1.mult(p0->getPosition(0), d0);
    m_M0ToM1.mult(p0->getPosition(1), d1);
    m_M0ToM1.mult(p0->getPosition(2), d2);
 
-   if (!g1->getBVol().testIntersect(d0, d1, d2)) {
+   if (!g1->getBVol().checkIntersect(d0, d1, d2)) {
       return DoubleTraverserBase<BasicTraits>::QUIT;
    }
-#endif
    return DoubleTraverserBase<BasicTraits>::CONTINUE;
 }
 
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::InitFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::InitFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createInitFunctor (ObjectT* obj) 
 {
-   InitFunctorT::InitMethodT f = &(ObjectT::Init);
+   typename InitFunctorT::InitMethodT f = &(ObjectT::Init);
    return InitFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::InitDoubleFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::InitDoubleFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createInitDoubleFunctor (ObjectT* obj) 
 {
-   InitDoubleFunctorT::InitMethodT f = &(ObjectT::InitDouble);
+   typename InitDoubleFunctorT::InitMethodT f = &(ObjectT::InitDouble);
    return InitDoubleFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::LeaveDoubleFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::LeaveDoubleFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createLeaveDoubleFunctor (ObjectT* obj) 
 {
-   LeaveDoubleFunctorT::InitMethodT f = &(ObjectT::LeaveDouble);
+   typename LeaveDoubleFunctorT::InitMethodT f = &(ObjectT::LeaveDouble);
    return LeaveDoubleFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::BVolBVolFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::BVolBVolFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createBVolBVolFunctor (ObjectT* obj) 
 {
-   BVolBVolFunctorT::DispatchMethodT f = &(ObjectT::BVolBVolCollision);
+   typename BVolBVolFunctorT::DispatchMethodT f = &(ObjectT::BVolBVolCollision);
    return BVolBVolFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::PrimBVolFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::PrimBVolFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createPrimBVolFunctor (ObjectT* obj) 
 {
-   PrimBVolFunctorT::DispatchMethodT f = &(ObjectT::PrimBVolCollision);
+   typename PrimBVolFunctorT::DispatchMethodT f = &(ObjectT::PrimBVolCollision);
    return PrimBVolFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::BVolPrimFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::BVolPrimFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createBVolPrimFunctor (ObjectT* obj) 
 {
-   BVolPrimFunctorT::DispatchMethodT f = &(ObjectT::BVolPrimCollision);
+   typename BVolPrimFunctorT::DispatchMethodT f = &(ObjectT::BVolPrimCollision);
    return BVolPrimFunctorT(obj, f);
 }
 template <class BasicTraits, class BVOL>
-DynamicAlignCollisionTraits<BasicTraits,BVOL>::PrimPrimFunctorT 
+typename DynamicAlignCollisionTraits<BasicTraits,BVOL>::PrimPrimFunctorT 
 DynamicAlignCollisionTraits<BasicTraits,BVOL>::createPrimPrimFunctor (ObjectT* obj) 
 {
-   PrimPrimFunctorT::DispatchMethodT f = &(ObjectT::PrimPrimCollision);
+   typename PrimPrimFunctorT::DispatchMethodT f = &(ObjectT::PrimPrimCollision);
    return PrimPrimFunctorT(obj, f);
 }
 
-#if 0
-#include "OSGGVDoubleTraverser.cpp"
-
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K6Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K14Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K18Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K26Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K12Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverser<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K20Dop> >;
-
-#include "OSGGVDoubleTraverserBinary.cpp"
-
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K6Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K14Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K18Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K26Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K12Dop> >;
-template class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K20Dop> >;
-#endif

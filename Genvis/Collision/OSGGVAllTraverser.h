@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -45,20 +45,19 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING AllTraverserBase
 {
 public:
-   typedef typename BasicTraits::Cache      Cache;
-   typedef typename BasicTraits::CacheData  CacheData;
-   typedef DoubleTraverserBase<BasicTraits> DoubleTraverser;
-
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef typename BasicTraits::Cache          Cache;
+   typedef typename BasicTraits::CacheData      CacheData;
+   typedef typename BasicTraits::GeomObjectType GeomObjectType;
+   typedef DoubleTraverserBase<BasicTraits>     DoubleTraverser;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
    inline AllTraverserBase ();
    virtual inline ~AllTraverserBase ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */
-   static inline Cache&    getCache ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Double traverser used for pairwise collision detection.      */
@@ -76,7 +75,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */
-   virtual bool apply   (const OSG::NodePtr& node0, const OSG::NodePtr& node1) = 0;
+   virtual bool apply   (const GeomObjectType& node0, const GeomObjectType& node1) = 0;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -97,29 +96,30 @@ inline AllTraverserBase<BasicTraits>::~AllTraverserBase ()
 {
 }
 
+#if 0
 template <class BasicTraits>
-inline AllTraverserBase<BasicTraits>::Cache& 
+inline typename AllTraverserBase<BasicTraits>::Cache& 
 AllTraverserBase<BasicTraits>::getCache ()
 {
    return OSGCache::the();
 }
+#endif
 
 template <class BasicTraits>
-inline void                   AllTraverserBase<BasicTraits>::setDoubleTraverser 
-(DoubleTraverser* doubleTraverser)
+inline void AllTraverserBase<BasicTraits>::setDoubleTraverser (DoubleTraverser* doubleTraverser)
 {
    m_doubleTraverser = doubleTraverser;
 }
 
 template <class BasicTraits>
-inline AllTraverserBase<BasicTraits>::DoubleTraverser&       
+inline typename AllTraverserBase<BasicTraits>::DoubleTraverser&       
 AllTraverserBase<BasicTraits>::getDoubleTraverser ()
 {
    assert(m_doubleTraverser != NULL);
    return *m_doubleTraverser;
 }
 template <class BasicTraits>
-inline const AllTraverserBase<BasicTraits>::DoubleTraverser& 
+inline const typename AllTraverserBase<BasicTraits>::DoubleTraverser& 
 AllTraverserBase<BasicTraits>::getDoubleTraverser () const
 {
    assert(m_doubleTraverser != NULL);
@@ -138,10 +138,10 @@ inline const DataBase<BasicTraits>& AllTraverserBase<BasicTraits>::getData () co
 }
 
 template <class BasicTraits>
-inline AllTraverserBase<BasicTraits>::CacheData& 
+inline typename AllTraverserBase<BasicTraits>::CacheData& 
 AllTraverserBase<BasicTraits>::getCacheData (CacheData& data, BVolAdapterBase* group)
 {
-   if (group->getParent() == NULL) {
+   if (group->getParent() == NULL) { // no parent
       return data;
    }
    // triangle adapter
@@ -151,9 +151,13 @@ AllTraverserBase<BasicTraits>::getCacheData (CacheData& data, BVolAdapterBase* g
       return tri->getObjectAdapter();
    }
    // object adapter
-   OpenSGObjectBase<BasicTraits>* parent = 
+   OpenSGObjectBase<BasicTraits>* obj = 
      dynamic_cast<OpenSGObjectBase<BasicTraits>*>(group->getParent());
-   return getCache()[parent->getOriginal()];
+   if (obj != NULL) {
+      return obj->getObjectAdapter();
+   }
+   // no adapter
+   return data;
 }
 
 
@@ -164,9 +168,17 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING AllTraverser : public AllTraverserBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef AllTraverserBase<BasicTraits>       Inherited;
-   typedef typename BasicTraits::TransformType TransformType;
+   typedef typename Inherited::Cache           Cache;
+   typedef typename Inherited::CacheData       CacheData;
+   typedef typename Inherited::GeomObjectType  GeomObjectType;
+   typedef typename Inherited::DoubleTraverser DoubleTraverser;
 
+   typedef typename BasicTraits::TransformType TransformType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -175,7 +187,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */   
-   virtual bool apply   (const OSG::NodePtr& node0, const OSG::NodePtr& node1);
+   virtual bool apply   (const GeomObjectType& node0, const GeomObjectType& node1);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 };

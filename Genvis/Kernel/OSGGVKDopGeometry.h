@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:48:57 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -81,8 +81,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Local frame.                                                 */
    /*! \{                                                                 */
-   static inline VectorClass* getFrameX ();
-   static inline VectorClass* getFrameY ();
+   static VectorClass* getFrameX ();
+   static VectorClass* getFrameY ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -105,7 +105,7 @@ private:
    static void       createBox   (const BVol& bvol,
 				  Polygon3SetIndexed&    geom);
    /*! Cut boundary representation geom using the KDop direction i.       */
-   static void       cutHalfspace(unsigned i,
+   static void       cutHalfspace(u32 i,
 				  const BVol& bvol,
 				  Polygon3SetIndexed&    geom);
    /*! \}                                                                 */
@@ -129,21 +129,11 @@ inline const Polygon3SetIndexed& KDopGeometry<REAL,SIZE>::getPolygonSet () const
    return m_geom;
 }
 template <class REAL, int SIZE>
-inline const KDopGeometry<REAL,SIZE>::BVol&
+inline const typename KDopGeometry<REAL,SIZE>::BVol&
 KDopGeometry<REAL,SIZE>::getBVol () const
 {
    assert(m_bvol != NULL);
    return *m_bvol;
-}
-template <class REAL, int SIZE>
-inline VectorClass* KDopGeometry<REAL,SIZE>::getFrameX ()
-{
-   return s_x;
-}
-template <class REAL, int SIZE>
-inline VectorClass* KDopGeometry<REAL,SIZE>::getFrameY ()
-{
-   return s_y;
 }
 
 template <class REAL, int SIZE>
@@ -160,3 +150,4 @@ inline KDopGeometry<REAL,SIZE>::KDopGeometry (const Self& src)
 
 END_GENVIS_NAMESPACE
 #endif
+

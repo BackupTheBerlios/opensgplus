@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 22:02:20 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -41,59 +41,40 @@ template<class BasicTraits>
 BVolHierarchyBase<BasicTraits>::~BVolHierarchyBase ()
 {
 }
-template<class BasicTraits> 
-void BVolHierarchyBase<BasicTraits>::setParameter (Oracle*, unsigned, unsigned)
-{
-}
-template<class BasicTraits> 
-void BVolHierarchyBase<BasicTraits>::setParameter (SplitAlgorithm, unsigned, unsigned)
-{
-}
+
 
 template<class BasicTraits, class InputTraits> 
 ObjectBVolHierarchy<BasicTraits,InputTraits>::ObjectBVolHierarchy ()
-  : m_root(NULL), m_oracle(NULL), m_deleteOracle(false), m_minObjects(256), m_maxLevel(50)
+  : m_root(NULL), m_oracle(NULL), m_minObjects(256), m_maxLevel(50)
 {
 }
 template<class BasicTraits, class InputTraits> 
 ObjectBVolHierarchy<BasicTraits,InputTraits>::~ObjectBVolHierarchy ()
 {
    m_root = NULL;
-   if (m_deleteOracle) {
-      delete m_oracle;
-   }
 }
 
 template<class BasicTraits, class InputTraits> 
-void ObjectBVolHierarchy<BasicTraits,InputTraits>::setParameter (Oracle*  method, 
-								 unsigned maxLevel, 
-								 unsigned minObjects)
+void ObjectBVolHierarchy<BasicTraits,InputTraits>::setParameter (const char* description, 
+								 u32 maxLevel, 
+								 u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = method;
-   m_deleteOracle = false;
+   m_oracle = Oracle<BVol>::getOracle(description);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 template<class BasicTraits, class InputTraits> 
-void ObjectBVolHierarchy<BasicTraits,InputTraits>::setParameter
-(SplitAlgorithm method,
- unsigned maxLevel,
- unsigned minObjects)
+void ObjectBVolHierarchy<BasicTraits,InputTraits>::setParameter (u32 method,
+								 u32 maxLevel,
+								 u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = createOracle(method);
-   m_deleteOracle = true;
+   m_oracle = Oracle<BVol>::getOracle(method);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 
 template<class BasicTraits, class InputTraits> 
-ObjectBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
+typename ObjectBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
 ObjectBVolHierarchy<BasicTraits,InputTraits>::getRoot () const
 {
    assert(m_root != NULL);
@@ -104,11 +85,10 @@ template <class BasicTraits, class InputTraits>
 void ObjectBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformType&  m2w,
 							       const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[getCache().getCurrentNode()];
+   CacheData& data = Cache::the()[Cache::the().getCurrentNode()];
    data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
 
-   AdapterType* adapter = LeafFactory::the().newObject();
-   m_leaf.push_back(adapter);
+   AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
    adapter->setObjectAdapter(&data);
    adapter->init(m2w, obj);
    data.setAdapter(AdapterType::getAdapterId(), adapter);
@@ -119,16 +99,16 @@ void ObjectBVolHierarchy<BasicTraits,InputTraits>::destroy ()
 {
    m_root = NULL;
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
    }
    m_inner.clear();
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
 	it2 != m_leaf.end();
 	++it2){
       LeafFactory::the().deleteObject(*it2);
@@ -139,10 +119,8 @@ template<class BasicTraits, class InputTraits>
 void ObjectBVolHierarchy<BasicTraits,InputTraits>::clear ()
 {
    m_root = NULL;
-   // clear cache
-   //getCache().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
@@ -151,75 +129,72 @@ void ObjectBVolHierarchy<BasicTraits,InputTraits>::clear ()
 }
 
 template<class BasicTraits, class InputTraits> 
-unsigned ObjectBVolHierarchy<BasicTraits,InputTraits>::hierarchy ()
+void ObjectBVolHierarchy<BasicTraits,InputTraits>::process   (const GeomObjectType& node)
+{
+   m_last = node;
+}
+template<class BasicTraits, class InputTraits> 
+void ObjectBVolHierarchy<BasicTraits,InputTraits>::hierarchy (const GeomObjectType& node)
 {
    typename CacheData::AdapterVector all;
-   getCache().collectAdapter(AdapterType::getAdapterId(), all);
+   if (node == NullFC) {
+      if (m_last == NullFC) {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all);
+      } else {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all, m_last);
+      }
+   } else {
+      Cache::the().collectAdapter(AdapterType::getAdapterId(), all, node);
+   }
    Optimizer<GroupType> builder(m_oracle,
 				all,
 				m_maxLevel, m_minObjects);
    builder.setDataStore(&m_inner);
-   m_root = builder.optimize();
-   return builder.getCurrentDepth();
-}
-template<class BasicTraits, class InputTraits> 
-Oracle* ObjectBVolHierarchy<BasicTraits,InputTraits>::createOracle
-(SplitAlgorithm method)
-{
-   switch (method) {
-   default:
-   case LongestSideMedianId:
-     return new LongestSideMedian<BVol> ();
-   case LongestSideMeanId:
-     return new LongestSideMean<BVol> ();
-   case MinimumSICId:
-     return new MinimumSIC<BVol> ();
-   case MinimumVolumeId:
-     return new MinimumVolume<BVol> ();
-   }
+   m_root  = builder.optimize();
+   m_depth = builder.getCurrentDepth();
 }
 
 template<class BasicTraits, class InputTraits> 
 void ObjectBVolHierarchy<BasicTraits,InputTraits>::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   ObjectBVolHierarchy<BasicTraits,InputTraits>, 
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this,
 				    &ObjectBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(ObjectBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry));
 #endif
 }
 
 template<class BasicTraits, class InputTraits> 
-void ObjectBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry (
-CNodePtr& cnode, OSGStaticInput* input)
+bool ObjectBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
    ObjectBVolHierarchy<BasicTraits,InputTraits>* thisInput = 
      (ObjectBVolHierarchy<BasicTraits,InputTraits>*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
 
-   Cache& cache = thisInput->getCache();
-   if (cache.getCurrentMaterial() != NullFC) {
+   if (Cache::the().getCurrentMaterial() != NullFC) {
       GeometryPtr arg = GeometryPtr::dcast(cnode);
-      arg->setMaterial(cache.getCurrentMaterial());
+      arg->setMaterial(Cache::the().getCurrentMaterial());
    }
-   thisInput->addAdapter(cache.getCurrentMatrix(), cache.getCurrentNode());
+   thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+   return true;
 }
 
 #ifndef OSG_NOFUNCTORS
 template<class BasicTraits, class InputTraits> 
-void ObjectBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool ObjectBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, input); 
 }
 #endif
 
@@ -227,48 +202,36 @@ CNodePtr& cnode, OSGStaticInput*)
 // face
 template<class BasicTraits, class InputTraits> 
 FaceBVolHierarchy<BasicTraits,InputTraits>::FaceBVolHierarchy ()
-  : m_root(NULL), m_oracle(NULL), m_deleteOracle(false), m_minObjects(256), m_maxLevel(50)
+  : m_root(NULL), m_oracle(NULL), m_minObjects(256), m_maxLevel(50)
 {
 }
 template<class BasicTraits, class InputTraits> 
 FaceBVolHierarchy<BasicTraits,InputTraits>::~FaceBVolHierarchy ()
 {
    m_root = NULL;
-   if (m_deleteOracle) {
-      delete m_oracle;
-   }
 }
 
 template<class BasicTraits, class InputTraits> 
-void FaceBVolHierarchy<BasicTraits,InputTraits>::setParameter (Oracle*  method, 
-							       unsigned maxLevel, 
-							       unsigned minObjects)
+void FaceBVolHierarchy<BasicTraits,InputTraits>::setParameter (const char* description, 
+							       u32 maxLevel, 
+							       u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = method;
-   m_deleteOracle = false;
+   m_oracle = Oracle<BVol>::getOracle(description);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 template<class BasicTraits, class InputTraits> 
-void FaceBVolHierarchy<BasicTraits,InputTraits>::setParameter
-(SplitAlgorithm method,
- unsigned maxLevel,
- unsigned minObjects)
+void FaceBVolHierarchy<BasicTraits,InputTraits>::setParameter (u32 method,
+							       u32 maxLevel,
+							       u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = createOracle(method);
-   m_deleteOracle = true;
+   m_oracle = Oracle<BVol>::getOracle(method);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 
 template<class BasicTraits, class InputTraits> 
-FaceBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
+typename FaceBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
 FaceBVolHierarchy<BasicTraits,InputTraits>::getRoot () const
 {
    assert(m_root != NULL);
@@ -279,9 +242,8 @@ template <class BasicTraits, class InputTraits>
 void FaceBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformType&  m2w,
 							     const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
-
    // iterate over all faces
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    FaceIterator end = geom->endFaces();
@@ -289,8 +251,7 @@ void FaceBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformType
 	face!=end; 
 	++face) {
       // create face adapter
-      AdapterType* adapter = LeafFactory::the().newObject();
-      m_leaf.push_back(adapter);
+      AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
       adapter->setObjectAdapter(&data);
       adapter->init(m2w, face);
       data.setAdapter(AdapterType::getAdapterId(), adapter);
@@ -302,16 +263,16 @@ void FaceBVolHierarchy<BasicTraits,InputTraits>::destroy ()
 {
    m_root = NULL;
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
    }
    m_inner.clear();
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
 	it2 != m_leaf.end();
 	++it2){
       LeafFactory::the().deleteObject(*it2);
@@ -322,10 +283,8 @@ template<class BasicTraits, class InputTraits>
 void FaceBVolHierarchy<BasicTraits,InputTraits>::clear ()
 {
    m_root = NULL;
-   // clear cache
-   //getCache().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
@@ -334,86 +293,72 @@ void FaceBVolHierarchy<BasicTraits,InputTraits>::clear ()
 }
 
 template<class BasicTraits, class InputTraits> 
-unsigned FaceBVolHierarchy<BasicTraits,InputTraits>::hierarchy ()
+void FaceBVolHierarchy<BasicTraits,InputTraits>::process   (const GeomObjectType& node)
+{
+   m_last = node;
+}
+template<class BasicTraits, class InputTraits> 
+void FaceBVolHierarchy<BasicTraits,InputTraits>::hierarchy (const GeomObjectType& node)
 {
    typename CacheData::AdapterVector all;
-   getCache().collectAdapter(AdapterType::getAdapterId(), all);
+   if (node == NullFC) {
+      if (m_last == NullFC) {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all);
+      } else {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all, m_last);
+      }
+   } else {
+      Cache::the().collectAdapter(AdapterType::getAdapterId(), all, node);
+   }
    Optimizer<GroupType> builder(m_oracle,
 				all,
 				m_maxLevel, m_minObjects);
    builder.setDataStore(&m_inner);
-   m_root = builder.optimize();
-   return builder.getCurrentDepth();
-}
-template<class BasicTraits, class InputTraits> 
-unsigned FaceBVolHierarchy<BasicTraits,InputTraits>::hierarchyNode (const NodePtr& node)
-{
-   Optimizer<GroupType> builder(m_oracle,
-			        getCache()[node].getAdapter(AdapterType::getAdapterId()),
-				m_maxLevel, m_minObjects);
-   builder.setDataStore(&m_inner);
-   m_root = builder.optimize();
-   return builder.getCurrentDepth();
-}
-
-template<class BasicTraits, class InputTraits> 
-Oracle* FaceBVolHierarchy<BasicTraits,InputTraits>::createOracle
-(SplitAlgorithm method)
-{
-   switch (method) {
-   default:
-   case LongestSideMedianId:
-     return new LongestSideMedian<BVol> ();
-   case LongestSideMeanId:
-     return new LongestSideMean<BVol> ();
-   case MinimumSICId:
-     return new MinimumSIC<BVol> ();
-   case MinimumVolumeId:
-     return new MinimumVolume<BVol> ();
-   }
+   m_root  = builder.optimize();
+   m_depth = builder.getCurrentDepth();
 }
 
 template<class BasicTraits, class InputTraits> 
 void FaceBVolHierarchy<BasicTraits,InputTraits>::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   FaceBVolHierarchy<BasicTraits,InputTraits>, 
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this,
 				    &FaceBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(FaceBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry));
 #endif
 }
 
 template<class BasicTraits, class InputTraits> 
-void FaceBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry (
-CNodePtr& cnode, OSGStaticInput* input)
+bool FaceBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
    FaceBVolHierarchy<BasicTraits,InputTraits>* thisInput = 
      (FaceBVolHierarchy<BasicTraits,InputTraits>*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
 
-   Cache& cache = thisInput->getCache();
-   if (cache.getCurrentMaterial() != NullFC) {
+   if (Cache::the().getCurrentMaterial() != NullFC) {
       GeometryPtr arg = GeometryPtr::dcast(cnode);
-      arg->setMaterial(cache.getCurrentMaterial());
+      arg->setMaterial(Cache::the().getCurrentMaterial());
    }
-   thisInput->addAdapter(cache.getCurrentMatrix(), cache.getCurrentNode());
+   thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+   return true;
 }
 
 #ifndef OSG_NOFUNCTORS
 template<class BasicTraits, class InputTraits> 
-void FaceBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool FaceBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, input); 
 }
 #endif
 
@@ -421,48 +366,36 @@ CNodePtr& cnode, OSGStaticInput*)
 // primitive
 template<class BasicTraits, class InputTraits> 
 PrimitiveBVolHierarchy<BasicTraits,InputTraits>::PrimitiveBVolHierarchy ()
-  : m_root(NULL), m_oracle(NULL), m_deleteOracle(false), m_minObjects(256), m_maxLevel(50)
+  : m_root(NULL), m_oracle(NULL), m_minObjects(256), m_maxLevel(50)
 {
 }
 template<class BasicTraits, class InputTraits> 
 PrimitiveBVolHierarchy<BasicTraits,InputTraits>::~PrimitiveBVolHierarchy ()
 {
    m_root = NULL;
-   if (m_deleteOracle) {
-      delete m_oracle;
-   }
 }
 
 template<class BasicTraits, class InputTraits> 
-void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::setParameter (Oracle*  method, 
-							       unsigned maxLevel, 
-							       unsigned minObjects)
+void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::setParameter (const char* description, 
+								    u32 maxLevel, 
+								    u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = method;
-   m_deleteOracle = false;
+   m_oracle = Oracle<BVol>::getOracle(description);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 template<class BasicTraits, class InputTraits> 
-void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::setParameter
-(SplitAlgorithm method,
- unsigned maxLevel,
- unsigned minObjects)
+void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::setParameter (u32 method,
+								    u32 maxLevel,
+								    u32 minObjects)
 {
-   if (m_oracle != NULL && m_deleteOracle) {
-      delete m_oracle;
-   }
-   m_oracle       = createOracle(method);
-   m_deleteOracle = true;
+   m_oracle = Oracle<BVol>::getOracle(method);
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 
 template<class BasicTraits, class InputTraits> 
-PrimitiveBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
+typename PrimitiveBVolHierarchy<BasicTraits,InputTraits>::GroupType* 
 PrimitiveBVolHierarchy<BasicTraits,InputTraits>::getRoot () const
 {
    assert(m_root != NULL);
@@ -473,9 +406,8 @@ template <class BasicTraits, class InputTraits>
 void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformType&  m2w,
 								  const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
-
    // iterate over all prims
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    PrimitiveIterator end = geom->endPrimitives();
@@ -483,8 +415,7 @@ void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const Transfor
 	prim!=end; 
 	++prim) {
       // create prim adapter
-      AdapterType* adapter = LeafFactory::the().newObject();
-      m_leaf.push_back(adapter);
+      AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
       adapter->setObjectAdapter(&data);
       adapter->init(m2w, prim);
       data.setAdapter(AdapterType::getAdapterId(), adapter);
@@ -496,16 +427,16 @@ void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::destroy ()
 {
    m_root = NULL;
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
    }
    m_inner.clear();
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
 	it2 != m_leaf.end();
 	++it2){
       LeafFactory::the().deleteObject(*it2);
@@ -516,10 +447,8 @@ template<class BasicTraits, class InputTraits>
 void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::clear ()
 {
    m_root = NULL;
-   // clear cache
-   //getCache().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
@@ -528,86 +457,72 @@ void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::clear ()
 }
 
 template<class BasicTraits, class InputTraits> 
-unsigned PrimitiveBVolHierarchy<BasicTraits,InputTraits>::hierarchy ()
+void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::process   (const GeomObjectType& node)
+{
+   m_last = node;
+}
+template<class BasicTraits, class InputTraits> 
+void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::hierarchy (const GeomObjectType& node)
 {
    typename CacheData::AdapterVector all;
-   getCache().collectAdapter(AdapterType::getAdapterId(), all);
+   if (node == NullFC) {
+      if (m_last == NullFC) {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all);
+      } else {
+	 Cache::the().collectAdapter(AdapterType::getAdapterId(), all, m_last);
+      }
+   } else {
+      Cache::the().collectAdapter(AdapterType::getAdapterId(), all, node);
+   }
    Optimizer<GroupType> builder(m_oracle,
 				all,
 				m_maxLevel, m_minObjects);
    builder.setDataStore(&m_inner);
-   m_root = builder.optimize();
-   return builder.getCurrentDepth();
-}
-template<class BasicTraits, class InputTraits> 
-unsigned PrimitiveBVolHierarchy<BasicTraits,InputTraits>::hierarchyNode (const NodePtr& node)
-{
-   Optimizer<GroupType> builder(m_oracle,
-			        getCache()[node].getAdapter(AdapterType::getAdapterId()),
-				m_maxLevel, m_minObjects);
-   builder.setDataStore(&m_inner);
-   m_root = builder.optimize();
-   return builder.getCurrentDepth();
-}
-
-template<class BasicTraits, class InputTraits> 
-Oracle* PrimitiveBVolHierarchy<BasicTraits,InputTraits>::createOracle
-(SplitAlgorithm method)
-{
-   switch (method) {
-   default:
-   case LongestSideMedianId:
-     return new LongestSideMedian<BVol> ();
-   case LongestSideMeanId:
-     return new LongestSideMean<BVol> ();
-   case MinimumSICId:
-     return new MinimumSIC<BVol> ();
-   case MinimumVolumeId:
-     return new MinimumVolume<BVol> ();
-   }
+   m_root  = builder.optimize();
+   m_depth = builder.getCurrentDepth();
 }
 
 template<class BasicTraits, class InputTraits> 
 void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   PrimitiveBVolHierarchy<BasicTraits,InputTraits>, 
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this,
 				    &PrimitiveBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(PrimitiveBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry));
 #endif
 }
 
 template<class BasicTraits, class InputTraits> 
-void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry (
-CNodePtr& cnode, OSGStaticInput* input)
+bool PrimitiveBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
    PrimitiveBVolHierarchy<BasicTraits,InputTraits>* thisInput = 
      (PrimitiveBVolHierarchy<BasicTraits,InputTraits>*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
 
-   Cache& cache = thisInput->getCache();
-   if (cache.getCurrentMaterial() != NullFC) {
+   if (Cache::the().getCurrentMaterial() != NullFC) {
       GeometryPtr arg = GeometryPtr::dcast(cnode);
-      arg->setMaterial(cache.getCurrentMaterial());
+      arg->setMaterial(Cache::the().getCurrentMaterial());
    }
-   thisInput->addAdapter(cache.getCurrentMatrix(), cache.getCurrentNode());
+   thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+   return true;
 }
 
 #ifndef OSG_NOFUNCTORS
 template<class BasicTraits, class InputTraits> 
-void PrimitiveBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool PrimitiveBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, input); 
 }
 #endif
 

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -150,28 +150,28 @@ private:
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
-  // User callback
-  //!< User-defined data sent to the possible callback
-  u32				mUserData;	
-  //!< User-defined callback		
-  PROFILE_CALLBACK	mCallback;			
-  //!< Event triggering off the callback
-  const char*			mEvent;				
-
-  //!< Elapsed cycles
-  std::stack<u32>		mCyclesCounters;	
-  //!< Insertion orders
-  std::stack<u32>               mOrder;				
-  //!< Data records
-  std::vector<ProfileData>	mRecorder;			
-  //!< Current number of recorded events
-  u32				mNbRecords;		
-  //!< Current recursion level	
-  u32				mRecursionLevel;	
-  //!< true if Reset() has been called
-  bool				mIsReady;		
-  //!< true if the ending callback is pending	
-  bool				mEndingPending;		
+   // User callback
+   //!< User-defined data sent to the possible callback
+   u32				mUserData;	
+   //!< User-defined callback		
+   PROFILE_CALLBACK	mCallback;			
+   //!< Event triggering off the callback
+   const char*			mEvent;				
+   
+   //!< Elapsed cycles
+   std::stack<u32>		mCyclesCounters;	
+   //!< Insertion orders
+   std::stack<u32>               mOrder;				
+   //!< Data records
+   std::vector<ProfileData>	mRecorder;			
+   //!< Current number of recorded events
+   u32				mNbRecords;		
+   //!< Current recursion level	
+   u32				mRecursionLevel;	
+   //!< true if Reset() has been called
+   bool				mIsReady;		
+   //!< true if the ending callback is pending	
+   bool				mEndingPending;		
 };
 
 inline bool Profiler::StartProfile(const char* label)

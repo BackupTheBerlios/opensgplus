@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:51:24 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -82,7 +82,8 @@ inline void         FactoryHeap<AdapterType>::deleteObject (AdapterType* obj)
    delete obj;
 }
 template<class AdapterType> 
-inline FactoryHeap<AdapterType>::Self& FactoryHeap<AdapterType>::the ()
+inline typename FactoryHeap<AdapterType>::Self& 
+FactoryHeap<AdapterType>::the ()
 {
    static Self instance;
    return instance;
@@ -94,19 +95,19 @@ inline FactoryHeap<AdapterType>::Self& FactoryHeap<AdapterType>::the ()
     again.
  */
 template<class AdapterType> 
-class OSG_GENVISLIB_DLLMAPPING FactorySTL
+class OSG_GENVISLIB_DLLMAPPING FactoryArray
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef FactorySTL<AdapterType> Self;
+   typedef FactoryArray<AdapterType> Self;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
-   inline FactorySTL ();
-   inline ~FactorySTL ();
+   inline FactoryArray ();
+   inline ~FactoryArray ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Singleton.                                                   */
@@ -131,20 +132,21 @@ private:
 };
 
 template<class AdapterType> 
-inline FactorySTL<AdapterType>::FactorySTL ()
+inline FactoryArray<AdapterType>::FactoryArray ()
 {
+   // allocate array of size GV_MAX_NUM (defined in OSGGVBase.h)
    m_array = new AdapterType[GV_MAX_NUM];
    m_current = 0;
    m_size    = GV_MAX_NUM;
 }
 template<class AdapterType> 
-inline FactorySTL<AdapterType>::~FactorySTL ()
+inline FactoryArray<AdapterType>::~FactoryArray ()
 {
    delete[] m_array;
 }
 
 template<class AdapterType> 
-inline AdapterType* FactorySTL<AdapterType>::newObject    ()
+inline AdapterType* FactoryArray<AdapterType>::newObject    ()
 {
    if (m_empty.begin() != m_empty.end()) {
       AdapterType* result = m_empty.front();
@@ -153,18 +155,21 @@ inline AdapterType* FactorySTL<AdapterType>::newObject    ()
    }
    AdapterType* result = m_array + m_current;
    if (++m_current >= m_size) {
+      // FATAL: array size is not sufficient!
+      // Increase compile-time constant GV_MAX_NUM (defined in OSGGVBase.h)
       assert(false);
       return m_array;
    }
    return result;
 }
 template<class AdapterType> 
-inline void         FactorySTL<AdapterType>::deleteObject (AdapterType* obj)
+inline void         FactoryArray<AdapterType>::deleteObject (AdapterType* obj)
 {
    m_empty.push_front(obj);
 }
 template<class AdapterType> 
-inline FactorySTL<AdapterType>::Self& FactorySTL<AdapterType>::the ()
+inline typename FactoryArray<AdapterType>::Self& 
+FactoryArray<AdapterType>::the ()
 {
    static Self instance;
    return instance;

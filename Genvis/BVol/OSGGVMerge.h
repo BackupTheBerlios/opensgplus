@@ -23,72 +23,118 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
 #ifndef OSGGVMERGE_H
 #define OSGGVMERGE_H
 
+#include <stack>
+#include <vector>
 #include "OSGGVBase.h"
 #include "OSGGVGroup.h"
+#include "OSGGVSingleTraverser.h"
 
 BEGIN_GENVIS_NAMESPACE
 
-/*! \brief Merge levels of bounding volume hierarchies. For example
-    MergeLevels(1) on a binary hierarchy creates a 4-ary hierarchy.
+/*! \brief Merge levels of a bounding volume hierarchy. For example
+    Merge with setNumLevels(1) on a binary hierarchy creates a 4-ary hierarchy.
  */
-class OSG_GENVISLIB_DLLMAPPING MergeLevels 
+template <class BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING Merge
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BoundingVolume<Real> BVol;
+   typedef typename BasicTraits::GeomObjectType                  GeomObjectType;
+   typedef typename BasicTraits::GeomFaceType                    GeomFaceType;
+   typedef typename BasicTraits::TransformType                   TransformType;
+   typedef BVolAdapterBase                                       GeneralType; 
+   typedef BoundingVolume<Real>                                  BVol;
+   typedef typename SingleTraverserBase<BasicTraits>::ResultType ResultT;
+   typedef BVolAdapterBase                                       AdapterType;
+   typedef BVolGroupBase                                         GroupType;
+   typedef std::vector<GeneralType*>                             AddList;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
-   MergeLevels (unsigned level=1);
+   inline Merge ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline unsigned getNumLevels () const;
-   inline void     setNumLevels (unsigned level);
+   inline u32      getNumLevels () const;
+   inline void     setNumLevels (u32 level);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Merge.                                                       */
-   /*! \}                                                                 */
-   void     merge (BVolGroupBase* scene);
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-
-private:
-   /*---------------------------------------------------------------------*/
-   /*! \name Internal.                                                    */
-   /*! \}                                                                 */
-   void merge   (BVolGroupBase* scene,
-                 std::vector<BVolAdapterBase*>& addList,
-                 unsigned level);
-   bool compact (BVolGroupBase* parent, 
-		 BVolAdapterBase* son1, 
-		 BVolAdapterBase* son2);
+   /*! \name Traversal functions.                                         */
+   /*! \{                                                                 */   
+   bool     InitMerge  (GeneralType* a, const TransformType& m);
+   bool     LeaveMerge (GeneralType* a, const TransformType& m);
+   ResultT  InnerMerge (GroupType*   b);
+   ResultT  InnerLeaveMerge (GroupType*   b);
+   ResultT  LeafMerge  (AdapterType* p);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
-   unsigned m_level;
+protected:
+   u32 m_level;
+   u32 m_current;
+   std::stack<AddList> m_addStack;
 };
 
-inline unsigned MergeLevels::getNumLevels () const
+template <class BasicTraits>
+inline Merge<BasicTraits>::Merge ()
+  : m_level(0)
+{
+}
+template <class BasicTraits>
+inline u32 Merge<BasicTraits>::getNumLevels () const
 {
    return m_level;
 }
-inline void     MergeLevels::setNumLevels (unsigned level)
+template <class BasicTraits>
+inline void     Merge<BasicTraits>::setNumLevels (u32 level)
 {
    m_level = level;
 }
+
+/*! \brief Traits class for Merge.
+*/
+template <class BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING MergeTraits
+{
+public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef typename Merge<BasicTraits>::BVol          BVol;
+   typedef typename Merge<BasicTraits>::ResultT       ResultT;
+   typedef Merge<BasicTraits>                         ObjectT;
+   typedef typename Merge<BasicTraits>::GeneralType   GeneralType;
+   typedef typename Merge<BasicTraits>::GroupType     GroupType;
+   typedef typename Merge<BasicTraits>::AdapterType   AdapterType;
+   typedef typename Merge<BasicTraits>::TransformType TransformType;
+
+   typedef InitSingleFunctor2<bool,GeneralType,TransformType,ObjectT> InitFunctorT;
+   typedef SingleFunctor<ResultT,GroupType,ObjectT>                   InnerFunctorT;
+   typedef SingleFunctor<ResultT,AdapterType,ObjectT>                 LeafFunctorT;
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Functor creation.                                            */
+   /*! \{                                                                 */
+   static  InitFunctorT  createInitFunctor      (ObjectT* obj);
+   static  InitFunctorT  createInitLeaveFunctor (ObjectT* obj);
+   static  InnerFunctorT createInnerFunctor     (ObjectT* obj);
+   static  InnerFunctorT createInnerLeaveFunctor(ObjectT* obj);
+   static  LeafFunctorT  createLeafFunctor      (ObjectT* obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+};
 
 END_GENVIS_NAMESPACE
 #endif

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:43:27 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -37,11 +37,9 @@
 #include "OSGGVBase.h"
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
-#include "OSGGVTriangleAdapterAligned.h"
-#include "OSGGVKDop.h"
 #include "OSGGVDoubleTraverser.h"
+#include "OSGGVTriangleAdapterAligned.h"
 #include "OSGGVBVolCollision.h"
-#include "OSGGeometry.h"
 
 BEGIN_GENVIS_NAMESPACE
 
@@ -53,12 +51,22 @@ class OSG_GENVISLIB_DLLMAPPING PrecomputedAlignCollision
 : public BVolCollisionBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef BVolCollisionBase<BasicTraits>                        Inherited;
-   typedef BVOL                                                  BVol;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangleAligned<BasicTraits,BVOL>               AdapterType;
    typedef BVolGroupAligned<BVOL>                                GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
+   typedef BVOL                                                  BVol;
 #ifdef GV_PRECOMPUTEDREALIGN_32BIT
    enum { OccTableHighestBit = 31, OccTableBits = 32 };
    typedef u32                                                   OccTableType;
@@ -67,7 +75,7 @@ public:
    typedef u64                                                   OccTableType;
 #endif
    typedef DataAligned<Real,BVOL::Size>                          Data;
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -77,11 +85,11 @@ public:
    /*! \name Traversal functions.                                         */
    /*! \{                                                                 */
    /*! Init for the single pair in the arguments.                         */
-   bool        InitDouble  (GroupType* root0, const TransformType& d0, 
-			    GroupType* root1, const TransformType& d1);
+   bool        InitDouble  (GroupType* root0, const TransformType& d0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& d1, const TransformType& f1);
    /*! Leave for the single pair in the arguments.                        */
-   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, 
-			    GroupType* root1, const TransformType& m1);
+   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, const TransformType& f0,
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
 
    /*! Operation for inner nodes in the arguments.                        */
    ResultT BVolBVolCollision (GroupType* b0, GroupType* b1);
@@ -102,20 +110,23 @@ public:
    /*---------------------------------------------------------------------*/
 
 protected:
-   VectorClass        m_M1Direction[2*BVOL::Size];
-   VectorClass        m_proj[BVOL::Size];
-   Real               m_M1Offset[BVOL::Size];
    TransformType      m_M1ToM0;
    TransformType      m_M0ToM1;
-   unsigned           m_perm[2*BVOL::Size];
-   unsigned           m_mask[2*BVOL::Size];
-   unsigned           m_submask[2*BVOL::Size];
+
+   VectorClass        m_proj[BVOL::Size];
+   Real               m_M1Offset[BVOL::Size];
+
+   Real               m_scale;
+
+   u32                m_perm[2*BVOL::Size];
+   u32                m_mask[2*BVOL::Size];
+   u32                m_submask[2*BVOL::Size];
 };
 
 template <class BasicTraits, class BVOL>
-inline bool PrecomputedAlignCollision<BasicTraits,BVOL>::LeaveDouble (
-GroupType*, const TransformType&, 
-GroupType*, const TransformType&)
+inline bool PrecomputedAlignCollision<BasicTraits,BVOL>::LeaveDouble 
+(GroupType*, const TransformType&, const TransformType&, 
+ GroupType*, const TransformType&, const TransformType&)
 {
    return false;
 }

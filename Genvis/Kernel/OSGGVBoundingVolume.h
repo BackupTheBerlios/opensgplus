@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -63,16 +63,21 @@ public:
    virtual REAL        getSurfaceArea () const = 0;
    virtual REAL        getVolume      () const = 0;
 
-   virtual bool testIntersect (const PointClass&  origin, 
-			       const VectorClass& dir,
-			       REAL& dist, 
-			       double precision=0.01) const = 0;
-   virtual bool testIntersect (const PointClass& point) const = 0;
-   virtual bool testIntersect (const BoundingVolume<REAL>& box)   const = 0;
+   virtual bool        calcIntersect (const PointClass&  origin, 
+				      const VectorClass& dir,
+				      REAL& dist) const = 0;
+   virtual inline bool checkIntersect (const PointClass&  origin, 
+				       const VectorClass& dir,
+				       const REAL& dist) const;
+   virtual bool        checkIntersect (const PointClass& point) const = 0;
+   virtual bool        checkIntersect (const BoundingVolume<REAL>& box) const = 0;
+   virtual bool        checkIntersect (const PointClass& p1,
+				       const PointClass& p2,
+				       const PointClass& p3) const = 0;
 
-   virtual void unify (REAL size) = 0;
-   virtual void unify (const BoundingVolume<REAL>& box) = 0;
-   virtual void unify (const PointClass&           point) = 0;
+   virtual void        unify (REAL size) = 0;
+   virtual void        unify (const BoundingVolume<REAL>& box) = 0;
+   virtual void        unify (const PointClass&           point) = 0;
 
    virtual inline void draw ()          const;
    virtual inline void drawWireframe () const;
@@ -152,6 +157,14 @@ inline BoundingVolume<REAL>::~BoundingVolume ()
 }
 
 template <class REAL>
+inline bool BoundingVolume<REAL>::checkIntersect (const PointClass&  origin, 
+						  const VectorClass& dir,
+						  const REAL& dist) const
+{
+   REAL d = dist;
+   return calcIntersect(origin, dir, d);
+}
+template <class REAL>
 inline void BoundingVolume<REAL>::draw ()          const
 {
 }
@@ -207,23 +220,23 @@ inline void BoundingVolume<REAL>::extendBy (const OSG::Volume& volume)
 template <class REAL>
 inline bool BoundingVolume<REAL>::intersect (const OSG::Pnt3f& point) const
 {
-   return testIntersect(point);
+   return checkIntersect(point);
 }
 
 template <class REAL>
 inline bool BoundingVolume<REAL>::intersect (const OSG::Line& line) const
 {
    REAL dist = -1;
-   return testIntersect(line.getPosition(), line.getDirection(), dist);
+   return checkIntersect(line.getPosition(), line.getDirection(), dist);
 }
 
 template <class REAL>
 inline bool BoundingVolume<REAL>::intersect (const OSG::Line& line,
 					     float& enter, float& exit) const
 {
-   bool result = testIntersect(line.getPosition(), line.getDirection(), enter);
+   bool result = checkIntersect(line.getPosition(), line.getDirection(), enter);
    if (result) {
-      testIntersect(line.getPosition()+enter*line.getDirection(), 
+      checkIntersect(line.getPosition()+enter*line.getDirection(), 
 		    line.getDirection(), 
 		    exit);
    }

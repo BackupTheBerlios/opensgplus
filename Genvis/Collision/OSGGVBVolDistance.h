@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -40,9 +40,9 @@ BEGIN_GENVIS_NAMESPACE
  */
 struct Distance
 {
+   Real       distance;
    PointClass p1; 
    PointClass p2; 
-   Real       distance;
 };
 
 /*! \brief Euclidean distance between two points.
@@ -61,8 +61,9 @@ struct EuclideanMetric
 struct EuclideanMetricPlane
 {
    EuclideanMetricPlane ()
-     : m_normal(0,1,0)
-   {}
+   {
+      setNormal(Vec3f(0,1,0));
+   }
    const VectorClass& getNormal () const {
       return m_normal;
    }
@@ -74,11 +75,17 @@ struct EuclideanMetricPlane
       static FloatingComparator<Real> comp(0.1);
       return comp.zero(m_normal.dot(v));
    }
-   Real operator () (const VectorClass& d) const {
-      if (isInPlane(d)) {
-	 return d.length();
+   Real operator () (const VectorClass& v) const {
+#if 0
+      if (isInPlane(v)) {
+	 return v.length();
       }
       return infinity;
+#else
+      static const Real s_penalty = 1000.0f;
+      Real proj = m_normal.dot(v);
+      return (v - proj*m_normal).length() + pow(stdAbs(proj)/v.length(), 2)*s_penalty;
+#endif
    }
    Real operator () (const PointClass& a, const PointClass& b) const {
       VectorClass d = b-a;
@@ -100,9 +107,9 @@ struct EuclideanMetricHalfspace : public EuclideanMetricPlane
       static FloatingComparator<Real> comp(0.1);
       return comp.positive0(m_normal.dot(v));
    }
-   Real operator () (const VectorClass& d) const {
-      if (isInPlane(d)) {
-	 return d.length();
+   Real operator () (const VectorClass& v) const {
+      if (isInPlane(v)) {
+	 return v.length();
       }
       return infinity;
    }
@@ -125,8 +132,17 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolCollisionBase<BasicTraits> Inherited;
-   typedef Metric                         MetricType; 
+   typedef BVolCollisionBase<BasicTraits>         Inherited;
+   typedef typename Inherited::Cache              Cache;
+   typedef typename Inherited::CacheData          CacheData;
+   typedef typename Inherited::DoubleTraverser    DoubleTraverser;
+
+   typedef typename Inherited::TransformType      TransformType;
+   typedef typename Inherited::AdapterType        AdapterType;
+   typedef typename Inherited::CollisionPair      CollisionPair;
+   typedef typename Inherited::CollisionContainer CollisionContainer;
+
+   typedef Metric                                 MetricType; 
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -191,23 +207,17 @@ inline void BVolDistanceBase<BasicTraits,Metric>::setIntersecting (bool value)
 }
 
 template <class BasicTraits, class Metric>
-inline BVolDistanceBase<BasicTraits,Metric>::MetricType& 
+inline typename BVolDistanceBase<BasicTraits,Metric>::MetricType& 
 BVolDistanceBase<BasicTraits,Metric>::getMetric ()
 {
    return s_metric;
 }
 template <class BasicTraits, class Metric>
-inline const BVolDistanceBase<BasicTraits,Metric>::MetricType& 
+inline const typename BVolDistanceBase<BasicTraits,Metric>::MetricType& 
 BVolDistanceBase<BasicTraits,Metric>::getMetric () const
 {
    return s_metric;
 }
-
-template <class BasicTraits, class Metric>
-Real      BVolDistanceBase<BasicTraits,Metric>::s_maxDistance = infinity;
-template <class BasicTraits, class Metric>
-BVolDistanceBase<BasicTraits,Metric>::MetricType BVolDistanceBase<BasicTraits,Metric>::s_metric;
-
 
 END_GENVIS_NAMESPACE
 

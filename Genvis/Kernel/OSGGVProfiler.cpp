@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.4 $
-//   $Date: 2003/09/25 16:17:57 $
+//   $Revision: 1.5 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Hierarchical profiling based on code 
@@ -26,6 +26,7 @@
 USING_GENVIS_NAMESPACE
 
 static u32 gBase = 0;
+#if 0
 static void SetBaseTime(u32 time)	
 { 
    gBase = time; 
@@ -35,7 +36,6 @@ static u32  GetBaseTime()
    return gBase; 
 }
 
-#ifdef WIN32
 /*! This function initializes the profiler by counting the cpuid overhead.
     This is done 3 times on purpose, since cpuid takes a longer time to execute the first times it's called.
     "cpuid" is used before rdtsc to prevent out-of-sequence execution from producing wrong results.
@@ -105,6 +105,20 @@ __forceinline void	EndProfile(u32& val)
   }
   val-=GetBaseTime();
 }
+#endif
+
+#ifdef WIN32
+inline void InitProfiler()
+{
+}
+inline void	StartProfile(u32& val)
+{
+   val = u32(timeGetTime());
+}
+inline void	EndProfile(u32& val)
+{
+   val = u32(timeGetTime()) - val;
+}
 #else // other platforms
 inline void InitProfiler()
 {
@@ -119,7 +133,7 @@ inline void	EndProfile(u32& val)
 {
    struct timeval stop;
    gettimeofday(&stop, NULL);
-   val = u32(stop.tv_sec)*1000+u32(stop.tv_usec) - val;
+   val = (u32(stop.tv_sec)*1000+u32(stop.tv_usec)) - val;
 }
 #endif
 
@@ -138,7 +152,9 @@ Profiler& Profiler::the ()
 
 void Profiler::Reset()
 {
-	if(!gBase)	InitProfiler();
+	if (!gBase) {
+	   InitProfiler(); 
+	}
 
 	while (!mCyclesCounters.empty()) mCyclesCounters.pop();
 	while (!mOrder.empty())          mOrder.pop();
@@ -170,7 +186,7 @@ bool Profiler::_StartProfile(const char* label)
 	mOrder.push(mNbRecords++);
 
 	// We begin a new cycle
-	unsigned Value;
+	u32 Value;
 	::StartProfile(Value);
 
 	mCyclesCounters.push(Value);
@@ -208,8 +224,9 @@ bool Profiler::_EndProfile(const char* label)
 #ifndef GV_PROFILER_SUMNAMES
 	mRecorder.push_back(ProfileData(Order, label, Value, 0, --mRecursionLevel));
 #else
-	static unsigned radius = 20;
+	static u32 radius = 20;
 	typedef std::vector<ProfileData>::iterator Iterator;
+
 	Iterator begin = (mRecorder.size()<=radius
 			  ? mRecorder.begin() 
 			  : mRecorder.end()-radius);
@@ -259,11 +276,10 @@ ProfileData* Profiler::GetResults(u32& nbrecords, u64& totalnbcycles)
 	      totalnbcycles += Data[i].NbCycles;
 	   }
 	}
-	Real Total(totalnbcycles);
+	Real Total = Real(totalnbcycles);
 
 	// Loop through records
-	for (i=0;i<nbrecords;i++)
-	{
+	for (i=0; i<nbrecords; ++i) {
 		// Get current record
 		ProfileData* CurDat = &Data[i];
 

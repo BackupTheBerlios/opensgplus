@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// File:    $Id: OSGGVBVolFunctions.h,v 1.1 2003/09/11 16:20:30 fuenfzig Exp $
+// File:    $Id: OSGGVBVolFunctions.h,v 1.2 2004/03/12 13:23:23 fuenfzig Exp $
 // Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
 // ---------------------------------------------------------------
 // bounding volume union functions
@@ -26,13 +26,13 @@ inline void setValueTransposed (Matrix& m,
 }
 
 /** (Closed)Interval test q in [a, b]. */
-inline bool testIntersect (float q, float a, float b)
+inline bool checkIntersect (float q, float a, float b)
 {
    static FloatingComparator<float> comp;
    return (comp.leq(a, q) && comp.leq(q, b));
 }
 /** (Closed)Interval test q in [a, b]. */
-inline bool testIntersect (double q, double a, double b)
+inline bool checkIntersect (double q, double a, double b)
 {
    static FloatingComparator<double> comp;
    return (comp.leq(a, q) && comp.leq(q, b));
@@ -68,30 +68,29 @@ inline void unify (KDop<REAL,SIZE>&       box1,
 {
    if (box1.isEmpty()) {
       box1 = box2;
-   } else {
-      for (int k=0; k<SIZE; ++k) {
-         box1.minVector()[k] = stdMin(box1.minVector()[k], box2.minVector()[k]);
-         box1.maxVector()[k] = stdMax(box1.maxVector()[k], box2.maxVector()[k]);
-      }
-      box1.update();
+      return;
    }
+   for (int k=0; k<SIZE; ++k) {
+      box1.minVector()[k] = stdMin(box1.minVector()[k], box2.minVector()[k]);
+      box1.maxVector()[k] = stdMax(box1.maxVector()[k], box2.maxVector()[k]);
+   }
+   box1.update();
 }
 
 /** Intersection test for k-dops (with same k) bvol1 and dop2. 
     Specialization of 
-    inline bool testIntersect (const KDop<REAL,SIZE1>& box1,
-                               const KDop<REAL,SIZE2>& box2).
+    inline bool checkIntersect (const KDop<REAL,SIZE1>& box1,
+                                const KDop<REAL,SIZE2>& box2).
   */
 template <class REAL, int SIZE>
-inline bool testIntersect (const KDop<REAL,SIZE>& dop1,
-			   const KDop<REAL,SIZE>& dop2)
+inline bool checkIntersect (const KDop<REAL,SIZE>& dop1,
+			    const KDop<REAL,SIZE>& dop2)
 {
-   if (dop1.isEmpty() || dop2.isEmpty()) {// one dop is empty => no intersection
+   if (dop1.isEmpty() || dop2.isEmpty()) { // no intersection
       return false;              
    }
    for (int k=0; k<SIZE; ++k) {
       if (stdMin(dop1.maxVector()[k], dop2.maxVector()[k]) < stdMax(dop1.minVector()[k], dop2.minVector()[k])) {
-      //if (comp.less(stdMin(dop1.maxVector()[k], dop2.maxVector()[k]), stdMax(dop1.minVector()[k], dop2.minVector()[k]))) {
 	 return false;
       }
    }
@@ -99,10 +98,10 @@ inline bool testIntersect (const KDop<REAL,SIZE>& dop1,
 }
 /** Intersection test for k-dops (with different k) bvol1 and dop2. */
 template <class REAL, int SIZE1, int SIZE2>
-inline bool testIntersect (const KDop<REAL,SIZE1>& box1,
-			   const KDop<REAL,SIZE2>& box2)
+inline bool checkIntersect (const KDop<REAL,SIZE1>& box1,
+			    const KDop<REAL,SIZE2>& box2)
 {
-   if (box1.isEmpty() || box2.isEmpty()) {// one box is empty => no intersection
+   if (box1.isEmpty() || box2.isEmpty()) {// no intersection
       return false;              
    }
    Polygon3SetIndexed& geom1 = box1.getGeometry().getPolygonSet();
@@ -111,14 +110,14 @@ inline bool testIntersect (const KDop<REAL,SIZE1>& box1,
    for (it = geom1.attribs.points.begin(); 
 	it != geom1.attribs.points.end();
 	++it) {
-      if (box2.testIntersect(*it)) {
+      if (box2.checkIntersect(*it)) {
 	 return true;
       }
    }
    for (it = geom2.attribs.points.begin(); 
 	it != geom2.attribs.points.end();
 	++it) {
-      if (box1.testIntersect(*it)) {
+      if (box1.checkIntersect(*it)) {
 	 return true;
       }
    }

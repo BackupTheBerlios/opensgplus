@@ -1,7 +1,32 @@
-// ---------------------------------------------------------------
-// File:    $Id: OSGGVRAPIDTraverser.h,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $
-// Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
-// ---------------------------------------------------------------
+//=============================================================================
+//                                                                            
+//                               Genvis                                     
+//        Copyright (C) 2001 by Institute of Computer Graphics, TU Braunschweig
+//                           graphics.tu-bs.de                                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//                                License                                     
+//                                                                            
+//   This library is free software; you can redistribute it and/or modify it 
+//   under the terms of the GNU Library General Public License as published  
+//   by the Free Software Foundation, version 2.                             
+//                                                                             
+//   This library is distributed in the hope that it will be useful, but       
+//   WITHOUT ANY WARRANTY; without even the implied warranty of                
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         
+//   Library General Public License for more details.                          
+//                                                                            
+//   You should have received a copy of the GNU Library General Public         
+//   License along with this library; if not, write to the Free Software       
+//   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:28:31 $
+//                                                                            
+//=============================================================================
 
 #ifndef OSGGVRAPIDTRAVERSER_H
 #define OSGGVRAPIDTRAVERSER_H
@@ -21,15 +46,21 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING RAPIDAllTraverser : public AllTraverserBase<BasicTraits>
 {
 public:
-   typedef AllTraverserBase<BasicTraits>   Inherited;
-   typedef typename BasicTraits::TransformType TransformType;
-   typedef OpenSGRAPIDAdapter<BasicTraits> ObjectAdapterType;
-   typedef RAPIDCollision<BasicTraits>     ObjectT;
-   typedef ObjectT::FaceAdapterType        FaceAdapterType;
-   typedef ObjectT::FaceContainer          FaceContainer;
-   typedef ObjectT::CollisionPair          CollisionPair;
-   typedef ObjectT::CollisionContainer     CollisionContainer;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef AllTraverserBase<BasicTraits>        Inherited;
+   typedef typename Inherited::Cache            Cache;
+   typedef typename Inherited::CacheData        CacheData;
 
+   typedef typename BasicTraits::TransformType  TransformType;
+   typedef RAPIDCollision<BasicTraits>          ObjectT;
+   typedef typename ObjectT::ObjectAdapterType  ObjectAdapterType;
+   typedef typename ObjectT::FaceAdapterType    FaceAdapterType;
+   typedef typename ObjectT::FaceContainer      FaceContainer;
+   typedef typename ObjectT::CollisionPair      CollisionPair;
+   typedef typename ObjectT::CollisionContainer CollisionContainer;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -62,13 +93,13 @@ inline RAPIDAllTraverser<BasicTraits>::RAPIDAllTraverser ()
 }
 
 template <class BasicTraits>
-inline RAPIDAllTraverser<BasicTraits>::ObjectT&       
+inline typename RAPIDAllTraverser<BasicTraits>::ObjectT&       
 RAPIDAllTraverser<BasicTraits>::getDataTyped ()
 {
    return m_data;
 }
 template <class BasicTraits>
-inline const RAPIDAllTraverser<BasicTraits>::ObjectT& 
+inline const typename RAPIDAllTraverser<BasicTraits>::ObjectT& 
 RAPIDAllTraverser<BasicTraits>::getDataTyped () const
 {
    return m_data;

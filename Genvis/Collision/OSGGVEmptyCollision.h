@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -49,32 +49,49 @@ template <class BasicTraits, class BVOL>
 class OSG_GENVISLIB_DLLMAPPING EmptyCollision : public BVolCollisionBase<BasicTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef BVolCollisionBase<BasicTraits>                        Inherited;
+   typedef typename Inherited::Cache                             Cache;
+   typedef typename Inherited::CacheData                         CacheData;
+   typedef typename Inherited::DoubleTraverser                   DoubleTraverser;
+   typedef typename Inherited::TransformType                     TransformType;
+   typedef typename Inherited::CollisionPair                     CollisionPair;
+   typedef typename Inherited::CollisionContainer                CollisionContainer;
+
    typedef typename DoubleTraverserBase<BasicTraits>::ResultType ResultT;
    typedef OpenSGTriangle2BVol<BasicTraits,BVOL>                 AdapterType;
    typedef BVolGroup<BVOL>                                       GroupType;
    typedef BVolAdapter<BVOL>                                     GeneralType;
    typedef BVOL                                                  BVol;
-
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Constructor.                                                 */
+   /*! \{                                                                 */
    inline EmptyCollision ();
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Traversal functions.                                         */
+   /*! \{                                                                 */
+   bool    InitDouble      (GroupType* root0, const TransformType& d0, const TransformType& f0, 
+			    GroupType* root1, const TransformType& d1, const TransformType& f1);
+   inline bool LeaveDouble (GroupType* root0, const TransformType& m0, const TransformType& f0,
+			    GroupType* root1, const TransformType& m1, const TransformType& f1);
+   ResultT BVolBVolCollision (GroupType* b0,     GroupType* b1);
 
-   // collision functions
-   bool    InitDouble        (GroupType* root0, const Matrix& d0, 
-			      GroupType* root1, const Matrix& d1);
-   inline bool LeaveDouble (GroupType* root0, const Matrix& m0, 
-			    GroupType* root1, const Matrix& m1);
-   ResultT BVolBVolCollision (GroupType* b0, 
-			      GroupType* b1);
+   ResultT PrimBVolCollision (AdapterType* b0,   GroupType* b1);
 
-   ResultT PrimBVolCollision (AdapterType* b0,
-			      GroupType* b1);
+   ResultT BVolPrimCollision (GroupType* b0,   AdapterType* b1);
 
-   ResultT BVolPrimCollision (GroupType* b0, 
-			      AdapterType* b1);
-
-   ResultT PrimPrimCollision (AdapterType* b0, 
-			      AdapterType* b1);
-
+   ResultT PrimPrimCollision (AdapterType* b0, AdapterType* b1);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Dump.                                                        */
+   /*! \{                                                                 */
    virtual inline void dump (std::ostream& os);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 template <class BasicTraits, class BVOL>
@@ -83,9 +100,9 @@ inline EmptyCollision<BasicTraits,BVOL>::EmptyCollision ()
 {
 }
 template <class BasicTraits, class BVOL>
-inline bool EmptyCollision<BasicTraits,BVOL>::LeaveDouble (
-GroupType*, const Matrix&, 
-GroupType*, const Matrix&)
+inline bool EmptyCollision<BasicTraits,BVOL>::LeaveDouble 
+(GroupType*, const TransformType&, const TransformType&, 
+ GroupType*, const TransformType&, const TransformType&)
 {
    return false;
 }
@@ -96,26 +113,35 @@ inline void EmptyCollision<BasicTraits,BVOL>::dump (std::ostream& os)
 }
 
 
+/*! \brief Traits class for usage of EmptyCollision with double traverser.
+ */
 template <class BasicTraits, class BVOL>
 class OSG_GENVISLIB_DLLMAPPING EmptyCollisionTraits
 {
 public:
-   typedef typename EmptyCollision<BasicTraits,BVOL>::CacheData   CacheData;
-   typedef typename EmptyCollision<BasicTraits,BVOL>::ResultT     ResultT;
-   typedef EmptyCollision<BasicTraits,BVOL>                       ObjectT;
-   typedef typename EmptyCollision<BasicTraits,BVOL>::GeneralType GeneralType;
-   typedef typename EmptyCollision<BasicTraits,BVOL>::GroupType   GroupType;
-   typedef typename EmptyCollision<BasicTraits,BVOL>::AdapterType AdapterType;
-   typedef typename EmptyCollision<BasicTraits,BVOL>::BVol        BVol;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef typename EmptyCollision<BasicTraits,BVOL>::CacheData     CacheData;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::TransformType TransformType;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::ResultT       ResultT;
+   typedef EmptyCollision<BasicTraits,BVOL>                         ObjectT;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::GeneralType   GeneralType;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::GroupType     GroupType;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::AdapterType   AdapterType;
+   typedef typename EmptyCollision<BasicTraits,BVOL>::BVol          BVol;
 
    typedef InitSingleFunctor<bool,ObjectT>                                   InitFunctorT;
-   typedef InitDoubleFunctor<bool,GroupType,Matrix,GroupType,Matrix,ObjectT> InitDoubleFunctorT;
-   typedef InitDoubleFunctor<bool,GroupType,Matrix,GroupType,Matrix,ObjectT> LeaveDoubleFunctorT;
+   typedef InitDoubleFunctor<bool,GroupType,TransformType,GroupType,TransformType,ObjectT> InitDoubleFunctorT;
+   typedef InitDoubleFunctor<bool,GroupType,TransformType,GroupType,TransformType,ObjectT> LeaveDoubleFunctorT;
    typedef DispatchFunctor<ResultT,GroupType,GroupType,ObjectT> BVolBVolFunctorT;
    typedef DispatchFunctor<ResultT,AdapterType,GroupType,ObjectT> PrimBVolFunctorT;
    typedef DispatchFunctor<ResultT,GroupType,AdapterType,ObjectT> BVolPrimFunctorT;
    typedef DispatchFunctor<ResultT,AdapterType,AdapterType,ObjectT> PrimPrimFunctorT;
-
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Functor creation.                                            */
+   /*! \{                                                                 */
    static  InitFunctorT        createInitFunctor        (ObjectT* obj);
    static  InitDoubleFunctorT  createInitDoubleFunctor  (ObjectT* obj);
    static  LeaveDoubleFunctorT createLeaveDoubleFunctor (ObjectT* obj);
@@ -123,6 +149,8 @@ public:
    static  PrimBVolFunctorT createPrimBVolFunctor (ObjectT* obj);
    static  BVolPrimFunctorT createBVolPrimFunctor (ObjectT* obj);
    static  PrimPrimFunctorT createPrimPrimFunctor (ObjectT* obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 END_GENVIS_NAMESPACE

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -35,11 +35,24 @@ Timer KDop<REAL,SIZE>::s_time(100);
 #endif
 
 template <class REAL, int SIZE>
+void KDop<REAL,SIZE>::setDirection (VectorClass* dir)
+{
+   for (u32 k=0; k<2*SIZE; ++k) {
+      s_direction[k].setValue(dir[k]);
+   } 
+}
+template <class REAL, int SIZE>
+const VectorClass* KDop<REAL,SIZE>::getDirection ()
+{
+   return s_direction;
+}
+
+template <class REAL, int SIZE>
 REAL KDop<REAL,SIZE>::getMinmaxFraction () const
 {
    REAL minDiff, maxDiff;
    minDiff = maxDiff = difference(0);
-   for (unsigned k=1; k<SIZE; ++k) {
+   for (u32 k=1; k<SIZE; ++k) {
       REAL diff;
       if ((diff = difference(k)) < minDiff) {
 	 minDiff = diff;
@@ -69,24 +82,7 @@ float KDop<float,3>::getSurfaceArea () const
 #endif
    return area;
 }
-double KDop<double,3>::getSurfaceArea () const
-{
-#if 0
-   if (GV_verbose) {
-      s_time.start();
-   }
-#endif
-   double area = difference(0)*(difference(1)+difference(2)) 
-     + difference(1)*difference(2);   
-#if 0
-   if (GV_verbose) {
-      s_time.stop();
-      Statistics::the()[" 6-DOP NumArea"]  += 1;
-      Statistics::the()[" 6-DOP TimeArea"]  = s_time.averageTime();
-   }
-#endif
-   return area;
-}
+
 float KDop<float,3>::getVolume      () const
 {
 #if 0
@@ -104,27 +100,11 @@ float KDop<float,3>::getVolume      () const
 #endif
    return vol;
 }
-double KDop<double,3>::getVolume      () const
-{
-#if 0
-   if (GV_verbose) {
-      s_time.start();
-   }
-#endif
-   double vol = difference(0) * difference(1) * difference(2);   
-#if 0
-   if (GV_verbose) {
-      s_time.stop();
-      Statistics::the()[" 6-DOP NumVolume"]  += 1;
-      Statistics::the()[" 6-DOP TimeVolume"]  = s_time.averageTime();
-   }
-#endif
-   return vol;
-}
 
 template <class REAL, int SIZE>
 REAL KDop<REAL,SIZE>::getSurfaceArea () const
 {
+#if 0
    if (m_geom == NULL) {
       updateGeometry();
    }
@@ -142,11 +122,16 @@ REAL KDop<REAL,SIZE>::getSurfaceArea () const
       Statistics::the()[std::string(type.str())+="TimeArea"]  = s_time.averageTime();
    }
 #endif
+#else
+   Real area = difference(0)*(difference(1)+difference(2)) 
+     + difference(1)*difference(2);
+#endif
    return area;
 }
 template <class REAL, int SIZE>
 REAL KDop<REAL,SIZE>::getVolume      () const
 {
+#if 0
    if (m_geom == NULL) {
       updateGeometry();
    }
@@ -163,6 +148,9 @@ REAL KDop<REAL,SIZE>::getVolume      () const
       Statistics::the()[std::string(type.str())+="NumVolume"]  += 1;
       Statistics::the()[std::string(type.str())+="TimeVolume"]  = s_time.averageTime();
    }
+#endif
+#else
+   Real vol = difference(0) * difference(1) * difference(2);   
 #endif
    return vol;
 }
@@ -232,16 +220,6 @@ bool KDop<float,3>::createDirections()
    s_direction[5].setValue(-s_direction[2]);
    return true;
 }
-bool KDop<double,3>::createDirections()
-{
-   s_direction[0].setValues(1, 0, 0);
-   s_direction[1].setValues(0, 1, 0);
-   s_direction[2].setValues(0, 0, 1);
-   s_direction[3].setValue(-s_direction[0]);
-   s_direction[4].setValue(-s_direction[1]);
-   s_direction[5].setValue(-s_direction[2]);
-   return true;
-}
 bool KDop<float,7>::createDirections()
 {
    static float isqrt3 = 1.0f/sqrt(3.0f);
@@ -262,56 +240,12 @@ bool KDop<float,7>::createDirections()
    s_direction[13].setValue(-s_direction[6]);
    return true;
 }
-bool KDop<double,7>::createDirections()
-{
-   static double isqrt3 = 1.0/sqrt(3.0);
-   s_direction[0].setValues(1, 0, 0);
-   s_direction[1].setValues(0, 1, 0);
-   s_direction[2].setValues(0, 0, 1);
-   s_direction[3].setValues(isqrt3,  isqrt3,  isqrt3);
-   s_direction[4].setValues(isqrt3, -isqrt3,  isqrt3);
-   s_direction[5].setValues(isqrt3, -isqrt3, -isqrt3);
-   s_direction[6].setValues(isqrt3,  isqrt3, -isqrt3);
-
-   s_direction[7].setValue(-s_direction[0]);
-   s_direction[8].setValue(-s_direction[1]);
-   s_direction[9].setValue(-s_direction[2]);
-   s_direction[10].setValue(-s_direction[3]);
-   s_direction[11].setValue(-s_direction[4]);
-   s_direction[12].setValue(-s_direction[5]);
-   s_direction[13].setValue(-s_direction[6]);
-   return true;
-}
 
 // boundary calculation can be done more efficient
 // see Crosnier, Rossignac: Tribox bounds for three-dimensional objects
 bool KDop<float,9>::createDirections()
 {
    static float isqrt2 = 1.0f/sqrt(2.0f);
-   s_direction[0].setValues(1, 0, 0);
-   s_direction[1].setValues(0, 1, 0);
-   s_direction[2].setValues(0, 0, 1);
-   s_direction[3].setValues(isqrt2,  isqrt2,  0);
-   s_direction[4].setValues(isqrt2,  0,  isqrt2);
-   s_direction[5].setValues(0,  isqrt2,  isqrt2);
-   s_direction[6].setValues(isqrt2, -isqrt2,  0);
-   s_direction[7].setValues(isqrt2,  0, -isqrt2);
-   s_direction[8].setValues(0,  isqrt2, -isqrt2);
-
-   s_direction[9].setValue(-s_direction[0]);
-   s_direction[10].setValue(-s_direction[1]);
-   s_direction[11].setValue(-s_direction[2]);
-   s_direction[12].setValue(-s_direction[3]);
-   s_direction[13].setValue(-s_direction[4]);
-   s_direction[14].setValue(-s_direction[5]);
-   s_direction[15].setValue(-s_direction[6]);
-   s_direction[16].setValue(-s_direction[7]);
-   s_direction[17].setValue(-s_direction[8]);
-   return true;
-}
-bool KDop<double,9>::createDirections()
-{
-   static double isqrt2 = 1.0/sqrt(2.0);
    s_direction[0].setValues(1, 0, 0);
    s_direction[1].setValues(0, 1, 0);
    s_direction[2].setValues(0, 0, 1);
@@ -430,39 +364,6 @@ bool KDop<float,13>::createDirections()
    s_direction[25].setValue(-s_direction[12]);
    return true;
 }
-bool KDop<double,13>::createDirections()
-{
-   static double isqrt2 = 1.0/sqrt(2.0);
-   static double isqrt3 = 1.0/sqrt(3.0);
-   s_direction[0].setValues(1, 0, 0);
-   s_direction[1].setValues(0, 1, 0);
-   s_direction[2].setValues(0, 0, 1);
-   s_direction[3].setValues(isqrt3,  isqrt3,  isqrt3);
-   s_direction[4].setValues(isqrt3, -isqrt3,  isqrt3);
-   s_direction[5].setValues(isqrt3,  isqrt3, -isqrt3);
-   s_direction[6].setValues(isqrt3, -isqrt3, -isqrt3);
-   s_direction[7].setValues(isqrt2,  isqrt2,  0);
-   s_direction[8].setValues(isqrt2,  0,  isqrt2);
-   s_direction[9].setValues(0,  isqrt2,  isqrt2);
-   s_direction[10].setValues(isqrt2, -isqrt2,  0);
-   s_direction[11].setValues(isqrt2,  0, -isqrt2);
-   s_direction[12].setValues(0,  isqrt2, -isqrt2);
-
-   s_direction[13].setValue(-s_direction[0]);
-   s_direction[14].setValue(-s_direction[1]);
-   s_direction[15].setValue(-s_direction[2]);
-   s_direction[16].setValue(-s_direction[3]);
-   s_direction[17].setValue(-s_direction[4]);
-   s_direction[18].setValue(-s_direction[5]);
-   s_direction[19].setValue(-s_direction[6]);
-   s_direction[20].setValue(-s_direction[7]);
-   s_direction[21].setValue(-s_direction[8]);
-   s_direction[22].setValue(-s_direction[9]);
-   s_direction[23].setValue(-s_direction[10]);
-   s_direction[24].setValue(-s_direction[11]);
-   s_direction[25].setValue(-s_direction[12]);
-   return true;
-}
 template <class REAL, int SIZE>
 bool KDop<REAL,SIZE>::createDirections ()
 {
@@ -504,7 +405,7 @@ KDop<REAL,SIZE>::KDop<REAL,SIZE> (const BoundingVolume<REAL>& bvol)
 template <class REAL, int SIZE>
 const KDop<REAL,SIZE>& KDop<REAL,SIZE>::operator= (const KDop<REAL,SIZE>& dop)
 {
-   for (int k=0; k<SIZE; ++k) {
+   for (u32 k=0; k<SIZE; ++k) {
       m_min[k] = dop.m_min[k];
       m_max[k] = dop.m_max[k];
    }
@@ -530,7 +431,7 @@ void KDop<REAL,SIZE>::init (const PointClass& center,
    m_max[0] = center[0]+hx;
    m_max[1] = center[1]+hy;
    m_max[2] = center[2]+hz;
-   for (int k=3; k<SIZE; ++k) {
+   for (u32 k=3; k<SIZE; ++k) {
       m_min[k] = m_min[0]*direction()[k][0]
 	+ m_min[1]*direction()[k][1]
 	+ m_min[2]*direction()[k][2];
@@ -566,7 +467,7 @@ KDop<REAL,SIZE>::KDop (const REAL* minVector,
 {
    setEmpty(false);
    static FloatingComparator<REAL> comp;
-   for (int k=0; k<SIZE; ++k) {
+   for (u32 k=0; k<SIZE; ++k) {
       m_min[k] = minVector[k];
       m_max[k] = maxVector[k];
       setEmpty(isEmpty() || comp.equal(m_min[k], m_max[k]));
@@ -622,13 +523,12 @@ PointClass KDop<REAL,SIZE>::getCenter () const
    return PointClass(average(0), average(1), average(2));
 }
 
-bool KDop<float,3>::testIntersect (const PointClass&  origin, 
+bool KDop<float,3>::calcIntersect (const PointClass&  origin, 
 				   const VectorClass& dir,
-				   float& dist, 
-				   double precision) const
+				   float& dist) const
 {
    static FloatComparator comp;
-   static int indices[] = {1, 2, 0, 2, 1, 0};
+   static i32 indices[] = {1, 2, 0, 2, 1, 0};
 
    if (isEmpty()) {
       return false;
@@ -641,8 +541,8 @@ bool KDop<float,3>::testIntersect (const PointClass&  origin,
 
    bool result = false;
 
-   int pos = 0;
-   for (unsigned c=0; c<3; ++c, pos += 2) {
+   i32 pos = 0;
+   for (u32 c=0; c<3; ++c, pos += 2) {
       if (!comp.zero(dir[c])) {
          float id = 1.0f/dir[c];
          float d = (v[c]+half[c])*id;
@@ -663,53 +563,11 @@ bool KDop<float,3>::testIntersect (const PointClass&  origin,
    }
    return result;
 }
-bool KDop<double,3>::testIntersect (const PointClass&  origin, 
-				    const VectorClass& dir,
-				    double& dist, 
-				    double precision) const
-{
-   static DoubleComparator comp;
-   static int indices[] = {1, 2, 0, 2, 1, 0};
-
-   if (isEmpty()) {
-      return false;
-   }
-
-   VectorClass v(getCenter() - origin);
-   VectorClass half(0.5f*difference(0),
-		    0.5f*difference(1),
-		    0.5f*difference(2));
-
-   bool result = false;
-
-   int pos = 0;
-   for (unsigned c=0; c<3; ++c, pos += 2) {
-      if (!comp.zero(dir[c])) {
-         double id = 1.0f/dir[c];
-         double d = (v[c]+half[c])*id;
-         //if (comp.positive(d) && (comp.negative(dist) || comp.less(d,dist)) && comp.less(stdAbs(v[indices[pos]]-d*dir[indices[pos]]),     half[indices[pos]]) && comp.less(stdAbs(v[indices[pos+1]]-d*dir[indices[pos+1]]), half[indices[pos+1]]) ) {
-         if (d > 0 && (dist < 0 || d < dist) 
-	     && stdAbs(v[indices[pos]]-d*dir[indices[pos]]) < half[indices[pos]]
-             && stdAbs(v[indices[pos+1]]-d*dir[indices[pos+1]]) < half[indices[pos+1]]) {
-            dist = d; result = true;
-         }
-         d = (v[c]-half[c])*id;
-         //if (comp.positive(d) && (comp.negative(dist) || comp.less(d,dist)) && comp.less(stdAbs(v[indices[pos]]-d*dir[indices[pos]]),     half[indices[pos]]) && comp.less(stdAbs(v[indices[pos+1]]-d*dir[indices[pos+1]]), half[indices[pos+1]]) ) {
-	 if (d > 0 && (dist < 0 || d < dist) 
-	     && stdAbs(v[indices[pos]]-d*dir[indices[pos]]) < half[indices[pos]]
-	     && stdAbs(v[indices[pos+1]]-d*dir[indices[pos+1]]) < half[indices[pos+1]]) {
-            dist = d; result = true;
-         }
-      }
-   }
-   return result;
-}
 
 template <class REAL,int SIZE>
-bool KDop<REAL,SIZE>::testIntersect (const PointClass&  origin, 
-				     const VectorClass& dir,
-				     REAL& dist, 
-				     double precision) const
+bool KDop<REAL,SIZE>::checkIntersect (const PointClass&  origin, 
+				      const VectorClass& dir,
+				      const REAL& dist) const
 {
    static FloatingComparator<REAL> c;
 
@@ -719,7 +577,65 @@ bool KDop<REAL,SIZE>::testIntersect (const PointClass&  origin,
 
    REAL cen[SIZE];
    REAL ray[SIZE];
-   int k, kk;
+   u32 k, kk;
+   for (k=0; k<SIZE; ++k) {
+      cen[k]  = direction()[k].dot(origin); 
+      ray[k]  = direction()[k].dot(dir);
+   }
+
+   for (k=0; k<SIZE; ++k) {
+      if (!c.zero(ray[k])) {
+         REAL id = 1.0f/ray[k];
+         REAL d  = (m_min[k]-cen[k])*id;
+         if (c.positive(d) && (c.negative(dist) || c.less(d, dist)) ) {
+	    bool thisResult = true;
+	    for (kk=0; kk<SIZE; ++kk) {
+	       if (kk == k) {
+		  continue;
+	       }
+	       REAL proj = cen[kk]+d*ray[kk];
+	       if (c.less(proj, m_min[kk]) || c.greater(proj, m_max[kk])) {
+		  thisResult = false;
+	       }
+	    }
+	    if (thisResult) {
+	       return true;
+	    }
+	 }
+         d = (m_max[k]-cen[k])*id;
+         if (c.positive(d) && (c.negative(dist) || c.less(d,dist)) ) {
+	    bool thisResult = true;
+	    for (kk=0; kk<SIZE; ++kk) {
+	       if (kk == k) {
+		  continue;
+	       }
+	       REAL proj = cen[kk]+d*ray[kk];
+	       if (c.less(proj, m_min[kk]) || c.greater(proj, m_max[kk])) {
+		  thisResult = false;
+	       }
+	    }
+	    if (thisResult) {
+	       return true;
+	    }
+	 }
+      }
+   }
+   return false;
+}
+template <class REAL,int SIZE>
+bool KDop<REAL,SIZE>::calcIntersect (const PointClass&  origin, 
+				     const VectorClass& dir,
+				     REAL& dist) const
+{
+   static FloatingComparator<REAL> c;
+
+   if (isEmpty()) {
+      return false;
+   }
+
+   REAL cen[SIZE];
+   REAL ray[SIZE];
+   u32 k, kk;
    for (k=0; k<SIZE; ++k) {
       cen[k]  = direction()[k].dot(origin); 
       ray[k]  = direction()[k].dot(dir);
@@ -767,20 +683,21 @@ bool KDop<REAL,SIZE>::testIntersect (const PointClass&  origin,
    }
    return result;
 }
+
 template <class REAL, int SIZE>
-bool KDop<REAL,SIZE>::testIntersect (const PointClass& point) const
+bool KDop<REAL,SIZE>::checkIntersect (const PointClass& point) const
 {
-   for (int k=0; k<SIZE; ++k) {
+   for (u32 k=0; k<SIZE; ++k) {
       REAL proj = direction()[k].dot(point);
       if (proj < minVector()[k] || maxVector()[k] < proj) {
-	//if (!genvis::testIntersect(proj, minVector()[k], maxVector()[k])) {
+	//if (!genvis::checkIntersect(proj, minVector()[k], maxVector()[k])) {
 	 return false;
       }
    }
    return true;
 }
 
-bool KDop<float, 3>::testIntersect (const PointClass& p0,
+bool KDop<float, 3>::checkIntersect (const PointClass& p0,
 				    const PointClass& p1,
 				    const PointClass& p2) const
 {
@@ -806,39 +723,13 @@ bool KDop<float, 3>::testIntersect (const PointClass& p0,
    return true;
 }
 
-bool KDop<double, 3>::testIntersect (const PointClass& p0,
-				     const PointClass& p1,
-				     const PointClass& p2) const
-{
-   static FloatingComparator<double> comp;
-   double min0 = stdMin(stdMin(p0[0], p1[0]), p2[0]);
-   double max0 = stdMax(stdMax(p0[0], p1[0]), p2[0]);
-   if (   comp.less   (max0, minVector()[0]) 
-       || comp.greater(min0, maxVector()[0])) {
-      return false;
-   }
-   double min1 = stdMin(stdMin(p0[1], p1[1]), p2[1]);
-   double max1 = stdMax(stdMax(p0[1], p1[1]), p2[1]);
-   if (   comp.less   (max1, minVector()[1]) 
-       || comp.greater(min1, maxVector()[1])) {
-      return false;
-   }
-   double min2 = stdMin(stdMin(p0[2], p1[2]), p2[2]);
-   double max2 = stdMax(stdMax(p0[2], p1[2]), p2[2]);
-   if (   comp.less   (max2, minVector()[2]) 
-       || comp.greater(min2, maxVector()[2])) {
-      return false;
-   }
-   return true;
-}
-
 template <class REAL, int SIZE>
-bool KDop<REAL, SIZE>::testIntersect (const PointClass& p0,
+bool KDop<REAL, SIZE>::checkIntersect (const PointClass& p0,
 				      const PointClass& p1,
 				      const PointClass& p2) const
 {
    static FloatingComparator<REAL> comp;
-   for (unsigned k=0; k<SIZE; ++k) {
+   for (u32 k=0; k<SIZE; ++k) {
       REAL proj0 = direction()[k].dot(p0);
       REAL proj1 = direction()[k].dot(p1);
       REAL proj2 = direction()[k].dot(p2);
@@ -853,7 +744,8 @@ bool KDop<REAL, SIZE>::testIntersect (const PointClass& p0,
 }
 
 template <class REAL, int SIZE>
-KDop<REAL,SIZE>::BVolGeometry& KDop<REAL,SIZE>::getGeometry () const
+typename KDop<REAL,SIZE>::BVolGeometry& 
+KDop<REAL,SIZE>::getGeometry () const
 {
    if (m_geom == NULL) {
       updateGeometry();
@@ -862,34 +754,34 @@ KDop<REAL,SIZE>::BVolGeometry& KDop<REAL,SIZE>::getGeometry () const
 }
 
 template <class REAL, int SIZE>
-bool KDop<REAL,SIZE>::testIntersect (const BoundingVolume<REAL>& box2) const
+bool KDop<REAL,SIZE>::checkIntersect (const BoundingVolume<REAL>& box2) const
 {
    const KDop<REAL,3>*    aabb = NULL;
    const KDop<REAL,SIZE>* dop  = NULL;
    if ((aabb = dynamic_cast<const KDop<REAL,3>*>(&box2))) {
-      return genvis::testIntersect(*this, *aabb);
+      return genvis::checkIntersect(*this, *aabb);
    }
    if ((dop = dynamic_cast<const KDop<REAL,SIZE>*>(&box2))) {
-      return genvis::testIntersect(*this, *dop);
+      return genvis::checkIntersect(*this, *dop);
    }
    return false;
 }
 
 template <class REAL, int SIZE>
-bool KDop<REAL,SIZE>::testIntersect (const KDop<REAL,SIZE>& dop2) const
+bool KDop<REAL,SIZE>::checkIntersect (const KDop<REAL,SIZE>& dop2) const
 {
-   return genvis::testIntersect(*this, dop2);
+   return genvis::checkIntersect(*this, dop2);
 }
 
 template <class REAL, int SIZE>
-bool KDop<REAL,SIZE>::testIntersect (const KDop<REAL,SIZE>& dop2,
-				     REAL*                  offset) const
+bool KDop<REAL,SIZE>::checkIntersect (const KDop<REAL,SIZE>& dop2,
+				      REAL*                  offset) const
 {
    if (isEmpty() || dop2.isEmpty()) {// one box is empty => no intersection
       return false;              
    }
    static FloatingComparator<REAL> comp;
-   for (int k=0; k<SIZE; ++k) {
+   for (u32 k=0; k<SIZE; ++k) {
       if (comp.less(stdMin(maxVector()[k], dop2.maxVector()[k]+offset[k]),
 		    stdMax(minVector()[k], dop2.minVector()[k]+offset[k]))) {
 	 return false;
@@ -904,7 +796,7 @@ void KDop<REAL,SIZE>::unify (const KDop<REAL,SIZE>& dop)
    if (isEmpty()) {
       operator=(dop);
    } else {
-      for (int k=0; k<SIZE; ++k) {
+      for (u32 k=0; k<SIZE; ++k) {
          minVector()[k] = stdMin(minVector()[k], dop.minVector()[k]);
          maxVector()[k] = stdMax(maxVector()[k], dop.maxVector()[k]);
       }
@@ -916,14 +808,14 @@ void KDop<REAL,SIZE>::unify (const KDop<REAL,SIZE>& dop,
 			     REAL*                  offset)
 {
    if (isEmpty()) {
-      for (int k=0; k<SIZE; ++k) {
+      for (u32 k=0; k<SIZE; ++k) {
          minVector()[k] = dop.minVector()[k]+offset[k];
          maxVector()[k] = dop.maxVector()[k]+offset[k];
       }
       setEmpty(dop.isEmpty());
       update();
    } else {
-      for (int k=0; k<SIZE; ++k) {
+      for (u32 k=0; k<SIZE; ++k) {
          minVector()[k] = stdMin(minVector()[k], dop.minVector()[k]+offset[k]);
          maxVector()[k] = stdMax(maxVector()[k], dop.maxVector()[k]+offset[k]);
       }
@@ -934,7 +826,7 @@ void KDop<REAL,SIZE>::unify (const KDop<REAL,SIZE>& dop,
 template <class REAL, int SIZE>
 void KDop<REAL,SIZE>::unify (float size)
 {
-   for (unsigned k=0; k<BVol::Size; ++k) {
+   for (u32 k=0; k<BVol::Size; ++k) {
       minVector()[k] -= size;
       maxVector()[k] += size;
    }
@@ -951,13 +843,13 @@ template <class REAL, int SIZE>
 void KDop<REAL,SIZE>::unify (const PointClass& point)
 {
    if (isEmpty()) {
-      for (int k=0; k<SIZE; ++k) {
+      for (u32 k=0; k<SIZE; ++k) {
 	 REAL proj = direction()[k].dot(point);
 	 minVector()[k] = proj;
 	 maxVector()[k] = proj;
       }
    } else {
-      for (int k=0; k<SIZE; ++k) {
+      for (u32 k=0; k<SIZE; ++k) {
 	 REAL proj = direction()[k].dot(point);
          minVector()[k] = stdMin(minVector()[k], proj);
          maxVector()[k] = stdMax(maxVector()[k], proj);
@@ -1035,74 +927,6 @@ void KDop<float,3>::drawWireframe ()          const
      glEnd();
 }
 
-void KDop<double,3>::draw ()          const
-{
-   glBegin(GL_QUADS);
-   glNormal3d(0,0,-1);
-   glVertex3d(minVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], minVector()[2]);
-
-   glNormal3d(0,0,+1);
-   glVertex3d(maxVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], minVector()[1], maxVector()[2]);
-
-   glNormal3d(0,0,-1);
-   glVertex3d(minVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], maxVector()[2]);  
-   glVertex3d(minVector()[0], maxVector()[1], minVector()[2]);
-
-   glNormal3d(0,0,+1);
-   glVertex3d(maxVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], minVector()[2]);
-
-   glNormal3d(0,0,-1);
-   glVertex3d(minVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], minVector()[1], maxVector()[2]);
-
-   glNormal3d(0,0,+1);
-   glVertex3d(minVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], minVector()[2]);
-   glEnd();
-}
-void KDop<double,3>::drawWireframe ()          const
-{
-   glBegin(GL_LINE_LOOP);
-   glVertex3d(minVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], minVector()[2]);
-   glEnd();
-
-   glBegin(GL_LINE_LOOP);
-   glVertex3d(maxVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], minVector()[1], maxVector()[2]);
-   glEnd();
-
-   glBegin(GL_LINES);
-   glVertex3d(minVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], minVector()[1], maxVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(minVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], maxVector()[1], maxVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], minVector()[2]);
-   glVertex3d(maxVector()[0], minVector()[1], maxVector()[2]);
-   glEnd();
-}
-
 template <class REAL, int SIZE>
 void KDop<REAL,SIZE>::draw ()          const
 {
@@ -1124,7 +948,7 @@ template <class REAL, int SIZE>
 std::ostream& KDop<REAL,SIZE>::dumpInternal (std::ostream& os) const
 {
    os << "k-DOP(k=" << SIZE << ", direction" << std::flush; 
-   int k;
+   u32 k;
    for (k=0; k<SIZE; ++k) {
       os << " " << direction()[k];
    } 
@@ -1157,7 +981,7 @@ REAL KDop<REAL,SIZE>::unitDopRadius ()
    static REAL radius = -1;
    if (radius < 0) {
       Polygon3SetIndexed& geom = unitDop().getGeometry().getPolygonSet();
-      for (unsigned k=0; k<BVol::Size; ++k) {
+      for (u32 k=0; k<BVol::Size; ++k) {
 	 PointClass           center(getDirection()[k]);
 	 Polygon3Indexed*     itF    = geom.getFace(k);
 	 Polygon3EdgeIndexed* e      = itF->firstEdge();
@@ -1179,8 +1003,8 @@ REAL KDop<REAL,SIZE>::unitDopAngle ()
       // length of hypothenusis sqrt(1+unitDopRadius()*unitDopRadius()) (phythagorean theorem)
       // angle = ancathete/hypothenusis
       angle = 1.0f/sqrt(1+unitDopRadius()*unitDopRadius());
-      std::cout << "unitDopRadius(" << SIZE << "-DOP: " << unitDopRadius() << ")" << std::endl;
-      std::cout << "unitDopAngle (" << SIZE << "-DOP: " << angle << ")" << std::endl;
+      GV_stream << "unitDopRadius(" << SIZE << "-DOP: " << unitDopRadius() << ")" << std::endl;
+      GV_stream << "unitDopAngle (" << SIZE << "-DOP: " << angle << ")" << std::endl;
    }
    return angle;
 }
@@ -1203,13 +1027,13 @@ const REAL* KDop<REAL,SIZE>::unitDopAngleTable ()
    };
    if (tab[0] < 0) {
       REAL step = acosf(unitDopAngle()) / OccTableHighestBit;
-      for (int i=0; i<OccTableBits; ++i) {
+      for (i32 i=0; i<OccTableBits; ++i) {
 	 tab[i] = cosf(i*step);
       }
    }
    return tab+1;
 }
-#endif
+#else
 // subdividing the cosine of the total angle uniformly 
 template <class REAL, int SIZE>
 const REAL* KDop<REAL,SIZE>::unitDopAngleTable ()
@@ -1223,14 +1047,16 @@ const REAL* KDop<REAL,SIZE>::unitDopAngleTable ()
    if (tab[0] < 0) {
       tab[0] = 1;
       REAL step = (1 - unitDopAngle()) / OccTableHighestBit;
-      for (int i=1; i<OccTableBits; ++i) {
+      for (i32 i=1; i<OccTableBits; ++i) {
 	 tab[i] = tab[i-1] - step;
       }
    }
    return tab+1;
 }
+#endif
 template <class REAL, int SIZE>
-KDop<REAL,SIZE>::DopTableType* KDop<REAL,SIZE>::unitDopTable ()
+typename KDop<REAL,SIZE>::DopTableType* 
+KDop<REAL,SIZE>::unitDopTable ()
 {
    static const REAL* tab = unitDopAngleTable();
    static REAL  tab2[OccTableBits][OccTableBits] = {
@@ -1242,8 +1068,8 @@ KDop<REAL,SIZE>::DopTableType* KDop<REAL,SIZE>::unitDopTable ()
    }
    };
    if (tab2[0][0] < 0) {
-      for (int ring=0; ring<OccTableBits; ++ring) {
-	 for (int angle=0; angle<OccTableBits; ++angle) {
+      for (i32 ring=0; ring<OccTableBits; ++ring) {
+	 for (i32 angle=0; angle<OccTableBits; ++angle) {
 	    tab2[ring][angle] = tab[angle-1]/tab[ring];
 	 }
       }
@@ -1267,7 +1093,7 @@ const REAL* KDop<REAL,SIZE>::unitDopAngleTable ()
    if (tab[0] < 0) {
       tab[0] = 1;
       REAL step = (1 - unitDopAngle()) / OccTableHighestBit;
-      for (int i=1; i<OccTableBits; ++i) {
+      for (i32 i=1; i<OccTableBits; ++i) {
 	 tab[i] = tab[i-1] - step;
       }
    }
@@ -1289,8 +1115,8 @@ KDop<REAL,SIZE>::DopTableType* KDop<REAL,SIZE>::unitDopTable ()
    }
    };
    if (tab2[0][0] < 0) {
-      for (int ring=0; ring<OccTableBits; ++ring) {
-	 for (int angle=0; angle<OccTableBits; ++angle) {
+      for (i32 ring=0; ring<OccTableBits; ++ring) {
+	 for (i32 angle=0; angle<OccTableBits; ++angle) {
 	    tab2[ring][angle] = tab[angle-1]/tab[ring];
 	 }
       }
@@ -1309,7 +1135,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    static DopTableType* tab = unitDopTable();
 
    register OccTableType check = OccTableType(1) << OccTableHighestBit;
-   register int          angle = OccTable2HighestBit - p;
+   register i32          angle = OccTable2HighestBit - p;
    // -1 <= angle <= OccTable2HighestBit
    register REAL maxValue = 1;
    if (mask & check) {
@@ -1322,7 +1148,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    check >>= 1;
    assert(check == (OccTableType(1)<<OccTable2HighestBit));
    --angle;
-   register int ring = OccTable2HighestBit;
+   register i32 ring = OccTable2HighestBit;
    // 0 <= ring <= OccTable2HighestBit
    while (angle >= 0) {
      if (mask & check) { // (1<<(p+i))
@@ -1360,7 +1186,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    static REAL* tab = unitDopAngleTable();
    REAL maxValue = 1;
    register REAL value;
-   register unsigned check = (OccTableType(1) << OccTableHighestBit);
+   register u32 check = (OccTableType(1) << OccTableHighestBit);
    //std::cout << "p=" << p << ":";
    if (mask & check) {
       maxValue = tab[OccTable2HighestBit-p]*out;
@@ -1369,7 +1195,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    // sequence v+_i = tab[i]/tab[p+i] >= 1
    // and monotonously increasing
    check >>= 1;
-   register int i;
+   register i32 i;
    for (i=OccTable2HighestBit-p; i>0; --i, check>>=1) {
      if (mask & check) { // (1<<(p+i))
 	 if ((value=tab[i-1]/tab[p+i]) > maxValue) {
@@ -1404,7 +1230,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    register REAL maxValue = 1;
    register REAL value;
    register OccTableType check = OccTableType(1) << OccTableHighestBit;
-   register int          angle = OccTable2HighestBit - p;
+   register i32          angle = OccTable2HighestBit - p;
    if (mask & check) {
       maxValue = tab[angle]*out;
    }
@@ -1414,7 +1240,7 @@ REAL KDop<REAL,SIZE>::unitDopAngleTable (const OccTableType& mask,
    check >>= 1;
    assert(check == (OccTableType(1)<<OccTable2HighestBit));
    --angle;
-   register int ring = OccTable2HighestBit;
+   register i32 ring = OccTable2HighestBit;
    while (angle >= 0) {
      if (mask & check) { // (1<<(p+i))
 	 if ((value=tab[angle]/tab[ring]) > maxValue) {

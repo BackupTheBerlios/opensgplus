@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:27:49 $
 //                                                                            
 //=============================================================================
 
@@ -45,17 +45,22 @@ BEGIN_GENVIS_NAMESPACE
     Mention that this cannot be very precise! 
  */
 template <class BasicTraits>
-class OSG_GENVISLIB_DLLMAPPING NodeAllTraverser 
-: public AllTraverserBase<BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING NodeAllTraverser : public AllTraverserBase<BasicTraits>
 {
 public:
-   typedef AllTraverserBase<BasicTraits>       Inherited;
-   typedef typename BasicTraits::TransformType TransformType;
-   typedef OpenSGNodeAdapter<BasicTraits>      ObjectAdapterType;
-   typedef NodeCollision<BasicTraits>          ObjectT;
-   typedef ObjectT::CollisionPair              CollisionPair;
-   typedef ObjectT::CollisionContainer         CollisionContainer;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef AllTraverserBase<BasicTraits>        Inherited;
+   typedef typename Inherited::Cache            Cache;
+   typedef typename Inherited::CacheData        CacheData;
 
+   typedef typename BasicTraits::TransformType  TransformType;
+   typedef NodeCollision<BasicTraits>           ObjectT;
+   typedef typename ObjectT::AdapterType        AdapterType;
+   typedef typename ObjectT::CollisionPair      CollisionPair;
+   typedef typename ObjectT::CollisionContainer CollisionContainer;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -88,13 +93,13 @@ inline NodeAllTraverser<BasicTraits>::NodeAllTraverser ()
 }
 
 template <class BasicTraits>
-inline NodeAllTraverser<BasicTraits>::ObjectT&       
+inline typename NodeAllTraverser<BasicTraits>::ObjectT&       
 NodeAllTraverser<BasicTraits>::getDataTyped ()
 {
    return m_data;
 }
 template <class BasicTraits>
-inline const NodeAllTraverser<BasicTraits>::ObjectT& 
+inline const typename NodeAllTraverser<BasicTraits>::ObjectT& 
 NodeAllTraverser<BasicTraits>::getDataTyped () const
 {
    return m_data;

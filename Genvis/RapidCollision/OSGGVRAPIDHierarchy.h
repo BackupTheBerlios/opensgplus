@@ -1,8 +1,32 @@
-// ---------------------------------------------------------------
-// File:    $Id: OSGGVRAPIDHierarchy.h,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $
-// Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
-// ---------------------------------------------------------------
-// hierarchy builder
+//=============================================================================
+//                                                                            
+//                               Genvis                                     
+//        Copyright (C) 2001 by Institute of Computer Graphics, TU Braunschweig
+//                           graphics.tu-bs.de                                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//                                License                                     
+//                                                                            
+//   This library is free software; you can redistribute it and/or modify it 
+//   under the terms of the GNU Library General Public License as published  
+//   by the Free Software Foundation, version 2.                             
+//                                                                             
+//   This library is distributed in the hope that it will be useful, but       
+//   WITHOUT ANY WARRANTY; without even the implied warranty of                
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         
+//   Library General Public License for more details.                          
+//                                                                            
+//   You should have received a copy of the GNU Library General Public         
+//   License along with this library; if not, write to the Free Software       
+//   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:28:31 $
+//                                                                            
+//=============================================================================
 
 #ifndef OSGGVRAPIDHIERARCHY_H
 #define OSGGVRAPIDHIERARCHY_H
@@ -28,6 +52,11 @@ public:
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef SingleBVolHierarchyBase<BasicTraits>     Inherited;
+   typedef typename Inherited::TransformType        TransformType;
+   typedef typename Inherited::GeomObjectType       GeomObjectType;
+   typedef typename Inherited::Cache                Cache;
+   typedef typename Inherited::CacheData            CacheData;
+
    typedef OpenSGRAPIDAdapter<BasicTraits>          AdapterType;
    typedef typename AdapterType::FactoryType        FactoryType;
    /*! \}                                                                 */
@@ -51,15 +80,15 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy creation.                                          */
    /*! \{                                                                 */
-   virtual void hierarchy ();
+   virtual void process (const GeomObjectType& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Registration for traversal with cache.                       */
    /*! \{                                                                 */
    virtual void registerFunctors ();
-   static void staticEnterGeometry (osg::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry (osg::CNodePtr& cnode, OSGStaticInput* input);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterGeometry       (osg::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry       (osg::CNodePtr& cnode, OSGStaticInput* input);
 #endif
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/

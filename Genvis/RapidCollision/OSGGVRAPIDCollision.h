@@ -1,3 +1,33 @@
+//=============================================================================
+//                                                                            
+//                               Genvis                                     
+//        Copyright (C) 2001 by Institute of Computer Graphics, TU Braunschweig
+//                           graphics.tu-bs.de                                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//                                License                                     
+//                                                                            
+//   This library is free software; you can redistribute it and/or modify it 
+//   under the terms of the GNU Library General Public License as published  
+//   by the Free Software Foundation, version 2.                             
+//                                                                             
+//   This library is distributed in the hope that it will be useful, but       
+//   WITHOUT ANY WARRANTY; without even the implied warranty of                
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         
+//   Library General Public License for more details.                          
+//                                                                            
+//   You should have received a copy of the GNU Library General Public         
+//   License along with this library; if not, write to the Free Software       
+//   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:28:31 $
+//                                                                            
+//=============================================================================
+
 #ifndef OSGGVRAPIDCOLLISION_H
 #define OSGGVRAPIDCOLLISION_H
 
@@ -21,11 +51,17 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolCollisionBase<BasicTraits>      Inherited;
-   typedef typename BasicTraits::TransformType TransformType;
-   typedef OpenSGRAPIDAdapter<BasicTraits>     ObjectAdapterType;
-   typedef OpenSGRAPIDFaceAdapter<BasicTraits> FaceAdapterType;
-   typedef std::vector<FaceAdapterType>        FaceContainer;
+   typedef BVolCollisionBase<BasicTraits>         Inherited;
+   typedef typename Inherited::Cache              Cache;
+   typedef typename Inherited::CacheData          CacheData;
+   typedef typename Inherited::TransformType      TransformType;
+   typedef typename Inherited::AdapterType        AdapterType;
+   typedef typename Inherited::CollisionPair      CollisionPair;
+   typedef typename Inherited::CollisionContainer CollisionContainer;
+
+   typedef OpenSGRAPIDAdapter<BasicTraits>        ObjectAdapterType;
+   typedef OpenSGRAPIDFaceAdapter<BasicTraits>    FaceAdapterType;
+   typedef std::vector<FaceAdapterType>           FaceContainer;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -35,31 +71,35 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Member.                                                      */
    /*! \{                                                                 */
-   inline int                       getMode () const;
+   inline i32                       getMode () const;
    virtual inline bool              getStopFirst () const;
    virtual void                     setStopFirst (bool flag=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Collision results.                                           */
    /*! \{                                                                 */
-   inline FaceContainer&            getContactFaces ();
-   inline const FaceContainer&      getContactFaces () const;
+   inline FaceContainer&            getContactFirst  ();
+   inline const FaceContainer&      getContactFirst  () const;
+   inline FaceContainer&            getContactSecond ();
+   inline const FaceContainer&      getContactSecond () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */
-   virtual inline bool              Init (); 
+   virtual bool              Init (); 
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 private:
    i32                m_mode;
-   FaceContainer      m_faces;
+   i32                m_last;
+   FaceContainer      m_first;
+   FaceContainer      m_second;
 };
 typedef  RAPIDCollision<OpenSGTraits> OSGRAPIDCollision;
 
 template <class BasicTraits>
-inline int RAPIDCollision<BasicTraits>::getMode () const
+inline i32 RAPIDCollision<BasicTraits>::getMode () const
 {
   return m_mode;
 }
@@ -70,25 +110,28 @@ inline bool RAPIDCollision<BasicTraits>::getStopFirst () const
 }
 
 template <class BasicTraits>
-inline RAPIDCollision<BasicTraits>::FaceContainer&       
-RAPIDCollision<BasicTraits>::getContactFaces ()
+inline typename RAPIDCollision<BasicTraits>::FaceContainer&       
+RAPIDCollision<BasicTraits>::getContactFirst ()
 {
-   return m_faces;
+   return m_first;
 }
 template <class BasicTraits>
-inline const RAPIDCollision<BasicTraits>::FaceContainer& 
-RAPIDCollision<BasicTraits>::getContactFaces () const
+inline const typename RAPIDCollision<BasicTraits>::FaceContainer& 
+RAPIDCollision<BasicTraits>::getContactFirst () const
 {
-   return m_faces;
+   return m_first;
 }
-
-template<class BasicTraits>
-inline bool RAPIDCollision<BasicTraits>::Init ()
+template <class BasicTraits>
+inline typename RAPIDCollision<BasicTraits>::FaceContainer&       
+RAPIDCollision<BasicTraits>::getContactSecond ()
 {
-   bool result = Inherited::Init();
-   //getContactFaces().reserve(GV_MAX_NUM_FACES);
-   getContactFaces().clear();
-   return result;
+   return m_second;
+}
+template <class BasicTraits>
+inline const typename RAPIDCollision<BasicTraits>::FaceContainer& 
+RAPIDCollision<BasicTraits>::getContactSecond () const
+{
+   return m_second;
 }
 
 END_GENVIS_NAMESPACE

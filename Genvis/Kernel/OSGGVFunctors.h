@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -38,7 +38,7 @@
 BEGIN_GENVIS_NAMESPACE
 
 template<class ResultT, class ArgT, class ObjectT> 
-class OSG_GENVISLIB_DLLMAPPING SingleFunctor
+class SingleFunctor
 {
 public:
    typedef ResultT (ObjectT::*DispatchMethodT) (ArgT* );
@@ -62,7 +62,7 @@ private:
 };
 
 template<class ResultT, class Arg1T, class Arg2T, class ObjectT> 
-class OSG_GENVISLIB_DLLMAPPING DispatchFunctor
+class DispatchFunctor
 {
 public:
    typedef ResultT (ObjectT::*DispatchMethodT) (Arg1T* b0, Arg2T* b1);
@@ -86,7 +86,7 @@ private:
 };
 
 template<class ResultT, class ObjectT> 
-class OSG_GENVISLIB_DLLMAPPING InitSingleFunctor
+class InitSingleFunctor
 {
 public:
    typedef ResultT (ObjectT::*InitMethodT) ();
@@ -109,7 +109,7 @@ private:
    InitMethodT m_method;
 };
 template<class ResultT, class Arg1T, class Arg2T, class ObjectT> 
-class OSG_GENVISLIB_DLLMAPPING InitSingleFunctor2
+class InitSingleFunctor2
 {
 public:
    typedef ResultT (ObjectT::*InitMethodT) (Arg1T* a, const Arg2T& b);
@@ -133,11 +133,11 @@ private:
 };
 
 template<class ResultT, class Arg1T, class Arg2T, class Arg3T, class Arg4T, class ObjectT> 
-class OSG_GENVISLIB_DLLMAPPING InitDoubleFunctor
+class InitDoubleFunctor
 {
 public:
-   typedef ResultT (ObjectT::*InitMethodT) (Arg1T*, const Arg2T&, 
-					    Arg3T*, const Arg4T&);
+   typedef ResultT (ObjectT::*InitMethodT) (Arg1T*, const Arg2T&, const Arg2T&, 
+					    Arg3T*, const Arg4T&, const Arg4T&);
 
    inline InitDoubleFunctor (ObjectT* obj, InitMethodT method)
      : m_obj(obj), m_method(method)
@@ -148,9 +148,9 @@ public:
    {
    }
 
-   inline ResultT call (Arg1T* a, const Arg2T& b, 
-			Arg3T* c, const Arg4T& d) {
-      return ((m_obj)->*m_method)(a, b, c, d);
+   inline ResultT call (Arg1T* a1, const Arg2T& a2, const Arg2T& a3, 
+			Arg3T* b1, const Arg4T& b2, const Arg4T& b3) {
+      return ((m_obj)->*m_method)(a1, a2, a3, b1, b2, b3);
    }
 
 private:

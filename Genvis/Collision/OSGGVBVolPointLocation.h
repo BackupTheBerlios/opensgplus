@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -47,15 +47,19 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING BVolPointLocationBase
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef typename BasicTraits::GeomObjectType      GeomObjectType;
    typedef typename BasicTraits::GeomFaceType        GeomFaceType;
    typedef typename BasicTraits::TransformType       TransformType;
    typedef BVolAdapterBase                           GeneralType; 
-
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    inline BVolPointLocationBase ();
+   virtual inline ~BVolPointLocationBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
@@ -76,9 +80,13 @@ inline BVolPointLocationBase<BasicTraits>::BVolPointLocationBase ()
   : m_hit(NULL), m_point()
 {
 }
+template <class BasicTraits>
+inline BVolPointLocationBase<BasicTraits>::~BVolPointLocationBase ()
+{
+}
 
 template <class BasicTraits>
-inline BVolPointLocationBase<BasicTraits>::GeneralType*    
+inline typename BVolPointLocationBase<BasicTraits>::GeneralType*    
 BVolPointLocationBase<BasicTraits>::getHit       () const
 {
    return m_hit;
@@ -103,11 +111,20 @@ class OSG_GENVISLIB_DLLMAPPING BVolPointLocation
 : public BVolPointLocationBase<BasicTraits>
 {
 public:
-   typedef BoundingVolume<Real>                         BVol;
-   typedef SingleTraverserBase<BasicTraits>::ResultType ResultT;
-   typedef BVolAdapterBase                              AdapterType;
-   typedef BVolGroupInterface                           GroupType;
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef BVolPointLocationBase<BasicTraits>           Inherited;
+   typedef typename Inherited::GeomObjectType           GeomObjectType;
+   typedef typename Inherited::GeomFaceType             GeomFaceType;
+   typedef typename Inherited::TransformType            TransformType;
+   typedef typename Inherited::GeneralType              GeneralType; 
 
+   typedef BoundingVolume<Real>                                  BVol;
+   typedef typename SingleTraverserBase<BasicTraits>::ResultType ResultT;
+   typedef BVolAdapterBase                                       AdapterType;
+   typedef BVolGroupInterface                                    GroupType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -139,26 +156,28 @@ inline BVolPointLocation<BasicTraits>::BVolPointLocation ()
 {
 }
 template <class BasicTraits>
-inline BVolPointLocation<BasicTraits>::AdapterType* 
+inline typename BVolPointLocation<BasicTraits>::AdapterType* 
 BVolPointLocation<BasicTraits>::getHitTyped () const
 {
    return static_cast<AdapterType*>(m_hit);
 }
 template <class BasicTraits>
-inline BVolPointLocation<BasicTraits>::ResultT  
-BVolPointLocation<BasicTraits>::InnerLeavePointLocation 
-(GroupType*)
+inline typename BVolPointLocation<BasicTraits>::ResultT  
+BVolPointLocation<BasicTraits>::InnerLeavePointLocation (GroupType*)
 {
    return SingleTraverserBase<BasicTraits>::CONTINUE;
 }
 
 
-/*! \brief Traits class for point location.
+/*! \brief Traits class for BVolPointLocation.
 */
 template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING BVolPointLocationTraits
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef typename BVolPointLocation<BasicTraits>::BVol          BVol;
    typedef typename BVolPointLocation<BasicTraits>::ResultT       ResultT;
    typedef BVolPointLocation<BasicTraits>                         ObjectT;
@@ -170,12 +189,17 @@ public:
    typedef InitSingleFunctor2<bool,GeneralType,TransformType,ObjectT> InitFunctorT;
    typedef SingleFunctor<ResultT,GroupType,ObjectT>                   InnerFunctorT;
    typedef SingleFunctor<ResultT,AdapterType,ObjectT>                 LeafFunctorT;
-
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Functor creation.                                            */
+   /*! \{                                                                 */
    static  InitFunctorT  createInitFunctor      (ObjectT* obj);
    static  InitFunctorT  createInitLeaveFunctor (ObjectT* obj);
    static  InnerFunctorT createInnerFunctor     (ObjectT* obj);
    static  InnerFunctorT createInnerLeaveFunctor(ObjectT* obj);
    static  LeafFunctorT  createLeafFunctor      (ObjectT* obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
 };
 
 END_GENVIS_NAMESPACE

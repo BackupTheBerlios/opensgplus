@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -35,99 +35,28 @@
 #include "OSGGVFunctors.h"
 #include "OSGGVTraits.h"
 #include "OSGGVInput.h"
-#include "OSGGVGroup.h"
-#include "OSGGVBVolAdapterExt.h"
+#include "OSGGVSingleTraverserBase.h"
 
 BEGIN_GENVIS_NAMESPACE
 
-/*! \brief Base single traverser.
- */
-template <class BasicTraits>
-class OSG_GENVISLIB_DLLMAPPING SingleTraverserBase
-{
-public:
-   typedef typename BasicTraits::Cache         Cache;
-   typedef typename BasicTraits::CacheData     CacheData;
-   typedef typename BasicTraits::TransformType TransformType;
-
-   /*---------------------------------------------------------------------*/
-   /*! \name Result type.                                                 */
-   /*! \{                                                                 */
-   enum ResultType {
-      CONTINUE, // continue traversal
-      QUIT      // quit traversal
-   };
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Constructor.                                                 */
-   /*! \{                                                                 */
-   inline SingleTraverserBase ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */
-   static inline Cache& getCache ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Apply.                                                       */
-   /*! \{                                                                 */   
-   virtual bool apply    (const NodePtr& node) = 0;
-   virtual bool apply    (CacheData& data, BVolAdapterBase* node, const TransformType& m) = 0;
-   virtual bool applyAll (const NodePtr& node) = 0;
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-
-protected:
-   static inline CacheData& getCacheData (CacheData& data, BVolAdapterBase* adapter);
-};
-
-template class OSG_GENVISLIB_DLLMAPPING SingleTraverserBase<OpenSGTraits>;
-typedef  SingleTraverserBase<OpenSGTraits>  OSGBVolTraverser;
-
-
-template <class BasicTraits>
-inline SingleTraverserBase<BasicTraits>::SingleTraverserBase ()
-{
-}
-
-template <class BasicTraits>
-inline SingleTraverserBase<BasicTraits>::Cache& SingleTraverserBase<BasicTraits>::getCache ()
-{
-   return OSGCache::the();
-}
-
-template <class BasicTraits>
-inline SingleTraverserBase<BasicTraits>::CacheData& 
-SingleTraverserBase<BasicTraits>::getCacheData (CacheData& data, BVolAdapterBase* group)
-{
-   if (group->getParent() == NULL) {
-      return data;
-   }
-   // triangle adapter
-   OpenSGTriangleBase<BasicTraits>*  tri = 
-     dynamic_cast<OpenSGTriangleBase<BasicTraits>*>(group->getParent());
-   if (tri != NULL) {
-      return tri->getObjectAdapter();
-   }
-   // object adapter
-   OpenSGObjectBase<BasicTraits>* parent = 
-     dynamic_cast<OpenSGObjectBase<BasicTraits>*>(group->getParent());
-   return getCache()[parent->getOriginal()];
-}
-
-
-
 /*! \brief Single traverser for n-ary hierarchies.
-           The template argument SingleTraits is used to define the traversal semantics.
+    The template argument SingleTraits is used to define the traversal semantics.
  */
 template <class BasicTraits, class SingleTraits>
-class OSG_GENVISLIB_DLLMAPPING SingleTraverser 
+class SingleTraverser 
 : public SingleTraverserBase<BasicTraits>
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
+   typedef SingleTraverserBase<BasicTraits>     Inherited;
+   typedef typename Inherited::Cache            Cache;
+   typedef typename Inherited::CacheData        CacheData;
+   typedef typename Inherited::GeomObjectType   GeomObjectType;
+   typedef typename Inherited::TransformType    TransformType;
+   typedef typename Inherited::ResultType       ResultType;
+
    typedef typename SingleTraits::BVol          BVol;
    typedef typename SingleTraits::AdapterType   AdapterType;
    typedef typename SingleTraits::GroupType     GroupType;
@@ -143,7 +72,7 @@ public:
    inline SingleTraverser ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name DataBase for traversal semantics and collision result.       */
+   /*! \name DataBase for traversal semantics.                            */
    /*! \{                                                                 */
    inline ObjectT&       getData ();
    inline const ObjectT& getData () const;
@@ -151,9 +80,9 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */
-   inline bool apply    (const NodePtr& node);
-   inline bool apply    (CacheData& data, BVolAdapterBase* node, const TransformType& m);
-   inline bool applyAll (const NodePtr& node);
+   inline bool apply    (const GeomObjectType& node);
+   inline bool apply    (CacheData& data, BVolAdapterBase* node, 
+			 const TransformType& m=TransformType::identity());
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -182,43 +111,23 @@ inline SingleTraverser<BasicTraits,SingleTraits>::SingleTraverser ()
 {
 }
 template <class BasicTraits, class SingleTraits>
-inline SingleTraverser<BasicTraits,SingleTraits>::ObjectT& SingleTraverser<BasicTraits,SingleTraits>::getData ()
+inline typename SingleTraverser<BasicTraits,SingleTraits>::ObjectT& 
+SingleTraverser<BasicTraits,SingleTraits>::getData ()
 {
    return m_data;
 }
 template <class BasicTraits, class SingleTraits>
-inline const SingleTraverser<BasicTraits,SingleTraits>::ObjectT& SingleTraverser<BasicTraits,SingleTraits>::getData () const
+inline const typename SingleTraverser<BasicTraits,SingleTraits>::ObjectT& 
+SingleTraverser<BasicTraits,SingleTraits>::getData () const
 {
    return m_data;
 }
 
 template <class BasicTraits, class SingleTraits>
-inline bool SingleTraverser<BasicTraits,SingleTraits>::apply (const NodePtr& node)
+inline bool SingleTraverser<BasicTraits,SingleTraits>::apply 
+(const GeomObjectType& node)
 {
-   CacheData& data = getCache()[node];
-   GroupType* root = 
-     static_cast<GroupType*>(*data.getAdapter(BVolAdapterBase::getAdapterId()).begin());
-   assert(root != NULL);
-   if (data.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
-      if (initFunc.call(root, data.getToWorldMatrix())) { 
-	 traverse((GeneralType*)root);
-	 return true;
-      } 
-   } else {
-      TransformType m; 
-      m.invertFrom(data.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
-      m.multLeft(data.getToWorldMatrix());
-      if (initFunc.call(root, m)) { 
-	 traverse((GeneralType*)root);
-	 return true;
-      } 
-   }
-   return false;
-}
-template <class BasicTraits, class SingleTraits>
-inline bool SingleTraverser<BasicTraits,SingleTraits>::applyAll (const NodePtr& node)
-{
-   CacheData& data = getCache()[node];
+   CacheData& data = Cache::the()[node];
    bool result = false;
    for (typename CacheData::AdapterContainer::const_iterator 
         it = data.getAdapter(BVolAdapterBase::getAdapterId()).begin();
@@ -240,7 +149,7 @@ inline bool SingleTraverser<BasicTraits,SingleTraits>::apply
    GroupType* root = static_cast<GroupType*>(node);
    assert(root != NULL);
    if (initFunc.call(root, m)) { 
-      traverse((GeneralType*)root);
+      traverse(static_cast<GeneralType*>(root));
       return true;
    } 
    return false;
@@ -257,7 +166,7 @@ inline void SingleTraverser<BasicTraits,SingleTraits>::traverse (GeneralType* no
       GroupType* group = dynamic_cast<GroupType*>(node);
 #endif
       if (innerFunc.call(group) == CONTINUE) {
-	 for (unsigned i=0; i<group->size(); ++i) {
+	 for (u32 i=0; i<group->size(); ++i) {
 	    traverse(static_cast<GeneralType*>(group->getSon(i)));   
 	 }
       }
@@ -269,16 +178,23 @@ inline void SingleTraverser<BasicTraits,SingleTraits>::traverse (GeneralType* no
 
 
 /*! \brief Single traverser for n-ary hierarchies.
-           The template argument SingleTraits is used to define the traversal semantics.
+    The template argument SingleTraits is used to define the traversal semantics.
  */
 template <class BasicTraits, class SingleTraits>
-class OSG_GENVISLIB_DLLMAPPING SingleEnterLeaveTraverser
+class SingleEnterLeaveTraverser
 : public SingleTraverserBase<BasicTraits>
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
+   typedef SingleTraverserBase<BasicTraits>     Inherited;
+   typedef typename Inherited::Cache            Cache;
+   typedef typename Inherited::CacheData        CacheData;
+   typedef typename Inherited::GeomObjectType   GeomObjectType;
+   typedef typename Inherited::TransformType    TransformType;
+   typedef typename Inherited::ResultType       ResultType;
+
    typedef typename SingleTraits::BVol          BVol;
    typedef typename SingleTraits::AdapterType   AdapterType;
    typedef typename SingleTraits::GroupType     GroupType;
@@ -302,9 +218,9 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */
-   inline bool apply    (const NodePtr& node);
-   inline bool apply    (CacheData& data, BVolAdapterBase* node, const TransformType& m);
-   inline bool applyAll (const NodePtr& node);
+   inline bool apply    (const GeomObjectType& node);
+   inline bool apply    (CacheData& data, BVolAdapterBase* node, 
+			 const TransformType& m=TransformType::identity());
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -336,43 +252,29 @@ inline SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::SingleEnterLeaveTrav
 {
 }
 template <class BasicTraits, class SingleTraits>
-inline SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::ObjectT& SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::getData ()
+inline typename SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::ObjectT& 
+SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::getData ()
 {
    return m_data;
 }
 template <class BasicTraits, class SingleTraits>
-inline const SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::ObjectT& SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::getData () const
+inline const typename SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::ObjectT& 
+SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::getData () const
 {
    return m_data;
 }
 
 template <class BasicTraits, class SingleTraits>
-inline bool SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::apply (const NodePtr& node)
+inline bool SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::apply 
+(const GeomObjectType& node)
 {
-   CacheData& data = getCache()[node];
-   BVolAdapterBase* root = 
-     static_cast<BVolAdapterBase*>(*data.getAdapter(BVolAdapterBase::getAdapterId()).begin());
-   assert(root != NULL);
-   if (data.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
-      TransformType m = data.getToWorldMatrix(); 
-      return apply(data, root, m);
-   } else {
-      TransformType m; 
-      m.invertFrom(data.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
-      m.multLeft(data.getToWorldMatrix());
-      return apply(data, root, m);
-   }
-}
-template <class BasicTraits, class SingleTraits>
-inline bool SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::applyAll (const NodePtr& node)
-{
-   CacheData& data = getCache()[node];
+   CacheData& data = Cache::the()[node];
    bool result = false;
+   u32 i = 0;
    for (typename CacheData::AdapterContainer::const_iterator 
         it = data.getAdapter(BVolAdapterBase::getAdapterId()).begin();
 	it != data.getAdapter(BVolAdapterBase::getAdapterId()).end();
-	++it) {
-
+	++it, ++i) {
       BVolAdapterBase* first = static_cast<BVolAdapterBase*>(*it);
       CacheData&       d = getCacheData(data, first);
       TransformType    m = d.getToWorldMatrix(); 
@@ -389,7 +291,7 @@ inline bool SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::apply
    assert(root != NULL);
 
    if (initEnter.call(root, m)) { 
-      traverse((GeneralType*)node);
+      traverse(static_cast<GeneralType*>(node));
       initLeave.call(root, m);
       return true;
    } 
@@ -408,7 +310,7 @@ inline void SingleEnterLeaveTraverser<BasicTraits,SingleTraits>::traverse (Gener
       GroupType* group = dynamic_cast<GroupType*>(node);
 #endif
       if (innerEnter.call(group) == CONTINUE) {
-	 for (unsigned i=0; i<group->size(); ++i) {
+	 for (u32 i=0; i<group->size(); ++i) {
 	    traverse(static_cast<GeneralType*>(group->getSon(i)));   
 	 }
       }

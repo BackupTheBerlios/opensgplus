@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:18:34 $
 //                                                                            
 //=============================================================================
 
@@ -36,6 +36,9 @@
 #include "OSGGVBase.h"
 
 BEGIN_GENVIS_NAMESPACE
+
+/*! \brief Size (in byte) of data array. */
+const u32 sizeDataType = 3*sizeof(PointClass);
 
 /*! \brief Collision pair of two adapter pairs with additional data object.
  */
@@ -56,26 +59,28 @@ public:
    inline AdapterType* getFirst  () const;
    inline void         setSecond (AdapterType* second);
    inline AdapterType* getSecond () const;
-   inline void         setData (void* data);
-   inline void*        getData ();
-   inline const void*  getData () const;
+   inline u8*          getData ();
+   inline const u8*    getData () const;
+   inline bool         getTouched () const;
+   inline void         setTouched (bool value=true);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 private:
    AdapterType* m_first;
    AdapterType* m_second;
-   void*        m_data;
+   u8           m_data[sizeDataType];
+   bool         m_touched;
 };
 
 template <class AdapterType>
 inline    CollisionData<AdapterType>::CollisionData ()
-  : m_first(NULL), m_second(NULL), m_data(NULL)
+  : m_first(NULL), m_second(NULL), m_touched(false)
 {
 }
 template <class AdapterType>
 inline    CollisionData<AdapterType>::CollisionData (AdapterType* first, AdapterType* second)
-  : m_first(first), m_second(second), m_data(NULL)
+  : m_first(first), m_second(second), m_touched(false)
 {
 }
 template <class AdapterType>
@@ -99,21 +104,33 @@ inline AdapterType* CollisionData<AdapterType>::getSecond () const
    return m_second;
 }
 template <class AdapterType>
-inline void         
-CollisionData<AdapterType>::setData  (void* data)
+inline bool        
+CollisionData<AdapterType>::getTouched () const
 {
-   m_data = data;
+   return m_touched;
 }
 template <class AdapterType>
-inline void*
+inline void         
+CollisionData<AdapterType>::setTouched (bool value)
+{
+   m_touched = value;
+}
+template <class AdapterType>
+inline u8*
 CollisionData<AdapterType>::getData ()
 {
+   if (!getTouched()) {
+      return NULL;
+   } 
    return m_data;
 }
 template <class AdapterType>
-inline const void*
+inline const u8*
 CollisionData<AdapterType>::getData  () const
 {
+   if (!getTouched()) {
+      return NULL;
+   } 
    return m_data;
 }
 
@@ -136,12 +153,10 @@ public:
    inline void            setData (const DataType& data);
    inline DataType&       getData ();
    inline const DataType& getData () const;
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Memory management.                                           */
-   /*! \{                                                                 */
-   inline void            destroy ();
-   inline void            create ();
+   inline void            setFirst  (AdapterType* first);
+   inline AdapterType*    getFirst  () const;
+   inline void            setSecond (AdapterType* second);
+   inline AdapterType*    getSecond () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -154,39 +169,50 @@ inline CollisionInterface<AdapterType,DataType>::CollisionInterface
 (CollisionData<AdapterType>& data)
   : m_data(data)
 {
+   assert(sizeof(DataType) <= sizeDataType);
 }
 template <class AdapterType, class DataType>
 inline void CollisionInterface<AdapterType,DataType>::setData (const DataType& data)
 {
-   assert(m_data.getData() != NULL);
+   m_data.setTouched();
    *((DataType*)m_data.getData()) = data;
 }
 template <class AdapterType, class DataType>
 inline DataType& CollisionInterface<AdapterType,DataType>::getData ()
 {
-   assert(m_data.getData() != NULL);
+   m_data.setTouched();
    return *((DataType*)m_data.getData());
 }
 template <class AdapterType, class DataType>
 inline const DataType& CollisionInterface<AdapterType,DataType>::getData () const
 {
-   assert(m_data.getData() != NULL);
    return *((DataType*)m_data.getData());
 }
 template <class AdapterType, class DataType>
-inline void            CollisionInterface<AdapterType,DataType>::destroy ()
+inline void         CollisionInterface<AdapterType,DataType>::setFirst  (AdapterType* first)
 {
-   delete ((DataType*)m_data.getData());
+   m_data.setFirst(first);
 }
 template <class AdapterType, class DataType>
-inline void            CollisionInterface<AdapterType,DataType>::create ()
+inline AdapterType* CollisionInterface<AdapterType,DataType>::getFirst  () const
 {
-   m_data.setData(new DataType());
+   return m_data.getFirst();
+}
+template <class AdapterType, class DataType>
+inline void         CollisionInterface<AdapterType,DataType>::setSecond (AdapterType* second)
+{
+   m_data.setSecond(second);
+}
+template <class AdapterType, class DataType>
+inline AdapterType* CollisionInterface<AdapterType,DataType>::getSecond () const
+{
+   return m_data.getSecond();
 }
 
 END_GENVIS_NAMESPACE
 
 #endif
+
 
 
 

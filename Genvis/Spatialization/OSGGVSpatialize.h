@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:31 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:31:38 $
 //                                                                            
 //=============================================================================
 
@@ -38,7 +38,6 @@
 
 #include "OSGGroup.h"
 #include "OSGGeometry.h"
-//#include "OSGGeoPropPtrs.h"
 
 BEGIN_GENVIS_NAMESPACE
 
@@ -46,19 +45,19 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING Spatialize
 {
 public:
-   typedef BoundingVolume<Real>                         BVol;
-   typedef SingleTraverserBase<BasicTraits>::ResultType ResultT;
-   typedef OpenSGObjectBase<BasicTraits>                AdapterType;
-   typedef BVolGroupBase                                GroupType; 
-   typedef BVolAdapterBase                              GeneralType; 
-   typedef typename BasicTraits::TransformType          TransformType; 
+   typedef BoundingVolume<Real>                                  BVol;
+   typedef typename SingleTraverserBase<BasicTraits>::ResultType ResultT;
+   typedef OpenSGObjectBase<BasicTraits>                         AdapterType;
+   typedef BVolGroupBase                                         GroupType; 
+   typedef BVolAdapterBase                                       GeneralType; 
+   typedef typename BasicTraits::TransformType                   TransformType; 
 
    Spatialize ();
    ~Spatialize ();
 
    OSG::NodePtr getRoot () const;
-   void         setLevel (unsigned level);
-   unsigned     getLevel () const;
+   void         setDepth (u32 level);
+   u32          getDepth () const;
 
    bool     InitEnter  (GeneralType* a, const TransformType& m);
    bool     InitLeave  (GeneralType* a, const TransformType& m);
@@ -74,7 +73,7 @@ private:
    OSG::NodePtr m_root;
    OSG::NodePtr m_rootLevel;
    std::vector<OSG::NodePtr> m_rootStack;
-   unsigned     m_level;
+   unsigned     m_depth;
    unsigned     m_current;
 };
 

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:37:55 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -36,16 +36,16 @@
 #include "OSGGVTraits.h"
 #include "OSGGVGroup.h"
 #include "OSGGVBVolAdapterExt.h"
-#include "OSGGVDoubleTraverser.h"
+#include "OSGGVDoubleTraverserBase.h"
 
 BEGIN_GENVIS_NAMESPACE
 
-/*! \brief Double traverser for pairwise collision detection on binary hierarchies.
+/*! \brief Depth-first traversal of two binary bounding volume hierarchies.
     The template argument DoubleTraits is used to define the traversal semantics.
     Traversal is started with the first entry in the generalized front cache. 
  */
 template <class BasicTraits, class DoubleTraits>
-class OSG_GENVISLIB_DLLMAPPING DoubleTraverserBinaryCoherent 
+class DoubleTraverserBinaryCoherent 
 : public DoubleTraverserBase<BasicTraits>
 {
 public:
@@ -53,13 +53,20 @@ public:
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef DoubleTraverserBase<BasicTraits>        Inherited;
+   typedef typename Inherited::Cache               Cache;
+   typedef typename Inherited::CacheData           CacheData;
+   typedef typename Inherited::GeomObjectType      GeomObjectType;
+   typedef typename Inherited::TransformType       TransformType;
+   typedef typename Inherited::ResultType          ResultType;
+
    typedef typename DoubleTraits::BVol             BVol;
    typedef typename DoubleTraits::AdapterType      AdapterType;
    typedef typename DoubleTraits::GroupType        GroupType;
    typedef typename DoubleTraits::GeneralType      GeneralType;
    typedef typename DoubleTraits::ObjectT          ObjectT;
-   typedef typename DoubleTraits::InitFunctorT       InitFunctorT;
-   typedef typename DoubleTraits::InitDoubleFunctorT InitDoubleFunctorT;
+   typedef typename DoubleTraits::InitFunctorT        InitFunctorT;
+   typedef typename DoubleTraits::InitDoubleFunctorT  InitDoubleFunctorT;
+   typedef typename DoubleTraits::LeaveDoubleFunctorT LeaveDoubleFunctorT;
    typedef typename DoubleTraits::BVolBVolFunctorT BVolBVolFunctorT;
    typedef typename DoubleTraits::PrimBVolFunctorT PrimBVolFunctorT;
    typedef typename DoubleTraits::BVolPrimFunctorT BVolPrimFunctorT;
@@ -81,9 +88,12 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Apply.                                                       */
    /*! \{                                                                 */
-   virtual inline bool apply   (const OSG::NodePtr& node0, const OSG::NodePtr& node1);
-   virtual inline bool apply   (CacheData& data0, BVolAdapterBase* node0, const TransformType& m0,
-				CacheData& data1, BVolAdapterBase* node1, const TransformType& m1);
+   virtual inline bool apply   (const GeomObjectType& node0, 
+				const GeomObjectType& node1);
+   virtual inline bool apply   (CacheData& parent0, CacheData& data0, BVolAdapterBase* node0, 
+				CacheData& parent1, CacheData& data1, BVolAdapterBase* node1, 
+				const TransformType& m0 = TransformType::identity(), 
+				const TransformType& m1 = TransformType::identity());
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -111,8 +121,9 @@ protected:
 
 private:
    ObjectT          m_data;
-   InitFunctorT       initFunc;
-   InitDoubleFunctorT initDoubleFunc;
+   InitFunctorT        initFunc;
+   InitDoubleFunctorT  initDoubleFunc;
+   LeaveDoubleFunctorT leaveDoubleFunc;
    BVolBVolFunctorT bbFunc;
    PrimBVolFunctorT pbFunc;
    BVolPrimFunctorT bpFunc;
@@ -132,13 +143,13 @@ DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::getData () const
    return m_data;
 }
 template <class BasicTraits, class DoubleTraits>
-inline DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::ObjectT& 
+inline typename DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::ObjectT& 
 DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::getDataTyped ()
 {
    return m_data;
 }
 template <class BasicTraits, class DoubleTraits>
-inline const DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::ObjectT& 
+inline const typename DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::ObjectT& 
 DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::getDataTyped () const
 {
    return m_data;
@@ -220,16 +231,13 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseGen
 
 
 
-#ifdef GV_PROFILED
-#include <pgouser.h>
-#endif
-
 template <class BasicTraits, class DoubleTraits>
 inline DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::DoubleTraverserBinaryCoherent ()
   : Inherited(),
     m_data(),
     initFunc(DoubleTraits::createInitFunctor(&m_data)),
     initDoubleFunc(DoubleTraits::createInitDoubleFunctor(&m_data)),
+    leaveDoubleFunc(DoubleTraits::createLeaveDoubleFunctor(&m_data)),
     bbFunc(DoubleTraits::createBVolBVolFunctor(&m_data)),
     pbFunc(DoubleTraits::createPrimBVolFunctor(&m_data)),
     bpFunc(DoubleTraits::createBVolPrimFunctor(&m_data)),
@@ -239,74 +247,61 @@ inline DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::DoubleTraverserB
 
 template <class BasicTraits, class DoubleTraits>
 inline bool DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::apply 
-(const NodePtr& node0, const NodePtr& node1)
+(const GeomObjectType& node0, const GeomObjectType& node1)
 {
-   CacheData& data0 = getCache()[node0];
-   CacheData& data1 = getCache()[node1];
+   CacheData& data0 = Cache::the()[node0];
+   CacheData& data1 = Cache::the()[node1];
 
-   GroupType* root0 = static_cast<GroupType*>(*data0.getAdapter(BVolAdapterBase::getAdapterId()).begin());
-   GroupType* root1 = static_cast<GroupType*>(*data1.getAdapter(BVolAdapterBase::getAdapterId()).begin());
+   GroupType* root0 = static_cast<GroupType*>(*data0.getAdapter(AdapterType::getAdapterId()).begin());
+   GroupType* root1 = static_cast<GroupType*>(*data1.getAdapter(AdapterType::getAdapterId()).begin());
    assert(root0 != NULL);
    assert(root1 != NULL);
 
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Reset();
-#endif
    TransformType m0;
-   if (data0.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
+   if (data0.getAdapterMatrix(AdapterType::getAdapterId()) == TransformType::identity()) {
       m0.setValue(data0.getToWorldMatrix());
    } else {
-      m0.invertFrom(data0.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
+      m0.invertFrom(data0.getAdapterMatrix(AdapterType::getAdapterId()));
       m0.multLeft(data0.getToWorldMatrix());
    }
    TransformType m1; 
-   if (data1.getAdapterMatrix(BVolAdapterBase::getAdapterId()) == TransformType::identity()) {
+   if (data1.getAdapterMatrix(AdapterType::getAdapterId()) == TransformType::identity()) {
       m1.setValue(data1.getToWorldMatrix());
    } else {
-      m1.invertFrom(data1.getAdapterMatrix(BVolAdapterBase::getAdapterId()));
+      m1.invertFrom(data1.getAdapterMatrix(AdapterType::getAdapterId()));
       m1.multLeft(data1.getToWorldMatrix());
    }
    if (initFunc.call() &&
-       initDoubleFunc.call(root0, m0, root1, m1)) { 
+       initDoubleFunc.call(root0, m0, TransformType::identity(),
+			   root1, m1, TransformType::identity())) { 
       traverseInnerInner(root0, root1, data0, data1);
+      leaveDoubleFunc.call(root0, m0, TransformType::identity(),
+			   root1, m1, TransformType::identity());
 
-#ifdef GV_PROFILED
-      _PGOPTI_Prof_Dump();
-#endif
       return true;
    } 
-
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Dump();
-#endif
    return false;
 }
 
 template <class BasicTraits, class DoubleTraits>
 inline bool DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::apply   
-(CacheData& data0, BVolAdapterBase* node0, const TransformType& m0,
- CacheData& data1, BVolAdapterBase* node1, const TransformType& m1)
+(CacheData&, CacheData& data0, BVolAdapterBase* node0,
+ CacheData&, CacheData& data1, BVolAdapterBase* node1, 
+  const TransformType& m0, const TransformType& m1)
 {
    GroupType* root0 = static_cast<GroupType*>(node0);
    GroupType* root1 = static_cast<GroupType*>(node1);
    assert(root0 != NULL);
    assert(root1 != NULL);
 
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Reset();
-#endif
-   if (initDoubleFunc.call(root0, m0, root1, m1)) { 
+   if (initDoubleFunc.call(root0, m0, TransformType::identity(),
+			   root1, m1, TransformType::identity())) { 
       traverseInnerInner(root0, root1, data0, data1);
+      leaveDoubleFunc.call(root0, m0, TransformType::identity(),
+			   root1, m1, TransformType::identity());
 
-#ifdef GV_PROFILED
-      _PGOPTI_Prof_Dump();
-#endif
       return true;
    } 
-
-#ifdef GV_PROFILED
-   _PGOPTI_Prof_Dump();
-#endif
    return false;
 }
 
@@ -335,8 +330,8 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseInn
  CacheData& data0, CacheData& data1)
 {
    // get cached nodes
-   typename CacheData::AdapterContainer& last0 = data0.getColCache();
-   typename CacheData::AdapterContainer& last1 = data1.getColCache();
+   typename CacheData::AdapterContainer& last0 = data0.getColCache(data1);
+   typename CacheData::AdapterContainer& last1 = data1.getColCache(data0);
 
 #if 0
    if (GV_verbose) {
@@ -348,9 +343,12 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseInn
       num += 1;
    }
 #endif
-   if (last0.size() <= 1 || last1.size() <= 1) {
+   if (last0.empty() || last1.empty()) {
       traverseInnerInner(b0, b1);
-      const typename DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
+
+      last0.clear();
+      last1.clear();
+      const typename DoubleTraits::ObjectT::CollisionContainer& result = getDataTyped().getContacts();
       if (result.size() > 0) {
 	 last0.push_back(static_cast<AdapterType*>(result[0].getFirst()));
 	 last1.push_back(static_cast<AdapterType*>(result[0].getSecond()));
@@ -362,7 +360,7 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseInn
       traverseInnerInner(b0, b1);
       
       // update OSG cache
-      const typename DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
+      const typename DoubleTraits::ObjectT::CollisionContainer& result = getDataTyped().getContacts();
       if (result.size() > 0) {
          last0[1] = static_cast<AdapterType*>(result[0].getFirst());
 	 last1[1] = static_cast<AdapterType*>(result[0].getSecond());

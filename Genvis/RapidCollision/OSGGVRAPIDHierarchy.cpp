@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:54:06 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:28:31 $
 //                                                                            
 //=============================================================================
 
@@ -32,43 +32,34 @@ RAPIDHierarchy<BasicTraits>::~RAPIDHierarchy ()
 template <class BasicTraits>
 void RAPIDHierarchy<BasicTraits>::addAdapter (const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[getCache().getCurrentNode()];
-   AdapterType* adapter = FactoryType::the().newObject();
-   m_leaf.push_back(adapter);
+   CacheData& data = Cache::the()[Cache::the().getCurrentNode()];
+   AdapterType* adapter = FactoryType::the().newObject(); m_leaf.push_back(adapter);
    adapter->setObjectAdapter(&data); 
    adapter->init(obj); 
    data.setAdapter(AdapterType::getAdapterId(), adapter);
 }
 
 template <class BasicTraits> 
-void RAPIDHierarchy<BasicTraits>::hierarchy ()
+void RAPIDHierarchy<BasicTraits>::process (const GeomObjectType& node)
 {
    // mark geometry nodes
-   std::vector<bool> isLeaf;
-   typename Cache::EntryIterator it;
-   for (it = getCache().begin(); it != getCache().end(); ++it) {
-      CacheData& data = getCache()[*it];
-      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
-	 isLeaf.push_back(false);
-      } else {
-	 isLeaf.push_back(true);
-      }
-   }
+   std::vector<CacheData*> all;
+   Cache::the().collectLeaves(all, node);
    // propagate to inner nodes
-   std::vector<bool>::const_iterator itLeaf;
-   for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
-      if (*itLeaf) {
-	 CacheData& data = getCache()[*it];
-	 AdapterType* leaf =
-	   static_cast<AdapterType*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
-	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   CacheData& data2 = getCache()[parent];
-	   if (data2.getNode() == NullFC) { // parent node not in cache 
-	     break;
-	   }
-
-	   data2.setAdapter(AdapterType::getAdapterId(), leaf);
+   typename std::vector<CacheData*>::const_iterator it;
+   for (it=all.begin(); it!=all.end(); ++it) {
+      CacheData& data = **it;
+      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	 continue;
+      }
+      AdapterType* leaf =
+	static_cast<AdapterType*>(data.getAdapter(AdapterType::getAdapterId())[0]);
+      for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+	 CacheData& data2 = Cache::the()[parent];
+	 if (data2.getNode() == NullFC) { // parent node not in cache 
+	    break;
 	 }
+	 data2.setAdapter(AdapterType::getAdapterId(), leaf);
       }
    }
 }
@@ -76,9 +67,10 @@ void RAPIDHierarchy<BasicTraits>::hierarchy ()
 template<class BasicTraits> 
 void RAPIDHierarchy<BasicTraits>::destroy ()
 {
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it=m_leaf.begin();
+   std::vector<AdapterType*>::const_iterator it;
+   for (it = m_leaf.begin();
 	it != m_leaf.end();
 	++it){
       FactoryType::the().deleteObject(*it);
@@ -88,41 +80,42 @@ void RAPIDHierarchy<BasicTraits>::destroy ()
 template<class BasicTraits> 
 void RAPIDHierarchy<BasicTraits>::clear   ()
 {
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
 }
 
 template<class BasicTraits> 
 void RAPIDHierarchy<BasicTraits>::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   RAPIDHierarchy<BasicTraits>,
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this, &RAPIDHierarchy<BasicTraits>::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(RAPIDHierarchy<BasicTraits>::staticEnterGeometry));
 #endif
 }
 
 template<class BasicTraits> 
-void RAPIDHierarchy<BasicTraits>::staticEnterGeometry  
+bool RAPIDHierarchy<BasicTraits>::staticEnterGeometry  
 (CNodePtr& cnode, OSGStaticInput* input)
 {
    RAPIDHierarchy<BasicTraits>* thisInput = (RAPIDHierarchy<BasicTraits>*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
-   thisInput->addAdapter(getCache().getCurrentNode());
+   thisInput->addAdapter(Cache::the().getCurrentNode());
+   return true;
 }
 
 #ifndef OSG_NOFUNCTORS
 template<class BasicTraits> 
-void RAPIDHierarchy<BasicTraits>::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool RAPIDHierarchy<BasicTraits>::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, input); 
 }
 #endif

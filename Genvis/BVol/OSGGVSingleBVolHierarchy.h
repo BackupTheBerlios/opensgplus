@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 22:03:08 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -39,20 +39,35 @@
 
 BEGIN_GENVIS_NAMESPACE
 
-class Oracle;
+template <class BVOL> class Oracle;
 template <class BVOL> class BVolGroup;
 
 /*! \brief Base for bounding volume hierarchies in scenegraph parts.
  */
 template<class BasicTraits> 
-class OSG_GENVISLIB_DLLMAPPING SingleBVolHierarchyBase 
-: public StaticInput<BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING SingleBVolHierarchyBase : public StaticInput<BasicTraits>
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef StaticInput<BasicTraits> Inherited;
+   typedef StaticInput<BasicTraits>                 Inherited;
+   typedef typename BasicTraits::GeomCoreType       GeomCoreType;
+   typedef typename Inherited::TransformType        TransformType;
+   typedef typename Inherited::GeomObjectType       GeomObjectType;
+   typedef typename Inherited::GeomFaceType         GeomFaceType;
+   typedef typename Inherited::Cache                Cache;
+   typedef typename Inherited::CacheData            CacheData;
+   //typedef std::map<GeomCoreType,CacheData*,FCPtrLess<GeomCoreType> > SharesContainer;
+   /*! Mode for hierarchy creation.
+       \begin{description}
+       \item[Local]
+       \item[LocalShared]
+       \item[Global]
+       \end{description}                                       */
+   enum ModeType {
+      Local, LocalShared, Global
+   };
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -61,13 +76,10 @@ public:
    virtual ~SingleBVolHierarchyBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Hierarchy update.                                            */
+   /*! \name CoordinateSystem.                                            */
    /*! \{                                                                 */   
-   enum ModeType {
-      LocalCoordSystem, GlobalCoordSystem
-   };
-   inline void         setCoordinateSystem (ModeType mode);
-   inline ModeType     getCoordinateSystem () const;
+   inline void     setCoordinateSystem (ModeType mode);
+   inline ModeType getCoordinateSystem () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy update.                                            */
@@ -77,14 +89,13 @@ public:
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy creation.                                          */
-   /*! \{                                                                 */   
-   virtual inline void setParameter (Oracle* method,
-				     unsigned maxLevel   = 50,
-				     unsigned minObjects = 256);
-   virtual inline void setParameter (SplitAlgorithm method,
-				     unsigned maxLevel   = 50,
-				     unsigned minObjects = 256);
-   virtual inline void hierarchy    ();
+   /*! \{                                                                 */  
+   virtual inline void         setParameter (u32 method,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
+   virtual inline void         setParameter (const char* description,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -100,7 +111,7 @@ SingleBVolHierarchyBase<BasicTraits>::setCoordinateSystem (ModeType mode)
    m_mode = mode;
 }
 template<class BasicTraits> 
-inline SingleBVolHierarchyBase<BasicTraits>::ModeType     
+inline typename SingleBVolHierarchyBase<BasicTraits>::ModeType     
 SingleBVolHierarchyBase<BasicTraits>::getCoordinateSystem () const
 {
    return m_mode;
@@ -118,18 +129,12 @@ SingleBVolHierarchyBase<BasicTraits>::updateHierarchy (NodePtr node)
 }
 template<class BasicTraits> 
 inline void 
-SingleBVolHierarchyBase<BasicTraits>::setParameter    (Oracle*, unsigned, unsigned)
+SingleBVolHierarchyBase<BasicTraits>::setParameter    (u32, u32, u32)
 {
 }
 template<class BasicTraits> 
 inline void 
-SingleBVolHierarchyBase<BasicTraits>::setParameter    
-(SplitAlgorithm, unsigned, unsigned)
-{
-}
-template<class BasicTraits> 
-inline void 
-SingleBVolHierarchyBase<BasicTraits>::hierarchy ()
+SingleBVolHierarchyBase<BasicTraits>::setParameter    (const char*, u32, u32)
 {
 }
 
@@ -142,13 +147,19 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef SingleBVolHierarchyBase<BasicTraits>       Inherited;
-   typedef typename BasicTraits::GeomTriangleType     GeomTriangleType;
-   typedef typename InputTraits::BVol                 BVol;
-   typedef typename InputTraits::AdapterType          AdapterType;
-   typedef typename InputTraits::GroupType            GroupType;
-   typedef typename GroupType::FactoryType            InnerFactory;
-   typedef typename AdapterType::FactoryType          LeafFactory;
+   typedef SingleBVolHierarchyBase<BasicTraits>     Inherited;
+   typedef typename Inherited::TransformType        TransformType;
+   typedef typename Inherited::GeomObjectType       GeomObjectType;
+   typedef typename Inherited::GeomFaceType         GeomFaceType;
+   typedef typename Inherited::Cache                Cache;
+   typedef typename Inherited::CacheData            CacheData;
+
+   typedef typename BasicTraits::GeomTriangleType       GeomTriangleType;
+   typedef typename InputTraits::BVol                   BVol;
+   typedef typename InputTraits::AdapterType            AdapterType;
+   typedef typename InputTraits::GroupType              GroupType;
+   typedef typename GroupType::FactoryType              InnerFactory;
+   typedef typename AdapterType::FactoryType            LeafFactory;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -172,13 +183,13 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy creation.                                          */
    /*! \{                                                                 */   
-   void         setParameter (Oracle* method,
-			      unsigned maxLevel   = 50,
-			      unsigned minObjects = 256);
-   void         setParameter (SplitAlgorithm method,
-			      unsigned maxLevel   = 50,
-			      unsigned minObjects = 256);
-   virtual void hierarchy      ();
+   virtual void         setParameter (u32 method,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
+   virtual void         setParameter (const char* description,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
+   virtual void process      (const GeomObjectType& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy update.                                            */
@@ -190,20 +201,18 @@ public:
 
 public:
    virtual void registerFunctors ();
-   static void staticEnterGeometry (osg::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry (CNodePtr& cnode, OSGStaticInput* input);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterGeometry       (osg::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry       (CNodePtr& cnode, OSGStaticInput* input);
 #endif
 
 protected:
-   void                 hierarchyLocal  ();
-   void                 hierarchyGlobal ();
-   static Oracle*       createOracle    (SplitAlgorithm method);
+   void                 hierarchyLocal  (const NodePtr& node);
+   void                 hierarchyGlobal (const NodePtr& node);
 
-   Oracle*                       m_oracle;
-   bool                          m_deleteOracle;
-   unsigned                      m_maxLevel;
-   unsigned                      m_minObjects;
+   Oracle<BVol>*                 m_oracle;
+   u32                      m_maxLevel;
+   u32                      m_minObjects;
    std::vector<GroupType*>       m_inner;
    std::vector<AdapterType*>     m_leaf;
 };
@@ -214,18 +223,25 @@ class OSG_GENVISLIB_DLLMAPPING SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAl
 : public SingleBVolHierarchyBase<OpenSGTraits>
 {
 public:
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
    typedef OpenSGTraits                               BasicTraits;
    typedef OpenSGTriangleAlignedInput<BVOL>           InputTraits;
    typedef SingleBVolHierarchyBase<BasicTraits>       Inherited;
-   typedef typename BasicTraits::GeomTriangleType     GeomTriangleType;
-   typedef typename InputTraits::BVol                 BVol;
-   //typedef typename InputTraits::ObjectBase           InternalObjectType;
-   typedef typename InputTraits::AdapterType          AdapterType;
-   typedef typename InputTraits::GroupType            GroupType;
+   typedef typename Inherited::TransformType          TransformType;
+   typedef typename Inherited::GeomObjectType         GeomObjectType;
+   typedef typename Inherited::GeomFaceType           GeomFaceType;
+   typedef typename Inherited::Cache                  Cache;
+   typedef typename Inherited::CacheData              CacheData;
 
-   typedef typename GroupType::FactoryType            InnerFactory;
-   typedef typename AdapterType::FactoryType          LeafFactory;
-
+   typedef typename BasicTraits::GeomTriangleType       GeomTriangleType;
+   typedef typename InputTraits::BVol                   BVol;
+   typedef typename InputTraits::AdapterType            AdapterType;
+   typedef typename InputTraits::GroupType              GroupType;
+   typedef typename GroupType::FactoryType              InnerFactory;
+   typedef typename AdapterType::FactoryType            LeafFactory;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
@@ -248,13 +264,13 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy creation.                                          */
    /*! \{                                                                 */   
-   void         setParameter (Oracle* method,
-			      unsigned maxLevel   = 50,
-			      unsigned minObjects = 256);
-   void         setParameter (SplitAlgorithm method,
-			      unsigned maxLevel   = 50,
-			      unsigned minObjects = 256);
-   virtual void hierarchy      ();
+   virtual void         setParameter (u32 method,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
+   virtual void         setParameter (const char* description,
+				      u32 maxLevel   = 50,
+				      u32 minObjects = 256);
+   virtual void process      (const GeomObjectType& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Hierarchy update.                                            */
@@ -266,20 +282,18 @@ public:
 
 public:
    virtual void registerFunctors ();
-   static void staticEnterGeometry (osg::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry (CNodePtr& cnode, OSGStaticInput* input);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterGeometry       (osg::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry       (CNodePtr& cnode, OSGStaticInput* input);
 #endif
 
 protected:
-   void                 hierarchyLocal  ();
-   void                 hierarchyGlobal ();
-   static Oracle*       createOracle    (SplitAlgorithm method);
+   void                 hierarchyLocal  (const NodePtr& node);
+   void                 hierarchyGlobal (const NodePtr& node);
 
-   Oracle*                       m_oracle;
-   bool                          m_deleteOracle;
-   unsigned                      m_maxLevel;
-   unsigned                      m_minObjects;
+   Oracle<BVol>*                 m_oracle;
+   u32                      m_maxLevel;
+   u32                      m_minObjects;
    std::vector<GroupType*>       m_inner;
    std::vector<AdapterType*>     m_leaf;
 };

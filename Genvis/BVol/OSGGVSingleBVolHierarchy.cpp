@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:39:35 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:16:55 $
 //                                                                            
 //=============================================================================
 
@@ -47,15 +47,12 @@ SingleBVolHierarchyBase<BasicTraits>::~SingleBVolHierarchyBase ()
 
 template<class BasicTraits, class InputTraits> 
 SingleBVolHierarchy<BasicTraits,InputTraits>::SingleBVolHierarchy ()
-  : m_oracle(NULL), m_deleteOracle(false), m_minObjects(256), m_maxLevel(50)
+  : m_oracle(NULL), m_minObjects(256), m_maxLevel(50)
 {
 }
 template<class BasicTraits, class InputTraits> 
 SingleBVolHierarchy<BasicTraits,InputTraits>::~SingleBVolHierarchy ()
 {
-   if (m_deleteOracle) {
-      delete m_oracle;
-   }
 }
 
 static void recursiveUpdate (BVolAdapterBase* root)
@@ -75,13 +72,13 @@ template <class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy ()
 {
    // first update leaf nodes in arbitrary order
-   for (std::vector<AdapterType*>::const_iterator it = m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it = m_leaf.begin();
 	it != m_leaf.end();
 	++it) {
       (*it)->update();
    }
    // update inner nodes in reverse order
-   std::vector<GroupType*>::const_iterator it2 = m_inner.end()-1; 
+   typename std::vector<GroupType*>::const_iterator it2 = m_inner.end()-1; 
    while (it2 != m_inner.begin()) {
       (*it2)->update();
       --it2;
@@ -90,7 +87,7 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy ()
 template <class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy (NodePtr node)
 {
-   CacheData& data = getCache()[node];
+   CacheData& data = Cache::the()[node];
    for (typename CacheData::AdapterContainer::iterator 
         it = data.getAdapter(AdapterType::getAdapterId()).begin();
 	it != data.getAdapter(AdapterType::getAdapterId()).end();
@@ -102,14 +99,13 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::updateHierarchy (NodePtr node
 template <class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
    for (TriangleIterator tri = geom->beginTriangles(); 
 	tri!=end; 
 	++tri) {
-      AdapterType* adapter = LeafFactory::the().newObject();
-      m_leaf.push_back(adapter);
+      AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
       adapter->setObjectAdapter(&data);
       adapter->init(tri);
       data.setAdapter(AdapterType::getAdapterId(), adapter);
@@ -120,16 +116,14 @@ template <class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::addAdapter (const TransformType&  m2w,
 							       const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
-
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
    for (TriangleIterator tri = geom->beginTriangles(); 
 	tri != end; 
 	++tri) {
-      AdapterType* adapter = LeafFactory::the().newObject();
-      m_leaf.push_back(adapter);
+      AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
       adapter->setObjectAdapter(&data);
       adapter->init(m2w, tri);
       data.setAdapter(AdapterType::getAdapterId(), adapter);
@@ -182,114 +176,95 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::restructureHierarchy
 #endif
 
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::setParameter
-(Oracle*  method,
- unsigned maxLevel,
- unsigned minObjects)
+void SingleBVolHierarchy<BasicTraits,InputTraits>::setParameter (const char* description,
+								 u32 maxLevel,
+								 u32 minObjects)
 {
+#if 0
    if (m_oracle != NULL && m_deleteOracle) {
       delete m_oracle;
    }
    m_oracle     = method;
    m_deleteOracle = false;
+#else
+   m_oracle     = Oracle<BVol>::getOracle(description);
+#endif
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::setParameter
-(SplitAlgorithm method,
- unsigned maxLevel,
- unsigned minObjects)
+void SingleBVolHierarchy<BasicTraits,InputTraits>::setParameter (u32 method,
+								 u32 maxLevel,
+								 u32 minObjects)
 {
+#if 0
    if (m_oracle != NULL && m_deleteOracle) {
       delete m_oracle;
    }
    m_oracle     = createOracle(method);
    m_deleteOracle = true;
+#else
+   m_oracle     = Oracle<BVol>::getOracle(method);
+#endif
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchy ()
+void SingleBVolHierarchy<BasicTraits,InputTraits>::process (const GeomObjectType& node)
 {
-   if (getCoordinateSystem() == LocalCoordSystem) {
-      hierarchyLocal();
-   } else {
-      hierarchyGlobal();
+   switch (getCoordinateSystem()) {
+   case Local:
+   case LocalShared:
+      hierarchyLocal(node);
+      break;
+   default:
+   case Global:
+      hierarchyGlobal(node);
+      break;
+   }
+}
+template<class BasicTraits, class InputTraits> 
+void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyGlobal (const NodePtr& node)
+{
+   CacheData& data = Cache::the()[node];
+   typename Cache::AdapterVector all;
+   Cache::the().collectAdapter(AdapterType::getAdapterId(), all, node, true);
+   if (all.size() == 0) {
+      return;
+   }
+   
+   Optimizer<GroupType> inst(m_oracle, all, m_maxLevel, m_minObjects);
+   inst.setDataStore(&m_inner);
+   GroupType* hier = inst.optimize();
+   //hier->setParent(static_cast<BVolAdapterBase*>(all[0]));
+   AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
+   adapter->setObjectAdapter(&data);
+   hier->setParent(adapter);
+   data.clearAdapter(AdapterType::getAdapterId());
+   data.setAdapter(AdapterType::getAdapterId(), hier);
+
+   // propagate to parent nodes
+   for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+      CacheData& data2 = Cache::the()[parent];
+      if (data2.getNode() == NullFC) { // parent node not in cache 
+	 break;
+      }
+      data2.setAdapter(AdapterType::getAdapterId(), hier);
    }
 }
 
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyGlobal ()
+void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal (const NodePtr& node)
 {
+#if 0
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
    typename Cache::EntryIterator it;
-   for (it = getCache().begin(); it != getCache().end(); ++it) {
-      CacheData& data = getCache()[*it];
-      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
-	 isLeaf.push_back(false);
-	 continue;
-      }
-
-      Optimizer<GroupType> inst(m_oracle,
-				data.getAdapter(AdapterType::getAdapterId()), 
-				m_maxLevel, 
-				m_minObjects);
-      inst.setDataStore(&m_inner);
-      GroupType* hier = inst.optimize();
-      data.clearAdapter(AdapterType::getAdapterId());
-      data.setAdapter(AdapterType::getAdapterId(), hier);
-      isLeaf.push_back(true);
-   }
-   // create BVolGroups for inner nodes
-   std::vector<bool>::const_iterator itLeaf;
-   for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
-      if (*itLeaf) {
-	 CacheData& data = getCache()[*it];
-	 BVolAdapterBase* leaf =
-	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
-	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   CacheData& data2 = getCache()[parent];
-	   if (data2.getNode() == NullFC) { // parent node not in cache anymore
-	     break;
-	   }
-
-	   data2.setAdapterMatrix(AdapterType::getAdapterId(), 
-				  data.getAdapterMatrix(AdapterType::getAdapterId()));
-	   if (data2.getAdapter(AdapterType::getAdapterId()).size() > 0) { 
-	     BVolAdapterBase* leaf2 = 
-	       static_cast<BVolAdapterBase*>(*data2.getAdapter(AdapterType::getAdapterId()).begin());
-
-	     // create newGroup and add leaf and leaf2
-	     GroupType* newGroup = InnerFactory::the().newObject();
-	     m_inner.push_back(newGroup);
-	     data2.clearAdapter(AdapterType::getAdapterId());
-	     data2.setAdapter(AdapterType::getAdapterId(), newGroup);
-	     
-	     newGroup->getSons().push_back(leaf);
-	     newGroup->getSons().push_back(leaf2);
-	     leaf ->setParent(newGroup);
-	     leaf2->setParent(newGroup);
-	   } else { 
-	     // insert leaf into cache
-	     data2.setAdapter(AdapterType::getAdapterId(), leaf);
-	   }
-	 }
-      }
-   }
-}
-
-template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal ()
-{
-   // generate hierarchies in geometry nodes
-   std::vector<bool> isLeaf;
-   typename Cache::EntryIterator it;
-   for (it = getCache().begin(); it != getCache().end(); ++it) {
-      CacheData& data = getCache()[*it];
-      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+   for (it = Cache::the().begin(); it != Cache::the().end(); ++it) {
+      CacheData& data = Cache::the()[*it];
+      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0
+	  || static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0])->isInner()) {
 	 isLeaf.push_back(false);
 	 continue;
       }
@@ -300,20 +275,20 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal ()
       inst.setDataStore(&m_inner);
       GroupType* hier = inst.optimize();
       // set parent to one of the leaf nodes
-      hier->setParent(static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin()));
+      hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
       data.clearAdapter(AdapterType::getAdapterId());
       data.setAdapter(AdapterType::getAdapterId(), hier);
       isLeaf.push_back(true);
    }
-   // propagate to inner nodes
-   std::vector<bool>::const_iterator itLeaf;
-   for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
+   // propagate to parent nodes
+   typename std::vector<bool>::const_iterator itLeaf;
+   for (it=Cache::the().begin(), itLeaf=isLeaf.begin(); it != Cache::the().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 CacheData& data = getCache()[*it];
+	 CacheData& data = Cache::the()[*it];
 	 BVolAdapterBase* leaf = 
 	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = Cache::the()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache 
 	     break;
 	   }
@@ -321,40 +296,102 @@ void SingleBVolHierarchy<BasicTraits,InputTraits>::hierarchyLocal ()
 	 }
       }
    }
-}
-
-template<class BasicTraits, class InputTraits> 
-Oracle* SingleBVolHierarchy<BasicTraits,InputTraits>::createOracle
-(SplitAlgorithm method)
-{
-   switch (method) {
-   default:
-   case LongestSideMedianId:
-     return new LongestSideMedian2<BVol> ();
-   case LongestSideMeanId:
-     return new LongestSideMean2<BVol> ();
-   case MinimumSICId:
-     return new MinimumSIC<BVol> ();
-   case MinimumVolumeId:
-     return new HeuristicGrouping<BVol> ();
-     //return new MinimumVolume<BVol> ();
+#else
+   // get geometry nodes
+   std::vector<CacheData*> all;
+   Cache::the().collectLeaves(all, node);
+   if (getCoordinateSystem() == Local) {
+      typename std::vector<CacheData*>::const_iterator it;
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	  continue;
+	}
+	Optimizer<GroupType> inst(m_oracle,
+				  data.getAdapter(AdapterType::getAdapterId()), 
+				  m_maxLevel, 
+				  m_minObjects);
+	inst.setDataStore(&m_inner);
+	GroupType* hier = inst.optimize();
+	// set parent to one of the leaf nodes
+	hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
+	data.clearAdapter(AdapterType::getAdapterId());
+	data.setAdapter(AdapterType::getAdapterId(), hier);
+	// propagate to parent nodes
+	for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+	  CacheData& data2 = Cache::the()[parent];
+	  if (data2.getNode() == NullFC) { // parent node not in cache 
+	    break;
+	  }
+	  data2.setAdapter(AdapterType::getAdapterId(), hier);
+	}
+      }
+   } else { // LocalShared
+      // create hierarchies
+      typename std::vector<CacheData*>::const_iterator it;
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	   continue;
+	}
+	Optimizer<GroupType> inst(m_oracle,
+				  data.getAdapter(AdapterType::getAdapterId()), 
+				  m_maxLevel, 
+				  m_minObjects);
+	inst.setDataStore(&m_inner);
+	BVolAdapterBase* hier = inst.optimize();
+	// set parent to one of the leaf nodes
+	hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
+	data.clearAdapter(AdapterType::getAdapterId());
+	data.setAdapter(AdapterType::getAdapterId(), hier);
+      }
+      // propagate to parent nodes
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	   // lookup share
+	   CacheData& share = Cache::the().getShare(data.getNode());
+	   if (share.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	      continue;
+	   }
+	   // create new root node
+	   GroupType* group = InnerFactory::the().newObject(); m_inner.push_back(group);
+	   *group = *static_cast<GroupType*>(share.getAdapter(AdapterType::getAdapterId())[0]);
+	   AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
+	   adapter->setObjectAdapter(&data);
+	   group->setParent(adapter);
+	   // set into adapter list
+	   data.setAdapter(AdapterType::getAdapterId(), group);
+	}
+	BVolAdapterBase* hier = 
+	  static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]);
+	for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+	   CacheData& data2 = Cache::the()[parent];
+	   if (data2.getNode() == NullFC) { // parent node not in cache 
+	     break;
+	   }
+	   data2.setAdapter(AdapterType::getAdapterId(), hier);
+	}
+      }
    }
+#endif
 }
 
 template<class BasicTraits, class InputTraits> 
 void SingleBVolHierarchy<BasicTraits,InputTraits>::destroy ()
 {
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearColCache();
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
    }
    m_inner.clear();
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
 	it2 != m_leaf.end();
 	++it2){
       LeafFactory::the().deleteObject(*it2);
@@ -365,9 +402,10 @@ template<class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::clear   ()
 {
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearColCache();
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
@@ -379,56 +417,61 @@ template<class BasicTraits, class InputTraits>
 void SingleBVolHierarchy<BasicTraits,InputTraits>::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   SingleBVolHierarchy<BasicTraits,InputTraits>,
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this, &SingleBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(SingleBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry));
 #endif
 }
 
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry  
+bool SingleBVolHierarchy<BasicTraits,InputTraits>::staticEnterGeometry  
 (CNodePtr& cnode, OSGStaticInput* input)
 {
    SingleBVolHierarchy<BasicTraits,InputTraits>* thisInput = 
      (SingleBVolHierarchy<BasicTraits,InputTraits>*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
-   if (thisInput->getCoordinateSystem() == LocalCoordSystem) {
-      thisInput->addAdapter(getCache().getCurrentNode());
-   } else {
-      thisInput->addAdapter(getCache().getCurrentMatrix(), getCache().getCurrentNode());
+   switch (thisInput->getCoordinateSystem()) { 
+   case Local:
+      thisInput->addAdapter(Cache::the().getCurrentNode());
+      break;
+   case LocalShared:
+      if (Cache::the().findShare(Cache::the().getCurrentNode()) == NULL) {
+	 thisInput->addAdapter(Cache::the().getCurrentNode());
+      }
+      break;
+   case Global:
+      thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+      break;
    }
+   return true;
 }
 
 #ifndef OSG_NOFUNCTORS
 template<class BasicTraits, class InputTraits> 
-void SingleBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool SingleBVolHierarchy<BasicTraits,InputTraits>::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, input); 
 }
 #endif
 
 
-#if 1
 template <class BVOL> 
 SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::SingleBVolHierarchy ()
-  : m_oracle(NULL), m_deleteOracle(false), m_minObjects(256), m_maxLevel(50)
+  : m_oracle(NULL), m_minObjects(256), m_maxLevel(50)
 {
 }
 template <class BVOL> 
 SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::~SingleBVolHierarchy ()
 {
-   if (m_deleteOracle) {
-      delete m_oracle;
-   }
 }
 
 template <class BVOL> 
@@ -444,7 +487,7 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::update
 template <class BVOL>
 void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::addAdapter (const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
    for (TriangleIterator tri=geom->beginTriangles(); 
@@ -459,13 +502,11 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::addAda
 }
 
 template <class BVOL>
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::addAdapter 
-(const TransformType&  m2w,
- const GeomObjectType& obj)
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::addAdapter (const TransformType&  m2w,
+										      const GeomObjectType& obj)
 {
-   CacheData& data = getCache()[obj];
+   CacheData& data = Cache::the()[obj];
    data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
-
    GeometryPtr geom = GeometryPtr::dcast(obj->getCore());
    TriangleIterator end = geom->endTriangles();
    for (TriangleIterator tri=geom->beginTriangles(); 
@@ -480,123 +521,100 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::addAda
 }
 
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::setParameter
-(Oracle*  method,
- unsigned maxLevel,
- unsigned minObjects)
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::setParameter 
+(const char* description,
+ u32 maxLevel,
+ u32 minObjects)
 {
+#if 0
    if (m_oracle != NULL && m_deleteOracle) {
       delete m_oracle;
    }
    m_oracle     = method;
    m_deleteOracle = false;
+#else
+   m_oracle     = Oracle<BVol>::getOracle(description);
+#endif
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::setParameter
-(SplitAlgorithm method,
- unsigned maxLevel,
- unsigned minObjects)
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::setParameter (u32 method,
+								 u32 maxLevel,
+								 u32 minObjects)
 {
+#if 0
    if (m_oracle != NULL && m_deleteOracle) {
       delete m_oracle;
    }
    m_oracle     = createOracle(method);
    m_deleteOracle = true;
+#else
+   m_oracle     = Oracle<BVol>::getOracle(method);
+#endif
    m_maxLevel   = maxLevel;
    m_minObjects = minObjects;
 }
 
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierarchy ()
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::process (const GeomObjectType& node)
 {
-   if (getCoordinateSystem() == LocalCoordSystem) {
-      hierarchyLocal();
-   } else {
-      hierarchyGlobal();
+   switch (getCoordinateSystem()) {
+   case Local:
+   case LocalShared:
+      hierarchyLocal(node);
+      break;
+   default:
+   case Global:
+      hierarchyGlobal(node);
+      break;
+   }
+}
+template <class BVOL> 
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierarchyGlobal
+(const NodePtr& node)
+{
+   CacheData& data = Cache::the()[node];
+   typename Cache::AdapterVector all;
+   Cache::the().collectAdapter(AdapterType::getAdapterId(), all, node, true);
+   if (all.size() == 0) {
+      return;
+   }
+
+   Optimizer<GroupType> inst(m_oracle, all, m_maxLevel, m_minObjects);
+   inst.setDataStore(&m_inner);
+   GroupType* hier = inst.optimize();
+   AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
+   adapter->setObjectAdapter(&data);
+   hier->setParent(adapter);
+   data.clearAdapter(AdapterType::getAdapterId());
+   data.setAdapter(AdapterType::getAdapterId(), hier);
+
+   // propagate to parent nodes
+   for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+      CacheData& data2 = Cache::the()[parent];
+      if (data2.getNode() == NullFC) { // parent node not in cache 
+	 break;
+      }
+      data2.setAdapter(AdapterType::getAdapterId(), hier);
    }
 }
 
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierarchyGlobal ()
+void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierarchyLocal 
+(const NodePtr& node)
 {
+#if 0
    // generate hierarchies in geometry nodes
    std::vector<bool> isLeaf;
    typename Cache::EntryIterator it;
-   for (it = getCache().begin(); it != getCache().end(); ++it) {
-      CacheData& data = getCache()[*it];
-      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+   for (it = Cache::the().begin(); it != Cache::the().end(); ++it) {
+      CacheData& data = Cache::the()[*it];
+      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0
+	  || static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0])->isInner()) {
 	 isLeaf.push_back(false);
 	 continue;
       }
-
-      Optimizer<GroupType> inst(m_oracle,
-				data.getAdapter(AdapterType::getAdapterId()), 
-				m_maxLevel, 
-				m_minObjects);
-      inst.setDataStore(&m_inner);
-      GroupType* hier = inst.optimize();
-      data.clearAdapter(AdapterType::getAdapterId());
-      data.setAdapter(AdapterType::getAdapterId(), hier);
-      isLeaf.push_back(true);
-   }
-   // create BVolGroups for inner nodes
-   std::vector<bool>::const_iterator itLeaf;
-   for (it = getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
-      CacheData& data = getCache()[*it];
-      if (!(*itLeaf)) {
-	 continue;
-      }
-
-      BVolAdapterBase*  leaf =
-	static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
-      NodePtr parent;
-      for (parent = data.getParent(); parent != NullFC; parent = parent->getParent()) {
-	   CacheData& data2 = getCache()[parent];
-	   if (data2.getNode() == NullFC) { // parent node not in cache anymore
-	     break;
-	   }
-
-	   data2.setAdapterMatrix(AdapterType::getAdapterId(), 
-				  data.getAdapterMatrix(AdapterType::getAdapterId()));
-	   if (data2.getAdapter(AdapterType::getAdapterId()).size() > 0) { 
-	     GroupType* leaf2 = 
-	       static_cast<GroupType*>(*data2.getAdapter(AdapterType::getAdapterId()).begin());
-
-	     // create newGroup and add leaf and leaf2
-	     GroupType* newGroup = InnerFactory::the().newObject();
-	     newGroup->init(*leaf2);
-	     m_inner.push_back(newGroup);
-	     data2.clearAdapter(AdapterType::getAdapterId());
-	     data2.setAdapter(AdapterType::getAdapterId(), newGroup);
-	     
-	     newGroup->getSons()[0] = leaf;
-	     newGroup->getSons()[1] = leaf2;
-	     newGroup->setValid(false);
-	     leaf ->setParent(newGroup);
-	     leaf2->setParent(newGroup);
-	   } else { 
-	     // insert leaf into cache
-	     data2.setAdapter(AdapterType::getAdapterId(), leaf);
-	   }
-      }
-   }
-}
-
-template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierarchyLocal ()
-{
-   // generate hierarchies in geometry nodes
-   std::vector<bool> isLeaf;
-   typename Cache::EntryIterator it;
-   for (it = getCache().begin(); it != getCache().end(); ++it) {
-      CacheData& data = getCache()[*it];
-      if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
-	 isLeaf.push_back(false);
-	 continue;
-      }
-
       Optimizer<GroupType> inst(m_oracle,
 				data.getAdapter(AdapterType::getAdapterId()), 
 				m_maxLevel, 
@@ -604,20 +622,20 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
       inst.setDataStore(&m_inner);
       GroupType* hier = inst.optimize();
       // set parent to one of the leaf nodes
-      hier->setParent(static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin()));
+      hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
       data.clearAdapter(AdapterType::getAdapterId());
       data.setAdapter(AdapterType::getAdapterId(), hier);
       isLeaf.push_back(true);
    }
-   // propagate to inner nodes
-   std::vector<bool>::const_iterator itLeaf;
-   for (it=getCache().begin(), itLeaf=isLeaf.begin(); it != getCache().end(); ++it, ++itLeaf) {
+   // propagate to parent nodes
+   typename std::vector<bool>::const_iterator itLeaf;
+   for (it=Cache::the().begin(), itLeaf=isLeaf.begin(); it != Cache::the().end(); ++it, ++itLeaf) {
       if (*itLeaf) {
-	 CacheData& data = getCache()[*it];
+	 CacheData& data = Cache::the()[*it];
 	 BVolAdapterBase* leaf = 
 	   static_cast<BVolAdapterBase*>(*data.getAdapter(AdapterType::getAdapterId()).begin());
 	 for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
-	   CacheData& data2 = getCache()[parent];
+	   CacheData& data2 = Cache::the()[parent];
 	   if (data2.getNode() == NullFC) { // parent node not in cache 
 	     break;
 	   }
@@ -626,37 +644,102 @@ void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::hierar
 	 }
       }
    }
-}
-template <class BVOL> 
-Oracle* SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::createOracle
-(SplitAlgorithm method)
-{
-   switch (method) {
-   default:
-   case LongestSideMedianId:
-     return new LongestSideMedian2<BVol> ();
-   case LongestSideMeanId:
-     return new LongestSideMean2<BVol> ();
-   case MinimumSICId:
-   case MinimumVolumeId:
-     return new HeuristicGrouping<BVol> ();
+#else
+   // get geometry nodes
+   std::vector<CacheData*> all;
+   Cache::the().collectLeaves(all, node);
+   if (getCoordinateSystem() == Local) {
+      typename std::vector<CacheData*>::const_iterator it;
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	  continue;
+	}
+	Optimizer<GroupType> inst(m_oracle,
+				  data.getAdapter(AdapterType::getAdapterId()), 
+				  m_maxLevel, 
+				  m_minObjects);
+	inst.setDataStore(&m_inner);
+	GroupType* hier = inst.optimize();
+	// set parent to one of the leaf nodes
+	hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
+	data.clearAdapter(AdapterType::getAdapterId());
+	data.setAdapter(AdapterType::getAdapterId(), hier);
+	// propagate to parent nodes
+	for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+	  CacheData& data2 = Cache::the()[parent];
+	  if (data2.getNode() == NullFC) { // parent node not in cache 
+	    break;
+	  }
+	  data2.setAdapter(AdapterType::getAdapterId(), hier);
+	}
+      }
+   } else { // LocalShared
+      // create hierarchies
+      typename std::vector<CacheData*>::const_iterator it;
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	   continue;
+	}
+	Optimizer<GroupType> inst(m_oracle,
+				  data.getAdapter(AdapterType::getAdapterId()), 
+				  m_maxLevel, 
+				  m_minObjects);
+	inst.setDataStore(&m_inner);
+	BVolAdapterBase* hier = inst.optimize();
+	// set parent to one of the leaf nodes
+	hier->setParent(static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]));
+	data.clearAdapter(AdapterType::getAdapterId());
+	data.setAdapter(AdapterType::getAdapterId(), hier);
+      }
+      // propagate to parent nodes
+      for (it=all.begin(); it!=all.end(); ++it) {
+	CacheData& data = **it;
+	if (data.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	   // lookup share
+	   CacheData& share = Cache::the().getShare(data.getNode());
+	   if (share.getAdapter(AdapterType::getAdapterId()).size() == 0) {
+	      continue;
+	   }
+	   // create new root node
+	   GroupType* group = InnerFactory::the().newObject(); m_inner.push_back(group);
+	   *group = *static_cast<GroupType*>(share.getAdapter(AdapterType::getAdapterId())[0]);
+	   AdapterType* adapter = LeafFactory::the().newObject(); m_leaf.push_back(adapter);
+	   adapter->setObjectAdapter(&data);
+	   group->setParent(adapter);
+	   // set into adapter list
+	   data.setAdapter(AdapterType::getAdapterId(), group);
+	}
+	BVolAdapterBase* hier = 
+	  static_cast<BVolAdapterBase*>(data.getAdapter(AdapterType::getAdapterId())[0]);
+	for (NodePtr parent=data.getParent(); parent!=NullFC; parent=parent->getParent()) {
+	   CacheData& data2 = Cache::the()[parent];
+	   if (data2.getNode() == NullFC) { // parent node not in cache 
+	     break;
+	   }
+	   data2.setAdapter(AdapterType::getAdapterId(), hier);
+	}
+      }
    }
+#endif
 }
 
 template <class BVOL> 
 void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::destroy ()
 {
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearColCache();
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
    }
    m_inner.clear();
    // clear adapter nodes
-   for (std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
+   for (typename std::vector<AdapterType*>::const_iterator it2=m_leaf.begin();
 	it2 != m_leaf.end();
 	++it2){
       LeafFactory::the().deleteObject(*it2);
@@ -667,9 +750,10 @@ template <class BVOL>
 void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::clear   ()
 {
    // clear cache
-   getCache().clearAdapter(AdapterType::getAdapterId());
+   Cache::the().clearColCache();
+   Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear inner hierarchy nodes
-   for (std::vector<GroupType*>::const_iterator it=m_inner.begin();
+   for (typename std::vector<GroupType*>::const_iterator it=m_inner.begin();
 	it != m_inner.end();
 	++it){
       InnerFactory::the().deleteObject(*it);
@@ -681,39 +765,52 @@ template <class BVOL>
 void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
-   getCache().registerEnterFunctor(Geometry::getClassType(), 
-				   osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+   Cache::the().registerEnterFunctor(Geometry::getClassType(), 
+				   osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 				   SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >,
 				   CNodePtr, 
 				   OSGStaticInput*>
 				   (this, &SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::functorEnterGeometry));
 #else
-   getCache().registerEnterFunction(Geometry::getClassType(),
+   Cache::the().registerEnterFunction(Geometry::getClassType(),
    cacheFunctionFunctor2(SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::staticEnterGeometry));
 #endif
 }
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::staticEnterGeometry  
+bool SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::staticEnterGeometry  
 (CNodePtr& cnode, OSGStaticInput* input)
 {
    SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >* thisInput = 
      (SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >*)input;
    if (thisInput == NULL) {
-      return;
+      return false;
    }
-   if (thisInput->getCoordinateSystem() == LocalCoordSystem) {
-      thisInput->addAdapter(getCache().getCurrentNode());
-   } else {
-      thisInput->addAdapter(getCache().getCurrentMatrix(), getCache().getCurrentNode());
+   switch (thisInput->getCoordinateSystem()) { 
+   case Local:
+      thisInput->addAdapter(Cache::the().getCurrentNode());
+      break;
+   case LocalShared:
+      if (Cache::the().findShare(Cache::the().getCurrentNode()) == NULL) {
+	 thisInput->addAdapter(Cache::the().getCurrentNode());
+      }
+      break;
+   case Global:
+      thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+      break;
    }
+   return true;
 }
 #ifndef OSG_NOFUNCTORS
 template <class BVOL> 
-void SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::functorEnterGeometry (
-CNodePtr& cnode, OSGStaticInput*)
+bool SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleAlignedInput<BVOL> >::functorEnterGeometry 
+(CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterGeometry (cnode, this); 
+   return staticEnterGeometry (cnode, this); 
 }
 #endif
 
-#endif
+
+
+
+
+

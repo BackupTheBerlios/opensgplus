@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:50:11 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:23:23 $
 //                                                                            
 //=============================================================================
 
@@ -71,8 +71,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline VectorClass  getSurfaceNormal () const;
-   inline void   setSurfaceNormal (const VectorClass& normal);
+   inline VectorClass getSurfaceNormal () const;
+   inline void        setSurfaceNormal (const VectorClass& normal);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -135,7 +135,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Intersection distance on ray.                                */
    /*! \{                                                                 */ 
-   inline Real             getDist    () const;
+   inline Real&             getDist    ();
+   inline const Real&       getDist    () const;
    inline void              setDist    (Real dist);
    inline bool              updateDist (Real dist);
    /*! \}                                                                 */
@@ -226,7 +227,11 @@ inline void              Intersection::setTo (BVolAdapterBase* to)
    m_to = to;
 }
 
-inline Real             Intersection::getDist () const
+inline Real&            Intersection::getDist ()
+{
+   return m_dist;
+}
+inline const Real&            Intersection::getDist () const
 {
    return m_dist;
 }
