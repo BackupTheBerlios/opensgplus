@@ -95,7 +95,6 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void serverInit              ( WindowPtr window,UInt32 id  );
     virtual void serverRender            ( WindowPtr window,UInt32 id,
                                            RenderAction *action        );
     virtual void serverSwap              ( WindowPtr window,UInt32 id  );

@@ -82,18 +82,6 @@ namespace
 #pragma reset woff 1174
 #endif
 
-const OSG::BitVector  SortFirstWindowBase::LeftFieldMask = 
-    (1 << SortFirstWindowBase::LeftFieldId);
-
-const OSG::BitVector  SortFirstWindowBase::RightFieldMask = 
-    (1 << SortFirstWindowBase::RightFieldId);
-
-const OSG::BitVector  SortFirstWindowBase::BottomFieldMask = 
-    (1 << SortFirstWindowBase::BottomFieldId);
-
-const OSG::BitVector  SortFirstWindowBase::TopFieldMask = 
-    (1 << SortFirstWindowBase::TopFieldId);
-
 const OSG::BitVector  SortFirstWindowBase::CompressionFieldMask = 
     (1 << SortFirstWindowBase::CompressionFieldId);
 
@@ -103,22 +91,13 @@ const OSG::BitVector  SortFirstWindowBase::SubtileSizeFieldMask =
 const OSG::BitVector  SortFirstWindowBase::ComposeFieldMask = 
     (1 << SortFirstWindowBase::ComposeFieldId);
 
+const OSG::BitVector  SortFirstWindowBase::RegionFieldMask = 
+    (1 << SortFirstWindowBase::RegionFieldId);
+
 
 
 // Field descriptions
 
-/*! \var Real32          SortFirstWindowBase::_mfLeft
-    
-*/
-/*! \var Real32          SortFirstWindowBase::_mfRight
-    
-*/
-/*! \var Real32          SortFirstWindowBase::_mfBottom
-    
-*/
-/*! \var Real32          SortFirstWindowBase::_mfTop
-    
-*/
 /*! \var string          SortFirstWindowBase::_sfCompression
     
 */
@@ -128,30 +107,14 @@ const OSG::BitVector  SortFirstWindowBase::ComposeFieldMask =
 /*! \var bool            SortFirstWindowBase::_sfCompose
     Transmit rendered image to cleint
 */
+/*! \var UInt32          SortFirstWindowBase::_mfRegion
+    left,right,bottom,top for each viewport
+*/
+
 //! SortFirstWindow description
 
 FieldDescription *SortFirstWindowBase::_desc[] = 
 {
-    new FieldDescription(MFReal32::getClassType(), 
-                     "left", 
-                     LeftFieldId, LeftFieldMask,
-                     false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getMFLeft),
-    new FieldDescription(MFReal32::getClassType(), 
-                     "right", 
-                     RightFieldId, RightFieldMask,
-                     false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getMFRight),
-    new FieldDescription(MFReal32::getClassType(), 
-                     "bottom", 
-                     BottomFieldId, BottomFieldMask,
-                     false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getMFBottom),
-    new FieldDescription(MFReal32::getClassType(), 
-                     "top", 
-                     TopFieldId, TopFieldMask,
-                     false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getMFTop),
     new FieldDescription(SFString::getClassType(), 
                      "compression", 
                      CompressionFieldId, CompressionFieldMask,
@@ -166,7 +129,12 @@ FieldDescription *SortFirstWindowBase::_desc[] =
                      "compose", 
                      ComposeFieldId, ComposeFieldMask,
                      false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getSFCompose)
+                     (FieldAccessMethod) &SortFirstWindowBase::getSFCompose),
+    new FieldDescription(MFUInt32::getClassType(), 
+                     "region", 
+                     RegionFieldId, RegionFieldMask,
+                     false,
+                     (FieldAccessMethod) &SortFirstWindowBase::getMFRegion)
 };
 
 //! SortFirstWindow type
@@ -206,7 +174,7 @@ FieldContainerPtr SortFirstWindowBase::shallowCopy(void) const
 
 UInt32 SortFirstWindowBase::getContainerSize(void) const 
 { 
-    return sizeof(SortFirstWindowBase); 
+    return sizeof(SortFirstWindow); 
 }
 
 
@@ -225,13 +193,10 @@ void SortFirstWindowBase::executeSync(      FieldContainer &other,
 #endif
 
 SortFirstWindowBase::SortFirstWindowBase(void) :
-    _mfLeft                   (), 
-    _mfRight                  (), 
-    _mfBottom                 (), 
-    _mfTop                    (), 
     _sfCompression            (), 
     _sfSubtileSize            (UInt32(32)), 
     _sfCompose                (bool(true)), 
+    _mfRegion                 (), 
     Inherited() 
 {
 }
@@ -243,13 +208,10 @@ SortFirstWindowBase::SortFirstWindowBase(void) :
 //! Copy Constructor
 
 SortFirstWindowBase::SortFirstWindowBase(const SortFirstWindowBase &source) :
-    _mfLeft                   (source._mfLeft                   ), 
-    _mfRight                  (source._mfRight                  ), 
-    _mfBottom                 (source._mfBottom                 ), 
-    _mfTop                    (source._mfTop                    ), 
     _sfCompression            (source._sfCompression            ), 
     _sfSubtileSize            (source._sfSubtileSize            ), 
     _sfCompose                (source._sfCompose                ), 
+    _mfRegion                 (source._mfRegion                 ), 
     Inherited                 (source)
 {
 }
@@ -268,26 +230,6 @@ UInt32 SortFirstWindowBase::getBinSize(const BitVector &whichField)
 {
     UInt32 returnValue = Inherited::getBinSize(whichField);
 
-    if(FieldBits::NoField != (LeftFieldMask & whichField))
-    {
-        returnValue += _mfLeft.getBinSize();
-    }
-
-    if(FieldBits::NoField != (RightFieldMask & whichField))
-    {
-        returnValue += _mfRight.getBinSize();
-    }
-
-    if(FieldBits::NoField != (BottomFieldMask & whichField))
-    {
-        returnValue += _mfBottom.getBinSize();
-    }
-
-    if(FieldBits::NoField != (TopFieldMask & whichField))
-    {
-        returnValue += _mfTop.getBinSize();
-    }
-
     if(FieldBits::NoField != (CompressionFieldMask & whichField))
     {
         returnValue += _sfCompression.getBinSize();
@@ -303,6 +245,11 @@ UInt32 SortFirstWindowBase::getBinSize(const BitVector &whichField)
         returnValue += _sfCompose.getBinSize();
     }
 
+    if(FieldBits::NoField != (RegionFieldMask & whichField))
+    {
+        returnValue += _mfRegion.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -311,26 +258,6 @@ void SortFirstWindowBase::copyToBin(      BinaryDataHandler &pMem,
                                   const BitVector         &whichField)
 {
     Inherited::copyToBin(pMem, whichField);
-
-    if(FieldBits::NoField != (LeftFieldMask & whichField))
-    {
-        _mfLeft.copyToBin(pMem);
-    }
-
-    if(FieldBits::NoField != (RightFieldMask & whichField))
-    {
-        _mfRight.copyToBin(pMem);
-    }
-
-    if(FieldBits::NoField != (BottomFieldMask & whichField))
-    {
-        _mfBottom.copyToBin(pMem);
-    }
-
-    if(FieldBits::NoField != (TopFieldMask & whichField))
-    {
-        _mfTop.copyToBin(pMem);
-    }
 
     if(FieldBits::NoField != (CompressionFieldMask & whichField))
     {
@@ -347,6 +274,11 @@ void SortFirstWindowBase::copyToBin(      BinaryDataHandler &pMem,
         _sfCompose.copyToBin(pMem);
     }
 
+    if(FieldBits::NoField != (RegionFieldMask & whichField))
+    {
+        _mfRegion.copyToBin(pMem);
+    }
+
 
 }
 
@@ -354,26 +286,6 @@ void SortFirstWindowBase::copyFromBin(      BinaryDataHandler &pMem,
                                     const BitVector    &whichField)
 {
     Inherited::copyFromBin(pMem, whichField);
-
-    if(FieldBits::NoField != (LeftFieldMask & whichField))
-    {
-        _mfLeft.copyFromBin(pMem);
-    }
-
-    if(FieldBits::NoField != (RightFieldMask & whichField))
-    {
-        _mfRight.copyFromBin(pMem);
-    }
-
-    if(FieldBits::NoField != (BottomFieldMask & whichField))
-    {
-        _mfBottom.copyFromBin(pMem);
-    }
-
-    if(FieldBits::NoField != (TopFieldMask & whichField))
-    {
-        _mfTop.copyFromBin(pMem);
-    }
 
     if(FieldBits::NoField != (CompressionFieldMask & whichField))
     {
@@ -390,6 +302,11 @@ void SortFirstWindowBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfCompose.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (RegionFieldMask & whichField))
+    {
+        _mfRegion.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -398,18 +315,6 @@ void SortFirstWindowBase::executeSyncImpl(      SortFirstWindowBase *pOther,
 {
 
     Inherited::executeSyncImpl(pOther, whichField);
-
-    if(FieldBits::NoField != (LeftFieldMask & whichField))
-        _mfLeft.syncWith(pOther->_mfLeft);
-
-    if(FieldBits::NoField != (RightFieldMask & whichField))
-        _mfRight.syncWith(pOther->_mfRight);
-
-    if(FieldBits::NoField != (BottomFieldMask & whichField))
-        _mfBottom.syncWith(pOther->_mfBottom);
-
-    if(FieldBits::NoField != (TopFieldMask & whichField))
-        _mfTop.syncWith(pOther->_mfTop);
 
     if(FieldBits::NoField != (CompressionFieldMask & whichField))
         _sfCompression.syncWith(pOther->_sfCompression);
@@ -420,6 +325,10 @@ void SortFirstWindowBase::executeSyncImpl(      SortFirstWindowBase *pOther,
     if(FieldBits::NoField != (ComposeFieldMask & whichField))
         _sfCompose.syncWith(pOther->_sfCompose);
 
+    if(FieldBits::NoField != (RegionFieldMask & whichField))
+        _mfRegion.syncWith(pOther->_mfRegion);
+
 
 }
+
 

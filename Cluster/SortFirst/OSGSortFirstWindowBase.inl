@@ -54,19 +54,22 @@ OSG_BEGIN_NAMESPACE
 
 
 //! access the type of the class
-inline OSG::FieldContainerType &SortFirstWindowBase::getClassType(void)
+inline
+OSG::FieldContainerType &SortFirstWindowBase::getClassType(void)
 {
     return _type; 
 } 
 
 //! access the numerical type of the class
-inline OSG::UInt32 SortFirstWindowBase::getClassTypeId(void) 
+inline
+OSG::UInt32 SortFirstWindowBase::getClassTypeId(void) 
 {
     return _type.getId(); 
 } 
 
 //! create a new instance of the class
-inline SortFirstWindowPtr SortFirstWindowBase::create(void) 
+inline
+SortFirstWindowPtr SortFirstWindowBase::create(void) 
 {
     SortFirstWindowPtr fc; 
 
@@ -80,7 +83,8 @@ inline SortFirstWindowPtr SortFirstWindowBase::create(void)
 }
 
 //! create an empty new instance of the class, do not copy the prototype
-inline SortFirstWindowPtr SortFirstWindowBase::createEmpty(void) 
+inline
+SortFirstWindowPtr SortFirstWindowBase::createEmpty(void) 
 { 
     SortFirstWindowPtr returnValue; 
     
@@ -92,166 +96,102 @@ inline SortFirstWindowPtr SortFirstWindowBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
-OSG_CLUSTERLIB_DLLMAPPING
-MFReal32 *SortFirstWindowBase::getMFLeft(void)
-{
-    return &_mfLeft;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-MFReal32 *SortFirstWindowBase::getMFRight(void)
-{
-    return &_mfRight;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-MFReal32 *SortFirstWindowBase::getMFBottom(void)
-{
-    return &_mfBottom;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-MFReal32 *SortFirstWindowBase::getMFTop(void)
-{
-    return &_mfTop;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 SFString *SortFirstWindowBase::getSFCompression(void)
 {
     return &_sfCompression;
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 SFUInt32 *SortFirstWindowBase::getSFSubtileSize(void)
 {
     return &_sfSubtileSize;
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 SFBool *SortFirstWindowBase::getSFCompose(void)
 {
     return &_sfCompose;
 }
 
+inline
+MFUInt32 *SortFirstWindowBase::getMFRegion(void)
+{
+    return &_mfRegion;
+}
 
-OSG_CLUSTERLIB_DLLMAPPING
+
+inline
 string &SortFirstWindowBase::getCompression(void)
 {
     return _sfCompression.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 const string &SortFirstWindowBase::getCompression(void) const
 {
     return _sfCompression.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 void SortFirstWindowBase::setCompression(const string &value)
 {
     _sfCompression.setValue(value);
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 UInt32 &SortFirstWindowBase::getSubtileSize(void)
 {
     return _sfSubtileSize.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 const UInt32 &SortFirstWindowBase::getSubtileSize(void) const
 {
     return _sfSubtileSize.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 void SortFirstWindowBase::setSubtileSize(const UInt32 &value)
 {
     _sfSubtileSize.setValue(value);
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 bool &SortFirstWindowBase::getCompose(void)
 {
     return _sfCompose.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 const bool &SortFirstWindowBase::getCompose(void) const
 {
     return _sfCompose.getValue();
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
+inline
 void SortFirstWindowBase::setCompose(const bool &value)
 {
     _sfCompose.setValue(value);
 }
 
 
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &SortFirstWindowBase::getLeft(UInt32 index)
+inline
+UInt32 &SortFirstWindowBase::getRegion(UInt32 index)
 {
-    return _mfLeft.getValue( index );
+    return _mfRegion.getValue( index );
 }
 
-MFReal32 &SortFirstWindowBase::getLeft(void)
+inline
+MFUInt32 &SortFirstWindowBase::getRegion(void)
 {
-    return _mfLeft;
+    return _mfRegion;
 }
 
-const MFReal32 &SortFirstWindowBase::getLeft(void) const
+inline
+const MFUInt32 &SortFirstWindowBase::getRegion(void) const
 {
-    return _mfLeft;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &SortFirstWindowBase::getRight(UInt32 index)
-{
-    return _mfRight.getValue( index );
-}
-
-MFReal32 &SortFirstWindowBase::getRight(void)
-{
-    return _mfRight;
-}
-
-const MFReal32 &SortFirstWindowBase::getRight(void) const
-{
-    return _mfRight;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &SortFirstWindowBase::getBottom(UInt32 index)
-{
-    return _mfBottom.getValue( index );
-}
-
-MFReal32 &SortFirstWindowBase::getBottom(void)
-{
-    return _mfBottom;
-}
-
-const MFReal32 &SortFirstWindowBase::getBottom(void) const
-{
-    return _mfBottom;
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &SortFirstWindowBase::getTop(UInt32 index)
-{
-    return _mfTop.getValue( index );
-}
-
-MFReal32 &SortFirstWindowBase::getTop(void)
-{
-    return _mfTop;
-}
-
-const MFReal32 &SortFirstWindowBase::getTop(void) const
-{
-    return _mfTop;
+    return _mfRegion;
 }
 
 

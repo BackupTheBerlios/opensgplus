@@ -47,6 +47,8 @@
 #include <OSGTileCameraDecorator.h>
 #include <OSGViewport.h>
 #include <OSGGeometry.h>
+#include <OSGStereoBufferViewport.h>
+#include <OSGRenderAction.h>
 #include "OSGSortFirstWindow.h"
 #include "OSGViewBufferHandler.h"
 #include "OSGConnection.h"
@@ -122,92 +124,72 @@ void SortFirstWindow::dump(      UInt32    ,
 
 /*----------------------------- server methods ----------------------------*/
 
-/*! initialize server window
- */
-
-void SortFirstWindow::serverInit( WindowPtr window,
-                                  UInt32 )
-{
-    ViewportPtr            svp,cvp;
-    TileCameraDecoratorPtr deco;
-
-    // do some checks 
-    if(window == NullFC)
-    {
-        SWARNING << "No Server window" << endl;
-        return;
-    }
-    if(getPort().size()==0)
-    {
-        SWARNING << "Cluster window has no viewport" << endl;
-        return;
-    }
-
-    // get cluster viewport. Currently there is only one viewport
-    // fore each window allowed!
-    cvp=getPort()[0];
-
-    // create camera decorator
-    deco = TileCameraDecorator::create();
-    beginEditCP(deco);
-    deco->setDecoratee( cvp->getCamera() );
-    deco->setSize( 0,0,1,1 );
-    deco->setFullWidth ( getWidth() );
-    deco->setFullHeight( getHeight() );
-    endEditCP(deco);
-
-    // create new server viewport
-    svp = Viewport::create();
-    beginEditCP(svp);
-    svp->setCamera    ( deco );
-    svp->setBackground( cvp->getBackground() );
-    svp->setRoot      ( cvp->getRoot() );
-    svp->setSize      ( 0,0,1,1 );
-    beginEditCP(window);
-    window->addPort(svp);
-    endEditCP(window);
-    endEditCP(svp);
-}
-
 /*! update server window
  */
-
-void SortFirstWindow::serverRender( WindowPtr window,UInt32 id,
+void SortFirstWindow::serverRender( WindowPtr serverWindow,
+                                    UInt32 id,
                                     RenderAction *action        )
 {
-    ViewportPtr vp=window->getPort()[0];
-    TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
+    TileCameraDecoratorPtr deco;
+    ViewportPtr serverPort;
+    ViewportPtr clientPort;
+    UInt32 sv,cv,regionStart;
+    UInt32 vpWidth;
+    UInt32 vpHeight;
 
-    if(id >= getTop()   .size() ||
-       id >= getBottom().size() ||
-       id >= getLeft()  .size() ||
-       id >= getRight() .size())
+    // duplicate viewports
+    for(cv=0,sv=0;cv<getPort().size();cv++)
     {
-        vp->setSize( 0,0,1,1 );
-        deco->setSize( 0,0,1,1 );
-        SWARNING << "top, bottom, left or right missing for server"
-                 << id << endl;
-        return;
+        clientPort = getPort()[cv];
+        if(serverWindow->getPort().size() <= sv)
+        {
+            // create new port
+            serverPort = StereoBufferViewport::create();
+            deco=TileCameraDecorator::create();
+            beginEditCP(serverWindow);
+            serverWindow->addPort(serverPort);
+            serverPort->setCamera(deco);
+            endEditCP(serverWindow);
+        }
+        else
+        {
+            serverPort = serverWindow->getPort()[sv];
+            deco=TileCameraDecoratorPtr::dcast(serverPort->getCamera());
+        }
+
+        // duplicate values
+        beginEditCP(serverPort);
+        regionStart=cv * getServers().size() * 4 + id * 4;
+        serverPort->setSize( 
+            getRegion()[ regionStart+0 ] + clientPort->getPixelLeft(),
+            getRegion()[ regionStart+1 ] + clientPort->getPixelBottom(),
+            getRegion()[ regionStart+2 ] + clientPort->getPixelLeft(),
+            getRegion()[ regionStart+3 ] + clientPort->getPixelBottom());
+
+        serverPort->setRoot      ( clientPort->getRoot()       );
+        serverPort->setBackground( clientPort->getBackground() );
+        serverPort->getMFForegrounds()->setValues( clientPort->getForegrounds() );
+        endEditCP(serverPort);
+
+        // calculate tile parameters
+        vpWidth =clientPort->getPixelWidth();
+        vpHeight=clientPort->getPixelHeight();
+        beginEditCP(deco);
+        deco->setFullWidth ( vpWidth );
+        deco->setFullHeight( vpHeight );
+        deco->setSize( getRegion()[ regionStart+0 ]/(float)vpWidth,
+                       getRegion()[ regionStart+1 ]/(float)vpHeight,
+                       getRegion()[ regionStart+2 ]/(float)vpWidth,
+                       getRegion()[ regionStart+3 ]/(float)vpHeight );
+        deco->setDecoratee( clientPort->getCamera() );
+        endEditCP(deco);
+        sv++;
     }
-
-    beginEditCP(deco);
-    // modify viewport size instead of window size
-    vp->setSize( getLeft()  [id],
-                 getBottom()[id],
-                 getRight() [id],
-                 getTop()   [id] );
-    cout << getLeft()  [id] << " ";
-    cout << getBottom()  [id] << " ";
-    cout << getRight()  [id] << " ";
-    cout << getTop()  [id] << endl;
-    deco->setSize( getLeft()  [id]/(float)getWidth(),
-                   getBottom()[id]/(float)getHeight(),
-                   getRight() [id]/(float)getWidth(),
-                   getTop()   [id]/(float)getHeight() );
-    deco->setFullWidth ( getWidth() );
-    deco->setFullHeight( getHeight() );
-    endEditCP(deco);
-
+    // remove unused ports
+    while(serverWindow->getPort().size()>sv)
+    {
+        serverWindow->subPort(sv);
+    }
     // compression type
     if(getCompose())
     {
@@ -224,43 +206,45 @@ void SortFirstWindow::serverRender( WindowPtr window,UInt32 id,
             _bufferHandler.setSubtileSize(getSubtileSize());
         }
     }
-    else
+#if 1
+    glDisable(GL_SCISSOR_TEST);
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT);
+#endif
+
+    // render the viewports
+    serverWindow->activate();
+    serverWindow->frameInit();
+    action->setWindow( serverWindow.getCPtr() );
+    for(sv=0;sv<serverWindow->getPort().size();++sv)
     {
-        glViewport(0,0,
-                   getWidth(),
-                   getHeight());
-        glScissor(0,0,
-                  getWidth(),
-                  getHeight());
-        glClearColor(0,0,0,0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        ViewportPtr vp=serverWindow->getPort()[sv];
+        vp->render( action );
+        // send resulting image
+        if(getCompose())
+        {
+            // send image
+            _bufferHandler.send(
+                *_connection,
+                ViewBufferHandler::RGB,
+                vp->getPixelLeft(),
+                vp->getPixelBottom(),
+                vp->getPixelRight(),
+                vp->getPixelTop(),
+                0,0);
+        }
     }
-    Inherited::serverRender(window,id,action);
 }
 
 /*! send image to client
  */
-
 void SortFirstWindow::serverSwap( WindowPtr window,
                                   UInt32 )
 {
-    if(getCompose())
-    {
-        ViewportPtr vp=window->getPort()[0];
-        // send image
-        _bufferHandler.send(
-            *_connection,
-            ViewBufferHandler::RGB,
-            vp->getPixelLeft(),
-            vp->getPixelBottom(),
-            vp->getPixelRight(),
-            vp->getPixelTop(),
-            0,0);
-    }
-    else
+    window->swap();
+    if(!getCompose())
     {
         _connection->wait();
-        window->swap();
     }
 }
 
@@ -271,37 +255,6 @@ void SortFirstWindow::serverSwap( WindowPtr window,
 
 void SortFirstWindow::clientInit( void )
 {
-    if(getClientWindow() == NullFC ||
-       getPort().size()==0)
-        return;
-
-    // get cluster viewport. Currently there is only one viewport
-    // fore each window allowed!
-    ViewportPtr cvp=getPort()[0];
-
-    // create camera decorator
-    TileCameraDecoratorPtr deco = TileCameraDecorator::create();
-    beginEditCP(deco);
-    deco->setDecoratee( cvp->getCamera() );
-    deco->setSize( 0,0,1,1 );
-    deco->setFullWidth ( getWidth() );
-    deco->setFullHeight( getHeight() );
-    endEditCP(deco);
-
-    // create new client viewport
-    ViewportPtr vp = Viewport::create();
-    beginEditCP(vp);
-    vp->setCamera    ( deco );
-    vp->setBackground( cvp->getBackground() );
-    vp->setRoot      ( cvp->getRoot() );
-    vp->setSize      ( 0,
-                       0, 
-                       1,
-                       1 );
-    beginEditCP(getClientWindow());
-    getClientWindow()->addPort(vp);
-    endEditCP(getClientWindow());
-    endEditCP(vp);
 }
 
 /*! client frame init
@@ -310,26 +263,25 @@ void SortFirstWindow::clientInit( void )
 void SortFirstWindow::clientPreSync( void )
 {
     SortFirstWindowPtr ptr=SortFirstWindowPtr(this);
-//    if(getCompose())
+    if(getCompose())
     {
-        if(getClientWindow() == NullFC)
+        // get window size from client window
+        if(getClientWindow() != NullFC)
         {
-            SFATAL << "No client window given" << endl;
-            return;
-        }
-        if(getWidth()  != getClientWindow()->getWidth() ||
-           getHeight() != getClientWindow()->getHeight())
-        {
-            beginEditCP(ptr,
-                        Window::WidthFieldMask|
-                        Window::HeightFieldMask);
+            if(getWidth()  != getClientWindow()->getWidth() ||
+               getHeight() != getClientWindow()->getHeight())
             {
-                setSize(getClientWindow()->getWidth(),
-                        getClientWindow()->getHeight());
+                beginEditCP(ptr,
+                            Window::WidthFieldMask|
+                            Window::HeightFieldMask);
+                {
+                    setSize(getClientWindow()->getWidth(),
+                            getClientWindow()->getHeight());
+                }
+                endEditCP(ptr,
+                          Window::WidthFieldMask|
+                          Window::HeightFieldMask);
             }
-            endEditCP(ptr,
-                      Window::WidthFieldMask|
-                      Window::HeightFieldMask);
         }
     }
 #if 0
@@ -352,44 +304,35 @@ void SortFirstWindow::clientPreSync( void )
         _loadManager=new GeoLoadManager();
         _loadManager->estimatePerformace();
     }
+
+    UInt32 i;
+    UInt32 cv;
     GeoLoadManager::ResultT region;
-    _loadManager->update( getPort()[0]->getRoot() );
-    _loadManager->balance(getPort()[0],
-                          getServers().size(),
-                          false,
-                          region);
 
-    // distribute work
-    // replace with load balancing algorithm !!!!!
-    int i;
-    beginEditCP(ptr,
-                SortFirstWindow::LeftFieldMask|
-                SortFirstWindow::RightFieldMask|
-                SortFirstWindow::TopFieldMask|
-                SortFirstWindow::BottomFieldMask);
-    getLeft()  .resize(getServers().size());
-    getRight() .resize(getServers().size());
-    getTop()   .resize(getServers().size());
-    getBottom().resize(getServers().size());
-    for(i=0;i<getServers().size();i++)
+    beginEditCP(ptr,SortFirstWindow::RegionFieldMask);
+    getRegion().clear();
+    for(cv=0;cv<getPort().size();cv++)
     {
-        getLeft()   [i]=region[4*i + 0];
-        getBottom() [i]=region[4*i + 1];
-        getRight()  [i]=region[4*i + 2];
-        getTop()    [i]=region[4*i + 3];
+        _loadManager->update( getPort()[cv]->getRoot() );
+        _loadManager->balance(getPort()[cv],
+                              getServers().size(),
+                              false,
+                              region);
+        for(i=0;i<getServers().size();i++)
+        {
+            getRegion().push_back(region[4*i+0]);
+            getRegion().push_back(region[4*i+1]);
+            getRegion().push_back(region[4*i+2]);
+            getRegion().push_back(region[4*i+3]);
 
-        cout << region[4*i + 0] << " ";
-        cout << region[4*i + 1] << " ";
-        cout << region[4*i + 2] << " ";
-        cout << region[4*i + 3] << endl;
-
-
+            cout << "VP:" << cv << " ";
+            cout << region[4*i + 0] << " ";
+            cout << region[4*i + 1] << " ";
+            cout << region[4*i + 2] << " ";
+            cout << region[4*i + 3] << endl;
+        }
     }
-    endEditCP(ptr,
-              SortFirstWindow::LeftFieldMask|
-              SortFirstWindow::RightFieldMask|
-              SortFirstWindow::TopFieldMask|
-              SortFirstWindow::BottomFieldMask);
+    endEditCP(ptr,SortFirstWindow::RegionFieldMask);
 }
 
 /*! client rendering
@@ -407,17 +350,20 @@ void SortFirstWindow::clientRender( RenderAction *  /* action */ )
 
 void SortFirstWindow::clientSwap( void )
 {
+    UInt32 cv;
     if(getCompose())
     {
         if(getClientWindow()!=NullFC)
         {
+            glDisable(GL_SCISSOR_TEST);
             glViewport(0,0,
                        getClientWindow()->getWidth(),
                        getClientWindow()->getHeight());
-            glScissor(0,0,
-                      getClientWindow()->getWidth(),
-                      getClientWindow()->getHeight());
-            _bufferHandler.recv(*_connection);
+            // receive all viewports
+            for(cv=0;cv<getPort().size();++cv)
+            {
+                _bufferHandler.recv(*_connection);
+            }
             Inherited::clientSwap();
         }
     }

@@ -76,7 +76,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.7 2002/04/12 12:02:44 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.8 2002/04/22 16:02:09 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -188,6 +188,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
 
     sortrow_t-=getSystemTime();
 
+    result.clear();
     vp->getCamera()->getViewing   ( viewing   ,width,height );
     vp->getCamera()->getProjection( projection,width,height );
     visible.reserve(_geoLoad.size());
