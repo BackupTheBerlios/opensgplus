@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 22:09:40 $
+//   $Revision: 1.3 $
+//   $Date: 2003/09/25 16:19:44 $
 //                                                                            
 //=============================================================================
 
@@ -163,6 +163,27 @@ private:
 };
 
 template <class BasicTraits, class DoubleTraits, int D0, int D1>
+inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth0 () const
+{
+   return D0;
+}
+template <class BasicTraits, class DoubleTraits, int D0, int D1>
+inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth1 () const
+{
+   return D1;
+}
+template <class BasicTraits, class DoubleTraits, int D0, int D1>
+inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth0 () const
+{
+   return m_d0;
+}
+template <class BasicTraits, class DoubleTraits, int D0, int D1>
+inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth1 () const
+{
+   return m_d1;
+}
+
+template <class BasicTraits, class DoubleTraits, int D0, int D1>
 inline void   
 DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse 
 (GroupType* g0,   GroupType* g1)
@@ -173,14 +194,14 @@ DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse
 
       unsigned i0 = m_d0+1;
       unsigned i1 = m_d1+1;
-      if (i0 < D0) {	  
+      if (i0 <= getDepth0()) {	  
  	 assert(sons1.size() >= 2);
 	 m_d0 = i0; m_d1 = i1;
 	 traverse((GeneralType*)sons0[0], (GeneralType*)sons1[0]);
 	 m_d0 = i0; m_d1 = i1;
 	 traverse((GeneralType*)sons0[0], (GeneralType*)sons1[1]);
       }
-      if (i1 < D1) {	  
+      if (i1 <= getDepth1()) {	  
 	 assert(sons0.size() >= 2);
 	 m_d0 = i0; m_d1 = i1;
 	 traverse((GeneralType*)sons0[1], (GeneralType*)sons1[0]);
@@ -199,7 +220,7 @@ inline void
       
       unsigned i0 = m_d0+1;
       unsigned i1 = m_d1;
-      if (i0 < D0) {	  
+      if (i0 <= getDepth0()) {	  
 	 assert(sons0.size() >= 2);
 	 m_d0 = i0; m_d1 = i1;
 	 traverse((GeneralType*)sons0[0], p1);
@@ -218,7 +239,7 @@ DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (AdapterType* p0,
       
       unsigned i0 = m_d0;
       unsigned i1 = m_d1+1;
-      if (i1 < D1) {	  
+      if (i1 <= D1) {	  
 	 assert(sons1.size() >= 2);
 	 m_d0 = i0; m_d1 = i1;
 	 traverse(p0, (GeneralType*)sons1[0]);
@@ -337,27 +358,6 @@ DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDataTyped ()
    return m_data;
 }
 
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth0 () const
-{
-   return D0;
-}
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getDepth1 () const
-{
-   return D1;
-}
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth0 () const
-{
-   return m_d0;
-}
-template <class BasicTraits, class DoubleTraits, int D0, int D1>
-inline unsigned DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::getCurrentDepth1 () const
-{
-   return m_d1;
-}
-
 
 #ifdef GV_PROFILED
 #include <pgouser.h>
@@ -410,11 +410,7 @@ inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply
 #endif
    if (initFunc.call() &&
        initDoubleFunc.call(root0, m0, root1, m1)) { 
-#ifdef GV_META_DEPTHCOUNT
-      traverse<D0,D1>((GroupT<D0>*)root0, (GroupT<D1>*)root1);
-#else
       traverse(root0, root1);
-#endif
       leaveDoubleFunc.call(root0, m0, root1, m1);
 
 #ifdef GV_PROFILED
@@ -444,11 +440,7 @@ inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply
    _PGOPTI_Prof_Reset();
 #endif
    if (initDoubleFunc.call(root0, m0, root1, m1)) { 
-#ifdef GV_META_DEPTHCOUNT
-      traverse<D0,D1>((GroupT<D0>*)root0, (GroupT<D1>*)root1);
-#else
       traverse(root0, root1);
-#endif
       leaveDoubleFunc.call(root0, m0, root1, m1);
 
 #ifdef GV_PROFILED
