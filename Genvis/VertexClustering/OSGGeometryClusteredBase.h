@@ -84,6 +84,13 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*==========================  PUBLIC  =================================*/
   public:
 
+    enum
+    {
+        NumCellsFieldId         = Inherited::NextFieldId,
+	NextFieldId             = NumCellsFieldId + 1
+    };
+
+    static const OSG::BitVector NumCellsFieldMask;
 
     static const OSG::BitVector MTInfluenceMask;
 
@@ -103,6 +110,23 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     virtual const FieldContainerType &getType  (void) const; 
 
     virtual       UInt32              getContainerSize(void) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Get                                 */
+    /*! \{                                                                 */
+
+           SFReal32            *getSFNumCells           (void);
+
+           Real32              &getNumCells           (void);
+     const Real32              &getNumCells           (void) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Set                                 */
+    /*! \{                                                                 */
+
+     void setNumCells           ( const Real32 &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -143,6 +167,11 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Fields                                  */
+    /*! \{                                                                 */
+
+    SFReal32            _sfNumCells;
 
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
@@ -172,6 +201,7 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
 
     friend class FieldContainer;
 
+    static FieldDescription   *_desc[];
     static FieldContainerType  _type;
 
 
@@ -188,6 +218,6 @@ typedef GeometryClusteredBase *GeometryClusteredBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.1 2003/09/11 16:20:32 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDBASE_H_ */

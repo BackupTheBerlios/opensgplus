@@ -84,8 +84,6 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
     virtual Action::ResultE drawPrimitives (DrawActionBase * action );
     void                    fillGrid       (GeoPositionsPtr pos);
 
-    static Real32 cellSize;
-
     genvis::RegularGrid<SetUnion>&       getGrid ();
     const genvis::RegularGrid<SetUnion>& getGrid () const;
     std::vector<SetUnion>&               getPool ();
@@ -136,6 +134,6 @@ OSG_END_NAMESPACE
 #include <OSGGeometryClusteredBase.inl>
 #include <OSGGeometryClustered.inl>
 
-#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTERED_H_ */

@@ -96,9 +96,37 @@ GeometryClusteredPtr GeometryClusteredBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
+//! Get the GeometryClustered::_sfNumCells field.
+inline
+SFReal32 *GeometryClusteredBase::getSFNumCells (void)
+{
+    return &_sfNumCells;
+}
+
+//! Get the value of the GeometryClustered::_sfNumCells field.
+inline
+Real32 &GeometryClusteredBase::getNumCells(void)
+{
+    return _sfNumCells.getValue();
+}
+
+//! Get the value of the GeometryClustered::_sfNumCells field.
+inline
+const Real32 &GeometryClusteredBase::getNumCells(void) const
+{
+    return _sfNumCells.getValue();
+}
+
+//! Set the value of the GeometryClustered::_sfNumCells field.
+inline
+void GeometryClusteredBase::setNumCells(const Real32 &value)
+{
+    _sfNumCells.setValue(value);
+}
+
 
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.1 2003/09/11 16:20:32 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $"
 

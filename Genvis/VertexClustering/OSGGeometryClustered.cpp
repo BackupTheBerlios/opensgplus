@@ -813,7 +813,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
           TexCoords2Index = -1,
           TexCoords3Index = -1;
 
-    if (nmappings > 0) {
+    if (nmappings > 0) { // multi-indexed
         PositionIndex   = geo->calcMappingIndex(Geometry::MapPosition      );
         NormalIndex     = geo->calcMappingIndex(Geometry::MapNormal        );
         ColorIndex      = geo->calcMappingIndex(Geometry::MapColor         );
@@ -822,7 +822,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
         TexCoords1Index = geo->calcMappingIndex(Geometry::MapTexCoords1    );
         TexCoords2Index = geo->calcMappingIndex(Geometry::MapTexCoords2    );
         TexCoords3Index = geo->calcMappingIndex(Geometry::MapTexCoords3    );
-    } else if (IndexData) {
+    } else if (IndexData) { // single-indexed
         nmappings = 1;
         PositionIndex =
         NormalIndex =
@@ -874,176 +874,112 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
  	   omit = false;
 	   glBegin(type);
 	   break;
-	case GL_TRIANGLES:
+	case GL_TRIANGLES: {
 	   SLOG << "GL_TRIANGLES" << std::endl;
+	   SetUnion* setArray[3];
 	   glBegin(type);
-	   for (UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ) {
+	   for (UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); l+=3) {
 	     SetUnion::nextFrame ();
+	     // test if triangle collapses then omit OpenGL commands
 	     if (IndexData) {
-		if (geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex))].getSet(true) == NULL
-		    || geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd+nmappings+PositionIndex))].getSet(true) == NULL
-		    || geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd+nmappings+nmappings+PositionIndex))].getSet(true) == NULL) { 
-		   l += 3;
+ 	        setArray[0] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex))].getSet(true);
+ 	        setArray[1] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex))].getSet(true);
+ 	        setArray[2] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex + nmappings))].getSet(true);
+		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   IndexInd += 3*nmappings;
 		   continue;
 		}
 	     } else {
-		if (geo->getPool()[index].getSet(true) == NULL
-		    || geo->getPool()[index+1].getSet(true) == NULL
-		    || geo->getPool()[index+2].getSet(true) == NULL) { 
-		   l += 3;
+ 	        setArray[0] = geo->getPool()[index].getSet(true);
+ 	        setArray[1] = geo->getPool()[index+1].getSet(true);
+ 	        setArray[2] = geo->getPool()[index+2].getSet(true);
+		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   index += 3;
 		   continue;
 		}
 	     }
-	     for (UInt32 lend=l+3; l<lend; ++l) {
-	     if (IndexData) {
-                vind = (UInt32*)(IndexData + IndexStride * IndexInd);
-                IndexInd += nmappings;
-#if 1
-		set = geo->getPool()[index].getSet(false);
-		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    } else {
-                vind = &index;
-                ++index;
-#if 1
-		set = geo->getPool()[index].getSet(false);
-		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    }
-	    if (ColorData) {
-	      ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
-	    }
-	    if (SecColorData) {
-	      SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
-	    }
-	    if (NormalData) {
-	      NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
-	    }
-	    if (TexCoordsData) {
-	      TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
-	    }
-	    if (TexCoords1Data) {
-	      TexCoords1Func(GL_TEXTURE1_ARB,
-			     TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
-	    }
-	    if (TexCoords2Data) {
-	      TexCoords2Func(GL_TEXTURE2_ARB,
-			     TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
-	    }
-	    if (TexCoords3Data) {
-	      TexCoords3Func(GL_TEXTURE3_ARB,
-			     TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
-	    }
-	    PositionFunc(PositionData + PositionStride * set->getIdentifier());
-	    }
+	     for (UInt32 ll=0; ll<3; ++ll) {
+	        // perform lookup
+	        if (IndexData) {
+		   vind = (UInt32*)(IndexData + IndexStride * IndexInd);
+		   IndexInd += nmappings;
+		   set = setArray[ll];
+		   SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
+		} else {
+		   vind = &index;
+		   ++index;
+		   set = setArray[ll];
+		   SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
+		}
+		// pump data
+		if (ColorData) {
+		   ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
+		}
+		if (SecColorData) {
+		   SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
+		}
+		if (NormalData) {
+		   NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+		}
+		if (TexCoordsData) {
+		   TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
+		}
+		if (TexCoords1Data) {
+		   TexCoords1Func(GL_TEXTURE1_ARB,
+				  TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
+		}
+		if (TexCoords2Data) {
+		   TexCoords2Func(GL_TEXTURE2_ARB,
+				  TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
+		}
+		if (TexCoords3Data) {
+		   TexCoords3Func(GL_TEXTURE3_ARB,
+				  TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
+		}
+		PositionFunc(PositionData + PositionStride * set->getIdentifier());
+	     }
 	   }
 	   glEnd();
-	   return;
+	   continue;
+	}
 	case GL_TRIANGLE_STRIP: {
 	   SLOG << "GL_TRIANGLE_STRIP" << std::endl;
-	   UInt32    length = 0;
-	   SetUnion* last  = NULL;
-	   SetUnion* last2 = NULL;
 	   SetUnion::nextFrame ();
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
+	     // perform lookup
 	     if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-		// CF to be checked
+		// always use the first two vertices
 		if (l > 2) {
 		  set = geo->getPool()[vind[PositionIndex]].getSet(true);
 		} else {
 		  set = geo->getPool()[vind[PositionIndex]].getSet(false);
 		}
-		if (set == NULL) {
-		  ++length; 
+		if (set == NULL) { // omit vertex
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
 		}
-		if (length % 2 == 1) {
-		  if (ColorData) {
-		    ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
-		  }
-		  if (SecColorData) {
-		    SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
-		  }
-		  if (NormalData) {
-		    NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
-		  }
-		  if (TexCoordsData) {
-		    TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
-		  }
-		  if (TexCoords1Data) {
-		    TexCoords1Func(GL_TEXTURE1_ARB,
-				   TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
-		  }
-		  if (TexCoords2Data) {
-		    TexCoords2Func(GL_TEXTURE2_ARB,
-				   TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
-		  }
-		  if (TexCoords3Data) {
-		    TexCoords3Func(GL_TEXTURE3_ARB,
-				   TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
-		  }
-		  PositionFunc(PositionData + PositionStride * last2->getIdentifier());
-		}
-		last2  = last;
-		last   = set;
-		length = 0;
 		SetUnion::nextFrame ();
 		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
-
 	    } else {
 	        vind = &index;
                 ++index;
-		// CF to be checked
+		// always use the first two vertices
 		if (l > 2) {
 		  set = geo->getPool()[index].getSet(true);
 		} else {
 		  set = geo->getPool()[index].getSet(false);
 		}
-		if (set == NULL) {
-		   ++length; 
+		if (set == NULL) { // omit vertex
 		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
-		if (length % 2 == 1) {
-		  if (ColorData) {
-		    ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
-		  }
-		  if (SecColorData) {
-		    SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
-		  }
-		  if (NormalData) {
-		    NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
-		  }
-		  if (TexCoordsData) {
-		    TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
-		  }
-		  if (TexCoords1Data) {
-		    TexCoords1Func(GL_TEXTURE1_ARB,
-				   TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
-		  }
-		  if (TexCoords2Data) {
-		    TexCoords2Func(GL_TEXTURE2_ARB,
-				   TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
-		  }
-		  if (TexCoords3Data) {
-		    TexCoords3Func(GL_TEXTURE3_ARB,
-				   TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
-		  }
-		  PositionFunc(PositionData + PositionStride * last2->getIdentifier());
-		}
-		last2  = last;
-		last   = set;
-		length = 0;
 		SetUnion::nextFrame ();
 		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
-
 	    }
+	    // pump data
 	    if (ColorData) {
 	      ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
 	    }
@@ -1071,64 +1007,63 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	    PositionFunc(PositionData + PositionStride * set->getIdentifier());
 	   }
 	   glEnd();
-	   return;
+	   continue;
 	}
-	case GL_TRIANGLE_FAN:
+	case GL_TRIANGLE_FAN: {
 	   SLOG << "GL_TRIANGLE_FAN" << std::endl;
 	   SetUnion::nextFrame ();
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
-	     if (IndexData) {
+	      // perform lookup
+	      if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-#if 1
 		set = geo->getPool()[vind[PositionIndex]].getSet(true);
 		if (set == NULL) { 
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
 		}
 		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    } else {
+	      } else {
                 vind = &index;
                 ++index;
-#if 1
 		set = geo->getPool()[index].getSet(true);
 		if (set == NULL) {
 		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
 		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    }
-	    if (ColorData) {
-	      ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
-	    }
-	    if (SecColorData) {
-	      SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
-	    }
-	    if (NormalData) {
-	      NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
-	    }
-	    if (TexCoordsData) {
-	      TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
-	    }
-	    if (TexCoords1Data) {
-	      TexCoords1Func(GL_TEXTURE1_ARB,
-			     TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
-	    }
-	    if (TexCoords2Data) {
-	      TexCoords2Func(GL_TEXTURE2_ARB,
-			     TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
-	    }
-	    if (TexCoords3Data) {
-	      TexCoords3Func(GL_TEXTURE3_ARB,
-			     TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
-	    }
-	    PositionFunc(PositionData + PositionStride * vind[PositionIndex]);
+	      }
+	      // perform lookup
+	      if (ColorData) {
+		ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
+	      }
+	      if (SecColorData) {
+		SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
+	      }
+	      if (NormalData) {
+		NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+	      }
+	      if (TexCoordsData) {
+		TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
+	      }
+	      if (TexCoords1Data) {
+		TexCoords1Func(GL_TEXTURE1_ARB,
+			       TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
+	      }
+	      if (TexCoords2Data) {
+		TexCoords2Func(GL_TEXTURE2_ARB,
+			       TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
+	      }
+	      if (TexCoords3Data) {
+		TexCoords3Func(GL_TEXTURE3_ARB,
+			       TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
+	      }
+	      PositionFunc(PositionData + PositionStride * vind[PositionIndex]);
 	   }
 	   glEnd();
-	   return;
+	   continue;
+	}
 	case GL_POLYGON:
 	   SLOG << "GL_POLYGON" << std::endl;
 	   SetUnion::nextFrame ();
@@ -1143,55 +1078,52 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   break;
 	};
 	for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
-	     if (IndexData) {
+	   // perform lookup
+	   if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-#if 1
 		set = geo->getPool()[vind[PositionIndex]].getSet(omit);
 		if (set == NULL) { 
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
 		}
 		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    } else {
+	   } else {
                 vind = &index;
                 ++index;
-#if 1
 		set = geo->getPool()[index].getSet(omit);
 		if (set == NULL) {
 		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
 		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
-#endif
-	    }
-
-	    if (ColorData) {
+	   }
+	   // pump data
+	   if (ColorData) {
 	      ColorFunc(ColorData + ColorStride * vind[ColorIndex]);
-	    }
-	    if (SecColorData) {
+	   }
+	   if (SecColorData) {
 	      SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
-	    }
-	    if (NormalData) {
+	   }
+	   if (NormalData) {
 	      NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
-	    }
-	    if (TexCoordsData) {
+	   }
+	   if (TexCoordsData) {
 	      TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
-	    }
-	    if (TexCoords1Data) {
+	   }
+	   if (TexCoords1Data) {
 	      TexCoords1Func(GL_TEXTURE1_ARB,
 			     TexCoords1Data + TexCoords1Stride * vind[TexCoords1Index]);
-	    }
-	    if (TexCoords2Data) {
+	   }
+	   if (TexCoords2Data) {
 	      TexCoords2Func(GL_TEXTURE2_ARB,
 			     TexCoords2Data + TexCoords2Stride * vind[TexCoords2Index]);
-	    }
-	    if (TexCoords3Data) {
+	   }
+	   if (TexCoords3Data) {
 	      TexCoords3Func(GL_TEXTURE3_ARB,
 			     TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
-	    }
-	    PositionFunc(PositionData + PositionStride * set->getIdentifier());
+	   }
+	   PositionFunc(PositionData + PositionStride * set->getIdentifier());
 	}
         glEnd();
     }
@@ -1229,15 +1161,10 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
    Real32 d = osgMax(osgMax(maxBound[0]-minBound[0], maxBound[1]-minBound[1]), maxBound[2]-minBound[2]);
 
    SetUnion::firstFrame ();
-#if 1
    m_grid.init(K6Dop(minBound.getValues(), maxBound.getValues()),
-	       cellSize, 
-	       RegularGridBase::MaxVoxelsPerDim);
+	       getNumCells(), 
+	       RegularGridBase::MinVoxelsPerDim);
    fillGrid(getPositions());
-#else
-   PositionsGrid grid(cellSize*d, minBound, maxBound);
-   grid.create(getPositions());
-#endif
    SLOG << "RegularGrid created: " << std::endl;
 
    masterGeoPump(action->getWindow(), this);
@@ -1271,8 +1198,6 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
    return Action::Continue;
 }
 
-Real32 GeometryClustered::cellSize = 10.f;
-
 /*------------------------------------------------------------------------*/
 /*                              cvs id's                                  */
 
@@ -1286,7 +1211,7 @@ Real32 GeometryClustered::cellSize = 10.f;
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.2 2003/09/17 16:55:58 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 

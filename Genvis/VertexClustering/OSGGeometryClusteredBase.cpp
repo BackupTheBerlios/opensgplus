@@ -64,11 +64,27 @@
 
 OSG_USING_NAMESPACE
 
+const OSG::BitVector  GeometryClusteredBase::NumCellsFieldMask = 
+    (1 << GeometryClusteredBase::NumCellsFieldId);
+
 const OSG::BitVector GeometryClusteredBase::MTInfluenceMask = 
     (Inherited::MTInfluenceMask) | 
     (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
+// Field descriptions
 
+/*! \var Real32          GeometryClusteredBase::_sfNumCells
+    Number of regular grid cells along shortest axis.
+*/
+
+FieldDescription *GeometryClusteredBase::_desc[] = 
+{
+    new FieldDescription(SFReal32::getClassType(), 
+                     "number of cells", 
+                     NumCellsFieldId, NumCellsFieldMask,
+                     false,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFNumCells)
+};
 
 FieldContainerType GeometryClusteredBase::_type(
     "GeometryClustered",
@@ -76,8 +92,8 @@ FieldContainerType GeometryClusteredBase::_type(
     NULL,
     (PrototypeCreateF) &GeometryClusteredBase::createEmpty,
     GeometryClustered::initMethod,
-    NULL,
-    0);
+    _desc,
+    sizeof(_desc));
 
 //OSG_FIELD_CONTAINER_DEF(GeometryClusteredBase, GeometryClusteredPtr)
 
@@ -122,7 +138,8 @@ void GeometryClusteredBase::executeSync(      FieldContainer &other,
 #endif
 
 GeometryClusteredBase::GeometryClusteredBase(void) :
-    Inherited() 
+    _sfNumCells                   (Real32(10)), 
+    Inherited()
 {
 }
 
@@ -131,6 +148,7 @@ GeometryClusteredBase::GeometryClusteredBase(void) :
 #endif
 
 GeometryClusteredBase::GeometryClusteredBase(const GeometryClusteredBase &source) :
+    _sfNumCells               (source._sfNumCells), 
     Inherited                 (source)
 {
 }
@@ -147,6 +165,10 @@ UInt32 GeometryClusteredBase::getBinSize(const BitVector &whichField)
 {
     UInt32 returnValue = Inherited::getBinSize(whichField);
 
+    if(FieldBits::NoField != (NumCellsFieldMask & whichField))
+    {
+        returnValue += _sfNumCells.getBinSize();
+    }
 
     return returnValue;
 }
@@ -156,6 +178,10 @@ void GeometryClusteredBase::copyToBin(      BinaryDataHandler &pMem,
 {
     Inherited::copyToBin(pMem, whichField);
 
+    if(FieldBits::NoField != (NumCellsFieldMask & whichField))
+    {
+        _sfNumCells.copyToBin(pMem);
+    }
 
 }
 
@@ -164,6 +190,10 @@ void GeometryClusteredBase::copyFromBin(      BinaryDataHandler &pMem,
 {
     Inherited::copyFromBin(pMem, whichField);
 
+    if(FieldBits::NoField != (NumCellsFieldMask & whichField))
+    {
+        _sfNumCells.copyFromBin(pMem);
+    }
 
 }
 
@@ -173,6 +203,8 @@ void GeometryClusteredBase::executeSyncImpl(      GeometryClusteredBase *pOther,
 
     Inherited::executeSyncImpl(pOther, whichField);
 
+    if(FieldBits::NoField != (NumCellsFieldMask & whichField))
+        _sfNumCells.syncWith(pOther->_sfNumCells);
 
 }
 
@@ -201,7 +233,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.2 2003/09/17 16:55:59 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 
