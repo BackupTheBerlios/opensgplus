@@ -37,8 +37,8 @@
 \*---------------------------------------------------------------------------*/
 
 
-#ifndef _OSGCLUSTER_H_
-#define _OSGCLUSTER_H_
+#ifndef _OSGCLUSTERDEF_H_
+#define _OSGCLUSTERDEF_H_
 #ifdef __sgi
 #pragma once
 #endif
@@ -55,26 +55,26 @@
 
 #if defined(WIN32) && defined(OSG_BUILD_DLL)
 #   ifdef OSG_COMPILECLUTERLIB
-#       define OSG_CLUSTER_DLLMAPPING        __declspec(dllexport)
-#       define OSG_CLUSTER_DLLTMPLMAPPING    __declspec(dllexport)
+#       define OSG_CLUSTERLIB_DLLMAPPING        __declspec(dllexport)
+#       define OSG_CLUSTERLIB_DLLTMPLMAPPING    __declspec(dllexport)
 #       if defined(_MSC_VER) && defined(__ICL)
-#           define OSG_MS_CLUSTER_DLLMAPPING 
+#           define OSG_MS_CLUSTERLIB_DLLMAPPING 
 #       else
-#           define OSG_MS_CLUSTER_DLLMAPPING __declspec(dllexport)
+#           define OSG_MS_CLUSTERLIB_DLLMAPPING __declspec(dllexport)
 #       endif
 #   else
-#       define OSG_CLUSTER_DLLMAPPING        __declspec(dllimport)
-#       define OSG_CLUSTER_DLLTMPLMAPPING    __declspec(dllimport)
+#       define OSG_CLUSTERLIB_DLLMAPPING        __declspec(dllimport)
+#       define OSG_CLUSTERLIB_DLLTMPLMAPPING    __declspec(dllimport)
 #       if defined(_MSC_VER) && defined(__ICL)
-#           define OSG_MS_CLUSTER_DLLMAPPING 
+#           define OSG_MS_CLUSTERLIB_DLLMAPPING 
 #       else
-#           define OSG_MS_CLUSTER_DLLMAPPING __declspec(dllimport)
+#           define OSG_MS_CLUSTERLIB_DLLMAPPING __declspec(dllimport)
 #       endif
 #   endif
 #else
-#define OSG_CLUSTER_DLLMAPPING
-#define OSG_CLUSTER_DLLTMPLMAPPING
-#define OSG_MS_CLUSTER_DLLMAPPING
+#define OSG_CLUSTERLIB_DLLMAPPING
+#define OSG_CLUSTERLIB_DLLTMPLMAPPING
+#define OSG_MS_CLUSTERLIB_DLLMAPPING
 #endif
 
 #endif /* _OSGCLUSTER_H_ */
