@@ -77,7 +77,8 @@ make_files script. Just call make_files <your new directory name> or make_files
 3) Add it to the CVS repository
 
 You need write access to the repository. For Berlios and other SourceForge
-clones that means becoming a project developer.
+clones that means becoming a project developer. See the site docs for details
+on how to do that.
 
 Now add your new directory to the repository by going one directory higher in
 the hierarchy and calling "cvs add @newname@". Note that the details of the
@@ -87,10 +88,6 @@ import @newname@ initial release". This will include all the files and
 directories in the current directory into the CVS module @newname@, so make
 sure you only have the files you actually want to keep in the repository in the
 current directory.
-
-
-
-
 
 
 If you have any questions or problems, don't hesitate to send a mail to
