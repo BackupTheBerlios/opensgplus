@@ -120,6 +120,7 @@ class OSG_SOCKET_DLLMAPPING Address {
 
     int  getPort() const;
     std::string getHost() const;
+    std::string getHostByName() const;
 
     /*------------------------- your_operators ------------------------------*/
 

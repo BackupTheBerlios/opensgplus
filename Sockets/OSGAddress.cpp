@@ -169,6 +169,11 @@ void Address::setHost(const string &host)
 
 string Address::getHost() const
 {
+    return string(inet_ntoa(_sockaddr.sin_addr));
+}
+
+string Address::getHostByName() const
+{
     struct hostent *hent;
     string result;
 
