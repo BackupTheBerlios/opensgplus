@@ -87,14 +87,14 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     /*! \name      Window system implementation functions                  */
     /*! \{                                                                 */
 
-    virtual void    activate          ( void );
-    virtual void    deactivate        ( void );
-    virtual void    swap              ( void );
-    virtual void    init              ( void );
+    virtual void    activate          ( void                        );
+    virtual void    deactivate        ( void                        );
+    virtual void    swap              ( void                        );
+    virtual void    init              ( void                        );
     virtual void    render            ( RenderAction *action = NULL );
     virtual void    renderAllViewports( RenderAction *action = NULL );
-    virtual void    frameInit         ( void );
-    virtual void    frameExit         ( void );
+    virtual void    frameInit         ( void                        );
+    virtual void    frameExit         ( void                        );
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/

@@ -148,7 +148,7 @@ bool ConnectionType::operator != (const ConnectionType &other) const
 /*! get conneciton name
  */
 
-string ConnectionType::getName(void)
+string ConnectionType::getName(void) const
 {
     return _name;
 }
@@ -156,7 +156,7 @@ string ConnectionType::getName(void)
 /*! get conneciton create function
  */
 
-ConnectionType::CreateFunction ConnectionType::getCreateFunction(void)
+ConnectionType::CreateFunction ConnectionType::getCreateFunction(void) const
 {
     return _createFunction;
 }

@@ -373,6 +373,15 @@ void StreamSockConnection::selectChannel(void)
     return;
 }
 
+/** \brief Get type of connection
+ *
+ * \return ConnectionType pointer
+ **/
+const ConnectionType *StreamSockConnection::getType()
+{
+    return &_type;
+}
+
 /*-------------------------- create ---------------------------------------*/
 
 /** \brief create conneciton

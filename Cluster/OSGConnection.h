@@ -55,6 +55,8 @@
 
 OSG_BEGIN_NAMESPACE
 
+class ConnectionType;
+
 class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
 {
     /*==========================  PUBLIC  =================================*/
@@ -63,21 +65,22 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    Connection(int zeroCopyThreshold);
-    virtual ~Connection(void); 
+             Connection ( int zeroCopyThreshold );
+    virtual ~Connection ( void                  ); 
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Connection functionaliy                    */
     /*! \{                                                                 */
 
-    virtual string bind            ( const std::string &address )=0;
-    virtual void   accept          ( void )=0;
-    virtual void   connect         ( const std::string &address )=0;
-    virtual void   wait            ( void )=0;
-    virtual void   signal          ( void )=0;
-    virtual UInt32 getChannelCount ( void )=0;
-    virtual void   selectChannel   ( void )=0;
+    virtual string                bind            ( const string &address )=0;
+    virtual void                  accept          ( void                  )=0;
+    virtual void                  connect         ( const string &address )=0;
+    virtual void                  wait            ( void                  )=0;
+    virtual void                  signal          ( void                  )=0;
+    virtual UInt32                getChannelCount ( void                  )=0;
+    virtual void                  selectChannel   ( void                  )=0;
+    virtual const ConnectionType *getType         ( void                  )=0;
 
     /*! \}                                                                 */
 

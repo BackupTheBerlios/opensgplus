@@ -45,10 +45,9 @@
 #include <map>
 #include <OSGBaseTypes.h>
 #include <OSGClusterDef.h>
+#include <OSGConnectionType.h>
 
 OSG_BEGIN_NAMESPACE
-
-class ConnectionType;
 
 //! Brief
 //! \ingroup baselib

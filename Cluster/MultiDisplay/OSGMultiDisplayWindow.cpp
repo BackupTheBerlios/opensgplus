@@ -46,8 +46,11 @@
 #include <GL/gl.h>
 #include <OSGViewport.h>
 #include <OSGTileCameraDecorator.h>
+#include <OSGBaseFunctions.h>
+#include <OSGStereoBufferViewport.h>
 #include "OSGMultiDisplayWindow.h"
 #include "OSGConnection.h"
+
 
 OSG_USING_NAMESPACE
 
@@ -123,60 +126,6 @@ void MultiDisplayWindow::dump(      UInt32    ,
 void MultiDisplayWindow::serverInit( WindowPtr window,
                                      UInt32 id )
 {
-    ViewportPtr            svp,cvp;
-    TileCameraDecoratorPtr deco;
-    UInt32                 row,column;
-
-    if(window == NullFC)
-    {
-        SWARNING << "No Server window" << endl;
-        return;
-    }
-    if(getPort().size()==0)
-    {
-        SWARNING << "Cluster window has no viewport" << endl;
-        return;
-    }
-    if(id >= (getHServers()*getVServers()))
-    {
-        SWARNING << "Server outside of the server grid " 
-                 << getHServers() << " x " 
-                 << getVServers()
-                 << endl;
-        return;
-    }
-
-    // position of this server
-    row   =id/getHServers();
-    column=id%getHServers();
-    
-    // get cluster viewport. Currently there is only one viewport
-    // fore each window allowed!
-    cvp=getPort()[0];
-
-    // create camera decorator
-    deco = TileCameraDecorator::create();
-    beginEditCP(deco);
-    deco->setDecoratee( cvp->getCamera() );
-    deco->setSize( 1.0/getHServers() * column,
-                   1.0/getVServers() * row,
-                   1.0/getHServers() * (column+1),
-                   1.0/getVServers() * (row   +1) );
-    deco->setFullWidth ( window->getWidth() * getHServers() );
-    deco->setFullHeight( window->getHeight() * getVServers() );
-    endEditCP(deco);
-
-    // create new server viewport
-    svp = Viewport::create();
-    beginEditCP(svp);
-    svp->setCamera    ( deco );
-    svp->setBackground( cvp->getBackground() );
-    svp->setRoot      ( cvp->getRoot() );
-    svp->setSize      ( 0,0, 1,1 );
-    beginEditCP(window);
-    window->addPort(svp);
-    endEditCP(window);
-    endEditCP(svp);
 }
 
 /*! render server window
@@ -188,28 +137,88 @@ void MultiDisplayWindow::serverInit( WindowPtr window,
  *  !param action     action
  */
 
-void MultiDisplayWindow::serverRender( WindowPtr window,
+void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
                                        UInt32 id,
                                        RenderAction *action )
 {
-    ViewportPtr            svp;
     TileCameraDecoratorPtr deco;
-    
-    // adjust window size
-    if(getPort().size()>0)
+    ViewportPtr serverPort;
+    ViewportPtr clientPort;
+    UInt32 sv,cv;
+    Int32 l,r,t,b;
+
+    UInt32 row   =id/getHServers();
+    UInt32 column=id%getHServers();
+    UInt32 width  = getWidth()  / getHServers();
+    UInt32 height = getHeight() / getVServers();
+    Int32 left   = column * width;
+    Int32 bottom = row    * height;
+    Int32 right  = left   + width  - 1;
+    Int32 top    = bottom + height - 1;
+
+    cout << width << " " << height << endl;
+
+    // duplicate viewports
+    for(cv=0,sv=0;cv<getPort().size();cv++)
     {
-        ViewportPtr vp=window->getPort()[0];
-        TileCameraDecoratorPtr deco=
-            TileCameraDecoratorPtr::dcast(vp->getCamera());
-        if(deco != NullFC)
+        clientPort = getPort()[cv];
+        if(clientPort->getPixelRight()  < left   ||
+           clientPort->getPixelLeft()   > right  ||
+           clientPort->getPixelTop()    < bottom ||
+           clientPort->getPixelBottom() > top      )
         {
-            beginEditCP(deco);
-            deco->setFullWidth ( window->getWidth() * getHServers() );
-            deco->setFullHeight( window->getHeight() * getVServers() );
-            endEditCP(deco);
+            // invisible on this server screen
+            cout << "invisible" << endl;
+            continue;
         }
+        // calculate overlapping viewport
+        l = osgMax(clientPort->getPixelLeft()  ,left  ) - left;
+        b = osgMax(clientPort->getPixelBottom(),bottom) - bottom;
+        r = osgMin(clientPort->getPixelRight() ,right ) - left;
+        t = osgMin(clientPort->getPixelTop()   ,top   ) - bottom;
+        cout << l << " " << r << " " << b << " " << t << endl;
+        if(serverWindow->getPort().size() <= sv)
+        {
+            cout << "create port" << endl;
+            serverPort = StereoBufferViewport::create();
+            deco=TileCameraDecorator::create();
+            beginEditCP(serverWindow);
+            serverWindow->addPort(serverPort);
+            serverPort->setCamera(deco);
+            endEditCP(serverWindow);
+        }
+        else
+        {
+            cout << "change port" << endl;
+            serverPort = serverWindow->getPort()[sv];
+            deco=TileCameraDecoratorPtr::dcast(serverPort->getCamera());
+        }
+        // duplicate values
+        beginEditCP(serverPort);
+        serverPort->setSize(l,b,r,t);
+        serverPort->setRoot      ( clientPort->getRoot()       );
+        serverPort->setBackground( clientPort->getBackground() );
+        serverPort->getMFForegrounds()->setValues( clientPort->getForegrounds() );
+        endEditCP(serverPort);
+        // calculate tile parameters
+        beginEditCP(deco);
+        deco->setFullWidth ( getWidth () );
+        deco->setFullHeight( getHeight() );
+        deco->setSize( 1.0/getHServers() * column,
+                       1.0/getVServers() * row,
+                       1.0/getHServers() * (column+1),
+                       1.0/getVServers() * (row   +1) );
+        deco->setDecoratee( clientPort->getCamera() );
+        endEditCP(deco);
+        sv++;
     }
-    Inherited::serverRender(window,id,action);
+    // remove unused ports
+    while(serverWindow->getPort().size()>sv)
+    {
+        cout << "remove port" << endl;
+        serverWindow->subPort(sv);
+    }
+    Inherited::serverRender(serverWindow,id,action);
 }
 
 /*! swap server window

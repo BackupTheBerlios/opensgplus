@@ -87,13 +87,14 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \name                   Communication                              */
     /*! \{                                                                 */
 
-    virtual string bind            ( const string &address );
-    virtual void   accept          ( void );
-    virtual void   connect         ( const string &address );
-    virtual void   wait            ( void );
-    virtual void   signal          ( void );
-    virtual UInt32 getChannelCount ( void );
-    virtual void   selectChannel   ( void );
+    string                bind            ( const string &address );
+    void                  accept          ( void                  );
+    void                  connect         ( const string &address );
+    void                  wait            ( void                  );
+    void                  signal          ( void                  );
+    UInt32                getChannelCount ( void                  );
+    void                  selectChannel   ( void                  );
+    const ConnectionType *getType         ( void                  );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

@@ -99,19 +99,6 @@ RemoteAspect::RemoteAspect():
     = Geometry::GLIdFieldMask;
     _fieldFilter[TextureChunk::getClassType().getId()] 
     = TextureChunk::GLIdFieldMask;
-    _fieldFilter[Window::getClassType().getId()] 
-    = Window::GlObjectStatusFieldMask;
-
-    type=FieldContainerFactory::the()->findType("GLUTWindow");
-    if(type)
-    {
-        _fieldFilter[type->getId()] = Window::GlObjectStatusFieldMask;
-    }
-    type=FieldContainerFactory::the()->findType("QTWindow");
-    if(type)
-    {
-        _fieldFilter[type->getId()] = Window::GlObjectStatusFieldMask;
-    }
 }
 
 /** \brief Destructor

@@ -199,6 +199,7 @@ void ClusterWindow::init( void )
                 {
                     msg.clear();
                     msg.putString(*s);
+                    msg.putString(getConnectionType());
                     serviceSock.sendTo(msg,BroadcastAddress(getServicePort()));
                 }
                 while(serviceSock.waitReadable(2)==false);

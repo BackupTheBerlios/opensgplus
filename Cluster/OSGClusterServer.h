@@ -106,7 +106,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    bool configChanged(FieldContainerPtr& fcp,
+    bool windowChanged(FieldContainerPtr& fcp,
                        RemoteAspect *);
 
     /*! \}                                                                 */
@@ -121,9 +121,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     RemoteAspect     _aspect;
     string           _serviceName;
     UInt32           _servicePort;
-    Thread          *_serviceThread;
+    bool             _serviceAvailable;
     UInt32           _serverId;
-    bool             _needUpdate; 
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/

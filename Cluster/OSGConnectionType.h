@@ -81,8 +81,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ConnectionType
     /*! \name                      Get                                     */
     /*! \{                                                                 */
 
-    string         getName          (void);
-    CreateFunction getCreateFunction(void);
+    string         getName          (void) const;
+    CreateFunction getCreateFunction(void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

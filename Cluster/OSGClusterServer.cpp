@@ -109,10 +109,9 @@ ClusterServer::ClusterServer(WindowPtr window,
     _clusterWindow(),
     _serviceName(serviceName),
     _servicePort(servicePort),
+    _serviceAvailable(false),
     _serverId(0),
-    _address(address),
-    _serviceThread(NULL),
-    _needUpdate(false)
+    _address(address)
 {
     _connection = ConnectionFactory::the().create(connectionType);
     if(_connection == NULL)
@@ -130,18 +129,6 @@ ClusterServer::ClusterServer(WindowPtr window,
  */
 ClusterServer::~ClusterServer(void)
 {
-    if(_serviceThread)
-    {
-        DgramSocket      s;
-        BinSocketMessage msg;
-        msg.clear();
-        msg.putString("stop");
-        msg.putString(_serviceName);
-        s.open();
-        s.sendTo(msg,BroadcastAddress(_servicePort));
-        Thread::join(_serviceThread);
-        s.close();
-    }
     if(_connection)
         delete _connection;
 }
@@ -157,14 +144,16 @@ ClusterServer::~ClusterServer(void)
  */
 void ClusterServer::init()
 {
+    Thread                  *serviceThread;
     OSG::FieldContainerType *fct;
 
     // bind connection
     _address = _connection->bind(_address);
 
     // start service proc
-    _serviceThread=dynamic_cast<Thread*>(ThreadManager::the()->getThread(NULL));
-    _serviceThread->run( serviceProc, 0, (void *) (this) );
+    _serviceAvailable=true;
+    serviceThread=dynamic_cast<Thread*>(ThreadManager::the()->getThread(NULL));
+    serviceThread->run( serviceProc, 0, (void *) (this) );
 
     // register interrest for all changed cluster windows
     for(UInt32 i=0;i<OSG::TypeFactory::the()->getNumTypes();++i)
@@ -180,15 +169,19 @@ void ClusterServer::init()
                 ClusterServer,
                 FieldContainerPtr,
                 RemoteAspect     *
-                >(this,&ClusterServer::configChanged));
-/*
-                osgMethodFunctor2Ptr(this,
-                                     &ClusterServer::configChanged));
-*/
+                >(this,&ClusterServer::windowChanged));
         }
     }
     // accept incomming connections
-    _connection->accept();
+    try {
+        _connection->accept();
+        _serviceAvailable=false;
+        Thread::join(serviceThread);
+    } catch(...)
+    {
+        _serviceAvailable=false;
+        throw;
+    }
 }
 
 /*! render server window
@@ -236,26 +229,24 @@ void ClusterServer::render(RenderAction *action)
     _clusterWindow->serverSwap  ( _window,_serverId );
 }
 
-/*! configuration chagne callback
+/*! clusterWindow changed callback
  *
  * this is a callback functor. It is called for each change of 
  * a ClusterWindow.
  */
 
-bool ClusterServer::configChanged(FieldContainerPtr& fcp,
+bool ClusterServer::windowChanged(FieldContainerPtr& fcp,
                                   RemoteAspect *)
 {
     MFString::iterator i;
-    ClusterWindowPtr config=ClusterWindowPtr::dcast(fcp);
+    ClusterWindowPtr window=ClusterWindowPtr::dcast(fcp);
 
-    i=config->getServers().find(_serviceName);
-    if(i==config->getServers().end())
+    if(window->getServers().find(_serviceName) == window->getServers().end())
     {
-        SWARNING << "wrong config" << endl;
+        SWARNING << "wrong window" << endl;
         return true;
     }
-    _needUpdate=true;
-    _clusterWindow=config;
+    _clusterWindow=window;
     return true;
 }
 
@@ -264,6 +255,14 @@ bool ClusterServer::configChanged(FieldContainerPtr& fcp,
  * serviceProc is a static class function that is processed in a
  * seperate thread. It tells all requesting clients on which
  * network address this server is waiting for connecitons.
+ *
+ * We do this in a thread because not all network types are
+ * able to set a timeout for accept. The service thread tells
+ * clients the address on wich the accept is expected.
+ * After a successful connection the service thread will be
+ * termnated.
+ *
+ * \param arg   Pointer to the ClusterServer
  */
 
 void *ClusterServer::serviceProc(void *arg)
@@ -273,6 +272,7 @@ void *ClusterServer::serviceProc(void *arg)
     DgramSocket      serviceSock;
     Address          addr;
     string           service;
+    string           connectionType;
 
     SINFO << "Waiting for request of " << server->_serviceName << endl;
     serviceSock.open();
@@ -282,16 +282,17 @@ void *ClusterServer::serviceProc(void *arg)
     {        
         try
         {
-            serviceSock.recvFrom(msg,addr);
-            service=msg.getString();
-            SINFO << "Request for " << service << endl;
-            if(service=="stop")
+            if(!serviceSock.waitReadable(.1))
             {
-                service=msg.getString();
-                if(service == server->_serviceName)
-                    return NULL;
+                if(server->_serviceAvailable==false)
+                    break;
             }
-            if(service == server->_serviceName)
+            serviceSock.recvFrom(msg,addr);
+            service       =msg.getString();
+            connectionType=msg.getString();
+            SINFO << "Request for " << service << endl;
+            if(service        == server->_serviceName &&
+               connectionType == server->_connection->getType()->getName())
             {
                 msg.clear();
                 msg.putString(service);
@@ -305,6 +306,9 @@ void *ClusterServer::serviceProc(void *arg)
             SLOG << e.what() << endl;
         }
     }
+    serviceSock.close();
+    SINFO << "Stop service thread" << endl;
+    return NULL;
 }
 
 

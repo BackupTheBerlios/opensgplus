@@ -93,13 +93,14 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    string bind            ( const string &address );
-    void   accept          ( void );
-    void   connect         ( const string &address );
-    void   wait            ( void );
-    void   signal          ( void );
-    UInt32 getChannelCount ( void );
-    void   selectChannel   ( void );
+    string                bind            ( const string &address );
+    void                  accept          ( void                  );
+    void                  connect         ( const string &address );
+    void                  wait            ( void                  );
+    void                  signal          ( void                  );
+    UInt32                getChannelCount ( void                  );
+    void                  selectChannel   ( void                  );
+    const ConnectionType *getType         ( void                  );
 
     void   printStatistics( void );
     void   clearStatistics( void );

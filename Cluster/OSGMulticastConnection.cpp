@@ -362,22 +362,12 @@ void MulticastConnection::wait(void)
 {
     UInt32 tag;
 
+    // send ready flag
+    putUInt32(0);
+    flush();
     // read sync tag;
     selectChannel();
     getUInt32(tag);
-/*
-    Selection selection;
-    UDPHeader sync;
-
-    selection.setRead(_socket);
-    if(selection.select(_maxWaitForSync)<=0)
-    {
-        SINFO << "Sync timeout" << endl;
-        return;
-    }
-    cout << "d" << endl;
-    _socket.recv(&sync,sizeof(sync));
-*/
 }
 
 /** send sync
@@ -385,20 +375,17 @@ void MulticastConnection::wait(void)
  **/
 void MulticastConnection::signal(void)
 {
-    // write sync tag
+    UInt32 tag;
+    // wait for all 
+    for(UInt32 i=0;i<getChannelCount();i++)
+    {
+        // read sync tag;
+        selectChannel();
+        getUInt32(tag);
+    }
+    // send signal
     putUInt32(0);
     flush();
-/*
-    UDPHeader sync;
-
-    // write some sync packages
-    sync.seqNumber=0;
-    sync.type     =SYNC;
-
-    // send sync tag
-    _socket.sendTo(&sync,sizeof(sync),_destination);
-    cout << "send sznc" << endl;
-*/
 }
 
 /** get number of links
@@ -450,6 +437,15 @@ void MulticastConnection::selectChannel()
         }
         _inSocket.recv(&header,sizeof(header));
     }
+}
+
+/** \brief Get type of connection
+ *
+ * \return ConnectionType pointer
+ **/
+const ConnectionType *MulticastConnection::getType()
+{
+    return &_type;
 }
 
 /** \brief Print statistic information
