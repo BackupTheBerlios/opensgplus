@@ -70,7 +70,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.12 2002/05/05 11:19:27 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.13 2002/05/07 07:27:28 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -270,6 +270,9 @@ void GeoLoadManager::addRenderNode(const RenderNode &rn,UInt32 id)
     _renderNode[id]=rn;
 }
 
+/** Draw recangular volume projection
+ * 
+ **/
 void GeoLoadManager::drawVolumes(WindowPtr win)
 {
     glPushMatrix();
@@ -284,13 +287,16 @@ void GeoLoadManager::drawVolumes(WindowPtr win)
     glEnable(GL_COLOR_MATERIAL);
     for(GeoLoadLstT::iterator l=_geoLoad.begin() ; l!=_geoLoad.end() ; ++l)
     {
-        glBegin(GL_LINE_LOOP);
-        glColor3f(0, 1, 0);
-        glVertex3f(l->getMin()[0],l->getMin()[1],0);
-        glVertex3f(l->getMax()[0],l->getMin()[1],0);
-        glVertex3f(l->getMax()[0],l->getMax()[1],0);
-        glVertex3f(l->getMin()[0],l->getMax()[1],0);
-        glEnd();
+        if(l->isVisible())
+        {
+            glBegin(GL_LINE_LOOP);
+            glColor3f(0, 1, 0);
+            glVertex3f(l->getMin()[0],l->getMin()[1],0);
+            glVertex3f(l->getMax()[0],l->getMin()[1],0);
+            glVertex3f(l->getMax()[0],l->getMax()[1],0);
+            glVertex3f(l->getMin()[0],l->getMax()[1],0);
+            glEnd();
+        }
     }
     glDisable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
