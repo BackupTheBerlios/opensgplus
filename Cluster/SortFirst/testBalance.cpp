@@ -23,8 +23,10 @@ char           *dumpImage="balance";
 int             dumpImageNr=0;
 bool            useFaceDistribution=false;
 bool            viewVolume=false;
-bool            simulateRendering=true;
+bool            simulateRendering=false;
 int             serverCount=10;
+int             loop=0;
+bool            cache;
 
 class MySceneManager:public SimpleSceneManager
 {
@@ -32,7 +34,10 @@ public:
     MySceneManager(){}
     virtual void redraw( void ) {
         static bool first=true;
+        static RenderNode rn;
+
         int i;
+        double tbalance;
         GeoLoadManager::ResultT region;
         if (_internalRoot == NullFC)
         {
@@ -46,14 +51,18 @@ public:
         if(first)
         {
             loadManager=new GeoLoadManager(useFaceDistribution);
-            RenderNode rn;
+            first=false;
             rn.determinePerformance(_win);
+        }
+        if(_win->getPort().size() < (serverCount+1))
+        {
             ViewportPtr vp,ovp=_win->getPort(0);
             addRefCP(ovp);
             addRefCP(ovp);
             TileCameraDecoratorPtr deco;
-            for(int i=0;i<serverCount;i++)
+            for(int i=_win->getPort().size()-1;i<serverCount;i++)
             {
+                cout << "Add new" << endl;
                 loadManager->addRenderNode(rn,i);
                 if(simulateRendering)
                 {
@@ -67,6 +76,7 @@ public:
                     beginEditCP(vp);
                     vp->setRoot      ( ovp->getRoot()       );
 
+                    /*
                     SkyBackgroundPtr sky = SkyBackground::create();
                     beginEditCP(sky);
                     sky->setSphereRes(16);
@@ -80,11 +90,10 @@ public:
                     sky->getMFGroundColor()->addValue(Color3f(1, .3, 0));
 
                     endEditCP(sky);
-
                     vp->setBackground( sky );
+                    */
 
-
-//                    vp->setBackground( ovp->getBackground() );
+                    vp->setBackground( ovp->getBackground() );
                     vp->getMFForegrounds()->setValues( ovp->getForegrounds() );
                     vp->setCamera(deco);
                     _win->addPort(vp);
@@ -93,16 +102,32 @@ public:
                     endEditCP(deco);
                 }
             }
-            first=false;
         }
+        tbalance = -getSystemTime();
         loadManager->update(_win->getPort()[0]->getRoot());
         loadManager->balance(_win->getPort()[0],false,region);
+        tbalance += getSystemTime();
         if(simulateRendering)
         {
             ViewportPtr vp;
             TileCameraDecoratorPtr deco;
             for(i=0;i<region.size();i+=4)
             {
+#if 1
+                cout << "Region: " << i << " ";
+                cout << region[i+0] << " ";
+                cout << region[i+1] << " ";
+                cout << region[i+2] << " ";
+                cout << region[i+3] << endl;
+                if(region[i+0] >= region[i+2]) {
+                    cout << "!!!" << endl;
+                    region[i+2]++;
+                }
+                if(region[i+1] >= region[i+3]) {
+                    cout << "!!!" << endl;
+                    region[i+3]++;
+                }
+#endif
                 vp=_win->getPort()[i/4+1];
                 deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
                 beginEditCP(deco);
@@ -119,7 +144,7 @@ public:
                 endEditCP(vp);
             }
         }
-        Time t;
+        Time t,tmin,tmax;
         for(i=0;i<_win->getPort().size();++i)
         {
             t=-getSystemTime();
@@ -127,8 +152,23 @@ public:
             _win->getPort(i)->render( _action );
             glFlush();
             t+=getSystemTime();
-            printf("FrameTime %5d %10.6f\n",i,t);
+            if(i==0)
+                continue;
+            if(i==1)
+            {
+                tmin=tmax=t;
+            }
+            else
+            {
+                if(t<tmin) tmin=t;
+                if(t>tmax) tmax=t;
+            }
         }
+        if(!cache)
+            printf("speed %5d %10.6f %10.6f %10.6f\n",_win->getPort().size()-1,
+                   tmin,
+                   tmax,
+                   tbalance);
         glPushAttrib(GL_ALL_ATTRIB_BITS);
         glDisable(GL_SCISSOR_TEST);
         glViewport(0,0,
@@ -204,7 +244,18 @@ NodePtr             scene;
 // Standard GLUT callback functions
 void display( void )
 {
+    cache=true;
     mgr->redraw();
+    cache=false;
+    mgr->redraw();
+    if(loop)
+    {
+        SLOG << loop << endl;
+        loop--;
+        serverCount++;
+        if(!loop)
+            exit(0);
+    }
 }
 
 void reshape( int w, int h )
@@ -300,6 +351,12 @@ int main (int argc, char **argv)
                 case 's':
                     serverCount=atoi(&argv[i][2]);
                     break;
+                case 'l':
+                    loop=atoi(&argv[i][2]);
+                    break;
+                case 'S':
+                    simulateRendering=true;
+                    break;
             }
         }
         else
@@ -339,7 +396,7 @@ int main (int argc, char **argv)
             cc=cb;
         if(file == NullFC)
         {
-            GeometryPtr geo=makeBoxGeo(.6,.6,.6,5,5,5);
+            GeometryPtr geo=makeBoxGeo(.6,.6,.6,20,20,20);
             beginEditCP(geo);
             SimpleMaterialPtr mat=SimpleMaterial::create();
             beginEditCP(mat);
@@ -395,7 +452,10 @@ int main (int argc, char **argv)
     mgr->showAll();
 
     // GLUT main loop
-    glutReshapeWindow(720,576);
+    if(loop)
+        glutIdleFunc(display);
+//    glutReshapeWindow(720,576);
+    glutReshapeWindow(1152,864);
     glutMainLoop();
 
     return 0;
