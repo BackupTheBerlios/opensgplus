@@ -27,6 +27,8 @@ MyPolyMesh* omesh = NULL;
 
 OpenMesh::EPropHandleT<Int32> isCrease;
 
+int unidepth = 3;
+
 
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
@@ -71,6 +73,7 @@ int main(int argc, char **argv)
       omesh->property(isCrease,eIt.handle()) = 0;
       // box.obj -> can
       //if (g==4 || g==6 || g==8 || g==10 || g==11 || g==9 || g==1 || g==3) omesh->property(isCrease,eIt.handle()) = 1;      
+      //if (g==0) omesh->property(isCrease,eIt.handle()) = 1;      
       g++;
        
       // mark border of mesh as crease
@@ -85,6 +88,7 @@ int main(int argc, char **argv)
    beginEditCP(subdivCore);
    subdivCore->setMaxDepth(maxdepth);
    subdivCore->setMesh(omesh);  
+   //subdivCore->setAutoUpdate(true); // default 
    endEditCP(subdivCore);
     
    NodePtr scene = Node::create();
@@ -132,7 +136,6 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
-   subdivCore->prepareFrame(mgr->getWindow()->getPort(0));
    mgr->redraw();
 }
 
@@ -171,6 +174,18 @@ void keyboard(unsigned char k, int x, int y)
    case 's': // solid
      glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
      break;
+   case '+': unidepth++;
+      beginEditCP(subdivCore);
+      subdivCore->setMaxDepth(unidepth);
+      subdivCore->setMinDepth(unidepth);
+      endEditCP(subdivCore);
+      break;
+   case '-': unidepth--;
+      beginEditCP(subdivCore);
+      subdivCore->setMaxDepth(unidepth);
+      subdivCore->setMinDepth(unidepth);
+      endEditCP(subdivCore);
+      break;
    case 27:
      osgExit();
      exit(1);    

@@ -86,6 +86,7 @@ int main(int argc, char **argv)
    subdivCore->setMaxDepth(maxdepth);  
    subdivCore->setMesh(omesh);  
    subdivCore->setBackfaceCulling(true);  
+   //subdivCore->setAutoUpdate(true); // default 
    endEditCP(subdivCore);
     
    NodePtr scene = Node::create();
@@ -133,7 +134,6 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
-   subdivCore->prepareFrame(mgr->getWindow()->getPort(0));
    mgr->redraw();
 }
 
