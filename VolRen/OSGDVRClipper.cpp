@@ -126,23 +126,23 @@ void DVRClipper::initialize(DVRVolume *volume)
         // registering callback functions for glu tesselator...
         gluTessCallback(myTess, 
                         GLU_TESS_COMBINE_DATA, 
-                        (GLvoid (*)()) vertexCombineCallback);
+                        (GLvoid (CALLBACK *)()) vertexCombineCallback);
 
         gluTessCallback(myTess, 
                         GLU_TESS_VERTEX_DATA, 
-                        (GLvoid (*)()) vertexCallback);
+                        (GLvoid (CALLBACK *)()) vertexCallback);
 
         gluTessCallback(myTess, 
                         GLU_TESS_BEGIN_DATA,
-                        (GLvoid (*)()) beginCallback);
+                        (GLvoid (CALLBACK *)()) beginCallback);
 
         gluTessCallback(myTess, 
                         GLU_TESS_END_DATA, 
-                        (GLvoid (*)()) endCallback);
+                        (GLvoid (CALLBACK *)()) endCallback);
 
         gluTessCallback(myTess, 
                         GLU_TESS_ERROR, 
-                        (GLvoid (*)()) errorCallback);
+                        (GLvoid (CALLBACK *)()) errorCallback);
     
     }
   

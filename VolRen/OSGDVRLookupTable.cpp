@@ -42,7 +42,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <iomanip.h>
+#include <iomanip>
 
 #include <OSGConfig.h>
 
@@ -505,7 +505,7 @@ void DVRLookupTable::commonConstructor(void)
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.4 2004/01/19 12:06:22 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRLOOKUPTABLE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRLOOKUPTABLE_INLINE_CVSID;
 }

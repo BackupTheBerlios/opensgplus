@@ -274,9 +274,12 @@ void DVRMtexLUTShader::cleanup(DVRVolume *volume, DrawActionBase */*action*/)
 }
 
 
-typedef void (*CombinerParameterfvNVFunc)(GLenum, const GLfloat *);
+typedef void (OSG_APIENTRY *CombinerParameterfvNVFunc)(      GLenum, 
+                                                       const GLfloat *);
 
-typedef void (*MultiTexCoord2dARBFunc   )(GLenum, GLdouble, GLdouble);
+typedef void (OSG_APIENTRY *MultiTexCoord2dARBFunc   )(      GLenum, 
+                                                             GLdouble, 
+                                                             GLdouble);
 
 //! callback for rendering slices
 void DVRMtexLUTShader::renderSlice(DVRVolume      *volume, 
@@ -518,28 +521,28 @@ void DVRMtexLUTShader::renderSlice(DVRVolume      *volume,
 
 #if defined(GL_ARB_multitexture) && defined(GL_NV_register_combiners)
 
-typedef void (*CombinerParameteriNVFunc)(      GLenum, 
-                                         const GLint    );
-typedef void (*CombinerInputNVFunc     )(      GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum   );
-typedef void (*CombinerOutputNVFunc    ) (     GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLboolean, 
-                                               GLboolean, 
-                                               GLboolean);
-typedef void (*FinalCombinerInputNVFunc)(      GLenum, 
-                                               GLenum, 
-                                               GLenum, 
-                                               GLenum   );
+typedef void (OSG_APIENTRY *CombinerParameteriNVFunc)(      GLenum, 
+                                                      const GLint    );
+typedef void (OSG_APIENTRY *CombinerInputNVFunc     )(      GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum   );
+typedef void (OSG_APIENTRY *CombinerOutputNVFunc    ) (     GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLboolean, 
+                                                            GLboolean, 
+                                                            GLboolean);
+typedef void (OSG_APIENTRY *FinalCombinerInputNVFunc)(      GLenum, 
+                                                            GLenum, 
+                                                            GLenum, 
+                                                            GLenum   );
 
 //! set up correct register combiner state
 void DVRMtexLUTShader::initCombiners(DrawActionBase *action)
@@ -738,7 +741,7 @@ UInt32 DVRMtexLUTShader::_funcFinalCombinerInputNV  =
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.4 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.5 2004/01/19 12:06:22 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRMTEXLUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRMTEXLUTSHADER_INLINE_CVSID;
 }

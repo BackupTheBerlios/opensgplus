@@ -18,40 +18,40 @@
 
 OSG_USING_NAMESPACE
 
-typedef void (*CombinerParameteriNVFunc      )(      GLenum, 
-                                               const GLint    );
-typedef void (*CombinerInputNVFunc           )(      GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum   );
-typedef void (*CombinerOutputNVFunc          )(      GLenum,
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLboolean, 
-                                                     GLboolean, 
-                                                     GLboolean);
-typedef void (*FinalCombinerInputNVFunc      )(      GLenum, 
-                                                     GLenum, 
-                                                     GLenum, 
-                                                     GLenum);
+typedef void (OSG_APIENTRY *CombinerParameteriNVFunc      )(      GLenum, 
+                                                            const GLint    );
+typedef void (OSG_APIENTRY *CombinerInputNVFunc           )(      GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum   );
+typedef void (OSG_APIENTRY *CombinerOutputNVFunc          )(      GLenum,
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLboolean, 
+                                                                  GLboolean, 
+                                                                  GLboolean);
+typedef void (OSG_APIENTRY *FinalCombinerInputNVFunc      )(      GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum, 
+                                                                  GLenum);
 
-typedef void (*CombinerParameterfvNVFunc     )(      GLenum, 
-                                                     GLfloat *);
-typedef void (*SecondaryColor3fvEXTFunc      )(      GLfloat *);
-typedef void (*CombinerStageParameterfvNVFunc)(      GLenum, 
-                                                     GLenum, 
-                                                     GLfloat *);
+typedef void (OSG_APIENTRY *CombinerParameterfvNVFunc     )(      GLenum, 
+                                                                  GLfloat *);
+typedef void (OSG_APIENTRY *SecondaryColor3fvEXTFunc      )(      GLfloat *);
+typedef void (OSG_APIENTRY *CombinerStageParameterfvNVFunc)(      GLenum, 
+                                                                  GLenum, 
+                                                                  GLfloat *);
 
-typedef void (*ActiveTextureARBFunc          )(      GLenum   );
-typedef void (*MultiTexCoord2dARBFunc        )(      GLenum, 
-                                                     GLdouble, 
-                                                     GLdouble ); 
+typedef void (OSG_APIENTRY *ActiveTextureARBFunc          )(      GLenum   );
+typedef void (OSG_APIENTRY *MultiTexCoord2dARBFunc        )(      GLenum, 
+                                                                  GLdouble, 
+                                                                  GLdouble ); 
 
 
 

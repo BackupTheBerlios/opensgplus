@@ -104,7 +104,7 @@ DVRSimpleLUTShader::~DVRSimpleLUTShader(void)
 
 //! returns texture formate for selected lookup table mode
 
-void DVRSimpleLUTShader::getPaletteFormat(DrawActionBase */*action*/,
+void DVRSimpleLUTShader::getPaletteFormat(DrawActionBase * /*action*/,
                                           UInt8           mode,
                                           GLenum         &internalFormat,
                                           GLenum         &externalFormat)
@@ -149,7 +149,6 @@ void DVRSimpleLUTShader::getPaletteFormat(DrawActionBase */*action*/,
 //! Automatically select a lookup table mode
 UInt8 DVRSimpleLUTShader::selectMode(DrawActionBase *action, Int8 textureMode)
 {
-    
     if(isModeSupported( action, LM_TABLE_SGI, textureMode ))
     {
         FDEBUG(("Using SGI postshading palette....\n"));
@@ -325,12 +324,26 @@ void DVRSimpleLUTShader::destroyDependentTexture(void)
 
 //! register combiners setup for opacity correction
 
-typedef void (*FinalCombinerInputNVFunc)(GLenum,    GLenum,    GLenum, GLenum);
-typedef void (*CombinerInputNVFunc     )(GLenum,    GLenum,    GLenum, GLenum, 
-                                         GLenum,    GLenum);
-typedef void (*CombinerOutputNVFunc    )(GLenum,    GLenum,    GLenum, GLenum, 
-                                         GLenum,    GLenum,    GLenum, 
-                                         GLboolean, GLboolean, GLboolean);
+typedef void (OSG_APIENTRY *FinalCombinerInputNVFunc)(GLenum,    
+                                                      GLenum,    
+                                                      GLenum, 
+                                                      GLenum);
+typedef void (OSG_APIENTRY *CombinerInputNVFunc     )(GLenum,    
+                                                      GLenum,    
+                                                      GLenum, 
+                                                      GLenum, 
+                                                      GLenum,    
+                                                      GLenum);
+typedef void (OSG_APIENTRY *CombinerOutputNVFunc    )(GLenum,    
+                                                      GLenum,    
+                                                      GLenum, 
+                                                      GLenum, 
+                                                      GLenum,    
+                                                      GLenum,    
+                                                      GLenum, 
+                                                      GLboolean, 
+                                                      GLboolean, 
+                                                      GLboolean);
 
 void DVRSimpleLUTShader::setupAlphaCorrectionRegisterCombiners(
     DrawActionBase *action)
@@ -618,13 +631,21 @@ bool DVRSimpleLUTShader::initialize(DVRVolume *volume, DrawActionBase *action)
     }                                                                    \
 }
 
-typedef void (*ActiveTextureARBFunc)(GLenum);
+typedef void (OSG_APIENTRY *ActiveTextureARBFunc)(      GLenum);
 
-typedef void (*ColorTableSGIFunc   )(GLenum, GLenum,       GLsizei, 
-                                     GLenum, GLenum, const GLvoid *);
+typedef void (OSG_APIENTRY *ColorTableSGIFunc   )(      GLenum, 
+                                                        GLenum,       
+                                                        GLsizei, 
+                                                        GLenum, 
+                                                        GLenum, 
+                                                  const GLvoid *);
 
-typedef void (*ColorTableEXTFunc    )(GLenum, GLenum,       GLsizei, 
-                                     GLenum, GLenum, const GLvoid *);
+typedef void (OSG_APIENTRY *ColorTableEXTFunc    )(      GLenum, 
+                                                         GLenum,       
+                                                         GLsizei, 
+                                                         GLenum, 
+                                                         GLenum, 
+                                                   const GLvoid *);
 
 //! Callback before any slice is rendered - setup per volume
 void DVRSimpleLUTShader::activate(DVRVolume *volume, DrawActionBase *action)
@@ -1203,7 +1224,7 @@ UInt32 DVRSimpleLUTShader::_funcCombinerOutputNV     =
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.4 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.5 2004/01/19 12:06:22 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRSIMPLELUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRSIMPLELUTSHADER_INLINE_CVSID;
 }

@@ -6,6 +6,7 @@
 #endif
 
 #include <OSGConfig.h>
+#include <OSGVolRenDef.h>
 #include <OSGBase.h>
 
 #include <OSGBaseTypes.h>
@@ -21,29 +22,6 @@ OSG_BEGIN_NAMESPACE
  */
 
 typedef UInt8 QBit;
-
-
-/*! \brief SFQBit
- *  \ingroup VolRen
- */
-
-typedef SField<QBit, 1>     SFQBit;
-
-#ifndef OSG_COMPILEQBITFIELDINST
-OSG_DLLEXPORT_DECL2(SField, QBit, 1, OSG_VOLRENLIB_DLLTMPLMAPPING)
-#endif
-  
-
-/*! \brief MFQBit
-    \ingroup MultiFields
-*/
-
-typedef MField<QBit, 1>     MFQBit;
-
-#ifndef OSG_COMPILEQBITFIELDINST
-OSG_DLLEXPORT_DECL2(MField, QBit, 1, OSG_VOLRENLIB_DLLTMPLMAPPING)
-#endif
-
 
 /*! \brief QBit field traits
     \ingroup VolRenLib
@@ -161,6 +139,27 @@ struct FieldDataTraits1<QBit> :
         }
     }
 };
+
+/*! \brief SFQBit
+ *  \ingroup VolRen
+ */
+
+typedef SField<QBit, 1>     SFQBit;
+
+#ifndef OSG_COMPILEQBITFIELDINST
+OSG_DLLEXPORT_DECL2(SField, QBit, 1, OSG_VOLRENLIB_DLLTMPLMAPPING)
+#endif
+  
+
+/*! \brief MFQBit
+    \ingroup MultiFields
+*/
+
+typedef MField<QBit, 1>     MFQBit;
+
+#ifndef OSG_COMPILEQBITFIELDINST
+OSG_DLLEXPORT_DECL2(MField, QBit, 1, OSG_VOLRENLIB_DLLTMPLMAPPING)
+#endif
 
 OSG_END_NAMESPACE
 

@@ -43,8 +43,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define OSG_COMPILEVOLRENLIB
-
 #include <OSGConfig.h>
 
 #include <OSGDVRClipGeometry.h>
@@ -191,7 +189,7 @@ void DVRClipObjects::remove(UInt32 n)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipObjects.cpp,v 1.2 2004/01/19 11:22:33 vossg Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipObjects.cpp,v 1.3 2004/01/19 12:06:22 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRCLIPOBJECTSBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRCLIPOBJECTSBASE_INLINE_CVSID;
 

@@ -2,6 +2,9 @@
 
 #include <OSGQBit.h>
 
+#include <OSGSFieldTypeDef.inl>
+#include <OSGMFieldTypeDef.inl>
+
 OSG_BEGIN_NAMESPACE
 
 DataType FieldDataTraits1<QBit>::_type("QBit", "BaseType");
