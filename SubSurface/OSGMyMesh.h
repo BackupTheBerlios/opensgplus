@@ -54,9 +54,9 @@ namespace OpenMesh {
 
    inline OpenMesh::Vec4f operator % (const OpenMesh::Vec4f& a, const OpenMesh::Vec4f& b) {
       return OpenMesh::Vec4f(a[0]*b[1]-a[1]*b[0], 
-			     a[2]*b[0]-a[0]*b[2],
-			     a[1]*b[2]-a[2]*b[1],
-			     0);
+           a[2]*b[0]-a[0]*b[2],
+           a[1]*b[2]-a[2]*b[1],
+           0);
    }
 
 }
@@ -66,28 +66,17 @@ OSG_BEGIN_NAMESPACE
 /*! OpenMesh Traits */
 struct MyTraitsPoint3 : public OpenMesh::DefaultTraits
 {
-  FaceAttributes     (OpenMesh::Attributes::Normal);	
-  VertexAttributes   (OpenMesh::Attributes::Normal);	
-  HalfedgeAttributes (OpenMesh::Attributes::PrevHalfedge);
-
-  EdgeTraits
-  {
-     Int32 isCrease;
-  };  
+   FaceAttributes (OpenMesh::Attributes::Normal);
+   VertexAttributes (OpenMesh::Attributes::Normal);
+   HalfedgeAttributes (OpenMesh::Attributes::PrevHalfedge);
 };
 /*! OpenMesh Traits */
 struct MyTraitsPoint4 : public OpenMesh::DefaultTraits
 {
-  typedef OpenMesh::Vec4f Point;
-
-  FaceAttributes     (OpenMesh::Attributes::Normal);	
-  VertexAttributes   (OpenMesh::Attributes::Normal);	
-  HalfedgeAttributes (OpenMesh::Attributes::PrevHalfedge);
-
-  EdgeTraits
-  {
-     Int32 isCrease;
-  };  
+   typedef OpenMesh::Vec4f Point;
+   FaceAttributes (OpenMesh::Attributes::Normal);
+   VertexAttributes (OpenMesh::Attributes::Normal);
+   HalfedgeAttributes (OpenMesh::Attributes::PrevHalfedge);
 };
 
 template <>

@@ -55,7 +55,7 @@ template<class WSDVector, class Mesh, int mtype> class WSDmain;
 
 OSG_END_NAMESPACE
 
-#define OSGOPENMESHTESSELATORPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshTesselatorPFields.h,v 1.2 2003/12/23 18:37:09 fuenfzig Exp $"
+#define OSGOPENMESHTESSELATORPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshTesselatorPFields.h,v 1.3 2004/03/24 12:50:22 fuenfzig Exp $"
 
 #endif
 

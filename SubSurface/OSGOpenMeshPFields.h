@@ -94,18 +94,18 @@ struct FieldDataTraits<MESH*> :
     }
 
     static inline void copyToBin  (      BinaryDataHandler& , 
-				   const MESH*&             ) {
+           const MESH*&             ) {
     }
 
     static inline void copyFromBin (BinaryDataHandler& , 
-				    MESH*&             oObject) {
+            MESH*&             oObject) {
        oObject = NULL;
     }
 };
 
 OSG_END_NAMESPACE
 
-#define OSGOPENMESHPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshPFields.h,v 1.2 2003/12/23 18:37:09 fuenfzig Exp $"
+#define OSGOPENMESHPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshPFields.h,v 1.3 2004/03/24 12:50:22 fuenfzig Exp $"
 
 #endif
 
