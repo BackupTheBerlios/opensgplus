@@ -124,13 +124,15 @@ void NVTest::init(void)
 {
 	glDepthMask(GL_FALSE);
 	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
-
+#ifdef GL_NV_occlusion_query
         glGenOcclusionQueriesNV(_maxtests, _results);
+#endif
 };
 
 inline
 void NVTest::perform(const int& num, const DynamicVolume& vol)
 {
+#ifdef GL_NV_occlusion_query
 	glBeginOcclusionQueryNV(_results[num]);
 
 	Pnt3f min,max;
@@ -157,14 +159,19 @@ void NVTest::perform(const int& num, const DynamicVolume& vol)
 	glVertex3f( min[0], max[1], max[2]);
 	glEnd();
 
-	glEndOcclusionQueryNV();	
+	glEndOcclusionQueryNV();
+#endif
 };
 
 inline
 int NVTest::result(const int& num)
 {
+#ifdef GL_NV_occlusion_query
 	GLuint pixelCount;
 	glGetOcclusionQueryuivNV(_results[num], GL_PIXEL_COUNT_NV, &pixelCount);
+#else
+	GLuint pixelCount=100000;
+#endif
 	return(pixelCount);
 };
 			

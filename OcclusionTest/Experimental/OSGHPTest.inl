@@ -129,6 +129,7 @@ void HPTest::init(void)
 inline
 void HPTest::perform(const int& num, const DynamicVolume& vol)
 {
+#ifdef GL_OCCLUSION_TEST_HP
 	glEnable(GL_OCCLUSION_TEST_HP);
 
 	Pnt3f min,max;
@@ -159,6 +160,9 @@ void HPTest::perform(const int& num, const DynamicVolume& vol)
 		
 	_results[num]=0;
 	glGetBooleanv(GL_OCCLUSION_TEST_RESULT_HP, &(_results[num]));
+#else
+	_results[num]=1;
+#endif
 };
 
 inline
