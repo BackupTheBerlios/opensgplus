@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:57:11 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/22 18:45:01 $
 //                                                                            
 //=============================================================================
 
@@ -90,14 +90,16 @@ public:
        list of all singletons. With registerOracle the singleton is registered with
        this list. */
    static void                              registerOracle (Oracle<BVOL>* instance);
-   /*! Get list of all registered oracles. */
+   /*! Get const list of all registered oracles. */
    static const std::vector<Oracle<BVOL>*>& getOracles ();
    /*! Get singleton with identifier id. 
        @return Returns NULL if not existing. */
-   static Oracle<BVOL>*                     getOracle (u32 id);
+   static Oracle<BVOL>*                     getOracle (u32 id,
+						       bool nullFail=false);
    /*! Get singleton with name desc. 
        @return Returns NULL if not existing. */
-   static Oracle<BVOL>*                     getOracle (const char* desc);
+   static Oracle<BVOL>*                     getOracle (const char* desc, 
+						       bool nullFail=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! Helper function. Calculates the bounding volume bvol by unifying the bounding volumes 
@@ -124,7 +126,8 @@ public:
 			    BoundingVolume<Real>& bvol);
 
 protected:
-   static std::vector<Oracle<BVOL>*> s_instances;
+   /*! Get list of all registered oracles. */
+   static std::vector<Oracle<BVOL>*>& getOraclesInternal ();
 };
 
 template <class BVOL>

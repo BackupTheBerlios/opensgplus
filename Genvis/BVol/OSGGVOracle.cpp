@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:57:11 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/22 18:45:01 $
 //                                                                            
 //=============================================================================
 
@@ -40,35 +40,20 @@ template class OSG_GENVISLIB_DLLMAPPING AllAxesSorted<K12Dop>;
 template class OSG_GENVISLIB_DLLMAPPING AllAxesSorted<K20Dop>;
 
 template <class BVOL>
-std::vector<Oracle<BVOL>*> Oracle<BVOL>::s_instances;
-
+std::vector<Oracle<BVOL>*>& Oracle<BVOL>::getOraclesInternal ()
+{
+   static std::vector<Oracle<BVOL>*> s_instances;
+   return s_instances;
+}
 template <class BVOL>
 const std::vector<Oracle<BVOL>*>& Oracle<BVOL>::getOracles ()
 {
-   return s_instances;
+   return getOraclesInternal();
 }
 template <class BVOL>
 void          Oracle<BVOL>::registerOracle (Oracle<BVOL>* instance)
 {
-   s_instances.push_back(instance);
-}
-template <class BVOL>
-Oracle<BVOL>* Oracle<BVOL>::getOracle (u32 i)
-{
-   if (i < s_instances.size()) {
-      return s_instances[i];
-   } 
-   return NULL;
-}
-template <class BVOL>
-Oracle<BVOL>* Oracle<BVOL>::getOracle (const char* description)
-{
-   for (u32 i=0; i<s_instances.size(); ++i) {
-     if (strcmp(s_instances[i]->getDescription(), description) == 0) {
-        return s_instances[i];
-     }
-   }
-   return NULL;
+   getOraclesInternal().push_back(instance);
 }
 
 

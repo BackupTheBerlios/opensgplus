@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2004/12/20 15:57:11 $
+//   $Revision: 1.3 $
+//   $Date: 2004/12/22 18:45:01 $
 //                                                                            
 //=============================================================================
 
@@ -66,6 +66,41 @@ template class OSG_GENVISLIB_DLLMAPPING Singleton<HeuristicGrouping<K18Dop> >;
 template class OSG_GENVISLIB_DLLMAPPING Singleton<HeuristicGrouping<K26Dop> >;
 template class OSG_GENVISLIB_DLLMAPPING Singleton<HeuristicGrouping<K12Dop> >;
 template class OSG_GENVISLIB_DLLMAPPING Singleton<HeuristicGrouping<K20Dop> >;
+
+// explicit template instantiations (repetition from OSGGVOracle.cpp)
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K6Dop>;
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K14Dop>;
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K18Dop>;
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K26Dop>;
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K12Dop>;
+template class OSG_GENVISLIB_DLLMAPPING Oracle<K20Dop>;
+
+template <class BVOL>
+Oracle<BVOL>* Oracle<BVOL>::getOracle (u32  i,
+				       bool nullFail)
+{
+   if (i < getOraclesInternal().size()) {
+      return getOraclesInternal()[i];
+   } 
+   if (!nullFail) {
+      return &Singleton<LongestSideMedian<BVOL> >::the();
+   }
+   return NULL;
+}
+template <class BVOL>
+Oracle<BVOL>* Oracle<BVOL>::getOracle (const char* description,
+				       bool  nullFail)
+{
+   for (u32 i=0; i<getOraclesInternal().size(); ++i) {
+     if (strcmp(getOraclesInternal()[i]->getDescription(), description) == 0) {
+        return getOraclesInternal()[i];
+     }
+   }
+   if (!nullFail) {
+      return &Singleton<LongestSideMedian<BVOL> >::the();
+   }
+   return NULL;
+}
 
 
 template <class BVOL>
