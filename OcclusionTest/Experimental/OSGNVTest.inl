@@ -110,7 +110,7 @@ void NVTest::frameExit(void)
 };
 
 inline
-void NVTest::setup(const int& max)
+void NVTest::setup(const UInt16& max)
 {
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
@@ -130,7 +130,7 @@ void NVTest::init(void)
 };
 
 inline
-void NVTest::perform(const int& num, const DynamicVolume& vol)
+void NVTest::perform(const UInt16& num, const DynamicVolume& vol)
 {
 #ifdef GL_NV_occlusion_query
 	glBeginOcclusionQueryNV(_results[num]);
@@ -164,7 +164,7 @@ void NVTest::perform(const int& num, const DynamicVolume& vol)
 };
 
 inline
-int NVTest::result(const int& num)
+UInt32 NVTest::result(const UInt16& num)
 {
 #ifdef GL_NV_occlusion_query
 	GLuint pixelCount;

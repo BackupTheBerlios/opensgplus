@@ -82,14 +82,14 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const int&);
+    void setup(const UInt16&);
 
     void frameInit(void);
     void frameExit(void);
 
     void init(void);
-    void perform(const int&, const DynamicVolume&);
-    int result(const int&);
+    void perform(const UInt16&, const DynamicVolume&);
+    UInt32 result(const UInt16&);
     void exit(void);
     
     /*! \}                                                                 */

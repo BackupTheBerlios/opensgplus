@@ -82,14 +82,14 @@ class OSG_SYSTEMLIB_DLLMAPPING NVTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const int&);
+    void setup(const UInt16&);
 
     void frameInit(void);
     void frameExit(void);
 
     void init(void);
-    void perform(const int&, const DynamicVolume&);
-    int result(const int&);
+    void perform(const UInt16&, const DynamicVolume&);
+    UInt32 result(const UInt16&);
     void exit(void);
     
     /*! \}                                                                 */
@@ -105,7 +105,7 @@ class OSG_SYSTEMLIB_DLLMAPPING NVTest
     /*==========================  PRIVATE  ================================*/
   private:
 
-    unsigned int _maxtests;
+    UInt16 _maxtests;
     GLuint* _results;
 
     /*! \brief prohibit default function (move to 'public' if needed) */

@@ -82,14 +82,14 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(Viewport*, const int&);
+    void setup(const UInt16&, Viewport*);
 
     void frameInit(void);
     void frameExit(void);
 
     void init(void);
-    void perform(const int&, const DynamicVolume&);
-    int result(const int&);
+    void perform(const UInt16&, const DynamicVolume&);
+    UInt32 result(const UInt16&);
     void exit(void);
     
     /*! \}                                                                 */
@@ -107,10 +107,10 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
 
     GLuint* _stencilbuf;
     Viewport* _port;
-    unsigned int _w, _h;
-    unsigned int _count;
-    unsigned int _maxtests;
-    unsigned int* _results;
+    UInt16 _w, _h;
+    UInt16 _count;
+    UInt16 _maxtests;
+    UInt32* _results;
 
     /*! \brief prohibit default function (move to 'public' if needed) */
     StencilTest(const StencilTest &source);

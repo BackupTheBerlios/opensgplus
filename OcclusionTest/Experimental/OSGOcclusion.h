@@ -85,8 +85,8 @@ class OSG_SYSTEMLIB_DLLMAPPING Occlusion
     void frameExit(void);
 
     void init(void);
-    void perform(const int&);
-    int result(const int&);
+    void perform(const UInt16&);
+    UInt32 result(const UInt16&);
     void exit(void);
     
     /*! \}                                                                 */

@@ -138,14 +138,14 @@ void Occlusion::init(void)
 /**
 */
 inline
-void Occlusion::perform(const int&)
+void Occlusion::perform(const UInt16&)
 {
 };
 
 /**
 */
 inline
-int Occlusion::result(const int&)
+UInt32 Occlusion::result(const UInt16&)
 {
 };
 			

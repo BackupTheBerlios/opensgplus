@@ -111,11 +111,11 @@ void StencilTest::frameExit(void)
 };
 
 inline
-void StencilTest::setup(Viewport* port, const int& max)
+void StencilTest::setup(const UInt16& max, Viewport* port)
 {
 	_port=port;
-	int w=_port->getPixelWidth();
-	int h=_port->getPixelHeight();
+	UInt16 w=_port->getPixelWidth();
+	UInt16 h=_port->getPixelHeight();
 	if(_w!=w || _h!=h || _stencilbuf==NULL){
 		_w=w;
 		_h=h;
@@ -124,7 +124,7 @@ void StencilTest::setup(Viewport* port, const int& max)
 	}
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
-		_results=new unsigned int[max];
+		_results=new UInt32[max];
 		_maxtests=max;
 	}
 };
@@ -140,7 +140,7 @@ void StencilTest::init(void)
 };
 
 inline
-void StencilTest::perform(const int& num, const DynamicVolume& vol)
+void StencilTest::perform(const UInt16& num, const DynamicVolume& vol)
 {
 	/*
 	Matrix m,v;
@@ -166,7 +166,7 @@ void StencilTest::perform(const int& num, const DynamicVolume& vol)
 
 	short minx=_w, maxx=0;
 	short miny=_h, maxy=0;
-        for(int i=0; i<8; i++){
+        for(UInt16 i=0; i<8; i++){
 		Pnt3f p1,p2;
 		p1[0]=(i&1)?min[0]:max[0];
 		p1[1]=(i&2)?min[1]:max[1];
@@ -236,7 +236,7 @@ void StencilTest::perform(const int& num, const DynamicVolume& vol)
 };
 
 inline
-int StencilTest::result(const int& num)
+UInt32 StencilTest::result(const UInt16& num)
 {
 	return(_results[num]);
 };
