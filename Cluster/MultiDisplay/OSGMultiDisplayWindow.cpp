@@ -198,11 +198,6 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
         serverPort->getMFForegrounds()->setValues( clientPort->getForegrounds() );        
         endEditCP(serverPort);
 
-        if(serverPort->getRoot() != OSG::NullFC)
-        {
-            serverPort->getRoot()->dump(0, 0);
-        }
-
         // calculate tile parameters
         beginEditCP(deco);
         deco->setFullWidth ( cright-cleft );
