@@ -369,7 +369,7 @@ void DVRIsoShader::initCombiners_DiffuseMultiCombiners(DrawActionBase *action)
                      GL_FALSE,         // cdDotproduct
                      GL_FALSE);        // muxSum
 
-    unsigned int i;
+    Int32 i;
 
     for(i = 0; i < (m_maxCombiners - 5) / 3; i++)
     {
@@ -1559,7 +1559,7 @@ void DVRIsoShader::setupCombinerParametersDiffuse(DVRVolume      *volume,
                                    GL_CONSTANT_COLOR1_NV,
                                    diffuseColor[1].getValuesRGBA());
         
-        unsigned int i;
+        Int32 i;
        
         // set values for all lights
         //      float ones[4] = {1.0f,1.0f,1.0f,1.0f};
@@ -1808,9 +1808,9 @@ void DVRIsoShader::setupCombinerParametersSpecular(DVRVolume      *volume,
         CombinerParameterfvNV(GL_CONSTANT_COLOR1_NV, halfway[0].getValues()); 
 
         // set direction of diffuse light
-        glColor3f(0.5 + 0.5 * diffuseDir[0][0],
-                  0.5 + 0.5 * diffuseDir[0][1], 
-                  0.5 + 0.5 * diffuseDir[0][2]);
+        glColor3f(0.5f + 0.5f * diffuseDir[0][0],
+                  0.5f + 0.5f * diffuseDir[0][1], 
+                  0.5f + 0.5f * diffuseDir[0][2]);
     }
     
     // set ambient light
@@ -2044,15 +2044,18 @@ void DVRIsoShader::renderSlice_NVRegisterCombinerShading(
     switch(clippedSlice->orientation)
     {
         case DVRRenderSlice::XY:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[5];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[5]);
             break;
 
         case DVRRenderSlice::XZ:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[4];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[4]);
             break;
 
         case DVRRenderSlice::YZ:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[3];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[3]);
             break;
 
         default:

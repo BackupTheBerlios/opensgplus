@@ -81,7 +81,7 @@ class TextureManager
     };
     
     //! Constructor/ destructor
-    TextureManager(DVRVolume * volume);
+    TextureManager(DVRVolume *volume);
     ~TextureManager(void);
 
     //! Register texture

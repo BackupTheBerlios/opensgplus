@@ -125,11 +125,11 @@ struct FieldDataTraits1<QBit> :
     static void      putToString   (const QBit                  &inVal,
                                           std::string           &outStr)
     {
-        if( inVal == true )
+        if(inVal == 1)
         {
             outStr.assign("TRUE");
         }
-        else if( inVal == false )
+        else if(inVal == 0)
         {
             outStr.assign("FALSE");
         }

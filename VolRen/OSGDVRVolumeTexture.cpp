@@ -136,7 +136,7 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
                 getImage()->getHeight(), 
                 getImage()->getDepth()));
     
-        for(UInt32 j = 0;
+        for(Int32 j = 0;
             j < getImage()->getWidth () * 
                 getImage()->getHeight() * 
                 getImage()->getDepth ();
@@ -161,7 +161,10 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
 
             sscanf(sTatt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
 
-            _sfSliceThickness.setValue(Vec3f(sT[0], sT[1], sT[2]));
+            _sfSliceThickness.setValue(
+                Vec3f(Real32(sT[0]), 
+                      Real32(sT[1]), 
+                      Real32(sT[2])));
         } 
         else 
         {
@@ -179,7 +182,10 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
 
             sscanf(resAtt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
 
-            _sfResolution.setValue(Vec3f(sT[0], sT[1], sT[2]));
+            _sfResolution.setValue(
+                Vec3f(Real32(sT[0]), 
+                      Real32(sT[1]), 
+                      Real32(sT[2])));
         } 
         else 
         {
@@ -234,7 +240,7 @@ void DVRVolumeTexture::dump(      UInt32    ,
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.4 2004/01/21 05:05:25 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.5 2004/01/24 06:53:27 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRVOLUMETEXTURE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRVOLUMETEXTURE_INLINE_CVSID;
 }

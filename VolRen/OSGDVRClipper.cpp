@@ -257,9 +257,9 @@ void DVRClipper::clipSlice(      DVRVolume      *volume,
             
             for(UInt32 i = 0; i < unclippedSlice.getVertexCount(); i++)
             {      
-                glColor3f(col % 3 == 0 ? 1.0 : 0.0, 
-                          col % 3 == 1 ? 1.0 : 0.0, 
-                          col % 3 == 2 ? 1.0 : 0.0);
+                glColor3f(col % 3 == 0 ? 1.0f : 0.0f, 
+                          col % 3 == 1 ? 1.0f : 0.0f, 
+                          col % 3 == 2 ? 1.0f : 0.0f);
                 
                 col++;
                 
@@ -305,9 +305,9 @@ void DVRClipper::clipSlice(      DVRVolume      *volume,
                         // iterate over all triangles in the current contour
                         do
                         {	    	   
-                            glColor3f(col % 3 == 0 ? 1.0 : 0.0, 
-                                      col % 3 == 1 ? 1.0 : 0.0, 
-                                      col % 3 == 2 ? 1.0 : 0.0);
+                            glColor3f(col % 3 == 0 ? 1.0f : 0.0f, 
+                                      col % 3 == 1 ? 1.0f : 0.0f, 
+                                      col % 3 == 2 ? 1.0f : 0.0f);
 
                             col++;
 

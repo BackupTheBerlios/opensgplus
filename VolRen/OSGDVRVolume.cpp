@@ -73,6 +73,10 @@ UInt32 DVRVolume::_extTex3D = Window::registerExtension( "GL_EXT_texture3D" );
 
 /*----------------------- constructors & destructors ----------------------*/
 
+#ifdef OSG_WIN32_CL
+#pragma warning( disable : 4355 )
+#endif
+
 //! Constructor
 DVRVolume::DVRVolume(void) :
     Inherited         (     ),
@@ -129,6 +133,10 @@ DVRVolume::DVRVolume(const DVRVolume &source) :
 
     commonConstructor();
 }
+
+#ifdef OSG_WIN32_CL
+#pragma warning( default : 4355 )
+#endif
 
 //! Destructor
 DVRVolume::~DVRVolume(void)
@@ -190,9 +198,9 @@ void DVRVolume::adjustVolume(Volume &volume)
         Vec3f & res   = tex->getResolution    ();
         Vec3f & slice = tex->getSliceThickness();
     
-        Vec3f minBB(-0.5 * res[0] * slice[0],
-                    -0.5 * res[1] * slice[1],
-                    -0.5 * res[2] * slice[2]);
+        Vec3f minBB(-0.5f * res[0] * slice[0],
+                    -0.5f * res[1] * slice[1],
+                    -0.5f * res[2] * slice[2]);
 
         Vec3f maxBB(-minBB);
     
@@ -723,7 +731,7 @@ void DVRVolume::initializeClipObjects(      DrawActionBase *action,
                 }
             }
             
-            Plane clipReferencePlane(sliceDir, -0.5 * diag.length());  
+            Plane clipReferencePlane(sliceDir, -0.5f * diag.length());  
             
             clipObjects->initialize(volumeToWorld, clipReferencePlane);
 
@@ -747,7 +755,7 @@ void DVRVolume::initializeClipObjects(      DrawActionBase *action,
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolume.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolume.cpp,v 1.4 2004/01/24 06:53:27 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRVOLUME_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRVOLUME_INLINE_CVSID;
 }

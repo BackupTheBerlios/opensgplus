@@ -323,7 +323,7 @@ void BrickSet::buildBrickTextures(ChunkMaterialPtr            &material,
     beginEditCP(material);
     {
         // build all texture chunks
-        for(UInt32 index = 0; index < m_nNumBricks; index++)
+        for(Int32 index = 0; index < m_nNumBricks; index++)
         {
             Int32 &resX  = m_pBricks[index].voxSize[0];
             Int32 &resY  = m_pBricks[index].voxSize[1];
@@ -460,9 +460,9 @@ void BrickSet::buildBrickTextures(ChunkMaterialPtr            &material,
 //! Reload brick textures
 void BrickSet::reloadBrickTextures(DrawActionBase *action, UInt32 texStage)
 {
-    for(UInt32 i = 0; i < m_nNumBricks; i++)
+    for(Int32 i = 0; i < m_nNumBricks; i++)
     {
-        for(UInt32 j = 0; j < m_pBricks[i].numTextures; j++)
+        for(Int32 j = 0; j < m_pBricks[i].numTextures; j++)
         {
             if(m_pBricks[i].texStage[j] == texStage)
             {
@@ -477,9 +477,9 @@ void BrickSet::reloadBrickTextures(DrawActionBase *action, UInt32 texStage)
 //! Clear brick textures
 void BrickSet::clearBrickTextures(ChunkMaterialPtr & material)
 {
-    for(UInt32 i = 0; i < m_nNumBricks; i++)
+    for(Int32 i = 0; i < m_nNumBricks; i++)
     {
-        for(UInt32 j = 0; j < m_pBricks[i].numTextures; j++)
+        for(Int32 j = 0; j < m_pBricks[i].numTextures; j++)
         {
             material->subChunk(m_pBricks[i].texture[j]);
         }
@@ -1056,7 +1056,7 @@ void Brick::render3DSlices(DVRVolume      *volume,
 
             while(numUsedIntersections != numIntersections) 
             {
-                for(unsigned int i = 1; i < numIntersections; i++) 
+                for(Int32 i = 1; i < numIntersections; i++) 
                 {
                     if ((bIntersectionUsed[i] == false   ) && 
                         (nEdgeCodes[i]        & nEdgeCode)  ) 
@@ -1174,7 +1174,7 @@ void Brick::render3DSlices(DVRVolume      *volume,
                     Real32 data[12 * 6]; // numIntersections is bounded by 12
                     UInt32 index = 0;
 
-                    for(UInt32 i = 0; i < numIntersections; i++) 
+                    for(Int32 i = 0; i < numIntersections; i++) 
                     {
                         v = vecIntersectionsSorted[i];
                         

@@ -118,12 +118,12 @@ Pnt3f DVRClipGeometry::interpolate(DVRTriangle *tri,
   
   return 
       (_mfVertices[tri->vertices[v1]].transformedPos * weight) +  
-      (_mfVertices[tri->vertices[v2]].transformedPos * (1.0 - 
+      (_mfVertices[tri->vertices[v2]].transformedPos * (1.0f - 
                                                         weight)).subZero();
 }
 
 
 OSG_END_NAMESPACE
 
-#define OSGDVRCLIPGEOMETRY_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometry.inl,v 1.2 2004/01/19 11:22:33 vossg Exp $"
+#define OSGDVRCLIPGEOMETRY_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometry.inl,v 1.3 2004/01/24 06:53:27 vossg Exp $"
 

@@ -247,10 +247,10 @@ void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume      *volume,
         // compute covered pixels
         GLint sr[4];
 
-        sr[0] = (GLint) floorf(vpOrigin[0]+(screenS[0]+1.0)*(vpSize[0]/2));
-        sr[1] = (GLint) floorf(vpOrigin[1]+(screenS[1]+1.0)*(vpSize[1]/2));
-        sr[2] = (GLint) ceilf (vpOrigin[0]+(screenS[2]+1.0)*(vpSize[0]/2));
-        sr[3] = (GLint) ceilf (vpOrigin[1]+(screenS[3]+1.0)*(vpSize[1]/2));
+        sr[0] = (GLint) floorf(vpOrigin[0]+(screenS[0]+1.0f)*(vpSize[0]/2));
+        sr[1] = (GLint) floorf(vpOrigin[1]+(screenS[1]+1.0f)*(vpSize[1]/2));
+        sr[2] = (GLint) ceilf (vpOrigin[0]+(screenS[2]+1.0f)*(vpSize[0]/2));
+        sr[3] = (GLint) ceilf (vpOrigin[1]+(screenS[3]+1.0f)*(vpSize[1]/2));
 
         // copy covered pixels 
         glMatrixMode(GL_MODELVIEW);
@@ -321,9 +321,9 @@ void DVRIsoShader::getCoveredScreenRect(DVRVolume      *volume,
         Vec3f & res   = tex->getResolution();
         Vec3f & slice = tex->getSliceThickness();
         
-        Pnt3f minBB(-0.5 * res[0] * slice[0], 
-                    -0.5 * res[1] * slice[1], 
-                    -0.5 * res[2] * slice[2]);
+        Pnt3f minBB(-0.5f * res[0] * slice[0], 
+                    -0.5f * res[1] * slice[1], 
+                    -0.5f * res[2] * slice[2]);
 
         Pnt3f maxBB(-minBB);
 	

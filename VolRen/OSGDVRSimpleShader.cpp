@@ -100,7 +100,8 @@ void DVRSimpleShader::dump(      UInt32    ,
 
 
 //! Callback to set up shader - register textures here
-bool DVRSimpleShader::initialize(DVRVolume *volume, DrawActionBase */*action*/)
+bool DVRSimpleShader::initialize(DVRVolume      *volume, 
+                                 DrawActionBase * /*action*/)
 {
     FDEBUG(("DVRSimpleShader::initialize\n"));
     
@@ -127,7 +128,7 @@ bool DVRSimpleShader::initialize(DVRVolume *volume, DrawActionBase */*action*/)
 
 
 //! Callback before any slice is rendered - setup per volume
-void DVRSimpleShader::activate(DVRVolume *volume, DrawActionBase */*action*/)
+void DVRSimpleShader::activate(DVRVolume *volume, DrawActionBase * /*action*/)
 {
     //FDEBUG << "DVRSimpleShader::activate\n"));
 
@@ -155,16 +156,16 @@ void DVRSimpleShader::activate(DVRVolume *volume, DrawActionBase */*action*/)
 }
 
 //! Callback before any brick - state setup per brick
-void DVRSimpleShader::brickActivate(DVRVolume      */*volume*/, 
-                                    DrawActionBase */*action*/, 
-                                    Brick          */*brick*/)
+void DVRSimpleShader::brickActivate(DVRVolume      * /*volume*/, 
+                                    DrawActionBase * /*action*/, 
+                                    Brick          * /*brick */)
 {
     //FDEBUG(("DVRSimpleShader::brickActivate\n"));
 }
 
 //! Callback after all rendering of the volume is done
-void DVRSimpleShader::deactivate(DVRVolume      */*volume*/, 
-                                 DrawActionBase */*action*/)
+void DVRSimpleShader::deactivate(DVRVolume      * /*volume*/, 
+                                 DrawActionBase * /*action*/)
 {
     FDEBUG(("DVRSimpleShader::deactivate\n"));
     
@@ -172,7 +173,7 @@ void DVRSimpleShader::deactivate(DVRVolume      */*volume*/,
 }
 
 //! Callback to clean up shader resources
-void DVRSimpleShader::cleanup(DVRVolume *volume, DrawActionBase */*action*/)
+void DVRSimpleShader::cleanup(DVRVolume *volume, DrawActionBase * /*action*/)
 {
     if (volume != NULL)
     {
@@ -195,7 +196,7 @@ void DVRSimpleShader::cleanup(DVRVolume *volume, DrawActionBase */*action*/)
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleShader.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleShader.cpp,v 1.4 2004/01/24 06:53:27 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRSIMPLESHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRSIMPLESHADER_INLINE_CVSID;
 }

@@ -160,8 +160,8 @@ void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
                 //!! setValue ( <value>, index )
                 
                 _mfData[iter] = 
-                    (Real32) _mfDataR[j] * 
-                    (Real32) TypeTraits<UInt8>::getMax();
+                    UInt8(Real32(_mfDataR[j]) * 
+                          Real32(TypeTraits<UInt8>::getMax()));
 
                 iter += numChannels;
             }
@@ -181,8 +181,8 @@ void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
             {
                 //!! setValue ( <value>, index )
                 _mfData[iter] = 
-                    (Real32) _mfDataG[j] * 
-                    (Real32) TypeTraits<UInt8>::getMax();
+                    UInt8(Real32(_mfDataG[j]) * 
+                          Real32(TypeTraits<UInt8>::getMax()));
 
                 iter += numChannels;
             }
@@ -201,8 +201,8 @@ void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
             {
                 //!! setValue ( <value>, index )
                 _mfData[iter] =
-                    (Real32) _mfDataB[j] * 
-                    (Real32) TypeTraits<UInt8>::getMax();
+                    UInt8(Real32(_mfDataB[j]) * 
+                          Real32(TypeTraits<UInt8>::getMax()));
 
                 iter += numChannels;
             }
@@ -222,8 +222,8 @@ void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
             {
                 //!! setValue ( <value>, index )
                 _mfData[iter] = 
-                    (Real32) _mfDataA[j] * 
-                    (Real32) TypeTraits<UInt8>::getMax();
+                    UInt8(Real32(_mfDataA[j]) * 
+                          Real32(TypeTraits<UInt8>::getMax()));
 
                 iter += numChannels;
             }
@@ -505,7 +505,7 @@ void DVRLookupTable::commonConstructor(void)
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.4 2004/01/19 12:06:22 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.5 2004/01/24 06:53:27 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRLOOKUPTABLE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRLOOKUPTABLE_INLINE_CVSID;
 }

@@ -127,7 +127,7 @@ void TextureManager::unregisterTexture(Int32 id)
 {
     FDEBUG(("TextureManager::unregisterTexture\n"));
 
-    if((id < 0) || (id > _registeredTextures.size()))
+    if((id < 0) || (UInt32(id) > _registeredTextures.size()))
     {
         SWARNING << "TextureManager::unregisterTexture - invalid id " 
                  << id 
@@ -146,7 +146,7 @@ void TextureManager::unregisterTexture(Int32 id)
 //! Reload texture
 void TextureManager::reloadTexture(Int32 id, DrawActionBase *action)
 {
-    if((id < 0) || (id > _registeredTextures.size()))
+    if((id < 0) || (UInt32(id) > _registeredTextures.size()))
     {
         SWARNING << "TextureManager::reloadTexture - invalid id " 
                  << id 
@@ -285,9 +285,9 @@ void TextureManager::buildTextures(ChunkMaterialPtr  material,
                                      int(res[2]),
                                      vT->getImage()->getBpp(), volume);
 
-            Vec3f brickSize((int)(res[0] / brickSubdivision[0]),
-                            (int)(res[1] / brickSubdivision[1]),
-                            (int)(res[2] / brickSubdivision[2]));
+            Vec3f brickSize(Real32((int)(res[0] / brickSubdivision[0])),
+                            Real32((int)(res[1] / brickSubdivision[1])),
+                            Real32((int)(res[2] / brickSubdivision[2])));
             
 
             FDEBUG(
@@ -414,7 +414,7 @@ Vec3f TextureManager::calcBrickSubdivision(Int32      resX,
 Brick *TextureManager::sortBricks(DrawActionBase *da, 
                                   Matrix          modelMat, 
                                   Vec3f           eyePoint, 
-                                  DVRVolume      */*volume*/, 
+                                  DVRVolume      * /*volume*/, 
                                   TextureMode     mode) 
 {
     

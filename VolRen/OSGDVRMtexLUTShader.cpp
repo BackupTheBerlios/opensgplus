@@ -315,7 +315,7 @@ void DVRMtexLUTShader::deactivate(DVRVolume *volume, DrawActionBase *action)
 }
 
 //! callback to clean up shader resources
-void DVRMtexLUTShader::cleanup(DVRVolume *volume, DrawActionBase */*action*/)
+void DVRMtexLUTShader::cleanup(DVRVolume *volume, DrawActionBase * /*action*/)
 {
     if(volume != NULL)
     {
@@ -451,16 +451,20 @@ void DVRMtexLUTShader::renderSlice(DVRVolume      *volume,
     switch(clippedSlice->orientation)
     {
         case DVRRenderSlice::XY:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[5];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[5]);
             break;
 
         case DVRRenderSlice::XZ:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[4];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[4]);
             break;
 
         case DVRRenderSlice::YZ:
-            intFactor = (*(*clippedSlice->begin())->vertices.begin())[3];
+            intFactor = 
+                Real32((*(*clippedSlice->begin())->vertices.begin())[3]);
             break;
+
         default:
             break;
     }
@@ -784,7 +788,7 @@ void DVRMtexLUTShader::initCombiners(DrawActionBase *action)
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.6 2004/01/21 05:05:25 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.7 2004/01/24 06:53:27 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRMTEXLUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRMTEXLUTSHADER_INLINE_CVSID;
 }
