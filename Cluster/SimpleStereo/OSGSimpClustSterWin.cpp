@@ -59,7 +59,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.3 2002/01/02 17:34:06 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.4 2002/01/20 11:03:34 marcus Exp $";
     static char cvsid_hpp[] = OSGSCLUSTSTERWIN_HEADER_CVSID;
     static char cvsid_inl[] = OSGSCLUSTSTERWIN_INLINE_CVSID;
 }
@@ -183,6 +183,15 @@ void SimpClustSterWin::serverRender(WindowPtr window,UInt32 id,
     endEditCP(serverCam);
 
     beginEditCP(svp);
+    svp->setBackground ( cvp->getBackground() );
+    svp->getForegrounds().clear();
+    for(MFForegroundPtr::iterator fp=svp->getForegrounds().begin();
+        fp!=svp->getForegrounds().end();
+        fp++)
+    {
+        svp->getForegrounds().push_back(*fp);
+    }
+    svp->setRoot       ( cvp->getRoot() );
     svp->setSize      ( 0,0, 1,1 );
     endEditCP(svp);
 
@@ -250,10 +259,8 @@ void SimpClustSterWin::serverInit( WindowPtr window,
     // create new server viewport
     svp = Viewport::create();
     beginEditCP(svp);
-    svp->setCamera    ( cam );
-    svp->setBackground( cvp->getBackground() );
-    svp->setRoot      ( cvp->getRoot() );
-    svp->setSize      ( 0,0, 1,1 );
+    svp->setCamera     ( cam );
+    svp->setSize       ( 0,0, 1,1 );
     beginEditCP(window);
     window->addPort(svp);
     endEditCP(window);
