@@ -1,0 +1,18 @@
+OSGGVPruningTraverser.h/.cpp
+
+Subject:  Re: Permission to use code
+From:     Pierre Terdiman
+
+>> But I did not find any copyright statement in the sources (or did I miss
+>> something?),
+>> so I want to ask if I can use these snippets in my project under the LGPL.
+
+
+Free code. Do whatever you want with it.
+
+Note that Opcode 1.3 includes the box-pruning and another sweep-and-prune
+implementation.
+
+Pierre
+
+
