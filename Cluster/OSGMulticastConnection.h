@@ -93,13 +93,15 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void accept         ( const std::string &address );
-    void connect        ( const std::string &address );
-    void wait           ();
-    void signal         ();
+    void   accept          ( const std::string &address );
+    void   connect         ( const std::string &address );
+    void   wait            ( void );
+    void   signal          ( void );
+    UInt32 getChannelCount ( void );
+    Bool   selectChannel   ( void );
 
-    void printStatistics(void);
-    void clearStatistics(void);
+    void   printStatistics( void );
+    void   clearStatistics( void );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -131,6 +133,7 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
   protected:
 
     enum UDPHeaderType {
+        ACK_REQUEST,
         ACK,
         DATA,
         ALIVE,
@@ -152,31 +155,25 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
             struct 
             {
                 UInt32 size;
-                UInt32 seqNumber[MULTICASTCONNECTION_MAX_WINDOW_SIZE];
+                UInt32 missing[MULTICASTCONNECTION_MAX_WINDOW_SIZE];
             } nack;
         };
-    };
-    struct UDPBufferInfo
-    {
-        UInt32     size;
-        Bool       send;
-        UDPBuffer *buffer;
     };
 
     /*---------------------------------------------------------------------*/
     /*! \name                  read/write                                  */
     /*! \{                                                                 */
 
-    virtual BuffersT::iterator read();
-    virtual void               write(BuffersT::iterator writeEnd);
+    virtual void               read  ( void );
+    virtual void               write ( void );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                  address handling                            */
     /*! \{                                                                 */
-    void interpreteAddress(const string &address,
-                           std::string  &host,
-                           UInt32       &port);
+    void interpreteAddress(const std::string  &address,
+                                 std::string  &host,
+                                 UInt32       &port);
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
@@ -184,12 +181,14 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
 
     std::vector<Address>              _receivers;
     UInt32                            _seqNumber;
-    UDPBuffersT                       _udpBuffers;
+    UDPBuffersT                       _udpReadBuffers;
+    UDPBuffersT                       _udpWriteBuffers;
     Time                              _maxWaitForAck;
     Time                              _waitForAck;
     Time                              _maxWaitForSync;
     DgramSocket                       _socket;
     Address                           _address;
+    Address                           _readAddress;
 
     /*! \}                                                                 */
 #   ifdef MULTICAST_STATISTICS

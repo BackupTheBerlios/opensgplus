@@ -99,6 +99,18 @@ SFUInt32 *ClusterWindowAttBase::getSFServerId(void)
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
+SFUInt32 *ClusterWindowAttBase::getSFX(void)
+{
+	return &_sfX;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFUInt32 *ClusterWindowAttBase::getSFY(void)
+{
+	return &_sfY;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
 SFBool *ClusterWindowAttBase::getSFComposite(void)
 {
 	return &_sfComposite;
@@ -121,6 +133,42 @@ OSG_CLUSTERLIB_DLLMAPPING
 void ClusterWindowAttBase::setServerId(const UInt32 &value)
 {
 	_sfServerId.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+UInt32 &ClusterWindowAttBase::getX(void)
+{
+	return _sfX.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const UInt32 &ClusterWindowAttBase::getX(void) const
+{
+	return _sfX.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowAttBase::setX(const UInt32 &value)
+{
+	_sfX.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+UInt32 &ClusterWindowAttBase::getY(void)
+{
+	return _sfY.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const UInt32 &ClusterWindowAttBase::getY(void) const
+{
+	return _sfY.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowAttBase::setY(const UInt32 &value)
+{
+	_sfY.setValue(value);
 }
 
 OSG_CLUSTERLIB_DLLMAPPING

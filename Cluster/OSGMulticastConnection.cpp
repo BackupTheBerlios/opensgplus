@@ -125,38 +125,42 @@ namespace
  */
 
 MulticastConnection::MulticastConnection(int port) :
-	Inherited(),
+	Inherited(0),
     _receivers(),
     _seqNumber(1),
+    _udpReadBuffers(32),
+    _udpWriteBuffers(32),
     _maxWaitForAck(40),
     _waitForAck(0.04),
     _maxWaitForSync(0.5),
     _socket(),
     _address("224.0.0.50",6546),
+//    _address("198.111.111.111",6546),
     _aliveThread(NULL),
     _stopAliveThread(false)
 {
-    UInt32 dataPos=sizeof(UDPHeader);
     UInt32 i;
-    // no zero copy
-    _zeroCopyThreshold=0;
-    // create buffers
-    _udpBuffers.resize(32 );
-    for(UInt32 i=0;
-        i<_udpBuffers.size();
-        i++)
+
+    // create read buffers
+    _udpReadBuffers.resize( 32 );
+    for(i=0;i<(_udpReadBuffers.size()-1);i++)
     {
-        _udpBuffers[i].resize(3000);
+        _udpReadBuffers[i].resize(3000);
+        readBufAdd(&_udpReadBuffers[i][sizeof(UDPHeader)],
+                   _udpReadBuffers[i].size()-sizeof(UDPHeader));
     }
-    for(UInt32 i=0;
-        i<(_udpBuffers.size()-1);
-        i++)
+    _udpReadBuffers[i].resize(3000);
+
+    // create read buffers
+    _udpWriteBuffers.resize( 32 );
+    for(i=0;i<(_udpWriteBuffers.size()-1);i++)
     {
-        _buffers.push_back(
-            MemoryBlock(&_udpBuffers[i][dataPos],
-                        _udpBuffers[i].size()-dataPos));
+        _udpWriteBuffers[i].resize(3000);
+        writeBufAdd(&_udpWriteBuffers[i][sizeof(UDPHeader)],
+                     _udpWriteBuffers[i].size()-sizeof(UDPHeader));
     }
-    reset();
+    _udpWriteBuffers[i].resize(3000);
+
     _socket.open();
 #   ifdef MULTICAST_STATISTICS
     clearStatistics();
@@ -203,7 +207,7 @@ void MulticastConnection::accept( const string &address )
     client.read(ip,100);
     client.read(&multicastport,sizeof(UInt32));
     
-    cout << "Multicast group:" << ip << endl;
+    cout << "Multicast group:" << ip << " " << multicastport << endl;
 
     // prepare multicast socket
     _socket.setReusePort(true);
@@ -247,13 +251,14 @@ void MulticastConnection::connect( const string &address )
 /** wait for sync
  *
  **/
-void MulticastConnection::wait()
+void MulticastConnection::wait(void)
 {
     Selection selection;
     UDPHeader sync;
     UInt32 tag;
 
     // read sync tag;
+    selectChannel();
     getUInt32(tag);
 
     selection.setRead(_socket);
@@ -268,7 +273,7 @@ void MulticastConnection::wait()
 /** send sync
  *
  **/
-void MulticastConnection::signal()
+void MulticastConnection::signal(void)
 {
     UDPHeader sync;
 
@@ -284,7 +289,54 @@ void MulticastConnection::signal()
     _socket.sendTo(&sync,sizeof(sync),_address);
 }
 
-void MulticastConnection::printStatistics()
+/** get number of links
+ *
+ **/
+UInt32 MulticastConnection::getChannelCount(void)
+{
+    return _receivers.size();
+}
+
+/** select channel for read
+ *
+ * A connection can have n links from which data can be read. So we
+ * need to select one channel for exclusive read. 
+ *
+ **/
+Bool MulticastConnection::selectChannel()
+{
+    Time t0,t1;
+    UDPHeader header;
+    Address from;
+    Selection selection;
+    UInt32 size;
+
+    t0=getSystemTime();
+    for(;;)
+    {
+        selection.setRead(_socket);
+        if(selection.select(2)<=0)
+        {
+            return false;
+        }
+        size=_socket.peekFrom(&header,sizeof(header),from);
+        // wait for data or ack request of unread data
+        if(size>=sizeof(header) &&
+           ( header.type == DATA ||
+             (header.type == ACK_REQUEST && header.seqNumber > _seqNumber)))
+        {
+            _readAddress=from;
+            return true;
+        }
+        else
+        {
+            _socket.recv(&header,sizeof(header));
+        }
+    }
+    return false;
+}
+
+void MulticastConnection::printStatistics(void)
 {
 #ifdef MULTICAST_STATISTICS
     printf("Bytes read ...............%12d\n",_statBytesRead);
@@ -335,22 +387,24 @@ void MulticastConnection::clearStatistics()
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
-BinaryDataHandler::BuffersT::iterator MulticastConnection::read()
+void MulticastConnection::read()
 {
-    UDPBuffersT::iterator currentBuffer=_udpBuffers.begin(); 
-    vector<UDPBufferInfo> dgrams;
-    vector<UDPBufferInfo>::iterator d;
-    BuffersT::iterator b;
-    UDPBufferInfo info;
-    UDPBuffer responseAck;
-    UInt32 pos,seq;
-    BuffersT::iterator result;
-    Address from;
-    Selection selection;
+    UDPBuffersT::iterator currentBuffer=_udpReadBuffers.begin(); 
+    BuffersT::iterator    buffer;
+    UDPHeader            *header;
+    UDPBuffer             responseAck;
+    UInt32                pos;
+    Address               from;
+    Selection             selection;
+    UInt32                dataSize;
 
 #   ifdef MULTICAST_STATISTICS
     Time readStartTime=getSystemTime();
 #   endif
+
+    // clear read buffers
+    for(buffer=readBufBegin();buffer!=readBufEnd();++buffer)
+        buffer->setDataSize(0);
 
     for(;;)
     {
@@ -359,153 +413,125 @@ BinaryDataHandler::BuffersT::iterator MulticastConnection::read()
         {
             throw ReadError("Timeout");
         }
-        info.buffer=(UDPBuffer*)&(*currentBuffer)[0];
-        info.size  =_socket.recvFrom(info.buffer,currentBuffer->size(),from);
-
-        if(info.buffer->header.type == ACK)
+        dataSize = _socket.recvFrom(&(*currentBuffer)[0],
+                                    currentBuffer->size(),
+                                    from);
+        if(from != _readAddress)
+            continue;
+        header   = (UDPHeader*)&(*currentBuffer)[0];
+        if(header->type == ACK_REQUEST)
         {
-            responseAck.header.type = ACK;
-            responseAck.header.seqNumber=info.buffer->header.seqNumber;
-            responseAck.nack.size=0;
-            for(seq=_seqNumber;
-                seq<info.buffer->header.seqNumber;
-                seq++)
+            responseAck.header.type      = ACK;
+            responseAck.header.seqNumber = header->seqNumber;
+            responseAck.nack.size        = 0;
+            for(pos = 0 , buffer=readBufBegin();
+                pos < (header->seqNumber - _seqNumber);
+                pos++   , buffer++)
             {
-                pos=seq - _seqNumber;
-                if(pos>=dgrams.size() || dgrams[pos].size==0)
+                if(buffer->getDataSize()==0)
                 {
 #   ifdef MULTICAST_STATISTICS
                     _statPckDrop++;
 #   endif
-                    responseAck.nack.seqNumber[responseAck.nack.size++]=seq;
+                    cout << "missing" << pos << " " << pos+_seqNumber << endl;
+                    responseAck.nack.missing[responseAck.nack.size++]=pos;
                 }
             }
             // send ack
             _socket.sendTo(&responseAck,
-                           (UInt8*)(&responseAck.nack.seqNumber
-                                    [responseAck.nack.size])-
-                           (UInt8*)(&responseAck),
+                           (MemoryHandle)(&responseAck.nack.missing
+                                         [responseAck.nack.size])-
+                           (MemoryHandle)(&responseAck),
                            from);
-            if(responseAck.nack.size==0 &&
-               _seqNumber < info.buffer->header.seqNumber)
+            if(responseAck.nack.size==0 && _seqNumber < header->seqNumber)
             {
                 // ok we got all packages
-                _seqNumber = info.buffer->header.seqNumber+1;
+                _seqNumber = header->seqNumber+1;
                 break;
             }
         }
-        if(info.buffer->header.type == DATA)
+        if(header->type == DATA)
         {
             // ignore old packages
-            if(info.buffer->header.seqNumber < _seqNumber)
+            if(header->seqNumber < _seqNumber)
+            {
                 continue;
-            pos=info.buffer->header.seqNumber - _seqNumber;
-            while(dgrams.size()<=pos)
-            {
-                UDPBufferInfo missing;
-                missing.size=0;
-                dgrams.push_back(missing);
             }
+            buffer=readBufBegin() + (header->seqNumber - _seqNumber);
             // ignore retransmitted packages
-            if(dgrams[pos].size==0)
+            if(buffer->getDataSize()>0)
             {
-#   ifdef MULTICAST_STATISTICS
-                _statBytesRead+=info.size;
-#   endif
-                dgrams[pos]=info;
-                currentBuffer++;
+                continue;
             }
+#   ifdef MULTICAST_STATISTICS
+            _statBytesRead+=dataSize;
+#   endif
+            buffer->setMem ( (MemoryHandle)&(*currentBuffer)[sizeof(UDPHeader)] );
+            buffer->setDataSize ( dataSize - sizeof(UDPHeader) );
+            buffer->setSize ( currentBuffer->size() );
+            currentBuffer++;
         }
-    }
-    // reorder handler buffers;
-    for(d=dgrams.begin(),b=_buffers.begin();
-        d!=dgrams.end();
-        d++,b++)
-    {
-        b->dataSize=d->size - sizeof(UDPHeader);
-        b->mem=((UInt8*)d->buffer) + sizeof(UDPHeader);
-    }
-    result=b;
-    for(;currentBuffer!=_udpBuffers.end();currentBuffer++,b++)
-    {
-        b->dataSize=0;
-        b->mem=((UInt8*)&(*currentBuffer)[sizeof(UDPHeader)]);
     }
 #   ifdef MULTICAST_STATISTICS
     Time readEndTime=getSystemTime();
     _statTimeRead+=readEndTime - readStartTime;
 #   endif
-
-    return result;
 }    
 
 /** Write buffer
  *
- * @param writeEnd  iterator points behind the last buffer containing data
- *
  **/
-void MulticastConnection::write(BuffersT::iterator writeEnd)
+void MulticastConnection::write(void)
 {
-    BuffersT::iterator b;
-    vector<UDPBufferInfo>::iterator d;
-    vector<UDPBufferInfo> dgrams;
-    UDPBuffer ackRequest;
-    set<Address> receivers(_receivers.begin(),_receivers.end());
-    set<Address> missingAcks;
-    Selection selection;
-    vector<UInt8> responseBuffer;
-    UDPBuffer *responseAck;
-    Time waitTime,maxWaitTime,t0,t1;
-    Address from;
+    vector<int>            send;
+    vector<int>::iterator  sendI;
+    BuffersT::iterator     bufferI;
+    UDPHeader              ackRequest;
+    set<Address>           receivers(_receivers.begin(),_receivers.end());
+    set<Address>           missingAcks;
+    Selection              selection;
+    UDPBuffer              responseAck;
+    Time                   waitTime,maxWaitTime,t0,t1;
+    Address                from;
+    UDPHeader             *header;
 
 #   ifdef MULTICAST_STATISTICS
     Time writeStartTime=getSystemTime();
 #   endif
 
-    // prepare buffers
-    for(b =_buffers.begin();
-        b!=writeEnd; 
-        ++b)
+    for(bufferI=writeBufBegin() ; 
+        bufferI!=writeBufEnd() && bufferI->getDataSize()>0 ;
+        bufferI++)
     {
-        UDPBufferInfo info;
-        // dgram information
-        info.size           = b->dataSize + sizeof(UDPHeader);
-        info.send           = true;
-        info.buffer         = (UDPBuffer*)(b->mem - sizeof(UDPHeader));
-        // set sequence numbers
-        info.buffer->header.seqNumber = _seqNumber++;
-        // data package
-        info.buffer->header.type       = DATA;
-        dgrams.push_back(info);
+        header = (UDPHeader*)(bufferI->getMem()-sizeof(UDPHeader));
+        header->type      = DATA;
+        header->seqNumber = _seqNumber++;
+        send.push_back(true);
 #   ifdef MULTICAST_STATISTICS
-        _statBytesWrite+=info.size;
+        _statBytesWrite+=bufferI->getDataSize();
 #   endif
     }
 
     // prepate ackRequest
-    ackRequest.header.seqNumber       = _seqNumber++;
-    ackRequest.header.type            = ACK;
-
-    // prepare response buffer. This is the max size for 
-    // ack response. longer packages will be truncated
-    responseBuffer.resize( (UInt8*)&ackRequest.nack.seqNumber[dgrams.size()]-
-                           (UInt8*)&ackRequest.header);
+    ackRequest.seqNumber       = _seqNumber++;
+    ackRequest.type            = ACK_REQUEST;
 
     // loop as long as one receiver needs some data
     while(!receivers.empty())
     {   
         // send packages as fast as possible
-        for(d =dgrams.begin();
-            d!=dgrams.end();
-            d++)
+        for(sendI =  send.begin()       , bufferI=writeBufBegin();
+            sendI != send.end();
+            sendI++                     , bufferI++)
         {
-            if(d->send)
+            if(*sendI == true)
             {
-                _socket.sendTo(d->buffer,d->size,_address);
-                d->send=false;
+                _socket.sendTo(bufferI->getMem()      - sizeof(UDPHeader),
+                               bufferI->getDataSize() + sizeof(UDPHeader),
+                               _address);
+                *sendI=false;
             }
         }
-        
         missingAcks=receivers;
         // cancle transmission if maxWaitForAck reached
         t0=OSG::getSystemTime();
@@ -519,8 +545,7 @@ void MulticastConnection::write(BuffersT::iterator writeEnd)
             _statAckRetransmit++;
 #   endif
             // send acknolage request
-            _socket.sendTo(&ackRequest.header,
-                           sizeof(UDPHeader),_address);
+            _socket.sendTo(&ackRequest,sizeof(UDPHeader),_address);
             // wait for acknolages. Max _waitForAck seconds.
             for(waitTime=_waitForAck,t1=OSG::getSystemTime();
                 waitTime>0.001 && (!missingAcks.empty());
@@ -529,9 +554,7 @@ void MulticastConnection::write(BuffersT::iterator writeEnd)
                 selection.setRead(_socket);
                 if(selection.select(waitTime)>0)
                 {
-                    _socket.recvFrom(&responseBuffer[0],
-                                     responseBuffer.size(),from);
-                    responseAck=(UDPBuffer*)&responseBuffer[0];
+                    _socket.recvFrom(&responseAck,sizeof(responseAck),from);
                     // ignore if we are not waiting for this ack
                     if(missingAcks.find(from)==missingAcks.end())
                     {
@@ -541,13 +564,13 @@ void MulticastConnection::write(BuffersT::iterator writeEnd)
                         continue;
                     }
                     // ignore if no ack or old package
-                    if(responseAck->header.type == DATA ||
-                       responseAck->header.seqNumber != 
-                       ackRequest.header.seqNumber)
+                    if(responseAck.header.type != ACK ||
+                       responseAck.header.seqNumber != 
+                       ackRequest.seqNumber)
                         continue;
                     // we got it, so we do not longer wait for this
                     missingAcks.erase(from);
-                    if(responseAck->nack.size==0)
+                    if(responseAck.nack.size==0)
                     {
                         // receiver has got all packages, so we can remove 
                         // from list of receivers for this transmission
@@ -556,29 +579,22 @@ void MulticastConnection::write(BuffersT::iterator writeEnd)
                     else
                     {
                         // mark packages for retransmission
-                        for(UInt32 i=0;i<responseAck->nack.size;i++) 
+                        for(UInt32 i=0;i<responseAck.nack.size;i++) 
                         {
 #   ifdef MULTICAST_STATISTICS
                             _statPckDrop++;
 #   endif
-                            /*
                             printf("Missing package %d %s:%d\n",
-                                   responseAck->nack.seqNumber[i],
+                                   responseAck.nack.missing[i],
                                    from.getHost().c_str(),
                                    from.getPort());
-                            */
-                            for(d =dgrams.begin();d!=dgrams.end();d++)
-                            {
-                                if(responseAck->nack.seqNumber[i] == 
-                                   d->buffer->header.seqNumber)
-                                    d->send=true;
-                            }
+                            send[responseAck.nack.missing[i]]=true;
                         }
                     }
                 }
             }
         }
-        // not all ack after maxWaitForAck seconds
+        // not all acks received after maxWaitForAck seconds
         if(!missingAcks.empty())
         {
             throw WriteError("ACK Timeout");

@@ -68,6 +68,8 @@
 #include <OSGAttachment.h> // Parent
 
 #include <OSGUInt32Fields.h> // ServerId type
+#include <OSGUInt32Fields.h> // X type
+#include <OSGUInt32Fields.h> // Y type
 #include <OSGBoolFields.h> // Composite type
 
 #include <OSGClusterWindowAttFields.h>
@@ -91,11 +93,15 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     enum
     {
         ServerIdFieldId  = Inherited::NextFieldId,
-        CompositeFieldId = ServerIdFieldId  + 1,
+        XFieldId         = ServerIdFieldId  + 1,
+        YFieldId         = XFieldId         + 1,
+        CompositeFieldId = YFieldId         + 1,
         NextFieldId      = CompositeFieldId + 1
     };
 
     static const osg::BitVector ServerIdFieldMask;
+    static const osg::BitVector XFieldMask;
+    static const osg::BitVector YFieldMask;
     static const osg::BitVector CompositeFieldMask;
 
     /*---------------------------------------------------------------------*/
@@ -123,10 +129,16 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \{                                                                 */
 
     inline       SFUInt32            *getSFServerId       (void);
+    inline       SFUInt32            *getSFX              (void);
+    inline       SFUInt32            *getSFY              (void);
     inline       SFBool              *getSFComposite      (void);
 
     inline       UInt32              &getServerId       (void);
     inline const UInt32              &getServerId       (void) const;
+    inline       UInt32              &getX              (void);
+    inline const UInt32              &getX              (void) const;
+    inline       UInt32              &getY              (void);
+    inline const UInt32              &getY              (void) const;
     inline       Bool                &getComposite      (void);
     inline const Bool                &getComposite      (void) const;
 
@@ -136,6 +148,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \{                                                                 */
 
     inline void setServerId       ( const UInt32 &value );
+    inline void setX              ( const UInt32 &value );
+    inline void setY              ( const UInt32 &value );
     inline void setComposite      ( const Bool &value );
 
     /*! \}                                                                 */
@@ -183,6 +197,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \{                                                                 */
 
     SFUInt32         	_sfServerId;
+    SFUInt32         	_sfX;
+    SFUInt32         	_sfY;
     SFBool           	_sfComposite;
 
     /*! \}                                                                 */

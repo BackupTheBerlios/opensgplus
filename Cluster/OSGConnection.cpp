@@ -89,7 +89,8 @@ char Connection::cvsid[] = "@(#)$Id:$";
 /** \brief Constructor
  */
 
-Connection::Connection(void):BinaryDataHandler()
+Connection::Connection(int zeroCopyThreshold):
+    BinaryDataHandler(zeroCopyThreshold)
 {
 }
 

@@ -103,6 +103,12 @@ namespace
 const OSG::BitVector	ClusterWindowAttBase::ServerIdFieldMask = 
     (1 << ClusterWindowAttBase::ServerIdFieldId);
 
+const OSG::BitVector	ClusterWindowAttBase::XFieldMask = 
+    (1 << ClusterWindowAttBase::XFieldId);
+
+const OSG::BitVector	ClusterWindowAttBase::YFieldMask = 
+    (1 << ClusterWindowAttBase::YFieldId);
+
 const OSG::BitVector	ClusterWindowAttBase::CompositeFieldMask = 
     (1 << ClusterWindowAttBase::CompositeFieldId);
 
@@ -112,6 +118,12 @@ const OSG::BitVector	ClusterWindowAttBase::CompositeFieldMask =
 
 /*! \var UInt32          ClusterWindowAttBase::_sfServerId
     Which server is responsible for the attached Window
+*/
+/*! \var UInt32          ClusterWindowAttBase::_sfX
+    X Position in client window
+*/
+/*! \var UInt32          ClusterWindowAttBase::_sfY
+    Y Position in client window
 */
 /*! \var Bool            ClusterWindowAttBase::_sfComposite
     Should the server send the rendered image back to the client
@@ -125,6 +137,16 @@ FieldDescription *ClusterWindowAttBase::_desc[] =
                      ServerIdFieldId, ServerIdFieldMask,
                      false,
                      (FieldAccessMethod) &ClusterWindowAttBase::getSFServerId),
+    new FieldDescription(SFUInt32::getClassType(), 
+                     "x", 
+                     XFieldId, XFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowAttBase::getSFX),
+    new FieldDescription(SFUInt32::getClassType(), 
+                     "y", 
+                     YFieldId, YFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowAttBase::getSFY),
     new FieldDescription(SFBool::getClassType(), 
                      "composite", 
                      CompositeFieldId, CompositeFieldMask,
@@ -190,6 +212,8 @@ void ClusterWindowAttBase::executeSync(      FieldContainer &other,
 
 ClusterWindowAttBase::ClusterWindowAttBase(void) :
 	_sfServerId               (), 
+	_sfX                      (), 
+	_sfY                      (), 
 	_sfComposite              (), 
 	Inherited() 
 {
@@ -199,6 +223,8 @@ ClusterWindowAttBase::ClusterWindowAttBase(void) :
 
 ClusterWindowAttBase::ClusterWindowAttBase(const ClusterWindowAttBase &source) :
 	_sfServerId               (source._sfServerId               ), 
+	_sfX                      (source._sfX                      ), 
+	_sfY                      (source._sfY                      ), 
 	_sfComposite              (source._sfComposite              ), 
 	Inherited                 (source)
 {
@@ -223,6 +249,16 @@ UInt32 ClusterWindowAttBase::getBinSize(const BitVector &whichField)
         returnValue += _sfServerId.getBinSize();
     }
 
+    if(FieldBits::NoField != (XFieldMask & whichField))
+    {
+        returnValue += _sfX.getBinSize();
+    }
+
+    if(FieldBits::NoField != (YFieldMask & whichField))
+    {
+        returnValue += _sfY.getBinSize();
+    }
+
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
     {
         returnValue += _sfComposite.getBinSize();
@@ -240,6 +276,16 @@ void ClusterWindowAttBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (ServerIdFieldMask & whichField))
     {
         _sfServerId.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (XFieldMask & whichField))
+    {
+        _sfX.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (YFieldMask & whichField))
+    {
+        _sfY.copyToBin(pMem);
     }
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
@@ -260,6 +306,16 @@ void ClusterWindowAttBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfServerId.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (XFieldMask & whichField))
+    {
+        _sfX.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (YFieldMask & whichField))
+    {
+        _sfY.copyFromBin(pMem);
+    }
+
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
     {
         _sfComposite.copyFromBin(pMem);
@@ -276,6 +332,12 @@ void ClusterWindowAttBase::executeSyncImpl(      ClusterWindowAttBase *pOther,
 
     if(FieldBits::NoField != (ServerIdFieldMask & whichField))
         _sfServerId.syncWith(pOther->_sfServerId);
+
+    if(FieldBits::NoField != (XFieldMask & whichField))
+        _sfX.syncWith(pOther->_sfX);
+
+    if(FieldBits::NoField != (YFieldMask & whichField))
+        _sfY.syncWith(pOther->_sfY);
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
         _sfComposite.syncWith(pOther->_sfComposite);

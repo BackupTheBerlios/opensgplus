@@ -1,3 +1,5 @@
+#include <OSGConfig.h>
+#include <OSGBaseFunctions.h>
 #include <OSGMulticastConnection.h>
 
 using namespace OSG;
@@ -6,12 +8,14 @@ int main(int argc,char **argv)
 {
     UInt32 i,j;
 
+ 	// OSG init
+    osgInit(argc, argv);
     try
     {
         if(argc>1 && (strcmp(argv[1],"-s")==0))
         {
             MulticastConnection con;
-            for(i=2;(int)i<argc;i+=2)
+            for(i=2;(int)i<argc;i+=1)
             {
                 string addr=argv[i];
                 addr+=":5555";
@@ -19,7 +23,10 @@ int main(int argc,char **argv)
                 con.connect( addr );
             }
             for(i=0;i<10000000;i++)
+            {
+//                cout << i << endl;
                 con.putUInt32(i);
+            }
             con.flush();
             con.printStatistics();
         }
@@ -27,13 +34,14 @@ int main(int argc,char **argv)
         {
             MulticastConnection con;
             con.accept("5555");
+            while(!con.selectChannel());
             for(i=0;i<10000000;i++)
             {
                 con.getUInt32(j);
 //                cout << j << endl;
                 if(j!=i)
                 {
-                    cout << "Error: Unexpected data!!" << endl;
+                    cout << "Error: Unexpected data!! " << j << endl;
                 }
             }
             con.printStatistics();

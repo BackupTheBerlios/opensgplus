@@ -110,17 +110,16 @@ char StreamSockConnection::cvsid[] = "@(#)$Id:$";
  */
 
 StreamSockConnection::StreamSockConnection():
-    Inherited(),
+    Inherited(200),
     _sockets()
 {
-    _socketBuffer.resize(16000);
-    _zeroCopyThreshold=200;
+    _socketReadBuffer.resize(16000);
+    _socketWriteBuffer.resize( _socketReadBuffer.size() );
     // reserve first bytes for buffer size
-    _buffers.push_back(
-        MemoryBlock(&_socketBuffer[sizeof(SocketBufferHeader)],
-                    _socketBuffer.size()-sizeof(SocketBufferHeader)) );
-    _socketBufferHeader=(SocketBufferHeader*)&_socketBuffer[0];
-    reset();
+    readBufAdd (&_socketReadBuffer [sizeof(SocketBufferHeader)],
+                _socketReadBuffer.size() -sizeof(SocketBufferHeader));
+    writeBufAdd(&_socketWriteBuffer[sizeof(SocketBufferHeader)],
+                _socketWriteBuffer.size()-sizeof(SocketBufferHeader));
 }
 
 /** \brief Destructor
@@ -138,35 +137,17 @@ StreamSockConnection::~StreamSockConnection(void)
 
 /** Read data into given memory
  *
- * The first socket that provides data is used for read.
+ * Read data form the current read socket. The read socket is that
+ * socket, that was selectet in selectChannel.
  *
- * @bug It is not possible to read sync from multible sources 
- *      with a StreamSockConnection. This is currently not a
- *      real problem. You have to switch off zero copy to get this work
- *      MR
  **/
 
-void StreamSockConnection::read(MemoryHandle mem,int size)
+void StreamSockConnection::read(MemoryHandle mem,UInt32 size)
 {
-    Selection selection;
-    SocketsT::iterator i;
     int len;
 
-    // wait for first socket to deliver data
-    for(i=_sockets.begin();i!=_sockets.end();i++)
-        selection.setRead(*i);
-    // select ok ?
-    if(!selection.select(-1))
-    {
-        throw ReadError("no socket selectable");
-    }
-    // get readable socket
-    for(i=_sockets.begin();!selection.isSetRead(*i);i++)
-        if(i==_sockets.end())
-            throw ReadError("no socket readable");
-    StreamSocket socket=*i;
     // read data
-    len=socket.read(mem,size);
+    len=_readSocket.read(mem,size);
     if(len==0)
     {
         throw ReadError("read got 0 bytes!");
@@ -175,51 +156,34 @@ void StreamSockConnection::read(MemoryHandle mem,int size)
 
 /** Read next data block
  *
- * The first socket that provides data is used for read. 
+ * The stream connection uses only BinaryDataHandler buffer. If more
+ * then one buffer is present, then this methode must be changed!
  *
- * @return buffer iterator points behind the last buffer containing data
  */
 
-BinaryDataHandler::BuffersT::iterator StreamSockConnection::read()
+void StreamSockConnection::read()
 {
-    SocketsT::iterator i;
-    Selection selection;
-    int readSize;
+    BuffersT::iterator buffer;
+    int size;
     int len;
 
-    // wait for first socket to deliver data
-    for(i=_sockets.begin();
-        i!=_sockets.end();
-        i++)
-        selection.setRead(*i);
-    // select ok ?
-    if(!selection.select(-1))
-    {
-        throw ReadError("no socket selectable");
-    }
-    // get readable socket
-    for(i=_sockets.begin();!selection.isSetRead(*i);i++)
-        if(i==_sockets.end())
-            throw ReadError("no socket readable");
-    StreamSocket socket=*i;
     // read buffer header
-    len=socket.read(&_socketBuffer[0],sizeof(SocketBufferHeader));
+    len=_readSocket.read(&_socketReadBuffer[0],sizeof(SocketBufferHeader));
     if(len==0)
         throw ReadError("peek got 0 bytes!");
     // read remaining data
-    len=socket.read(_buffers[0].mem,
-                    _socketBufferHeader->size);
+    size=((SocketBufferHeader*)&_socketReadBuffer[0])->size;
+    len=_readSocket.read(&_socketReadBuffer[sizeof(SocketBufferHeader)],size);
     if(len==0)
         throw ReadError("read got 0 bytes!");
-    _buffers[0].dataSize = _socketBufferHeader->size;
-    return _buffers.end();
+    readBufBegin()->setDataSize(size);
 }    
 
 /** Write data to all destinations
  *
  **/
 
-void StreamSockConnection::write(MemoryHandle mem,int size)
+void StreamSockConnection::write(MemoryHandle mem,UInt32 size)
 {
     SocketsT::iterator socket;
 
@@ -234,29 +198,21 @@ void StreamSockConnection::write(MemoryHandle mem,int size)
 
 /** Write buffer
  *
- * @param writeEnd  iterator points behind the last buffer containing data
+ * Write blocksize and data.
  *
  **/
-void StreamSockConnection::write(BuffersT::iterator writeEnd)
+void StreamSockConnection::write(void)
 {
-    UInt32 size=0;
-    SocketsT::iterator socket;
-    BuffersT::iterator i;
-
-    // calculate blocklen
-    for(i =_buffers.begin(); i!=writeEnd; ++i)
-    {
-        size+=i->dataSize;
-    }
+    UInt32 size = writeBufBegin()->getDataSize();
     // write size to header
-    _socketBufferHeader->size=size;
+    ((SocketBufferHeader*)&_socketWriteBuffer[0])->size=size;
     // write data to all sockets
-    for(socket =_sockets.begin();
+    for(SocketsT::iterator socket =_sockets.begin();
         socket!=_sockets.end();
-        socket++)
+        ++socket)
     {
         // write whole block
-        socket->write(&_socketBuffer[0],size+sizeof(SocketBufferHeader));
+        socket->write(&_socketWriteBuffer[0],size+sizeof(SocketBufferHeader));
     }
 }
 
@@ -300,7 +256,7 @@ void StreamSockConnection::connect( const string &address )
 /** wait for sync
  *
  **/
-void StreamSockConnection::wait()
+void StreamSockConnection::wait(void)
 {
     SocketsT::iterator   i;
     UInt8                trigger;
@@ -324,7 +280,7 @@ void StreamSockConnection::wait()
 /** send sync
  *
  **/
-void StreamSockConnection::signal()
+void StreamSockConnection::signal(void)
 {
     SocketsT::iterator   i;
     UInt8                trigger;
@@ -343,6 +299,43 @@ void StreamSockConnection::signal()
         // send signal to all links
         i->write(&trigger,sizeof(UInt8));
     }
+}
+
+/** get number of links
+ *
+ **/
+UInt32 StreamSockConnection::getChannelCount(void)
+{
+    return _sockets.size();
+}
+
+/** select channel for read
+ *
+ * A connection can have n links from which data can be read. So we
+ * need to select one channel for exclusive read. 
+ *
+ **/
+Bool StreamSockConnection::selectChannel(void)
+{
+    SocketsT::iterator socket;
+    Selection selection;
+
+    // wait for first socket to deliver data
+    for(socket=_sockets.begin();
+        socket!=_sockets.end();
+        socket++)
+        selection.setRead(*socket);
+    // select ok ?
+    if(!selection.select(-1))
+    {
+        return false;
+    }
+    // get readable socket
+    for(socket=_sockets.begin();!selection.isSetRead(*socket);socket++)
+        if(socket==_sockets.end())
+            throw ReadError("no socket readable");
+    _readSocket=*socket;
+    return true;
 }
 
 /*-------------------------- assignment -----------------------------------*/

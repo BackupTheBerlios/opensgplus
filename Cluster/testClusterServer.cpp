@@ -39,15 +39,18 @@
 #include "OSGMulticastConnection.h"
 #include "OSGVRMLWriteAction.h"
 #include "OSGClusterWindowAtt.h"
+#include "OSGImageComposition.h"
 
 using namespace OSG;
 
-Connection      *connection;
-UInt32           serverNr=-1;
-RenderAction	*ract;
-WindowPtr        osgWin;
-RemoteAspect     aspect;
-int              winid;
+Connection         *connection;
+UInt32              serverNr=999999;
+RenderAction	   *ract;
+WindowPtr           osgWin;
+RemoteAspect        aspect;
+int                 winid;
+ImageComposition    composition;
+ClusterWindowAttPtr windowAtt;
 
 Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
                              RemoteAspect * aspect)
@@ -96,7 +99,11 @@ Bool WindowChangedFunction(FieldContainerPtr& fcp,
         glEnable( GL_NORMALIZE );
         window->setWinID(winid);
         osgWin = window;
+        windowAtt = att;
     }
+    cout << osgWin->getWidth() << " " << osgWin->getHeight() << endl;
+    osgWin->setSize(osgWin->getWidth(),osgWin->getHeight());
+    glutReshapeWindow(osgWin->getWidth(),osgWin->getHeight());
     glutShowWindow();
     return true;
 }
@@ -112,11 +119,36 @@ void display()
             osgWin->frameInit();	            // frame-cleanup
             osgWin->renderAllViewports( ract );	// draw the viewports     
         }
-        connection->wait();
         if(osgWin!=NullFC)
         {
-            osgWin->swap(); 
+            if(windowAtt->getComposite())
+            {
+                TileCameraDecoratorPtr tile;
+                for(UInt32 i=0;i<osgWin->getPort().size();i++)
+                {
+                    tile=TileCameraDecoratorPtr::dcast(
+                        osgWin->getPort()[i]->getCamera());
+                    if(tile!=NullFC)
+                    {
+                        composition.send(
+                            *connection,
+                            tile->getLeft()   * tile->getFullWidth(),
+                            tile->getBottom() * tile->getFullHeight(),
+                            osgWin->getWidth(),
+                            osgWin->getHeight());
+                        cout << endl;
+                        composition.printStatistics();
+                        cout << endl;
+                    }
+                }
+                osgWin->swap(); 
+            }
+            else
+            {
+                connection->wait();
+                osgWin->swap(); 
                 osgWin->frameExit();	            // frame-cleanup
+            }
         }
     }
     catch(exception &e)
@@ -163,7 +195,7 @@ int main( int argc, char **argv )
         }
         address=argv[arg];
     }
-    if(serverNr==-1)
+    if(serverNr==999999)
     {
         printf("Option -s missing. Unknown server number. E.g. -s0\n"); 
         exit(1);

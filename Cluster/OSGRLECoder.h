@@ -75,17 +75,17 @@ template <> inline short       minValue<short>()       { return SHRT_MIN;  }
  *
  *  AABAABAABAAB This is the pattern for the worst case 
  *
- *  The template param 'offset' is used to compress data wich gaps.
+ *  The template param 'offset' is used to compress data with gaps.
  *  E.g. to compress each color component of an RGBA value you can 
  *  use an offset 4 and call RLEEncode 4 times.
  *  
- *  buffer=RLEEncode<signed char,4>(&img[0],&img[800*600  ],buffer);
- *  buffer=RLEEncode<signed char,4>(&img[1],&img[800*600+1],buffer);
- *  buffer=RLEEncode<signed char,4>(&img[2],&img[800*600+2],buffer);
+ *  buffer=RLEEncode<signed char,4>(&img[0],&img[800*600*4  ],buffer);
+ *  buffer=RLEEncode<signed char,4>(&img[1],&img[800*600*4+1],buffer);
+ *  buffer=RLEEncode<signed char,4>(&img[2],&img[800*600*4+2],buffer);
  *
  **/
 template <class T,int offset>
-T *RLEEncode(T *src,T *srcEnd,T *dst)
+T *RLEEncode(const T *src,const T *srcEnd,T *dst)
 {
     T *cntPtr=dst++;
     T cnt=0;
@@ -156,11 +156,11 @@ T *RLEEncode(T *src,T *srcEnd,T *dst)
  *  Run length uncompression
  **/
 template <class T,int offset>
-T *RLEDecode(T *src,T *srcEnd,T *dst)
+const T *RLEDecode(const T *src,T *dst,const T *dstEnd)
 {
     T value;
     T cnt;
-    while(src != srcEnd)
+    while(dst != dstEnd)
     {
         cnt = *src++;
         if(cnt>=0)
@@ -181,8 +181,9 @@ T *RLEDecode(T *src,T *srcEnd,T *dst)
             }
         }
     }
-    return dst;
+    return src;
 }
 
 #endif
+
 

@@ -194,6 +194,7 @@ void RemoteAspect::receiveSync(Connection &connection)
     ReceivedTypeT::iterator receivedTypeI;
     ReceivedFCT::iterator receivedFCI;
 
+    connection.selectChannel();
     // register mapper into factory
     mapper._remoteAspect=this;
     factory->setMapper(&mapper);

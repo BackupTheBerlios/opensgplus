@@ -51,6 +51,7 @@
 #include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGBinaryDataHandler.h>
+#include <OSGTime.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -96,15 +97,17 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
     //   instance functions                                                  
     //-----------------------------------------------------------------------
 
-    Connection(void);
+    Connection(int zeroCopyThreshold);
     virtual ~Connection(void); 
 
     /*------------------------- your_category -------------------------------*/
 
-    virtual void accept         ( const std::string &address )=0;
-    virtual void connect        ( const std::string &address )=0;
-    virtual void wait           ()=0;
-    virtual void signal         ()=0;
+    virtual void   accept          ( const std::string &address )=0;
+    virtual void   connect         ( const std::string &address )=0;
+    virtual void   wait            ( void )=0;
+    virtual void   signal          ( void )=0;
+    virtual UInt32 getChannelCount ( void )=0;
+    virtual Bool   selectChannel   ( void )=0;
 
     /*------------------------- your_operators ------------------------------*/
 

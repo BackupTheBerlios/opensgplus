@@ -107,19 +107,15 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Connection establishment                   */
+    /*! \name                   Communication                              */
     /*! \{                                                                 */
 
-    void accept         ( const string &address );
-    void connect        ( const string &address );
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Synchronisation                            */
-    /*! \{                                                                 */
-
-    void wait           ();
-    void signal         ();
+    void   accept          ( const string &address );
+    void   connect         ( const string &address );
+    void   wait            ( void );
+    void   signal          ( void );
+    UInt32 getChannelCount ( void );
+    Bool   selectChannel   ( void );
 
     /*! \}                                                                 */
 
@@ -130,13 +126,13 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \name                   IO Implementation                          */
     /*! \{                                                                 */
 
-    virtual void               read(MemoryHandle mem,int size);
-    virtual BuffersT::iterator read();
-    virtual void               write(BuffersT::iterator writeEnd);
-    virtual void               write(MemoryHandle mem,int size);
-    void                       interpreteAddress(const string &address,
-                                                 std::string  &host,
-                                                 UInt32       &port);
+    virtual void      read(MemoryHandle mem,UInt32 size);
+    virtual void      read();
+    virtual void      write(MemoryHandle mem,UInt32 size);
+    virtual void      write();
+    void              interpreteAddress(const std::string  &address,
+                                              std::string  &host,
+                                              UInt32       &port);
 
     /*! \}                                                                 */
 
@@ -144,9 +140,10 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \name                Instance Variables                            */
     /*! \{                                                                 */
 
+    StreamSocket         _readSocket;
     SocketsT             _sockets;
-    std::vector<UInt8>   _socketBuffer;
-    SocketBufferHeader  *_socketBufferHeader;
+    std::vector<UInt8>   _socketReadBuffer;
+    std::vector<UInt8>   _socketWriteBuffer;
 
     /*! \}                                                                 */
 

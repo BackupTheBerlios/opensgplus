@@ -22,6 +22,7 @@
 #include <OSGMFVecTypes.h>
 #include <OSGAction.h>
 #include <OSGDrawAction.h>
+#include <OSGRenderAction.h>
 #include <OSGSceneFileHandler.h>
 #include <OSGDirectionalLight.h>
 #include <OSGSimpleGeometry.h>
@@ -46,6 +47,7 @@
 #include "OSGStreamSockConnection.h"
 #include "OSGMulticastConnection.h"
 #include "OSGClusterWindowAtt.h"
+#include "OSGImageComposition.h"
 
 using namespace OSG;
 using namespace std;
@@ -60,6 +62,8 @@ VRMLFile             *pLoader = NULL;
 Connection           *connection;
 int                   servers;
 RemoteAspect          aspect;
+ImageComposition      composition;
+Bool                  composite=false;
 
 // **************
 // GLUT variables
@@ -71,9 +75,14 @@ int mouseb = 0;
 int lastx=0, lasty=0;
 int winwidth=0, winheight=0;
 
+vector<WindowPtr>              windows;
+vector<TileCameraDecoratorPtr> decos;
+RenderAction * dummyract;
 DrawAction * ract;
 WindowPtr win;
 int winid;
+int nhserv;
+int nvserv=1;
 
 // Program
 
@@ -94,8 +103,6 @@ void createSceneGraph(int argc,char **argv)
 {
     int width=servers*500;
     int height=500;
-    int nhserv=servers;
-    int nvserv=1;
     int i;
     char *filename;
     GLUTWindowPtr window;
@@ -103,7 +110,8 @@ void createSceneGraph(int argc,char **argv)
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
     Color3f bkgndcolor(0,0,1);
-    
+
+    nhserv=servers;
 	// create the graph
 	// beacon for camera and light	
     NodePtr b1n = Node::create();
@@ -248,6 +256,7 @@ void createSceneGraph(int argc,char **argv)
         deco->setFullWidth(width);
         deco->setFullHeight(height);
         endEditCP(deco);
+        decos.push_back(deco);
 
         vp = Viewport::create();
         beginEditCP(vp);
@@ -262,7 +271,10 @@ void createSceneGraph(int argc,char **argv)
         beginEditCP(pWindowAtt);
         {
             pWindowAtt->setServerId(i);
-            pWindowAtt->setComposite(false);
+            pWindowAtt->setComposite(composite);
+            pWindowAtt->setX(width/nhserv * i);
+            pWindowAtt->setY(0);
+            
         }
         endEditCP(pWindowAtt);
 
@@ -272,6 +284,7 @@ void createSceneGraph(int argc,char **argv)
         window->addPort( vp );
         window->setSize(width/nhserv,height/nvserv);
         endEditCP(window);
+        windows.push_back(window);
     }
 
     // move geometry in to viewfrustum
@@ -293,10 +306,19 @@ void createSceneGraph(int argc,char **argv)
 	
 	// Viewport
 
+    b1n = Node::create();
+    b1 = Group::create();
+	beginEditCP(b1n);
+	b1n->setCore( b1 );
+	endEditCP(b1n);
+
 	vp = Viewport::create();
 	vp->setCamera( cam );
 	vp->setBackground( bkgnd );
-	vp->setRoot( root );
+    if(composite)
+        vp->setRoot( b1n );
+    else
+        vp->setRoot( root );
 	vp->setSize( 0,0, 1,1 );
 
 	// Window
@@ -341,15 +363,32 @@ display(void)
 	cam_trans->getSFMatrix()->setValue( m1 );
 	endEditCP( cam_trans );
 
-	win->draw( ract );	
-
     try
     {
         // send syncronisation
         aspect.sendSync(*connection,Thread::getCurrentChangeList());
         Thread::getCurrentChangeList()->clearAll();
-        // sync swap
-        connection->signal();
+
+        if(composite)
+        {
+            win->frameInit();	            // frame-cleanup
+            // i dont'n need this. resize doesn't work otherwise
+            win->renderAllViewports(dummyract);	// draw the viewports     
+
+            composition.clearStatistics();
+            composition.recv(*connection,
+                             win->getWidth(),
+                             win->getHeight());
+            composition.printStatistics();
+            win->swap(); 
+            win->frameExit();	            // frame-cleanup
+        }
+        else
+        {
+            // sync swap
+            connection->signal();
+            win->draw( ract );	
+        }
 	}
     catch(exception &e)
     {
@@ -363,11 +402,30 @@ display(void)
     }
 }
 
-void reshape( int w, int h )
+void reshape( int width, int height )
 {
-	cerr << "Reshape: " << w << "," << h << endl;
-	win->resize( w, h );
-	
+	cerr << "Reshape: " << width << "," << height << endl;
+	win->resize( width, height );
+
+    if(composite)
+    {
+        vector<TileCameraDecoratorPtr>::iterator t;
+        vector<WindowPtr>::iterator w;
+        for(t=decos.begin();t!=decos.end();t++)
+        {
+            beginEditCP( (*t) );
+            (*t)->setFullWidth(width);
+            (*t)->setFullHeight(height);
+            endEditCP( (*t) );
+        }
+        for(w=windows.begin();w!=windows.end();w++)
+        {
+            beginEditCP( (*w) );
+            (*w)->setSize(width/nhserv,height/nvserv);
+            endEditCP( (*w) );
+        }
+
+    }
 	glutPostRedisplay();
 }
 
@@ -503,11 +561,13 @@ int main( int argc, char **argv )
 	glutMotionFunc(motion); 
 
 	ract = DrawAction::create();
-	// just draw the group's volumes as wireframe, ignore geometries
-	ract->registerEnterFunction( Group::getClassType(),
-									osgFunctionFunctor2( wireDraw ) );
-	ract->registerEnterFunction( Geometry::getClassType(),
-									osgFunctionFunctor2( ignore ) );
+	dummyract = RenderAction::create();
+
+    // just draw the group's volumes as wireframe, ignore geometries
+    ract->registerEnterFunction( Group::getClassType(),
+                                 osgFunctionFunctor2( wireDraw ) );
+    ract->registerEnterFunction( Geometry::getClassType(),
+                                 osgFunctionFunctor2( ignore ) );
 
     // clear changelist from prototypes
     OSG::Thread::getCurrentChangeList()->clearAll();
@@ -518,6 +578,8 @@ int main( int argc, char **argv )
         {
             if(strcmp(argv[arg],"-m")==0)
                 connType=1;
+            if(strcmp(argv[arg],"-c")==0)
+                composite=true;
         }
         switch(connType)
         {
@@ -539,7 +601,9 @@ int main( int argc, char **argv )
         }
         if(servers==0)
         {
-            cout << argv[0] << " [-m] [-ffile] [-wwidth] [-hheight] server1 server2 ... serverN" << endl;
+            cout << argv[0] << 
+                " [-m] [-c] [-ffile] "
+                "[-wwidth] [-hheight] server1 server2 ... serverN" << endl;
             exit(0);
         }
         createSceneGraph(argc,argv);
