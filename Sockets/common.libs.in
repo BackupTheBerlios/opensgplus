@@ -1,6 +1,7 @@
 # add the Sockets library to the system
 
 ac_gdz_packages="${ac_gdz_packages} Sockets"
+ac_gdz_package_order="${ac_gdz_package_order} Sockets"
 
 ac_gdz_package_name_Sockets="Sockets" 
 ac_gdz_package_fact_init_Sockets="0" 
