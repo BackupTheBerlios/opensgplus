@@ -23,7 +23,7 @@
 #include <OSGDrawAction.h>
 #include <OSGMultiDisplayWindow.h>
 #include <OSGSortFirstWindow.h>
-#include <OSGSimpClustSterWin.h>
+#include <OSGShearedStereoCameraDecorator.h>
 
 OSG_USING_NAMESPACE
 
@@ -39,10 +39,11 @@ RenderAction         *ract,*ract1,*ract2;
 GLUTWindowPtr         clientWindow;
 SortFirstWindowPtr    sortfirst;
 MultiDisplayWindowPtr multidisplay;
-SimpClustSterWinPtr   stereodisplay;
 bool                  animate=false;
 bool                  multiport=false;
 float                 ca=-1,cb=-1,cc=-1;
+bool                  doStereo=false;
+float                 eyedistance=1,zeroparallax=10;
 
 void showText(int x, int y, char *string)
 {
@@ -398,21 +399,61 @@ void init(vector<char *> &filenames)
 
     // Viewport
     OSG::ViewportPtr vp1;
-    vp1 = OSG::Viewport::create();
-    beginEditCP(vp1);
-    vp1->setCamera    ( cam );
-    vp1->setBackground( bkgnd );
-    vp1->setRoot      ( root );
-    vp1->setSize      ( 0,0, 1,1 );
-    endEditCP(vp1);
     OSG::ViewportPtr vp2;
-    vp2 = OSG::Viewport::create();
-    beginEditCP(vp2);
-    vp2->setCamera    ( cam );
-    vp2->setBackground( bkgnd );
-    vp2->setRoot      ( root );
-    vp2->setSize      ( .1, .55, .5,.95 );
-    endEditCP(vp2);
+    if(!doStereo)
+    {
+        vp1 = OSG::Viewport::create();
+        beginEditCP(vp1);
+        vp1->setCamera    ( cam );
+        vp1->setBackground( bkgnd );
+        vp1->setRoot      ( root );
+        vp1->setSize      ( 0,0, 1,1 );
+        endEditCP(vp1);
+        if(multiport)
+        {
+            vp2 = OSG::Viewport::create();
+            beginEditCP(vp2);
+            vp2->setCamera    ( cam );
+            vp2->setBackground( bkgnd );
+            vp2->setRoot      ( root );
+            vp2->setSize      ( .1, .55, .7,.95 );
+            endEditCP(vp2);
+        }
+    }
+    else
+    {
+        OSG::ShearedStereoCameraDecoratorPtr deco;
+        // left
+        deco=OSG::ShearedStereoCameraDecorator::create();
+        beginEditCP(deco);
+        deco->setLeftEye(true);
+        deco->setEyeSeparation(eyedistance);
+        deco->setDecoratee(cam);
+        deco->setZeroParallaxDistance(zeroparallax);
+        vp1 = OSG::Viewport::create();
+        beginEditCP(vp1);
+        vp1->setCamera    ( deco );
+        vp1->setBackground( bkgnd );
+        vp1->setRoot      ( root );
+        vp1->setSize      ( 0,0, .5,1 );
+        endEditCP(vp1);
+        endEditCP(deco);
+        // right
+        deco=OSG::ShearedStereoCameraDecorator::create();
+        beginEditCP(deco);
+        deco->setLeftEye(false);
+        deco->setEyeSeparation(eyedistance);
+        deco->setDecoratee(cam);
+        deco->setZeroParallaxDistance(zeroparallax);
+        vp2 = OSG::Viewport::create();
+        beginEditCP(vp2);
+        vp2->setCamera    ( deco );
+        vp2->setBackground( bkgnd );
+        vp2->setRoot      ( root );
+        vp2->setSize      ( .5,0,1,1 );
+        endEditCP(vp2);
+        endEditCP(deco);
+    }
 
     GLint glvp[4];
     glGetIntegerv( GL_VIEWPORT, glvp );
@@ -420,7 +461,7 @@ void init(vector<char *> &filenames)
 	beginEditCP(clusterWindow);
     clusterWindow->setSize( glvp[2], glvp[3] );
     clusterWindow->addPort( vp1 );
-    if(multiport)
+    if(multiport || doStereo)
         clusterWindow->addPort( vp2 );
 	endEditCP(clusterWindow);
 
@@ -453,7 +494,6 @@ int main(int argc,char **argv)
     string connectionType = "StreamSock";
     int rows=1;
     char type='M';
-    float eyedistance=1,zeroparallax=10;
     bool clientRendering=true;
     
     try
@@ -498,8 +538,8 @@ int main(int argc,char **argv)
                     case 'M':
                         type='M';
                         break;
-                    case 'S':
-                        type='S';
+                    case 's':
+                        doStereo=true;
                         break;
                     case 'e':
                         sscanf(argv[i]+2,"%f",&eyedistance);
@@ -523,7 +563,7 @@ int main(int argc,char **argv)
                              << "-C  sort-first and compose" << endl
                              << "-F  sort-first" << endl
                              << "-h  this msg" << endl
-                             << "-S  stereo" << endl
+                             << "-s  stereo" << endl
                              << "-e  eye distance" << endl
                              << "-z  zero parallax" << endl
                              << "-d  disable client rendering" << endl
@@ -589,10 +629,6 @@ int main(int argc,char **argv)
                 endEditCP(sortfirst);
                 clusterWindow=sortfirst;
                 break;
-            case 'S':
-                stereodisplay=SimpClustSterWin::create();
-                clusterWindow=stereodisplay;
-                break;
         }
         beginEditCP(clusterWindow);
         {
@@ -612,10 +648,6 @@ int main(int argc,char **argv)
                         clusterWindow->getServers().size()/rows);
                     multidisplay->setVServers(
                         rows);
-                    break;
-                case 'S':
-                    stereodisplay->setEyedistance(eyedistance);
-                    stereodisplay->setZeroparallax(zeroparallax);
                     break;
             }
         }
