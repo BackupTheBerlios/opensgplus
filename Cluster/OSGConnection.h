@@ -52,6 +52,8 @@
 #include <OSGBaseTypes.h>
 #include <OSGBinaryDataHandler.h>
 #include <OSGTime.h>
+#include <OSGStatCollector.h>
+#include <OSGStatElemTypes.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -83,9 +85,19 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
     virtual const ConnectionType *getType         ( void                  )=0;
 
     /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Statistics                                 */
+    /*! \{                                                                 */
+
+    StatCollector *getStatistics(void                  ) const;
+    void           setStatistics(StatCollector * stat  );
+
+    /*! \}                                                                 */
 
     /*=========================  PROTECTED  ===============================*/
   protected:
+
+    StatCollector   *_statistics;
 
     /*==========================  PRIVATE  ================================*/
   private:
@@ -107,5 +119,7 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
 typedef Connection *ConnectionP;
 
 OSG_END_NAMESPACE
+
+#include "OSGConnection.inl"
 
 #endif /* _CONNECTION_H_ */

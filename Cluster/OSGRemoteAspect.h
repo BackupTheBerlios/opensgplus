@@ -112,6 +112,13 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
                              const Functor &func            );
 
     /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Statistics                                 */
+    /*! \{                                                                 */
+
+    void           setStatistics(StatCollector * stat  );
+
+    /*! \}                                                                 */
 
     /*=========================  PROTECTED  ===============================*/
   protected:
@@ -127,6 +134,7 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     vector<Functor>                   _createdFunctors;
     vector<Functor>                   _destroyedFunctors;
     vector<Functor>                   _changedFunctors;
+    StatCollector                    *_statistics;
     
     void   send          ( Connection &connection    );
     void   receive       ( Connection &connection    );
@@ -146,6 +154,8 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
                                                       RemoteAspect * aspect);
     static bool _defaultChangedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
+
+    static StatElemDesc<StatTimeElem> statSyncTime;
 
 	// prohibit default functions (move to 'public' if you need one)
     RemoteAspect(const RemoteAspect &source);

@@ -6,10 +6,11 @@ ac_gdz_package_name_Cluster="Cluster"
 ac_gdz_package_fact_init_Cluster="1" 
 ac_gdz_package_dirs_Cluster="Cluster@ Cluster/SimpleStereo@ Cluster/MultiDisplay@ Cluster/SortFirst@" 
 ac_gdz_package_inc_dep_Cluster="@Base@ @System@ Sockets GL" 
-ac_gdz_package_link_dep_Cluster="SystemLib BaseLib SocketsLib" 
+ac_gdz_package_link_dep_Cluster="SystemLib BaseLib SocketsLib GL" 
 ac_gdz_package_testinc_dep_Cluster="Window/GLUT Window/QT" 
-ac_gdz_package_testlink_dep_Cluster="WindowGLUTLib WindowQTLib GLUT QT GL TIF JPG" 
+ac_gdz_package_testlink_dep_Cluster="WindowGLUTLib WindowQTLib GLUT QT TIF JPG" 
 ac_gdz_package_def_Cluster="OSG_COMPILECLUSTERLIB" 
+
 
 
 

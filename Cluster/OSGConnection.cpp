@@ -91,7 +91,8 @@ char Connection::cvsid[] = "@(#)$Id:$";
  */
 
 Connection::Connection(int zeroCopyThreshold):
-    BinaryDataHandler(zeroCopyThreshold)
+    BinaryDataHandler(zeroCopyThreshold),
+    _statistics(NULL)
 {
 }
 
@@ -102,6 +103,13 @@ Connection::~Connection(void)
 {
 }
 
+/** \brief set statistics collector
+ */
+
+void Connection::setStatistics(StatCollector *statistics)
+{
+    _statistics = statistics;
+}
 
 
 

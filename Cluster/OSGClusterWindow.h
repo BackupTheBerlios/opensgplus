@@ -44,6 +44,8 @@
 
 #include <OSGConfig.h>
 #include <OSGClusterWindowBase.h>
+#include <OSGStatCollector.h>
+#include <OSGStatElemTypes.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -97,6 +99,15 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     virtual void    frameExit         ( void                        );
 
     /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Statistics                                 */
+    /*! \{                                                                 */
+
+    StatCollector *getStatistics(void                  ) const;
+    void           setStatistics(StatCollector * stat  );
+
+    /*! \}                                                                 */
+
     /*=========================  PROTECTED  ===============================*/
   protected:
 
@@ -144,6 +155,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
     Connection      *_connection;
     RemoteAspect    *_remoteAspect;
     bool             _firstFrame;
+    StatCollector   *_statistics;
 
     /*! \}                                                                 */
 

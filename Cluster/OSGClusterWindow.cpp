@@ -99,7 +99,8 @@ namespace
 ClusterWindow::ClusterWindow(void) :
     Inherited(),
     _connection(NULL),
-    _remoteAspect(NULL)
+    _remoteAspect(NULL),
+    _statistics(NULL)
 {
 }
 
@@ -108,7 +109,8 @@ ClusterWindow::ClusterWindow(void) :
 ClusterWindow::ClusterWindow(const ClusterWindow &source) :
     Inherited(source),
     _connection(NULL),
-    _remoteAspect(NULL)
+    _remoteAspect(NULL),
+    _statistics(NULL)
 {
 }
 
@@ -175,8 +177,15 @@ void ClusterWindow::init( void )
     {
         SFATAL << "Unknown connection type " << getConnectionType() << endl;
     }
+    if(_connection && _statistics)
+    {
+        _connection->setStatistics(_statistics);
+    }
     // create remote aspect
     _remoteAspect = new RemoteAspect();
+    if(_statistics)
+        _remoteAspect->setStatistics(_statistics);
+
     // connect to all servers
     for(s =getServers().begin();
         s!=getServers().end();
@@ -290,6 +299,17 @@ void ClusterWindow::frameInit(void)
 
 void ClusterWindow::frameExit(void)
 {
+}
+
+/*-------------------------- statistics -----------------------------------*/
+
+void ClusterWindow::setStatistics(StatCollector *statistics)
+{
+    _statistics = statistics;
+    if(_connection)
+        _connection->setStatistics(statistics);
+    if(_remoteAspect)
+        _remoteAspect->setStatistics(statistics);
 }
 
 /*----------------------------- client methods ----------------------------*/

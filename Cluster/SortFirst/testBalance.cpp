@@ -5,11 +5,14 @@
 #include <OSGSimpleSceneManager.h>
 #include <OSGSimpleGeometry.h>
 #include <OSGGeoLoadManager.h>
+#include <OSGTileCameraDecorator.h>
 #include <OSGGroup.h>
 #include <OSGTransform.h>
+#include <OSGTime.h>
 #include <OSGSceneFileHandler.h>
 #include <OSGRenderNode.h>
 #include <OSGSimpleMaterial.h>
+#include <OSGSkyBackground.h>
 
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
@@ -20,6 +23,8 @@ char           *dumpImage="balance";
 int             dumpImageNr=0;
 bool            useFaceDistribution=false;
 bool            viewVolume=false;
+bool            simulateRendering=true;
+int             serverCount=10;
 
 class MySceneManager:public SimpleSceneManager
 {
@@ -43,16 +48,92 @@ public:
             loadManager=new GeoLoadManager(useFaceDistribution);
             RenderNode rn;
             rn.determinePerformance(_win);
-            for(int i=0;i<3;i++)
+            ViewportPtr vp,ovp=_win->getPort(0);
+            addRefCP(ovp);
+            addRefCP(ovp);
+            TileCameraDecoratorPtr deco;
+            for(int i=0;i<serverCount;i++)
             {
                 loadManager->addRenderNode(rn,i);
+                if(simulateRendering)
+                {
+                    beginEditCP(_win);
+                    deco=TileCameraDecorator::create();
+                    beginEditCP(deco);
+                    deco->setFullWidth ( _win->getWidth() );
+                    deco->setFullHeight( _win->getHeight() );
+                    deco->setDecoratee( ovp->getCamera() );
+                    vp=Viewport::create();
+                    beginEditCP(vp);
+                    vp->setRoot      ( ovp->getRoot()       );
+
+                    SkyBackgroundPtr sky = SkyBackground::create();
+                    beginEditCP(sky);
+                    sky->setSphereRes(16);
+                    
+                    sky->getMFSkyColor()->addValue(Color3f(0, 0, .2));
+                    sky->getMFSkyAngle()->addValue(Pi / 2);
+                    sky->getMFSkyColor()->addValue(Color3f(.6, .6, 1)); 
+                    
+                    sky->getMFGroundColor()->addValue(Color3f(0, .3, 1));
+                    sky->getMFGroundAngle()->addValue(Pi / 2);
+                    sky->getMFGroundColor()->addValue(Color3f(1, .3, 0));
+
+                    endEditCP(sky);
+
+                    vp->setBackground( sky );
+
+
+//                    vp->setBackground( ovp->getBackground() );
+                    vp->getMFForegrounds()->setValues( ovp->getForegrounds() );
+                    vp->setCamera(deco);
+                    _win->addPort(vp);
+                    endEditCP(_win);
+                    endEditCP(vp);
+                    endEditCP(deco);
+                }
             }
             first=false;
         }
         loadManager->update(_win->getPort()[0]->getRoot());
         loadManager->balance(_win->getPort()[0],false,region);
-        _win->renderAllViewports( _action );
+        if(simulateRendering)
+        {
+            ViewportPtr vp;
+            TileCameraDecoratorPtr deco;
+            for(i=0;i<region.size();i+=4)
+            {
+                vp=_win->getPort()[i/4+1];
+                deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
+                beginEditCP(deco);
+                beginEditCP(vp);
+                vp->setSize(region[i+0],
+                            region[i+1],
+                            region[i+2],
+                            region[i+3]);
+                deco->setSize(region[i+0]/(float)_win->getWidth(),
+                              region[i+1]/(float)_win->getHeight(),
+                              region[i+2]/(float)_win->getWidth(),
+                              region[i+3]/(float)_win->getHeight());
+                endEditCP(deco);
+                endEditCP(vp);
+            }
+        }
+        Time t;
+        for(i=0;i<_win->getPort().size();++i)
+        {
+            t=-getSystemTime();
+            _action->setWindow( _win.getCPtr() );
+            _win->getPort(i)->render( _action );
+            glFlush();
+            t+=getSystemTime();
+            printf("FrameTime %5d %10.6f\n",i,t);
+        }
         glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_SCISSOR_TEST);
+        glViewport(0,0,
+                   _win->getWidth(),
+                   _win->getHeight());
         if(viewVolume)
             loadManager->drawVolumes(_win);
         glPushMatrix();
@@ -60,8 +141,8 @@ public:
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
         glLoadIdentity();
-        gluOrtho2D(0,_win->getPort()[0]->getPixelWidth(),
-                   0,_win->getPort()[0]->getPixelHeight());
+        gluOrtho2D(0,_win->getWidth(),
+                   0,_win->getHeight());
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_COLOR_MATERIAL);
         for(i=0;i<region.size();i+=4)
@@ -215,6 +296,9 @@ int main (int argc, char **argv)
                     break;
                 case 'v':
                     viewVolume=true;
+                    break;
+                case 's':
+                    serverCount=atoi(&argv[i][2]);
                     break;
             }
         }

@@ -70,6 +70,10 @@ OSG_USING_NAMESPACE
 /** cvsid **/
 char RemoteAspect::cvsid[] = "@(#)$Id: OSGRemoteAspect.cpp,v 1.1 2001/08/12 20:34:25 dirk Exp $";
 
+StatElemDesc<StatTimeElem>  
+RemoteAspect::statSyncTime ("remoteSyncTime", 
+                            "time for scenegraph distribution");
+
 /***************************************************************************\
  *                           Instance methods                              *
 \***************************************************************************/
@@ -90,7 +94,8 @@ RemoteAspect::RemoteAspect():
     _fieldFilter(),
     _createdFunctors(),
     _destroyedFunctors(),
-    _changedFunctors()
+    _changedFunctors(),
+    _statistics(NULL)
 {
     FieldContainerType  *type;
 
@@ -148,6 +153,9 @@ void RemoteAspect::receiveSync(Connection &connection)
     RemoteAspectFieldContainerMapper mapper;
     ReceivedTypeT::iterator receivedTypeI;
     ReceivedFCT::iterator receivedFCI;
+
+    if(_statistics)
+        _statistics->getElem(statSyncTime)->start();
 
     connection.selectChannel();
     // register mapper into factory
@@ -285,6 +293,9 @@ void RemoteAspect::receiveSync(Connection &connection)
     } while(!finish);
     // unregister mapper into factory
     factory->setMapper(NULL);
+
+    if(_statistics)
+        _statistics->getElem(statSyncTime)->stop();
 }
 
 /** \brief Write all changes from the given ChangeList to the connection.
@@ -309,6 +320,9 @@ void RemoteAspect::sendSync(Connection &connection,
     FieldContainerPtr fcPtr;
     UInt32 typeId;
     BitVector mask;
+
+    if(_statistics)
+        _statistics->getElem(statSyncTime)->start();
 
     if(!changeList)
     {
@@ -407,6 +421,9 @@ void RemoteAspect::sendSync(Connection &connection,
     connection.putUInt8(SYNCENDED);
     // write buffer 
     connection.flush();
+
+    if(_statistics)
+        _statistics->getElem(statSyncTime)->stop();
 }
 
 /** \brief Register functor for create
@@ -479,6 +496,15 @@ void RemoteAspect::registerChanged(const FieldContainerType &type,
                                                 &_defaultChangedFunction));
     }
     _changedFunctors[ type.getId() ] = func;
+}
+
+/** \brief Set statistics collector
+ *
+ */
+
+void RemoteAspect::setStatistics(StatCollector *statistics)
+{
+    _statistics = statistics;
 }
 
 /*-------------------------------------------------------------------------*\

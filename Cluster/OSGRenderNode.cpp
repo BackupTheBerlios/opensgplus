@@ -99,6 +99,14 @@ RenderNode *RenderNode::_prefefined[]=
                    "NVIDIA Corporation",
                    "GeForce3/AGP/3DNOW!"),
 
+    new RenderNode(1.0/ 44061655,          // GF 3
+                   1.0/ 43842088,
+                   1.0/635688444,
+                   1.0/ 37530822,
+                   1.0/ 65564810,
+                   "NVIDIA Corporation",
+                   "GeForce3/AGP/SSE2"),
+
     new RenderNode(1.0/ 24931000,          // GF 2 MX
                    1.0/ 24930000,
                    1.0/112858311,

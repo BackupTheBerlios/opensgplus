@@ -42,6 +42,12 @@
 
 OSG_BEGIN_NAMESPACE
 
+inline
+StatCollector* ClusterWindow::getStatistics(void) const
+{
+    return _statistics;
+}
+
 OSG_END_NAMESPACE
 
 #define OSGCLUSTERWINDOW_INLINE_CVSID "@(#)$Id: $"
