@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:48:57 $
+//   $Revision: 1.3 $
+//   $Date: 2003/09/21 15:05:06 $
 //                                                                            
 //=============================================================================
 
@@ -325,7 +325,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
       for (Polygon3Indexed::Container::iterator itE=itF->edges.begin(); 
 	   itE != itF->edges.end();
 	   ++itE) {
-	 start = itE.operator->();
+	 start = &(*itE);
 	 if (comp.greater(out=normal.dot(start->getPoint())-scalar, 0.0)
 	     && comp.less(in=normal.dot(start->getOpposit()->getPoint())-scalar, 0.0)) {
 	    firstStart = start;
@@ -334,7 +334,7 @@ void KDopGeometry<REAL,SIZE>::cutHalfspace(unsigned i,
       }
    }
    // new face in plane (normal, scalar)
-   Polygon3Indexed* newFace = geom.getFace(i);//geom.newFace();
+   Polygon3Indexed* newFace = geom.getFace(i);
    if (firstStart == NULL) {
       return;
    }

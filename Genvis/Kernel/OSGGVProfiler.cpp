@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:48:18 $
+//   $Revision: 1.3 $
+//   $Date: 2003/09/21 15:04:36 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Hierarchical profiling based on code 
@@ -247,7 +247,7 @@ ProfileData* Profiler::GetResults(u32& nbrecords, u64& totalnbcycles)
 	// Reorganize the records (sorting)
 	Local cmp;
 	std::sort(mRecorder.begin(), mRecorder.end(), cmp);
-	ProfileData* Data = mRecorder.begin().operator->();
+	ProfileData* Data = &(*mRecorder.begin());
 
 	// Compute total number of elapsed cycles
 	totalnbcycles = 0;
