@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:48:57 $
 //                                                                            
 //=============================================================================
 
@@ -62,11 +62,11 @@ void KDopGeometry<float,10>::calcGeometry ()
 {
    createSlab(getBVol(), m_geom);
    unsigned i;
-   for (i=1; i<SIZE; ++i) {
+   for (i=1; i<Size; ++i) {
       cutHalfspace(i,      getBVol(), m_geom);
-      cutHalfspace(i+SIZE, getBVol(), m_geom);
+      cutHalfspace(i+Size, getBVol(), m_geom);
    }
-   // delete faces 2*SIZE, 2*SIZE+1, 2*SIZE+2, 2*SIZE+3
+   // delete faces 2*Size, 2*Size+1, 2*Size+2, 2*Size+3
    m_geom.faces.back().eraseAll();
    m_geom.faces.pop_back();
    m_geom.faces.back().eraseAll();
@@ -80,11 +80,11 @@ void KDopGeometry<float,6>::calcGeometry ()
 {
    createSlab(getBVol(), m_geom);
    unsigned i;
-   for (i=1; i<SIZE; ++i) {
+   for (i=1; i<Size; ++i) {
       cutHalfspace(i,      getBVol(), m_geom);
-      cutHalfspace(i+SIZE, getBVol(), m_geom);
+      cutHalfspace(i+Size, getBVol(), m_geom);
    }
-   // delete faces 2*SIZE, 2*SIZE+1, 2*SIZE+2, 2*SIZE+3
+   // delete faces 2*Size, 2*Size+1, 2*Size+2, 2*Size+3
    m_geom.faces.back().eraseAll();
    m_geom.faces.pop_back();
    m_geom.faces.back().eraseAll();
