@@ -48,6 +48,7 @@
 #include "OSGConfig.h"
 #include "OSGClusterException.h"
 #include "OSGFieldDescription.h"
+#include "OSGFieldContainerPtr.h"
 #include "OSGRemoteAspect.h"
 #include "OSGFieldContainer.h"
 #include "OSGLog.h"
@@ -349,6 +350,8 @@ void RemoteAspect::sendSync(Connection &connection,
         createdI++)
     {
         fcPtr=fcFactory->getContainer(*createdI);
+        if ( fcPtr == FieldContainerPtr::NullPtr ) // already deleted, ignore
+			continue;
 
         typeId = fcPtr->getTypeId();
         // type unknown by remote context ?
@@ -390,8 +393,10 @@ void RemoteAspect::sendSync(Connection &connection,
     {
         //        FieldContainerPtr fcPtr=*((FieldContainerPtr*)(&changedI->first));
 
-        FieldContainerPtr fcPtr=changedI->first;
-        mask = changedI->second;
+        FieldContainerPtr fcPtr=fcFactory->getContainer(changedI->first);
+        if ( fcPtr == FieldContainerPtr::NullPtr ) // already deleted, ignore
+			continue;
+		mask = changedI->second;
         filterI=_fieldFilter.find(fcPtr->getType().getId());
         // apply field filter
         if(filterI != _fieldFilter.end())
