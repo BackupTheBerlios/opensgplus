@@ -278,6 +278,9 @@ public:
    void setOuterGeoP(perInstanceData &insta, Int32 finer_l, Int32 finer_r, 
          Int32 finer_o, Int32 finer_u, UInt32 &indisIn);
 
+   //! test points
+   void setFastPoint(perInstanceData &insta, UInt32 &indisIn);
+   void setFastQuad(perInstanceData &insta, UInt32 &indisIn);
 
    //! instance shared data
    sharedFields*        mySharedFields;

@@ -928,7 +928,33 @@ void WSDdat<WSDVector, mtype>::setSpecialTriangle(OSG::GeoPLengthsUI32::StoredFi
 
 
 
+// setup point
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::setFastPoint
+(perInstanceData &insta, UInt32 &indisIn)
+{    
+   Int32 breite = wsddepthindexarray[wsdmaxdepth];
+   insta.oneTypes->push_back(GL_POINTS);
+   //insta.oneIndis->setValue(varrayOffset,indisIn++);
+   insta.oneIndis->setValue(varrayOffset+((breite*(breite/2))+(breite/2)),indisIn++);
+   insta.oneLengths->push_back(1);
+}
 
+
+// setup point
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::setFastQuad
+(perInstanceData &insta, UInt32 &indisIn)
+{  
+   Int32 step = zweihoch[wsdmaxdepth];
+   Int32 breite = wsddepthindexarray[wsdmaxdepth];
+   insta.oneTypes->push_back(GL_QUADS);   
+   insta.oneIndis->setValue(varrayOffset,indisIn++);
+   insta.oneIndis->setValue(varrayOffset+(step*breite),indisIn++);
+   insta.oneIndis->setValue(varrayOffset+((step*breite)+step),indisIn++);
+   insta.oneIndis->setValue(varrayOffset+step,indisIn++);
+   insta.oneLengths->push_back(4);
+}
 
 
 

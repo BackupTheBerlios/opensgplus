@@ -730,7 +730,7 @@ template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::setMaxDepth (UInt16 setdepth)
 {
    if (patchesready) {
-      SLOG << "Setting depth after patch init is not possible at the moment!" << std::endl;
+      SWARNING << "Setting depth after patch init is not possible!" << std::endl;
    } else {
       wsdmaxdepth = setdepth;
    }
@@ -859,11 +859,14 @@ void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
 template<>
 void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geop)
 {
-   SLOG << "start initPatches" << std::endl;
+   SINFO << "initPatches start" << std::endl;
    bool recycleGeop = (geop != NullFC);
    oldGeop = geop;
-   if (recycleGeop) SLOG << "ok, no new geometry needed" << std::endl;
-   else SLOG << "creating new geometry" << std::endl;
+   if (recycleGeop) {
+      SINFO << "geometry found" << std::endl;
+   } else {
+      SINFO << "creating new geometry" << std::endl;
+   }
 
    Int32 i=0;
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
@@ -877,7 +880,7 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
    i=pmesh->n_faces();
 
    if (i==0) {
-      SLOG << "no faces at all!" << std::endl;
+      SWARNING << "no faces at all!" << std::endl;
       patchesready=false;
       errorcase=true;
       return;
@@ -903,7 +906,7 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
       // maybe better to do that in pairing...
       if (temppatch->tricrease[4] != 0) {
          temppatch->isSingleTriangle=true;
-         SLOG << "crease in the middle!" << std::endl;
+         SINFO << "crease in the middle!" << std::endl;
          doubledPatches++;
       }
    }
@@ -928,7 +931,7 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
       temppatch->neighbors[3] = 0;
       temppatch->isSingleTriangle=(p_iter->partner < 1);
       if (temppatch->isSingleTriangle) {         
-         SLOG << "Single found" << std::endl;
+         SINFO << "single found" << std::endl;
       }
       // if there is a crease right through the patch we have to make it two!
       if (temppatch->tricrease[4] != 0) {
@@ -986,7 +989,7 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
       }
    }  
    patchesready=true;  
-   SLOG << i << " patches initialized.\n";    
+   SINFO << i << " patches initialized.\n";    
 #ifdef DEFINE_SHOWROOM  
    numPatches = i;
 #endif
@@ -1020,17 +1023,20 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
     }
   }
   pmesh->remove_property(patchIndex);
-  SLOG << "initPatches done" << std::endl;
+  SINFO << "initPatches done" << std::endl;
 }
 
 template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
 {     
-   SLOG << "start initPatches" << std::endl;
+   SINFO << "initPatches start" << std::endl;
    bool recycleGeop = (geop != NullFC);
    oldGeop = geop;
-   if (recycleGeop) SLOG << "ok, no new geometry needed" << std::endl;
-   else SLOG << "creating new geometry" << std::endl;
+   if (recycleGeop) {
+     SINFO << "geometry found" << std::endl;
+   } else {
+     SINFO << "creating new geometry" << std::endl;
+   }
 
    PatchData *temppatch;  
    UInt32 i=0;
@@ -1046,7 +1052,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
    i = pmesh->n_faces();
   
    if (i==0) {
-      SLOG << "no faces at all!" << std::endl;
+      SWARNING << "no faces at all!" << std::endl;
       patchesready=false;
       errorcase=true;
       return;
@@ -1061,7 +1067,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
    // face iteration for collecting patch-data
    for (f_it=pmesh->faces_begin(); f_it!=pmesh->faces_end(); ++f_it) {
       if (!isQuad(f_it.handle())) {
-         SLOG << "Face of degree <> 4 detected!" << std::endl;
+         SWARNING << "Face of degree <> 4 detected!" << std::endl;
          patchesready=false;
          errorcase=true;
          return;
@@ -1086,7 +1092,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
       i++;
    }  
    patchesready=true;  
-   SLOG << i << " patches initialized.\n";
+   SINFO << i << " patches initialized.\n";
 #ifdef DEFINE_SHOWROOM
    numPatches = i;
 #endif
@@ -1155,15 +1161,15 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
 (OSG::NodePtr& parent, OSG::Vec3f eyepoint)
 {  
    if ((!patchesready)) {
-      SLOG << "patches not initialized  - skipping perFrameSetup" << std::endl; 
+      SWARNING << "patches not initialized  - skipping perFrameSetup" << std::endl; 
       return;
    }
    if (errorcase) {
-      SLOG << "an error occured - skipping perFrameSetup" << std::endl; 
+      SWARNING << "error occured - skipping perFrameSetup" << std::endl; 
       return;
    }
    if (!isSetViewPort) {
-      SLOG << "WARNING: viewport variables are not set!" << std::endl;
+      SWARNING << "viewport variables are not set!" << std::endl;
    }
    Int32 n = getIndex(parent);         
       
@@ -1258,7 +1264,8 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
                do {
                   l--;
                   Rl = Rl *2;
-               } while ((Rl < Rmin) && (l>0));
+               } while (Rl < Rmin);// && (l>0));               
+
             } else {
                Real32 Rmax = d*hmax;
                if (Rl > Rmax) {
@@ -1282,7 +1289,22 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
             }
          }
 #endif
-         if (l < wsdmindepth) l = wsdmindepth;
+         if (l < wsdmindepth) {
+            l = l - wsdmindepth;
+            if ((Pmin / zweihoch[-l]) < 0.1f ) {            // very small patches are marked as back faces
+               patches[i].isFacing = BACK;
+            } else {
+               if ((Pmin / zweihoch[-l]) < 0.5f ) {         // small patches are drawn as points
+                  l=-2;
+               } else {
+                  if ((Pmin / zweihoch[-l]) < 3.5f ) {      // relative small patches are drawn as quads (without checking for neighbors)
+                     l=-1;
+                  } else {
+                     l=wsdmindepth;
+                  }
+               }
+            }
+         }
          if (l > wsdmaxdepth) l = wsdmaxdepth;
          // l is the optimal depth 
          patches[i].solltiefe=l;           
@@ -1317,6 +1339,14 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
 #ifdef DEFINE_SHOWROOM
         _numPatches++;
 #endif
+
+        if (patches[i].solltiefe < -1) {
+           patches[i].setFastPoint(myInstances[n], indisIn);
+        } else {
+            if (patches[i].solltiefe < 0) {
+               patches[i].setFastQuad(myInstances[n], indisIn);
+            } else {
+
        
          Int32 neue_tiefe = patches[i].solltiefe;         
          // patch depth has to be as high as the highest neighbour
@@ -1402,7 +1432,9 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
 #ifdef DEFINE_SHOWROOM
        _depthsInUse[patches[i].solltiefe]++;
 #endif
-      }          
+      }         
+      }
+      }
    }  
    endEditCP(myInstances[n].oneIndicesPtr);
    endEditCP(myInstances[n].oneLengthsPtr);
@@ -1426,11 +1458,11 @@ template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::uniformSetup(void)
 {  
    if ((!patchesready)) {
-      SLOG << "patches not initialized  - skipping uniformSetup" << std::endl; 
+      SWARNING << "patches not initialized  - skipping uniformSetup" << std::endl; 
       return;
    }
    if (errorcase) {
-      SLOG << "an error occured - skipping uniformSetup" << std::endl; 
+      SWARNING << "an error occured - skipping uniformSetup" << std::endl; 
       return;
    }
 
