@@ -105,8 +105,8 @@ public:
 
       if (hasCreases) {
          pMem.putValue((UInt8)1);
-         Mesh::EdgeIter eIt(mesh_.edges_begin());
-         Mesh::EdgeIter eEnd(mesh_.edges_end());
+         typename Mesh::EdgeIter eIt(mesh_.edges_begin());
+         typename Mesh::EdgeIter eEnd(mesh_.edges_end());
          Int32 g=0;
          for (; eIt!=eEnd; ++eIt) {
             pMem.putValue((Int32)mesh_.property(isCrease,eIt.handle())); 
@@ -200,8 +200,8 @@ public:
       pMem.getValue(fileHasCreases);
 
       if (hasCreases) {
-         Mesh::EdgeIter eIt(mesh_.edges_begin());
-         Mesh::EdgeIter eEnd(mesh_.edges_end());
+         typename Mesh::EdgeIter eIt(mesh_.edges_begin());
+         typename Mesh::EdgeIter eEnd(mesh_.edges_end());
          Int32 g=0;
          for (; eIt!=eEnd; ++eIt) {
             Int32 get=0;
