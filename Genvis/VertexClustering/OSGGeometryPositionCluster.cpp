@@ -54,8 +54,6 @@ std::vector<const CellDataTemplate<ADAPTER>*> CellDataTemplate<ADAPTER>::s_query
 template <class ADAPTER>
 std::vector<ADAPTER*>                         CellDataTemplate<ADAPTER>::s_factory;
 
-Matrix CellDataInternal::m_quad;
-
 DataType FieldDataTraits<SetUnionGridP>::_type(getName(), "IntegralType");
 
 #if defined(__sgi)

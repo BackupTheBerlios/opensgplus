@@ -74,15 +74,12 @@ public:
    inline const Vec3f& getNormal () const;
    inline Pnt3f&       getPointRep ();
    inline const Pnt3f& getPointRep () const;
-   inline Matrix&       getQuadric ();
-   inline const Matrix& getQuadric () const;
    inline void         clear ();
 
 private:
    UInt32 m_num;
    Vec3f  m_normal;
    Pnt3f  m_rep;
-   static Matrix m_quad;
 };
 
 inline void         CellDataInternal::clear ()
@@ -90,12 +87,6 @@ inline void         CellDataInternal::clear ()
    m_num = 0;
    m_normal.setValue(Vec3f::Null);
    m_rep.setValue(Pnt3f::Null);
-#if 0
-   m_quad.setValue(0, 0, 0, 0,
-		   0, 0, 0, 0,
-		   0, 0, 0, 0,
-		   0, 0, 0, 0);
-#endif
 }
 inline CellDataInternal::CellDataInternal ()
 {
@@ -117,15 +108,6 @@ inline const Vec3f&         CellDataInternal::getNormal () const
 {
    return m_normal;
 }
-#if 0
-inline Vec3f CellDataInternal::getNormal () const
-{
-   Real32 factor = sqrt(m_quad[0][0]);
-   Vec3f norm(factor, m_quad[0][1]/factor, m_quad[0][2]/factor);
-   //norm.normalize();
-   return norm;
-}
-#endif
 inline Pnt3f&       CellDataInternal::getPointRep ()
 {
    return m_rep;
@@ -134,88 +116,8 @@ inline const Pnt3f& CellDataInternal::getPointRep () const
 {
    return m_rep;
 }
-inline Matrix&       CellDataInternal::getQuadric ()
-{
-   return m_quad;
-}
-inline const Matrix& CellDataInternal::getQuadric () const
-{
-   return m_quad;
-}
 
 
-#if 0
-/*! 
- */
-template <class ADAPTER>
-class OSG_GENVISLIB_DLLMAPPING CellDataTemplate
-{
-public:
-   /*! Construct empty datastructure. */
-   inline CellDataTemplate ();
-
-   inline UInt32       getNumPoints () const;
-   inline void         setNumPoints (UInt32 num);
-   inline Pnt3f&       getPointRep ();
-   inline const Pnt3f& getPointRep () const;
-   inline void         clear ();
-
-   /*! Init timestamps. */
-   static inline void   firstFrame ();
-   /*! Switch to next timestamp. */
-   static inline void   nextFrame ();
-
-private:
-   static UInt32 s_currentStamp;
-   UInt32 m_stamp;
-   UInt32 m_num;
-   Pnt3f  m_rep;
-};
-typedef CellDataTemplate<DummyAdapter> CellData;
-
-template <class ADAPTER>
-inline CellDataTemplate<ADAPTER>::CellDataTemplate ()
-  : m_stamp(0), m_num(0)
-{
-}
-template <class ADAPTER>
-inline void         CellDataTemplate<ADAPTER>::clear ()
-{
-   m_num = 0;
-   m_rep.setValue(Pnt3f::Null);
-}
-template <class ADAPTER>
-inline UInt32       CellDataTemplate<ADAPTER>::getNumPoints () const
-{
-   return m_num;
-}
-template <class ADAPTER>
-inline void         CellDataTemplate<ADAPTER>::setNumPoints (UInt32 num)
-{
-   m_num = num;
-}
-template <class ADAPTER>
-inline Pnt3f&       CellDataTemplate<ADAPTER>::getPointRep ()
-{
-   return m_rep;
-}
-template <class ADAPTER>
-inline const Pnt3f& CellDataTemplate<ADAPTER>::getPointRep () const
-{
-   return m_rep;
-}
-
-template <class ADAPTER>
-inline void   CellDataTemplate<ADAPTER>::firstFrame ()
-{
-   s_currentStamp = 0;
-}
-template <class ADAPTER>
-inline void   CellDataTemplate<ADAPTER>::nextFrame ()
-{
-   ++s_currentStamp;
-}
-#else
 class CellDataInternal;
 /*! 
  */
@@ -228,7 +130,7 @@ public:
    }
    inline void clear () {
       m_data = NULL;
-      for (std::vector<ADAPTER*>::const_iterator it=s_factory.begin();
+      for (typename std::vector<ADAPTER*>::const_iterator it=s_factory.begin();
 	   it != s_factory.end();
 	   ++it) {
 	 delete (*it);
@@ -276,7 +178,6 @@ public:
          return true;
       }
       return false;
-      //return (m_stamp == s_currentStamp);
    }
 
 protected:
@@ -286,7 +187,6 @@ protected:
 };
 typedef CellDataTemplate<CellDataInternal> CellData;
 
-#endif
 
 #if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
 
@@ -376,6 +276,6 @@ OSG_DLLEXPORT_DECL1(MField, SetUnionGridP, OSG_GENVISLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYPOSITIONCLUSTER_HEADER_CVSID "@(#)$Id: OSGGeometryPositionCluster.h,v 1.2 2004/12/20 15:54:30 fuenfzig Exp $"
+#define OSGGEOMETRYPOSITIONCLUSTER_HEADER_CVSID "@(#)$Id: OSGGeometryPositionCluster.h,v 1.3 2004/12/21 17:42:58 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYPOSITIONCLUSTER_H_ */
