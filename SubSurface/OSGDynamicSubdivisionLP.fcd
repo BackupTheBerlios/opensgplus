@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="DynamicSubdivision"
+	parent="MaterialGroup"
+	library="System"
+	pointerfieldtypes="both"
+	structure="concrete"
+	systemcomponent="false"
+	parentsystemcomponent="true"
+	decoratable="false"
+>
+	<Field
+		name="MinDepth"
+		type="UInt16"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0"
+		access="public"
+	>
+	minimum subdivision depth
+	</Field>
+	<Field
+		name="MaxDepth"
+		type="UInt16"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0"
+		access="public"
+	>
+	maximum subdivision depth
+	</Field>
+	<Field
+		name="BackfaceCulling"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="false"
+		access="public"
+	>
+	switch for backface culling
+	</Field>
+	<Field
+		name="Mesh"
+		type="OpenMeshP"
+		cardinality="single"
+		visibility="external"
+		defaultValue="NULL"
+		access="public"
+	>
+	base mesh used for subdivision
+	</Field>
+	<Field
+		name="Tesselator"
+		type="OpenMeshTesselatorP"
+		cardinality="single"
+		visibility="internal"
+		defaultValue="NULL"
+		access="public"
+	>
+	tesselator implementing the two-table algorithm
+	</Field>
+</FieldContainer>
