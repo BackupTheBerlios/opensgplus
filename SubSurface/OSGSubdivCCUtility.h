@@ -52,6 +52,7 @@ public:
 
    //! property within openmesh
    OpenMesh::EPropHandleT<OSG::Int32> isCrease;
+   OpenMesh::VPropHandleT<OSG::Int32> creasecount;
 
    // construct with a given mesh
    inline SubdivCCT(Mesh& _mesh) : mesh_(_mesh) {
@@ -66,12 +67,25 @@ public:
 
    // subdivide mesh _iterations one time
    inline void subdivCC (void) {
+
+      // creasecount prop plus get max valence
+      mesh_.add_property(creasecount);
+      for (MyPolyMesh::VertexIter v_it=mesh_.vertices_begin(); v_it!=mesh_.vertices_end(); ++v_it) {
+         mesh_.property(creasecount,v_it.handle()) = 0;
+         for (MyPolyMesh::VertexEdgeIter ve_it=mesh_.ve_iter(v_it.handle()); ve_it; ++ve_it) {
+            if (mesh_.property(isCrease,ve_it.handle()) != 0) mesh_.property(creasecount,v_it.handle())++;
+         }
+      }
+      //
+
       wara = new FaceOneRing<typename Mesh::Point>[30]; // TODO: max valence is set to 30...   
       calcFacePoints();                // new face control points
       calcVertices();                  // new control vertices
       calcEdges();                     // new edge control points
       calcFaces();                     // and now put them all together
       updateVertexkoords();            // finally update vertices
+
+      mesh_.remove_property(creasecount);
    }  
 
 private:
@@ -203,7 +217,15 @@ private:
                neuPkt += mesh_.point(mesh_.to_vertex_handle(hh));
 
                Int32 thiscrease = 0;
-               if (useCreases) thiscrease = mesh_.property(isCrease,mesh_.edge_handle(hh));
+               if (useCreases) {
+                  thiscrease = mesh_.property(isCrease,mesh_.edge_handle(hh));
+                  if (thiscrease != 0) {
+                     if ((mesh_.property(creasecount, mesh_.from_vertex_handle(hh))<2) ||
+                        (mesh_.property(creasecount, mesh_.to_vertex_handle(hh))<2)) {
+                        thiscrease =0;
+                     }
+                  }
+               }
 
                if (thiscrease == 0) {          
                   neuPkt = neuPkt * 0.375;      // weighting regular
