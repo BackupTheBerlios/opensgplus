@@ -181,7 +181,7 @@ int Socket::read(void *buf,int size)
 {
     int len;
 
-    len=::recv(_sd,(char*)buf,size,0);
+    len=::recv(_sd,(char*)buf,size,MSG_WAITALL);
     if(len==-1)
     {
         throw SocketError("recv()");
@@ -304,6 +304,34 @@ Address Socket::getAddress()
         throw SocketError("getsockname()");
     }
     return result;
+}
+
+void Socket::setReadBufferSize(int size)
+{
+    int v=(int)size;
+    ::setsockopt(_sd,SOL_SOCKET,SO_RCVBUF,(SocketOptT*)&v,sizeof(v));
+}
+
+void Socket::setWriteBufferSize(int size)
+{
+    int v=(int)size;
+    ::setsockopt(_sd,SOL_SOCKET,SO_SNDBUF,(SocketOptT*)&v,sizeof(v));
+}
+
+int  Socket::getReadBufferSize() 
+{
+    int v;
+    SocketLenT len=sizeof(v);
+    ::getsockopt(_sd,SOL_SOCKET,SO_RCVBUF,(SocketOptT*)&v,&len);
+    return v;
+}
+
+int  Socket::getWriteBufferSize() 
+{
+    int v;
+    SocketLenT len=sizeof(v);
+    ::getsockopt(_sd,SOL_SOCKET,SO_SNDBUF,(SocketOptT*)&v,&len);
+    return v;
 }
 
 /*-------------------------- assignment -----------------------------------*/

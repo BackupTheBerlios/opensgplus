@@ -132,6 +132,10 @@ class OSG_SOCKET_DLLMAPPING Socket
     void         setReusePort(bool value);
     void         setBlocking(bool value);
     Address      getAddress();
+    void         setReadBufferSize(int size);
+    void         setWriteBufferSize(int size);
+    int          getReadBufferSize();
+    int          getWriteBufferSize();
 
     /*------------------------- your_operators ------------------------------*/
 
