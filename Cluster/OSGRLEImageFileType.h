@@ -42,7 +42,8 @@
 #pragma  once
 #endif
 
-#include <OSGSystemDef.h>
+#include <OSGConfig.h>
+#include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGImageFileType.h>
 
