@@ -87,8 +87,7 @@ public:
 
    //! property within openmesh
    OpenMesh::EPropHandleT<Int32> isCrease;
-
-
+   
    //! store one face into patch
    //! \param f_h face handle to one face
    //! \param pp pointer to the destination patch
@@ -113,6 +112,10 @@ private:
      
    MeshType *mesh;                            //!< pointer to the mesh
    WSDdat<VectorType, MType> *ppatch;      //!< pointer to the current patch
+
+   //! temp property for counting creases
+   OpenMesh::VPropHandleT<OSG::Int32> creasecount; 
+   
 };
 
 OSG_END_NAMESPACE

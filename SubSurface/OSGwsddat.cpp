@@ -114,7 +114,7 @@ Int32 WSDdat<WSDVector, mtype>::getneighbor (Int32 from, Int32 ad)
    Int32 ni_from=0;
    while (this->neighbors[ni_from] != from && ni_from<4) ni_from++;
    if (ni_from >= 4) {
-      SFATAL << "error finding neighbor" << std::endl; 
+      //SFATAL << "error finding neighbor" << std::endl; 
       return 0;
    }
    ni_from+=4;
@@ -161,6 +161,19 @@ void WSDdat<WSDVector, mtype>::setOuterGeoP(perInstanceData &insta,
               UInt32 &indisIn)
 {     
    if (solltiefe == 0) {
+      // fix the funny looking depth 0 effect
+      if (finer_o == 0) {
+         interstep_o = interstep_o/2;
+      }
+      if (finer_u == 0) {
+         interstep_u = interstep_u/2;
+      }
+      if (finer_l == 0) {
+         interstep_l = interstep_l/2;
+      }
+      if (finer_r == 0) {
+         interstep_r = interstep_r/2;
+      }
       setTiefe0(insta.oneLengths,
        insta.oneTypes,
        insta.oneIndis, indisIn);
@@ -299,7 +312,7 @@ void WSDdat<WSDVector, mtype>::setOuterRightLine(OSG::GeoPLengthsUI32::StoredFie
    if (finer_r == 0) {
       Int32 s = ((breite - 1 - step) + (step*breite) + varrayOffset);  
       setupStrip(newlengths, newtypes, newindis,
-      indisIn, s, (s+step), (step*breite));    
+      indisIn, (s+step), s, (step*breite));    
    } else {  // -> finer_r = 1  
       Int32 halfstep = (step /2);
       Int32 s = (breite - 1 - step) + (step*breite) + varrayOffset;    
@@ -338,7 +351,7 @@ void WSDdat<WSDVector, mtype>::setOuterLeftLine(OSG::GeoPLengthsUI32::StoredFiel
    if (finer_l == 0) {
       Int32 s = ((breite*step)+varrayOffset);
       setupStrip(newlengths, newtypes, newindis,
-      indisIn, s, (s+step), (step*breite));            
+      indisIn, (s+step), s, (step*breite));            
    } else {  // -> finer_l = 1  
       Int32 halfstep = (step /2);
       Int32 s = (breite*step)+varrayOffset;    
@@ -782,8 +795,8 @@ void WSDdat<OSG::Vec3f, TRIANGLE>::setupStrip(OSG::GeoPLengthsUI32::StoredFieldT
 {
    newtypes->push_back(GL_TRIANGLE_STRIP);  
    for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++){
-      newindis->setValue(s2,indisIn++);
-      newindis->setValue(s1,indisIn++);      // triangle-edge from c0 to c2!
+      newindis->setValue(s1,indisIn++);
+      newindis->setValue(s2,indisIn++);      // triangle-edge from c0 to c2!
       s1+=add;
       s2+=add;
    }
@@ -847,8 +860,8 @@ void WSDdat<WSDVector, mtype>::setupHalfStrip(OSG::GeoPLengthsUI32::StoredFieldT
 {
    newtypes->push_back(GL_TRIANGLE_STRIP);  
    for (Int32 j=0;j<width;j++){
-      newindis->setValue(s2,indisIn++);
       newindis->setValue(s1,indisIn++);
+      newindis->setValue(s2,indisIn++);
       s1+=add;
       s2+=add;
    }

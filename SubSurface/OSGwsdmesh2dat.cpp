@@ -29,12 +29,27 @@ WSDmesh2dat<WSDVector, Mesh, mtype>::WSDmesh2dat(MeshType *m)
 {
    mesh = m;
    useCreases = m->get_property_handle(isCrease,"isCrease");
+   if (useCreases) {
+      SLOG << "counting creases..." << std::endl;
+      // property counting creases around a vertex
+      mesh->add_property(creasecount);
+      for (Mesh::VertexIter v_it=mesh->vertices_begin(); v_it!=mesh->vertices_end(); ++v_it) {
+         mesh->property(creasecount,v_it.handle()) = 0;
+         for (Mesh::VertexEdgeIter ve_it=mesh->ve_iter(v_it.handle()); ve_it; ++ve_it) {
+            if (mesh->property(isCrease,ve_it.handle()) != 0) mesh->property(creasecount,v_it.handle())++;
+         }
+      }
+      //
+      SLOG << "done counting creases..." << std::endl;
+   }
 }
 
 template<class WSDVector, class Mesh, int mtype>
 WSDmesh2dat<WSDVector, Mesh, mtype>::~WSDmesh2dat()
 {
-
+   // property counting creases around a vertex
+   mesh->remove_property(creasecount);
+   //
 }
 
 template<class WSDVector, class Mesh, int mtype>

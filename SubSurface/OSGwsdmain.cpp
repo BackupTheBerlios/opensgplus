@@ -14,26 +14,11 @@ template class OSG_SUBSURFACELIB_DLLMAPPING WSDmain<OSG::Vec3f, MyTriMesh,   TRI
 template class OSG_SUBSURFACELIB_DLLMAPPING WSDmain<OSG::Vec3f, MyPolyMesh,  QUAD>;
 template class OSG_SUBSURFACELIB_DLLMAPPING WSDmain<OSG::Vec4f, MyPolyMesh4, QUAD>;
 
-// getFaceIndex: for a given facehandle return the hash value
-template<>
-Int32 WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::getFaceIndex (FaceHandle fh)
-{
-   Int32 i=0;
-   for (i=0; i<patches.size(); i++) {
-      if ((OmeshFaceListe[0][i] == fh) || (OmeshFaceListe[1][i] == fh)) return i;  
-   }
-   return -1;                    // error case: -1
-}
+// getFaceIndex: for a given facehandle return the index
 template<class WSDVector, class Mesh, int mtype>
 Int32 WSDmain<WSDVector, Mesh, mtype>::getFaceIndex (FaceHandle fh)
 {
-   Int32 i=0;
-   for (i=0; i<patches.size(); i++) {
-      if (OmeshFaceListe[0][i] == fh) {
-         return i; 
-      }
-   }
-   return -1;                    // error case: -1
+   return pmesh->property(patchIndex,fh);
 }
 
 // helper to do one subdivision step with creases
@@ -497,7 +482,7 @@ void WSDmain<WSDVector, Mesh, mtype>::getOptiDepth
       Int32 l=0;        // start with depth=0
       Real32 test=100;      // in test the min angle is stored      
       // average normal for all faces
-    test = getGreatestAngle(wara,a,n,0,i,i);        
+      test = getGreatestAngle(wara,a,n,0,i,i);        
       while ((test < epsilon) && (l < wsdmaxdepth))  {            
          l++;                // next depth
          simpleSubdiv(wara,waB,a,i);      // subdiv
@@ -692,6 +677,7 @@ void WSDmain<WSDVector, Mesh, mtype>::collectNeighbors
       } else {
          pp->neighbors[i] = 
           getFaceIndex(pmesh->face_handle(pmesh->opposite_halfedge_handle(fhe_h)));
+
       }
       fhe_h = pmesh->next_halfedge_handle(fhe_h);    
    }
@@ -715,6 +701,7 @@ WSDmain<WSDVector, Mesh, mtype>::WSDmain(MeshType *m)
    uniDepth = 3;  
 #endif
    useCreases = m->get_property_handle(isCrease,"isCrease");
+   singles.clear();
 }
 
 template<class WSDVector, class Mesh, int mtype>
@@ -724,6 +711,7 @@ WSDmain<WSDVector, Mesh, mtype>::~WSDmain()
    delete[] PatchData::slateB; PatchData::slateB=NULL;
    clearInstances();
    patches.clear();
+   singles.clear();
    subRefCP(mySharedFields.limitpointsptr);
    subRefCP(mySharedFields.limitnormalsptr);
    if (useTexture)
@@ -852,6 +840,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
 template<>
 void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
 {
+   SLOG << "start initPatches" << std::endl;
    Int32 i=0;
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
    subdivwsd.wsdmaxdepth = this->wsdmaxdepth;
@@ -868,7 +857,8 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
       patchesready=false;
       return;
    }
-   
+
+   pmesh->add_property(patchIndex,"patchIndex");   
 
    // step one: pairing list
    WSDpairing<OSG::Vec3f, MyTriMesh> pairinglist(pmesh);
@@ -895,9 +885,6 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
    //   
    initOSGStuff(i+doubledPatches);  
    patches.reserve(i+doubledPatches);
-
-   OmeshFaceListe[0] = new FaceHandle[i+doubledPatches];    // hash table for neighborhood collection
-   OmeshFaceListe[1] = new FaceHandle[i+doubledPatches];    // no more than i elements are needed
    
    i=0;
    // face iteration for collecting patch-data
@@ -925,12 +912,11 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
       temppatch->cvindex = 0;
       for (Int32 vindex=0; vindex<4; vindex++) {
          temppatch->vertexindex[vindex]=-2;
-      }
-      OmeshFaceListe[0][i] = p_iter->fh;
-      if (!temppatch->isSingleTriangle) {    
-         OmeshFaceListe[1][i] = p_iter->fh2;
+      }      
+      pmesh->property(patchIndex,p_iter->fh)=i;
+      if (!temppatch->isSingleTriangle) {      
+         pmesh->property(patchIndex,p_iter->fh2)=i;
       } else {
-         OmeshFaceListe[1][i] = p_iter->fh;     // single triangle
          singles.push_back(i);
       }
       if (wsdmaxdepth > 0) {
@@ -957,8 +943,8 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
          for (int vindex=0; vindex<4; vindex++) {
             temppatch->vertexindex[vindex]=-2;
          }
-         OmeshFaceListe[0][i] = p_iter->fh2;        
-         OmeshFaceListe[1][i] = p_iter->fh2;     // single triangle !
+         pmesh->property(patchIndex,p_iter->fh2)=i;
+  
          if (wsdmaxdepth > 0) {
             temppatch->solltiefe = 1;
             subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos        
@@ -981,16 +967,13 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
    for (MeshType::VertexIter v_it=pmesh->vertices_begin(); v_it!=pmesh->vertices_end(); ++v_it) {
       getOptiDepth(pmesh, v_it.handle());
    }  
-
-   i=0;
-   PatchDataContainer::iterator np_iter;
-   for (np_iter=patches.begin(); np_iter!=patches.end(); ++np_iter, i++) {
-      collectNeighbors(OmeshFaceListe[0][i], &(*np_iter));      
+  
+   for (f_it=pmesh->faces_begin(); f_it!=pmesh->faces_end(); ++f_it) {    
+      collectNeighbors(f_it.handle(), &patches[getFaceIndex(f_it.handle())]);      
    }  
-   delete[] OmeshFaceListe[0];  
-   delete[] OmeshFaceListe[1];    
 
    // now for the neighbor-neighbors
+   // iteration over patches
   for (i=0; i<patches.size(); i++) {
     patches[i].neighbor1in0 = patches[patches[i].neighbors[0]].getneighbor(i,-1);
     patches[i].neighbor3in0 = patches[patches[i].neighbors[0]].getneighbor(i,1);
@@ -1001,11 +984,13 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
     patches[i].neighbor0in3 = patches[patches[i].neighbors[3]].getneighbor(i,-1);
     patches[i].neighbor2in3 = patches[patches[i].neighbors[3]].getneighbor(i,1);      
   }
+  pmesh->remove_property(patchIndex);
+  SLOG << "initPatches done" << std::endl;
 }
 
 template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
-{  
+{     
    PatchData *temppatch;  
    Int32 i=0;
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
@@ -1017,16 +1002,19 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
 
    // face iteration: how many faces do we have?
    typename MeshType::FaceIter f_it;
-  i=pmesh->n_faces();
+   i = pmesh->n_faces();
   
    if (i==0) {
       SLOG << "no faces at all!" << std::endl;
       patchesready=false;
       return;
-   }
-   OmeshFaceListe[0] = new FaceHandle[i];    // hash table for neighborhood collection
+   }   
    initOSGStuff(i);
    patches.reserve(i);
+
+   // temp property for index to patch
+   pmesh->add_property(patchIndex,"patchIndex");
+
    i=0;
    // face iteration for collecting patch-data
    for (f_it=pmesh->faces_begin(); f_it!=pmesh->faces_end(); ++f_it) {
@@ -1049,7 +1037,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
          temppatch->solltiefe = 0;
          subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos    
       }
-      OmeshFaceListe[0][i] = f_it.handle();    // FaceHandle in hash table      
+      pmesh->property(patchIndex,f_it.handle())=i;
       i++;
    }  
    patchesready=true;  
@@ -1066,15 +1054,15 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
       ++v_it) {
       getOptiDepth(pmesh, v_it.handle());     
    }
-
    // collect neighborhood ( hash table is needed here )
+   // iteration over patches
    i=0;
    for (f_it=pmesh->faces_begin(); f_it!=pmesh->faces_end(); ++f_it) {    
       collectNeighbors(f_it.handle(), &patches[i]);
       i++;
-   }  
-   delete[] OmeshFaceListe[0];  // hash table has done its job
+   }
    // now for the neighbor-neighbors
+   // iteration over patches
    for (i=0; i<patches.size(); i++) {
       patches[i].neighbor1in0 = patches[patches[i].neighbors[0]].getneighbor(i,-1);
       patches[i].neighbor3in0 = patches[patches[i].neighbors[0]].getneighbor(i,1);
@@ -1084,7 +1072,9 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
       patches[i].neighbor2in1 = patches[patches[i].neighbors[1]].getneighbor(i,-1);
       patches[i].neighbor0in3 = patches[patches[i].neighbors[3]].getneighbor(i,-1);
       patches[i].neighbor2in3 = patches[patches[i].neighbors[3]].getneighbor(i,1);
-   }
+   }   
+   pmesh->remove_property(patchIndex);
+
 }
 
 
@@ -1116,6 +1106,9 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
    if (!patchesready) {
       SLOG << "patches not initialized!" << std::endl; 
       return;
+   }
+   if (!isSetViewPort) {
+      SLOG << "WARNING: viewport variables are not set!" << std::endl;
    }
    Int32 n = getIndex(parent);         
       
@@ -1221,22 +1214,21 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
                }           
             }
          } else {
-            SLOG << "ndoo! radius is corrupt!" << std::endl;
+            SFATAL << "radius is corrupt!" << std::endl;
          }          
       }
 #ifdef DEFINE_SHOWROOM 
          else {
             if ((patches[i].isFacing != BACK) && (useSilhouette)) {
                Int32 a = patches[i].maxdepth;
-               if (!useCurvature) a=uniDepth;
-          
-              if (patches[i].isFacing == SILUETTE) 
-                l = (a + wsdmaxdepth) / 2;
+               if (!useCurvature) a=uniDepth;          
+               if (patches[i].isFacing == SILUETTE) 
+                  l = (a + wsdmaxdepth) / 2;
             }
          }
 #endif
          if (l < wsdmindepth) l = wsdmindepth;
-         if (l >wsdmaxdepth) l = wsdmaxdepth;
+         if (l > wsdmaxdepth) l = wsdmaxdepth;
          // l is the optimal depth 
          patches[i].solltiefe=l;           
       
@@ -1281,14 +1273,12 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
          // do subdivision when the depth has been raised
          if (neue_tiefe > patches[i].currentdepth) {
             beginEditCP(myInstances[n].onlyOneGeoP->getPositions());    
-            beginEditCP(myInstances[n].onlyOneGeoP->getNormals());  
-            beginEditCP(myInstances[n].onlyOneGeoP->getColors());
+            beginEditCP(myInstances[n].onlyOneGeoP->getNormals());              
             if (useTexture) 
                beginEditCP(myInstances[n].onlyOneGeoP->getTexCoords());
             subdivwsd.subdiv(neue_tiefe,&patches[i]);               
             if (useTexture) 
-               endEditCP(myInstances[n].onlyOneGeoP->getTexCoords());
-            endEditCP(myInstances[n].onlyOneGeoP->getColors());
+               endEditCP(myInstances[n].onlyOneGeoP->getTexCoords());            
             endEditCP(myInstances[n].onlyOneGeoP->getNormals());    
             endEditCP(myInstances[n].onlyOneGeoP->getPositions());
          }       

@@ -49,7 +49,8 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::edgepoint
  VectorType& w1, VectorType& w2,VectorType& w3, VectorType& w4, 
  OSG::Int32 crease)
 {
-   if (crease == 0) {
+   if ((crease == 0) || 
+       ((crease == CREASE_HALF_REG_ONCE) && (targetdepth == 1))) {
       v= (v1 + v2)*0.375 + (w1 + w2 + w3 + w4)*0.0625;
    } else {
       v= (v1 + v2)*0.5;
@@ -476,6 +477,7 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::edgerow (OSG::Int32 ri, OSG::Int32 wi)
 {
    OSG::Int32 i=0;
    OSG::Int32 j=0;
+   OSG::Int32 ct=0;
    OSG::Vec3f* tabA = ppatch->ptabA;
    OSG::Vec3f* tabB = ppatch->ptabB;
    OSG::Int32 bA=ppatch->breiteA;
@@ -484,25 +486,46 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::edgerow (OSG::Int32 ri, OSG::Int32 wi)
     tabA[(ri+1)*bA+i], tabA[(ri+1)*bA+i+1],
     tabA[ri*bA+i+1], tabA[ri*bA+i]);
    ++i; ++j;
+
+   if ((targetdepth == 1) && ((ppatch->iscorner[0]<2) || (ppatch->iscorner[1]<2))) {
+      ct = 0;           // dart case
+   } else {
+      if (((ri == 1) && (ppatch->iscorner[0]<2)) ||
+          ((ri == ppatch->tabsize-3) && (ppatch->iscorner[1]<2)) ){
+         ct = 0;
+      } else {
+         ct = ppatch->crease[5];
+      }
+   }
    edgepoint(tabB[wi*bB+j], 
     tabA[(ri+1)*bA+i],tabA[ri*bA+i], 
     tabA[(ri+1)*bA+i+1],tabA[ri*bA+i+1],
-    tabA[ri*bA+i-1],tabA[(ri+1)*bA+i-1],ppatch->crease[5]);
+    tabA[ri*bA+i-1],tabA[(ri+1)*bA+i-1],ct);
    ++j;
 //*************************
    inneredgerow(ri, wi, i, j);
 //*************************
+
+   if ((targetdepth == 1) && ((ppatch->iscorner[2]<2) || (ppatch->iscorner[3]<2))) {
+      ct = 0;           // dart case
+   } else {
+      if (((ri == 1) && (ppatch->iscorner[3]<2)) ||
+          ((ri == ppatch->tabsize-3) && (ppatch->iscorner[2]<2)) ){
+         ct = 0;
+      } else {
+         ct = ppatch->crease[6];
+      }
+   }
    edgepoint(tabB[wi*bB+j], 
     tabA[(ri+1)*bA+i],tabA[ri*bA+i], 
     tabA[(ri+1)*bA+i+1],tabA[ri*bA+i+1],
-    tabA[ri*bA+i-1],tabA[(ri+1)*bA+i-1],ppatch->crease[6]);
+    tabA[ri*bA+i-1],tabA[(ri+1)*bA+i-1],ct);
    ++j;
    facepoint(tabB[wi*bB+j],
     tabA[(ri+1)*bA+i], tabA[(ri+1)*bA+i+1],
     tabA[ri*bA+i+1], tabA[ri*bA+i]);
    //   assert(i==ppatch->tabsize-2);
    //   assert(j==2*(ppatch->tabsize)-3-1);
-
 }
 
 template<>
@@ -616,10 +639,23 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::creaseinnervertexrow
    OSG::Vec3f* tabB = ppatch->ptabB;
    OSG::Int32 bA=ppatch->breiteA;
    OSG::Int32 bB=wsddepthindexarray[wsdmaxdepth]+2;   
+   OSG::Int32 ct = ce;
+
+   if (ri == 1) {
+      if (ppatch->iscorner[0] < 2) {
+         ct = 0;
+      }
+   } else {
+      if (ri==ppatch->tabsize-2) {      
+         if (ppatch->iscorner[1] < 2) {
+           ct = 0;
+         }
+      }
+   }
    edgepoint(tabB[wi*bB+j], 
     tabA[ri*bA+i],tabA[ri*bA+i+1], 
     tabA[(ri+1)*bA+i],tabA[(ri+1)*bA+i+1],
-    tabA[(ri-1)*bA+i+1],tabA[(ri-1)*bA+i],ce);
+    tabA[(ri-1)*bA+i+1],tabA[(ri-1)*bA+i],ct);
    ++j; ++i;
    assert(i==2);
    assert(j==3);
@@ -635,10 +671,25 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::creaseinnervertexrow
           tabA[ri*bA+i], tabA[ri*bA+i-1], tabA[ri*bA+i+1]);
       }
       ++j;
+
+      ct = ce;
+      if (i == ppatch->tabsize-3) {
+         if (ri == 1) {
+            if (ppatch->iscorner[3] < 2) {
+               ct = 0;
+            }
+         } else {
+            if (ri==ppatch->tabsize-2) {      
+               if (ppatch->iscorner[2] < 2) {
+               ct = 0;
+               }
+            }
+         }
+      }
       edgepoint(tabB[wi*bB+j], 
        tabA[ri*bA+i],tabA[ri*bA+i+1], 
        tabA[(ri+1)*bA+i],tabA[(ri+1)*bA+i+1],
-       tabA[(ri-1)*bA+i+1],tabA[(ri-1)*bA+i],ce);
+       tabA[(ri-1)*bA+i+1],tabA[(ri-1)*bA+i],ct);
       ++j;
    }
 }
@@ -687,7 +738,11 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::firstvertexrow (void)
    ++j;
 //*************************
    if (ppatch->crease[3] > 0) {
-      creaseinnervertexrow(ri, wi,i,j,1);
+      if ((targetdepth == 1) && ((ppatch->iscorner[0]<2) || (ppatch->iscorner[3]<2))) {
+         innervertexrow(ri, wi,i,j);               // dart case!
+      } else {
+         creaseinnervertexrow(ri, wi,i,j,1);
+      }
    } else {
       innervertexrow(ri, wi,i,j);
    }
@@ -809,7 +864,11 @@ void WSDsubdiv<OSG::Vec3f, QUAD>::lastvertexrow (OSG::Int32 ri, OSG::Int32 wi)
    ++j;
 //*************************
    if (ppatch->crease[8] > 0) {
-      creaseinnervertexrow(ri, wi,i,j,1);
+      if ((targetdepth == 1) && ((ppatch->iscorner[1]<2) || (ppatch->iscorner[2]<2))) {
+         innervertexrow(ri, wi,i,j);               // dart case!
+      } else {
+         creaseinnervertexrow(ri, wi,i,j,1);
+      }
    } else {
       innervertexrow(ri, wi,i,j);  
    }

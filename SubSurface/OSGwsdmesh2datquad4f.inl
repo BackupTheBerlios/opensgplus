@@ -41,6 +41,17 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::collectCorner
          // creases
          if (useCreases) {
             ppatch->corcrease[i][cc] = mesh->property(isCrease,mesh->edge_handle(test));
+            if (ppatch->corcrease[i][cc]!=0) {
+               if (mesh->property(creasecount,mesh->to_vertex_handle(test)) < 2) {
+                  ppatch->corcrease[i][cc]=0;         // dart ends on corner
+               } else {
+                  if (mesh->property(creasecount,mesh->from_vertex_handle(test))<2) {                       
+                     // we have a dart ending outside
+                     ppatch->corcrease[i][cc] = CREASE_HALF_REG_ONCE;
+                     SLOG << "dart found!" << std::endl;
+                  }
+               }
+            }
          } else {
             ppatch->corcrease[i][cc] = 0;
          }
@@ -68,13 +79,31 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::helper1
       || (!useCreases)) {
       ppatch->crease[a2] = 0;
    } else {
-      ppatch->crease[a2] = mesh->property(isCrease,mesh->edge_handle(mesh->next_halfedge_handle(op)));
+      ppatch->crease[a2] = mesh->property(isCrease,mesh->edge_handle(mesh->next_halfedge_handle(op)));//mesh->edge(mesh->edge_handle(mesh->next_halfedge_handle(op))).isCrease;  
+      if (ppatch->crease[a2]!=0) {
+         if (mesh->property(creasecount,mesh->from_vertex_handle(mesh->next_halfedge_handle(op)))<2) {
+            ppatch->crease[a2] = 0; // dart ends on corner
+         } else {
+            if (mesh->property(creasecount,mesh->to_vertex_handle(mesh->next_halfedge_handle(op)))<2) {
+               ppatch->crease[a2] = CREASE_HALF_REG_ONCE;
+            }
+         }
+      }
    }
    if ((mesh->is_boundary(mesh->edge_handle(fhe_h)) && (ppatch->valenz[(i+1)%4] < 4)) 
       || (!useCreases)) {
       ppatch->crease[a7] = 0;  
    } else {
-      ppatch->crease[a7] = mesh->property(isCrease,mesh->edge_handle(mesh->prev_halfedge_handle(op)));
+      ppatch->crease[a7] = mesh->property(isCrease,mesh->edge_handle(mesh->prev_halfedge_handle(op)));//mesh->edge(mesh->edge_handle(mesh->prev_halfedge_handle(op))).isCrease;
+      if (ppatch->crease[a7]!=0) {
+         if (mesh->property(creasecount,mesh->to_vertex_handle(mesh->prev_halfedge_handle(op)))<2) {
+            ppatch->crease[a7] = 0;
+         } else {
+            if (mesh->property(creasecount,mesh->from_vertex_handle(mesh->prev_halfedge_handle(op)))<2) {
+               ppatch->crease[a7] = CREASE_HALF_REG_ONCE;
+            }
+         }
+      }
    }
 }
 
@@ -243,13 +272,13 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::insertface
          ppatch->corcrease[ll][3] = ppatch->corcrease[ll][2] = ahh;
       }
       Int32 kk;
-      //if (ppatch->valenz[ll] > 2)  {
+      if (ppatch->valenz[ll] > 2)  {
          ppatch->iscorner[ll] = 0;
          for (kk = 0; kk<ppatch->valenz[ll]; kk++) 
             ppatch->iscorner[ll] = ppatch->iscorner[ll] + ppatch->corcrease[ll][kk];
-      //} else {
-      //   ppatch->iscorner[ll] = 3; // if valence = 2 allways a corner!
-      //}
+      } else {
+         ppatch->iscorner[ll] = 3; // if valence = 2 allways a corner!
+      }
    }    
    // crindis (for 2 creases-case and for normal calculation)
    for (Int32 yy=0; yy<4; yy++) {

@@ -134,10 +134,8 @@ public:
 
    //! call through for WSDmesh2dat::getBoundingBox   
    void OpenMeshBoundingBox(OSG::Pnt3f &boundingMin, OSG::Pnt3f &boundingMax);
-
-   //! FaceIndies-list
-   FaceHandle *OmeshFaceListe[2];  
-   //! returns index into OmeshFaceListe for face handle
+ 
+   //! returns index into patches for face handle
    Int32 getFaceIndex (FaceHandle fh);  
 
    //! Vertexlist
@@ -240,6 +238,9 @@ public:
    void initOneGeo(perInstanceData *instance);        //!< OpenSG - Geometry init (per Instance)
    bool isQuad(FaceHandle f_h);                       //!< returns true if f_h is a quad
    Int32 getIndex(OSG::NodePtr &p);
+
+   //! property within openmesh (patch index)
+   OpenMesh::FPropHandleT<Int32> patchIndex;
    //! \}
 };
 
