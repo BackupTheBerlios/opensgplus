@@ -190,9 +190,11 @@ void createSceneGraph(int argc,char **argv)
         deco = TileCameraDecorator::create();
         beginEditCP(deco);
         deco->setCamera( cam );
-        deco->setSize( 1.0/servers.size() * i,
+        float start=.5 - servers.size()/2.0;
+        cout << start << endl;
+        deco->setSize( start + i,
                        0.0, 
-                       1.0/servers.size() * (i+1),
+                       start + i + 1,
                        1.0);
         endEditCP(deco);
 

@@ -78,6 +78,8 @@ UInt32           serverNr=0;
 MyOSGQGLWidget  *glWidget=NULL;
 DrawAction	    *ract;
 QApplication    *app;
+bool             doSync=false;
+StreamSocket     client;
 
 MyOSGQGLWidget::MyOSGQGLWidget ( QWidget *parent, const char *name ) :
     OSGQGLWidget( parent, name ),
@@ -101,10 +103,20 @@ void MyOSGQGLWidget::initializeGL ( void )
 
 void MyOSGQGLWidget::paintGL ( void )
 {
+    UInt8 trigger;
+
     if(osgWin==NullFC)
         return;
 	osgWin->frameInit();	            // frame-cleanup
 	osgWin->drawAllViewports( ract );	// draw the viewports     
+
+    // sunc with render client
+    if(doSync)
+    {
+        client.write(&trigger,sizeof(UInt8));
+        client.read (&trigger,sizeof(UInt8));
+        doSync=false;
+    }
     osgWin->swap(); 
 	osgWin->frameExit();	            // frame-cleanup
 }
@@ -131,13 +143,11 @@ void MyOSGQGLWidget::keyPressEvent ( QKeyEvent *ke )
 Bool WindowCreatedFunction(FieldContainerPtr& fcp,
                            RemoteAspect * aspect)
 {
-    cout << "qt window create" << endl;
     if(windowsCreated==serverNr)
     {
         ract = DrawAction::create();
         glWidget = new MyOSGQGLWidget();
         app->setMainWidget( glWidget );
-        cout << "assign to widget" << endl;
         glWidget->osgWin = QTWindowPtr::dcast( fcp );
         glWidget->osgWin->setGlWidget( glWidget );
         glWidget->initializeGL( );
@@ -151,9 +161,14 @@ Bool WindowCreatedFunction(FieldContainerPtr& fcp,
 Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
                              RemoteAspect * aspect)
 {
-    cout << "qt window destroyed" << endl;
-    glWidget->osgWin = QTWindowPtr();
+    WindowPtr window=WindowPtr::dcast(fcp);
+
     windowsCreated--;
+    if(!glWidget)
+        return true;
+    if(glWidget->osgWin != window)
+        return true;
+    glWidget->osgWin = QTWindowPtr();
     glWidget->hide();
     app->processEvents();
     app->setMainWidget( NULL );
@@ -166,8 +181,6 @@ Bool WindowChangedFunction(FieldContainerPtr& fcp,
                            RemoteAspect * aspect)
 {
     QTWindowPtr window=QTWindowPtr::dcast(fcp);
-
-    cout << "qt window changed" << endl;
     glWidget->setFixedSize(window->getSFWidth()->getValue(),
                            window->getSFHeight()->getValue());
     return true;
@@ -177,11 +190,7 @@ OSG::Action::ResultE printGeometry( OSG::CNodePtr &, OSG::Action * action )
 {
 	OSG::NodePtr node = action->getActNode();
 	OSG::GeometryPtr g = OSG::GeometryPtr::dcast( node->getCore() );
-
-    cout << "!!!!!!!!!!!!!!!!!!" << endl;
     g->dump();
-    cout << "!!!!!!!!!!!!!!!!!!" << endl;
-
 	return OSG::Action::Continue;
 }
 
@@ -203,7 +212,7 @@ void dumpTree()
 
 void mainLoop(int port)
 {
-    StreamSocket         sock,client;
+    StreamSocket         sock;
     StreamSockConnection connection;
     RemoteAspect         aspect;
     Selection            select;
@@ -216,9 +225,7 @@ void mainLoop(int port)
     sock.bind(AnyAddress(port));
     sock.listen();
     client=sock.accept();
-    cout << "Client connected" << endl;
     client.read(&serverNr,sizeof(serverNr));
-    cout << "Run as server " << serverNr << endl;
     
     connection.addSocket(client);
     
@@ -234,24 +241,21 @@ void mainLoop(int port)
         while(1)
         {
             app->processEvents();
-            select.setRead(client);
-            if(select.select(0.05)>0)
+            // receive syncronisation
+            aspect.receiveSync(connection);
+            doSync=true;
+            if(!xx++)
             {
-                UInt8 trigger;
-                // receive syncronisation
-                aspect.receiveSync(connection);
-                // sunc with render client
-                client.write(&trigger,sizeof(UInt8));
-                client.read (&trigger,sizeof(UInt8));
-                if(!xx++)
-                {
-                    cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
-                    dumpTree();
-                    cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
-                }
+                // dumpTree();
             }
             if(glWidget)
                 glWidget->paintGL();
+            else
+            {
+                UInt8 trigger;
+                client.write(&trigger,sizeof(UInt8));
+                client.read (&trigger,sizeof(UInt8));
+            }
         }
     }
     catch(ConnectionClosed &e)
@@ -282,7 +286,6 @@ int main( int argc, char **argv )
         qWarning( "This system has no OpenGL support. Exiting." );
         return -1;
     }
-    //    glWidget->show();
         
     bool noError;
     do {
