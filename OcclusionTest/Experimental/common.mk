@@ -1,6 +1,6 @@
 
-SUB_DIR     := OcclusionCulling
-PACKAGENAME := OcclusionCulling
+SUB_DIR     := OcclusionTest
+PACKAGENAME := OcclusionTest
 
 INCL_DIR    := $($(PROJ)POOL)/$(SUB_DIR)
 

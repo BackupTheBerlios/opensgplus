@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
- *                     OpenSG PLUS Occlusion Culling                         *
+ *                     OpenSG PLUS Occlusion Test                            *
  *                                                                           *
  *                                                                           *
  *             Copyright (C) 2002 by the WSI/GRIS Uni Tuebingen              *
