@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// File:    $Id: OSGGVGenvisPreprocAction.h,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $
+// File:    $Id: OSGGVGenvisPreprocAction.h,v 1.2 2003/09/19 21:32:14 fuenfzig Exp $
 // Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
 // ---------------------------------------------------------------
 // OpenSG action filling the OpenSG cache
@@ -32,9 +32,8 @@ public:
    static GenvisPreprocAction* create(void);
 	
    static inline genvis::OSGCache& getCache ();
-   //inline void              setCache (genvis::OSGCache* cache);
 
-   inline Action::ResultE   apply (NodePtr root);
+   Action::ResultE   apply (NodePtr root);
 
 private:
     class Preproc

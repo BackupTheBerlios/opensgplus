@@ -21,9 +21,3 @@ inline genvis::OSGCache& GenvisPreprocAction::getCache ()
 {
    return genvis::OSGCache::the();
 }
-#if 0
-inline void     GenvisPreprocAction::setCache (genvis::OSGCache* cache)
-{
-   _cache = cache;
-}
-#endif
