@@ -150,7 +150,7 @@ void SortFirstWindow::serverInit( WindowPtr window,
     // create camera decorator
     deco = TileCameraDecorator::create();
     beginEditCP(deco);
-    deco->setCamera( cvp->getCamera() );
+    deco->setDecoratee( cvp->getCamera() );
     deco->setSize( 0,0,1,1 );
     deco->setFullWidth ( getWidth() );
     deco->setFullHeight( getHeight() );
@@ -283,7 +283,7 @@ void SortFirstWindow::clientInit( void )
     // create camera decorator
     TileCameraDecoratorPtr deco = TileCameraDecorator::create();
     beginEditCP(deco);
-    deco->setCamera( cvp->getCamera() );
+    deco->setDecoratee( cvp->getCamera() );
     deco->setSize( 0,0,1,1 );
     deco->setFullWidth ( getWidth() );
     deco->setFullHeight( getHeight() );

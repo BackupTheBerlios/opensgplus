@@ -157,7 +157,7 @@ void MultiDisplayWindow::serverInit( WindowPtr window,
     // create camera decorator
     deco = TileCameraDecorator::create();
     beginEditCP(deco);
-    deco->setCamera( cvp->getCamera() );
+    deco->setDecoratee( cvp->getCamera() );
     deco->setSize( 1.0/getHServers() * column,
                    1.0/getVServers() * row,
                    1.0/getHServers() * (column+1),
