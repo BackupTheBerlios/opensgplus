@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/03/12 13:23:23 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/21 17:41:57 $
 //                                                                            
 //=============================================================================
 
@@ -142,30 +142,54 @@ const u32  GV_MAX_NUM      = 100000;
 const u32  GV_MAX_CONTACTS = 1000;
 
 // Missing functions of namespace std
+/** Minimum of two arguments.
+ */
 template<class TYPE> 
 inline TYPE stdMin (const TYPE& a, const TYPE& b)
 { 
    return (a < b ? a : b); 
 }
 
+/** Maximum of two arguments.
+ */
 template<class TYPE> 
 inline TYPE stdMax (const TYPE& a, const TYPE& b)
 { 
    return (a < b ? b : a); 
 }
 
+/** Clamping of second argument to interval defined by first and third argument.
+ */
+template <class TYPE, class TYPE2>
+inline TYPE2 stdClamp (const TYPE& l, const TYPE2& value, const TYPE& h)
+{
+   if (value < l) {
+      return TYPE2(l);
+   }
+   if (h < value) {
+      return TYPE2(h);
+   }
+   return value;
+}
+
+/** Absolute value of argument.
+ */
 template<class TYPE> 
 inline TYPE stdAbs (const TYPE& a)
 { 
    return (a >= 0 ? a : -a); 
 }
 
+/** Calculate cosine from sine.
+ */
 template <class REAL>
 inline REAL cos2sin (const REAL& v)
 {
    return sqrt(1-v*v);
 }
 
+/** Logarithm (of base 2) of argument.
+ */
 template <class TYPE>
 inline u32 stdLog2 (TYPE arg)
 {
@@ -176,38 +200,60 @@ inline u32 stdLog2 (TYPE arg)
    }
    return result;
 }
+/** Power of two less than or equal to argument.
+ */
 template <class TYPE>
 inline u32 stdFloorPower2 (TYPE arg)
 {
    return 1 << (stdLog2(arg));
 }
+/** Power of two greater than argument.
+ */
 template <class TYPE>
 inline u32 stdCeilPower2 (TYPE arg)
 {
    return 1 << (stdLog2(arg)+1);
 }
 
+/** Double of argument. If argument is zero then result is one.
+ */
 template <class TYPE>
 inline TYPE stdDouble (const TYPE& arg)
 {
    return (arg==0 ? 1 : arg*2);
 }
+/** Half of argument.
+ */
 template <class TYPE>
 inline TYPE stdHalf (const TYPE& arg)
 {
    return arg/2;
 }
+/** n-times Double of argument. If argument is zero then result is zero.
+ */
 template <class TYPE>
-inline TYPE stdDouble (const TYPE& arg, u32 i)
+inline TYPE stdDouble (const TYPE& arg, u32 n)
 {
-   return arg<<i;
+   return arg<<n;
 }
+/** n-times Half of argument.
+ */
 template <class TYPE>
-inline TYPE stdHalf (const TYPE& arg, u32 i)
+inline TYPE stdHalf (const TYPE& arg, u32 n)
 {
    return arg>>i;
 }
 
+/** Square of argument.
+ */
+template <class TYPE>
+inline TYPE stdSqr (const TYPE& arg)
+{
+   return arg*arg;
+}
+
+/** Unequality compare operator, derived from equality compare operator.
+ */
 template <class TYPE>
 inline bool operator!= (const TYPE& a, const TYPE& b)
 {
