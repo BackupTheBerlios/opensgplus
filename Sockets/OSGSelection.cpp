@@ -65,6 +65,32 @@
 
 OSG_BEGIN_NAMESPACE
 
+/** \class Selection
+ *  \ingroup SocketsLib
+ *  \brief Wait or check one or more sockets for read/write blocking
+ *
+ * You can use a Selection to wait for data on one ore more sockets.
+ * It is possible to use a timeout as a maximum wait time.
+ *
+ * Example:
+ * <PRE>
+ * Selection sel;
+ * Socket s1,s2;
+ * ...
+ * sel.setRead(s1);
+ * sel.setRead(s2);
+ * if(sel.select(2))
+ * {
+ *   if(sel.isSetRead(s1)) cout << "Data on s1" << endl;
+ *   if(sel.isSetRead(s2)) cout << "Data on s2" << endl;
+ * }
+ * else
+ * {
+ *   cout << "No data after 2 seconds" << endl;
+ * }
+ * </PRE>
+ **/
+
 /***************************************************************************\
  *                               Types                                     *
 \***************************************************************************/
@@ -73,29 +99,7 @@ OSG_BEGIN_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char Selection::cvsid[] = "@(#)$Id: $";
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
+char Selection::cvsid[] = "@(#)$Id:$";
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -115,6 +119,9 @@ Selection::Selection()
     clear();
 }
 
+/** \brief Copy constructor
+ */
+
 Selection::Selection(const Selection &source):
     _fdSetRead (source._fdSetRead),
     _fdSetWrite(source._fdSetWrite)
@@ -128,11 +135,8 @@ Selection::~Selection()
 {
 }
 
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
+/** \brief Clear all settings
+ */
 
 void Selection::clear()
 {
@@ -140,26 +144,51 @@ void Selection::clear()
     FD_ZERO(&_fdSetWrite);
 }
 
+/** \brief Clear read settings for the given socket
+ *
+ * \param sock    For this socket the read flag is cleared
+ */
 void Selection::clearRead(const Socket &sock)
 {
     FD_CLR(sock._sd,&_fdSetRead);
 }
 
+/** \brief Clear write settings for the given socket
+ *
+ * \param sock    For this socket the write flag is cleared
+ */
 void Selection::clearWrite(const Socket &sock)
 {
     FD_CLR(sock._sd,&_fdSetWrite);
 }
 
+/** \brief Set read flag for the given socket
+ *
+ * \param sock    For this socket the read flag is set
+ */
 void Selection::setRead(const Socket &sock)
 {
     FD_SET(sock._sd,&_fdSetRead);
 }
 
+/** \brief Set write flag for the given socket
+ *
+ * \param sock    For this socket the write flag is set
+ */
 void Selection::setWrite(const Socket &sock)
 {
     FD_SET(sock._sd,&_fdSetWrite);
 }
 
+/** \brief Start selection
+ *
+ * Wait for the first read or write flag to be true. All other 
+ * flags are cleared.
+ *
+ * \param duration   Maximum wait time in seconds
+ *
+ * \return Number of set flags
+ */
 int Selection::select(double duration)
 {
     timeval tVal,*tValP;
@@ -187,12 +216,26 @@ int Selection::select(double duration)
     return count;
 }
 
+/** \brief Start selection
+ *
+ * Wait for the first read or write flag to be true. The resulting
+ * flags are set in result.
+ *
+ * \param duration   Maximum wait time in seconds
+ * \param result     Result selection
+ *
+ * \return Number of set flags
+ */
 int Selection::select(double duration,Selection &result) const
 {
     result=*this;
     return result.select(duration);
 }
 
+/** \brief Check if read flag is set for a socket
+ *
+ * \param sock    For this socket the read flag is tested
+ */
 bool Selection::isSetRead(const Socket &sock)
 {
     if(FD_ISSET(sock._sd, &_fdSetRead))
@@ -201,6 +244,10 @@ bool Selection::isSetRead(const Socket &sock)
         return false;
 }
 
+/** \brief Check if write flag is set for a socket
+ *
+ * \param sock    For this socket the write flag is tested
+ */
 bool Selection::isSetWrite(const Socket &sock)
 {
     if(FD_ISSET(sock._sd, &_fdSetWrite))
@@ -220,17 +267,6 @@ const Selection & Selection::operator =(const Selection &source)
     _fdSetWrite=source._fdSetWrite;
     return *this;
 }
-
-/*-------------------------- comparison -----------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 
 OSG_END_NAMESPACE
 

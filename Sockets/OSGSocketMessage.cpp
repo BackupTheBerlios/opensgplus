@@ -62,20 +62,26 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \class osg::SocketMessage
-    SocketMessage documentation,
- */
-
+/** \class osg::SocketMessage
+ *  \ingroup SocketsLib
+ *  \brief Abstract socket message buffer
+ *
+ * This is the base class for socket messages. It provides an Interface
+ * for transmission of data buffers.
+ * 
+ **/
 
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
-/*! Constructor documentation
+/*! Constructor
  */
 SocketMessage::SocketMessage(void)
 {
 }
 
+/*! copy Constructor
+ */
 SocketMessage::SocketMessage(const SocketMessage &)
 {
 }
@@ -83,7 +89,7 @@ SocketMessage::SocketMessage(const SocketMessage &)
 /*-------------------------------------------------------------------------*/
 /*                             Destructor                                  */
 
-/*! Destructor documentation
+/*! Destructor
  */
 SocketMessage::~SocketMessage(void)
 {
@@ -99,7 +105,16 @@ SocketMessage& SocketMessage::operator = (const SocketMessage &)
     return *this;
 }
 
+/** \brief Get message header
+ *
+ * \return Address to the message header
+ */
 SocketMessage::Header &SocketMessage::getHeader (void)
 {
     return *((Header*)(getBuffer()));
 }
+
+
+
+
+

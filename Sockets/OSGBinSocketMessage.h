@@ -49,10 +49,6 @@
 
 OSG_BEGIN_NAMESPACE
 
-/*! \ingroup baselib
- *  \brief Brief
- */
-
 class OSG_SOCKET_DLLMAPPING BinSocketMessage : public SocketMessage
 {
     /*==========================  PUBLIC  =================================*/

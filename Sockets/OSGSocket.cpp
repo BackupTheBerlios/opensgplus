@@ -69,6 +69,35 @@
 OSG_BEGIN_NAMESPACE
 
 /***************************************************************************\
+ *                            Description                                  *
+\***************************************************************************/
+
+/*! \defgroup SocketsLib Socket library
+
+The Socket library includes all objects concerning with berkeley sockets.
+
+*/
+
+/*! \class Socket
+    \ingroup SocketsLib
+    \brief Abstract network socket handler
+
+Socket baseclass. The Socket class wraps a socket descriptor. This
+class has no additional state variables. It is only h handle to the
+underlaying descriptor. Class createion and destruction has no
+influence to any descriptor. Use open to assign a descriptor and
+close to remove it from the system. If this class is copied, then
+there are to classes which uses the same descriptor. This is
+ok until you call close for one of this classes.
+One purpose of this implementation is to hide the differences between
+Windows and Unix sockets. Calls to this class should behave equally
+on all systems. As a result, some methods will not work as an 
+experienced Windows ore Unix programmer maight expect. Please refere
+to the function docu to get details about this.
+
+*/
+
+/***************************************************************************\
  *                               Types                                     *
 \***************************************************************************/
 
@@ -91,6 +120,8 @@ char Socket::cvsid[] = "@(#)$Id:$";
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
+/** \brief Get last occured error
+ */
 int Socket::getError()
 {
 #ifdef WIN32
@@ -100,6 +131,8 @@ int Socket::getError()
 #endif
 }
 
+/** \brief Get last host error
+ */
 int Socket::getHostError()
 {
 #ifdef WIN32
@@ -109,6 +142,8 @@ int Socket::getHostError()
 #endif
 }
 
+/** \brief Get last occured error as string
+ */
 string Socket::getErrorStr()
 {
     const char *err=NULL;
@@ -169,6 +204,8 @@ string Socket::getErrorStr()
         return string("Unknown error");
 }
 
+/** \brief Get last occured host error as string
+ */
 string Socket::getHostErrorStr()
 {
     const char *err;
@@ -183,21 +220,12 @@ string Socket::getHostErrorStr()
         return string("Unknown error");
 }
 
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-/***************************************************************************\
- *                           Instance methods                              *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*------------- constructors & destructors --------------------------------*/
-
 /** \brief Constructor
+ *
+ * Create a new Socket class. A valid socket descriptor will be assigned
+ * by calling open on a derived Socket class e.g. StreamSocket or
+ * DgramSocket. 
+ * On Windows WSAStartup is called by the first socket createn.
  */
 Socket::Socket():
     _sd(-1)
@@ -217,23 +245,24 @@ Socket::Socket():
     }
 }
 
+/** \brief Copy constructor
+ */
 Socket::Socket(const Socket &source):
     _sd(source._sd)
 {
 }
 
 /** \brief Destructor
+ *
+ * The Socket class is only a descriptor to the socket. By destruction
+ * of this class, the socket remains open.
  */
 Socket::~Socket()
 {
 }
 
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
+/** \brief close socket
+ */
 void Socket::close()
 {
 #ifdef WIN32
@@ -243,6 +272,16 @@ void Socket::close()
 #endif
 }
 
+/** \brief read date even if less then size available
+ *
+ * Read the data from the in buffer to a maximun length of size.
+ * don't wait until size bytes are available.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  Maximum count of bytes to read.
+ *
+ * \see recv 
+ */
 int Socket::recvAvailable(void *buf,int size)
 {
     int len;
@@ -261,6 +300,17 @@ int Socket::recvAvailable(void *buf,int size)
     return len;
 }
 
+/** \brief read the given number of bytes 
+ *
+ * Read size bytes into the buffer. Wait until size Bytes are available
+ * On Dgram sockets data maight be lossed, if size is smaller then the
+ * incomming package. This situation will not be treated as an error.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  Maximum count of bytes to read.
+ *
+ * \see recvAvailable recvFrom
+ */
 int Socket::recv(void *buf,int size)
 {
     int readSize;
@@ -294,6 +344,19 @@ int Socket::recv(void *buf,int size)
     return pos;
 }
 
+/** \brief peek the given number of bytes 
+ *
+ * Read size bytes into the buffer. Wait until size Bytes are available
+ * On Dgram sockets data maight be lossed, if size is smaller then the
+ * incomming package. This situation will not be treated as an error.
+ * The read bytes will not be removed from the in buffer. A call to
+ * recv after peek will result in the same data.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  Maximum count of bytes to read.
+ *
+ * \see recv recvAvailable
+ */
 int Socket::peek(void *buf,int size)
 {
     int readSize;
@@ -326,6 +389,14 @@ int Socket::peek(void *buf,int size)
     return readSize;
 }
 
+/** \brief Write the given number of bytes to the socket
+ *
+ * Write size bytes to the socket. This method maight block, if the
+ * output buffer is full.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  number of bytes to write
+ */
 int Socket::send(const void *buf,int size)
 {
     int writeSize;
@@ -347,6 +418,14 @@ int Socket::send(const void *buf,int size)
     return pos;
 }
 
+/** \brief Send a SocketMessage
+ *
+ * Workes like send, but buffer and size is taken from the SocketMessage
+ *
+ * \param msg   Reference to the SocketMessage
+ *
+ * \see send
+ */
 int Socket::send(SocketMessage &msg)
 {
     SocketMessage::Header &hdr=msg.getHeader();
@@ -354,6 +433,14 @@ int Socket::send(SocketMessage &msg)
     return send(msg.getBuffer(),msg.getSize());
 }
 
+/** \brief Receive a SocketMessage
+ *
+ * Workes like recv, but buffer and size is taken from the SocketMessage
+ *
+ * \param msg   Reference to the SocketMessage
+ *
+ * \see recv
+ */
 int Socket::recv(SocketMessage &msg)
 {
     SocketMessage::Header hdr;
@@ -362,6 +449,21 @@ int Socket::recv(SocketMessage &msg)
     return recv(msg.getBuffer(),msg.getSize());
 }
 
+/** \brief Bind a socket to a given Address
+ *
+ * It is possible to <br> bind a Socket to a special network interface ore
+ * to all availabel interfaces.
+ * <PRE>
+ * sock.bind(AnyAddress(23344));           Bind Socket to port 23344 
+ * sock.bind(Address("123.223.112.33",0);  Bind to the given adapter
+ * sock.bind(AnyAddress(0));               Bind to a free port      
+ * port = sock.getAddress().getPort();     Get bound port
+ * </PRE>
+ *
+ * \param address   Address to which the socket should be bound
+ *
+ * \see recv
+ */
 void Socket::bind(const Address &address)
 {
     Address result=address;
@@ -387,6 +489,10 @@ void Socket::bind(const Address &address)
     }
 }
 
+/** \brief set queue length for incomming connection requests
+ *
+ * \param maxPending   queue length, default is 5
+ */
 void Socket::listen(int maxPending)
 {
     if(::listen(_sd,maxPending)<0)
@@ -395,6 +501,12 @@ void Socket::listen(int maxPending)
     }
 }
 
+/** \brief connect to the given address
+ *
+ * After connect, all send data will be transfered to the address. 
+ *
+ * \param address   destination Address
+ */
 void Socket::connect(const Address &address)
 {
     if( ::connect(_sd,
@@ -405,12 +517,34 @@ void Socket::connect(const Address &address)
     }
 }
 
+/** \brief Enable, disable reuse port behavior
+ *
+ * If reuse port is true, then more then on process or thread is able
+ * to bind to the same port. This makes sense for multicast or braodcast
+ * sockets. For StreamSockets this feature can be used to avoid
+ * the <EM>Socket in use</EM> message on not propperly closed ports.
+ *
+ * \param value   true, enables and false disables socket reusage
+ */
 void Socket::setReusePort(bool value)
 {
     int v=(int)value;
     ::setsockopt(_sd,SOL_SOCKET,SO_REUSEADDR,(SocketOptT*)&v,sizeof(v));
 }
 
+/** \brief Enable, disable blocking
+ *
+ * By default all recv, send, accept calls will block until the executeion
+ * is finished. This behavior can be swithed off bei setting blocking to
+ * false. This will lead to a more difficult programming. An easier 
+ * way to get non blocking behavior is to use Selections or
+ * waitReadable, waitWritable. These methods provide a timeout
+ * for waiting.
+ *
+ * \param value   true, enables and false disables blocking
+ *
+ * \see Socket::waitReadable Socket::waitWritable Selection
+ */
 void Socket::setBlocking(bool value)
 {
 #ifndef WIN32
@@ -440,6 +574,12 @@ void Socket::setBlocking(bool value)
 #endif
 }
 
+/** \brief Get bound Address
+ *
+ * \return Address to which the Socket is bound
+ *
+ * \see Address 
+ */
 Address Socket::getAddress()
 {
     Address result;
@@ -453,18 +593,36 @@ Address Socket::getAddress()
     return result;
 }
 
+/** \brief Set the internal read buffer size
+ *
+ * \param size   Size in bytes of the internal read buffer
+ *
+ * \see Socket::getReadBufferSize
+ */
 void Socket::setReadBufferSize(int size)
 {
     int v=(int)size;
     ::setsockopt(_sd,SOL_SOCKET,SO_RCVBUF,(SocketOptT*)&v,sizeof(v));
 }
 
+/** \brief Set the internal write buffer size
+ *
+ * \param size    Size in bytes of the internal write buffer
+ *
+ * \see Socket::getWriteBufferSize
+ */
 void Socket::setWriteBufferSize(int size)
 {
     int v=(int)size;
     ::setsockopt(_sd,SOL_SOCKET,SO_SNDBUF,(SocketOptT*)&v,sizeof(v));
 }
 
+/** \brief Get internal read buffer size
+ *
+ * \return Size in bytes of the internal read buffer
+ *
+ * \see Socket::setReadBufferSize
+ */
 int Socket::getReadBufferSize() 
 {
     int v;
@@ -473,6 +631,12 @@ int Socket::getReadBufferSize()
     return v;
 }
 
+/** \brief Get internal write buffer size
+ *
+ * \return Size in bytes of the internal write buffer
+ *
+ * \see Socket::setWriteBufferSize
+ */
 int Socket::getWriteBufferSize() 
 {
     int v;
@@ -481,6 +645,10 @@ int Socket::getWriteBufferSize()
     return v;
 }
 
+/** \brief Get number of bytes in the internal read buffer
+ *
+ * \return Number of bytes in the internal read buffer
+ */
 int Socket::getAvailable(void)
 {
 #ifndef WIN32
@@ -500,6 +668,12 @@ int Socket::getAvailable(void)
 #endif
 }
 
+/** \brief Wait until recv or accept will not block
+ *
+ * \param duration   Maximum number of secons to wait. -1: wait unlimited.
+ *
+ * \return true, if data is abailable
+ */
 Bool Socket::waitReadable(double duration)
 {
     Selection selection;
@@ -510,6 +684,12 @@ Bool Socket::waitReadable(double duration)
         return false;
 }
 
+/** \brief Wait until send will not block
+ *
+ * \param duration   Maximum number of secons to wait. -1: wait unlimited.
+ *
+ * \return true, if send will not block
+ */
 Bool Socket::waitWritable(double duration)
 {
     Selection selection;
@@ -520,8 +700,6 @@ Bool Socket::waitWritable(double duration)
         return false;
 }
 
-/*-------------------------- assignment -----------------------------------*/
-
 /** \brief assignment
  */
 
@@ -531,14 +709,8 @@ const Socket & Socket::operator =(const Socket &source)
     return *this;
 }
 
-/*-------------------------- comparison -----------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
 OSG_END_NAMESPACE
+
+
+
+

@@ -66,9 +66,36 @@
 
 OSG_BEGIN_NAMESPACE
 
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
+/** \class StreamSocket
+ *  \ingroup SocketsLib
+ *  \brief Stream socket handler
+ *
+ * This class is a Handler to connection oriented sockets. A call to
+ * <EM>open</EM> will assing a stream socket and <EM>close</EM>
+ * releases the socket. 
+ *
+ * Client example
+ * <PRE>
+ * char buffer[100];
+ * StreamSocket s;
+ * s.open();
+ * s.connect(Address("serverhost.com",4567);
+ * s.send(buffer,100);
+ * s.close();
+ * </PRE>
+ *
+ * Server example
+ * <PRE>
+ * char buffer[100];
+ * StreamSocket s;
+ * s.open();
+ * s.bind(AnyAddress(4567);
+ * c=s.accept();               // accept incomming client
+ * c.recv(buffer,100);         // read client message
+ * c.close();
+ * s.close();
+ * </PRE>
+ **/
 
 /***************************************************************************\
  *                           Class variables                               *
@@ -80,53 +107,35 @@ char StreamSocket::cvsid[] = "@(#)$Id:$";
  *                           Class methods                                 *
 \***************************************************************************/
 
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
-
 /***************************************************************************\
  *                           Instance methods                              *
 \***************************************************************************/
 
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*------------- constructors & destructors --------------------------------*/
-
 /** \brief Constructor
+ *
+ * Use open to assign a system socket. No system socket is assigned by
+ * the constructor.
+ *
+ * \see StreamSocket::open
  */
 StreamSocket::StreamSocket():
     Socket()
 {
 }
 
+/** \brief Copy constructor
+ */
 StreamSocket::StreamSocket(const StreamSocket &source):
     Socket(source)
 {
 }
 
-/** \brief Destructor
+/** \brief Assign a socket
+ *
+ * <CODE>Open</CODE> assignes a system socket to the StreamSocket. 
+ *
+ * \see Socket::close 
  */
-
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
 void StreamSocket::open()
 {
     _sd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -136,6 +145,18 @@ void StreamSocket::open()
     }
 }
 
+/** \brief Accept incomming connection
+ *
+ * Accept incomming connection. Use the returned StreamSocket to 
+ * communicate over the accepted communication. If the new StreamSocket
+ * is no longer used, you have to close it.
+ *
+ * \param address   After accepting, address contains the remote address.
+ *
+ * \return New StreamSocket for client communication
+ *
+ * \see Socket::close StreamSocket::accept
+ */
 StreamSocket StreamSocket::acceptFrom(Address &address)
 {
     StreamSocket client;
@@ -152,12 +173,30 @@ StreamSocket StreamSocket::acceptFrom(Address &address)
     return client;
 }
 
+/** \brief Accept incomming connection
+ *
+ * Accept incomming connection. Use the returned StreamSocket to 
+ * communicate over the accepted communication. If the new StreamSocket
+ * is no longer used, you have to close it.
+ *
+ * \return New StreamSocket for client communication
+ *
+ * \see Socket::close StreamSocket::acceptFrom
+ */
 StreamSocket StreamSocket::accept()
 {
     Address addr;
     return acceptFrom(addr);
 }
 
+/** \brief Set delay behavior
+ *
+ * A Stream socket doesen't send data immediately. Only if the internal
+ * buffer contains enough data, an immediate write is forced. If
+ * delay is set to false, then data is written always immediately.
+ *
+ * \param value  true = delay, false = no delay. true is the default
+ */
 void StreamSocket::setDelay(bool value)
 {
     int rc,on;
@@ -182,12 +221,11 @@ const StreamSocket & StreamSocket::operator =(const StreamSocket &source)
 
 /*-------------------------- comparison -----------------------------------*/
 
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
 OSG_END_NAMESPACE
+
+
+
+
+
+
+

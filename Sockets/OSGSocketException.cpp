@@ -50,6 +50,11 @@
 
 OSG_BEGIN_NAMESPACE
 
+/** \class SocketException
+ *  \ingroup SocketsLib
+ *  \brief Base class for socket exceptions
+ **/
+
 /** \brief Constructor
  */
 SocketException::SocketException():
@@ -57,6 +62,11 @@ SocketException::SocketException():
 {
     _what+="SocketLib: ";
 }
+
+/** \class SocketError
+ *  \ingroup SocketsLib
+ *  \brief Execption caused by socket error return codes
+ **/
 
 /** \brief Constructor
  */
@@ -69,6 +79,11 @@ SocketError::SocketError(const char *function):SocketException()
     _what=_what + function + " " + estr + " " + Socket::getErrorStr();
 }
 
+/** \class SocketHostError
+ *  \ingroup SocketsLib
+ *  \brief Execption caused by host name resolution
+ **/
+
 /** \brief Constructor
  */
 SocketHostError::SocketHostError(const char *function):SocketException()
@@ -80,12 +95,22 @@ SocketHostError::SocketHostError(const char *function):SocketException()
     _what=_what + function + " " + estr + " " + Socket::getHostErrorStr(); 
 }
 
+/** \class SocketInUse
+ *  \ingroup SocketsLib
+ *  \brief Execption caused by reusage of ports
+ **/
+
 /** \brief Constructor
  */
 SocketInUse::SocketInUse(const char *function):
     SocketError(function)
 {
 }
+
+/** \class SocketConnReset
+ *  \ingroup SocketsLib
+ *  \brief Execption caused by connection reset of remote endpoint
+ **/
 
 /** \brief Constructor
  */
@@ -94,4 +119,9 @@ SocketConnReset::SocketConnReset(const char *function):
 {
 }
 OSG_END_NAMESPACE
+
+
+
+
+
 

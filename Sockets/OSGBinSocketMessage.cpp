@@ -63,15 +63,39 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \class osg::BinSocketMessage
-    BinSocketMessage documentation,
- */
-
+/** \class osg::BinSocketMessage
+ *  \ingroup SocketsLib
+ *  \brief Little-, Big endian independent message buffer
+ *
+ * Little-, Big endian independent message buffer.
+ * 
+ * Example:
+ * <PRE> 
+ * // send
+ * BinSockMessage msg;
+ * msg.clear();              // if not already empty
+ * msg.putUInt32(220);
+ * msg.putInt32 (221);
+ * msg.putUInt16(222);
+ * msg.putInt16 (223);
+ * msg.putUInt8 (224);
+ * msg.putInt8  (225);
+ * msg.putReal32(226.0);
+ * msg.putString("227");
+ * socket.send(msg);
+ * // receive
+ * string str;
+ * socket.recv(msg);
+ * str = msg.getString();
+ * msg.getString(str);        // avoid one copy
+ * </PRE> 
+ * 
+ **/
 
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
-/*! Constructor documentation
+/*! Constructor 
  */
 BinSocketMessage::BinSocketMessage(void):
     SocketMessage(),
@@ -81,6 +105,8 @@ BinSocketMessage::BinSocketMessage(void):
     clear();
 }
 
+/** \brief Copy constructor
+ */
 BinSocketMessage::BinSocketMessage(const BinSocketMessage &source):
     SocketMessage(source),
     _buffer(source._buffer),
@@ -91,7 +117,7 @@ BinSocketMessage::BinSocketMessage(const BinSocketMessage &source):
 /*-------------------------------------------------------------------------*/
 /*                             Destructor                                  */
 
-/*! Destructor documentation
+/** \brief Destructor
  */
 BinSocketMessage::~BinSocketMessage(void)
 {
@@ -123,17 +149,30 @@ BinSocketMessage& BinSocketMessage::operator = (const BinSocketMessage &source)
 /*-------------------------------------------------------------------------*/
 /*                             Misc                                        */
 
+/** \brief Set message size 
+ *
+ * Set message size. This is called by the socket to get enough space
+ * to read a message.
+ *
+ * \param size   New message size
+ */
 void BinSocketMessage::setSize(UInt32 size)
 {
     _buffer.resize(size);
     reset();
 }
 
+/** \brief Clear message buffer
+ */
 void BinSocketMessage::clear(void)
 {
     _buffer.resize(sizeof(Header));
 }
 
+/** \brief Reset buffer for reading
+ *
+ * Reset readpointer to the beginn of the buffer
+ */
 void BinSocketMessage::reset(void)
 {
     _pos=sizeof(Header);
@@ -142,11 +181,19 @@ void BinSocketMessage::reset(void)
 /*-------------------------------------------------------------------------*/
 /*                             Get                                         */
 
+/** \brief Get message size
+ *
+ * \return message size in bytes
+ */
 UInt32 BinSocketMessage::getSize(void) 
 {
     return _buffer.size();
 }
 
+/** \brief Get buffer address
+ *
+ * \return pointer to the begin of the buffer
+ */
 MemoryHandle BinSocketMessage::getBuffer(void)
 {
     if(_buffer.size())
@@ -154,3 +201,10 @@ MemoryHandle BinSocketMessage::getBuffer(void)
     else
         return 0;
 }
+
+
+
+
+
+
+

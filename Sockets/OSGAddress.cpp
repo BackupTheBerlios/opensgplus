@@ -62,49 +62,33 @@ OSG_BEGIN_NAMESPACE
 
 using namespace std;
 
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
+/** \class Address
+ *  \ingroup SocketsLib
+ *  \brief Network address
+ *
+ * The class Address holds an ip-address and a socket port number.
+ * It is used to connect, and sendTo Sockets.
+ * 
+ * Usage:
+ * <PRE>
+ * Address a("colossus.world.com",3334);
+ * socket.bind(a);
+ * cout << a.getHost() << endl;
+ * cout << a.getPort() << endl;
+ * </PRE>
+ **/
 
-/***************************************************************************\
- *                           Class variables                               *
-\***************************************************************************/
-
+/** \brief cvsid **/
 char Address::cvsid[] = "@(#)$Id:$";
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
-
-/***************************************************************************\
- *                           Instance methods                              *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
 
 /*------------- constructors & destructors --------------------------------*/
 
 /** \brief Constructor
+ *
+ * Create a socket address for the given port and host.
+ *
+ * \param host  Host as hostname or as number 111.222.333.444.
+ * \param port  Port id
  */
 Address::Address(const char *host,int port)
 {
@@ -115,6 +99,8 @@ Address::Address(const char *host,int port)
     setPort(port);
 }
 
+/** \brief copy Constructor
+ */
 Address::Address(const Address &source)
 {
     _sockaddr = source._sockaddr;
@@ -126,17 +112,19 @@ Address::~Address()
 {
 }
 
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
+/** \brief set the port number
+ *
+ * \param port  Port number as an int
+ */
 void Address::setPort(int port)
 {
     _sockaddr.sin_port = htons( port );
 }
 
+/** \brief set host name
+ *
+ * \param host   Host as name or number
+ */
 void Address::setHost(const string &host)
 {
     struct hostent *hent;
@@ -166,11 +154,19 @@ void Address::setHost(const string &host)
     }
 }
 
+/** \brief Get host as number string
+ *
+ * \result   Host as number e.g. 133.33.44.55
+ */
 string Address::getHost() const
 {
     return string(inet_ntoa(_sockaddr.sin_addr));
 }
 
+/** \brief Get host as name
+ *
+ * \result   Hostname if found. Otherwise number string.
+ */
 string Address::getHostByName() const
 {
     struct hostent *hent;
@@ -191,16 +187,28 @@ string Address::getHostByName() const
     return result;
 }
 
+/** \brief Get a pointer to the sockaddr struct
+ *
+ * \result   sockaddr struct
+ */
 sockaddr *Address::getSockAddr() const
 {
     return (struct sockaddr *)&_sockaddr;
 }
 
+/** \brief Get the size of the sockaddr struct
+ *
+ * \result   size of sockaddr
+ */
 int Address::getSockAddrSize() const
 {
     return sizeof(struct sockaddr_in);
 }
 
+/** \brief Get port number
+ *
+ * \result   port as int
+ */
 int Address::getPort() const
 {
     return ntohs(_sockaddr.sin_port);
@@ -208,22 +216,25 @@ int Address::getPort() const
 
 /*-------------------------- assignment -----------------------------------*/
 
-/** \brief assignment
- */
-
 /*-------------------------- comparison -----------------------------------*/
 
+/** \brief compare equal
+ */
 bool Address::operator == (const Address &other) const
 {
     return _sockaddr.sin_addr.s_addr == other._sockaddr.sin_addr.s_addr &&
            _sockaddr.sin_port        == other._sockaddr.sin_port;
 }
 
+/** \brief compare not equal
+ */
 bool Address::operator != (const Address &other) const
 {
     return ! (*this == other);
 }
 
+/** \brief compare less
+ */
 bool Address::operator < (const Address &other) const
 {
     return _sockaddr.sin_addr.s_addr < other._sockaddr.sin_addr.s_addr ||
@@ -247,7 +258,13 @@ bool Address::operator < (const Address &other) const
  *                           Class variables                               *
 \***************************************************************************/
 
+
+/** \brief cvs id
+ */
 char BroadcastAddress::cvsid[] = "@(#)$Id:$";
+
+/** \brief cvs id
+ */
 char AnyAddress::cvsid[] = "@(#)$Id:$";
 
 /***************************************************************************\
@@ -260,6 +277,13 @@ char AnyAddress::cvsid[] = "@(#)$Id:$";
 
 /*------------- constructors & destructors --------------------------------*/
 
+/** \class BroadcastAddress
+ *  \ingroup SocketsLib
+ *  \brief A BroadcastAddress is an Address used for broadcasting.
+ *
+ *  The hostfield is set to INADDR_BROADCAST.
+ **/
+
 /** \brief Constructor
  */
 BroadcastAddress::BroadcastAddress(int port)
@@ -267,6 +291,19 @@ BroadcastAddress::BroadcastAddress(int port)
     _sockaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
     setPort(port);
 }
+
+/*! \class AnyAddress
+ *  \ingroup SocketsLib
+ *  \brief A AnyAddress is an Address with host set to INADDR_ANY
+ * 
+ * Use This to bind a port to all availabel network interfaces.
+ * <PRE>
+ * StreamSocket s;
+ * s.open();
+ * s.bind(AnyAddress(5555));
+ * </PRE>
+ *
+*/
 
 /** \brief Constructor
  */

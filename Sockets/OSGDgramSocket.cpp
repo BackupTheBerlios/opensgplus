@@ -66,6 +66,28 @@
 
 OSG_BEGIN_NAMESPACE
 
+/** \class DgramSocket
+ *  \ingroup SocketsLib
+ *  \brief Datagramm socket handler
+ *
+ * This class is a handler to packet oriented socket.
+ * <EM>open</EM> will assing a udp socket and <EM>close</EM>
+ * releases the socket. 
+ * Messages send with DgramSockets can be lost or the order in
+ * which they arrive can be changed.
+ *
+ * Example:
+ * <PRE>
+ * char buffer[100];
+ * DgramSocket s;
+ * Address from;
+ * s.open();
+ * s.sendTo(buffer,10,Address("serverhost.com",4567));
+ * s.recvFrom(buffer,10,from);
+ * s.close();
+ * </PRE>
+ **/
+
 /***************************************************************************\
  *                               Types                                     *
 \***************************************************************************/
@@ -107,26 +129,30 @@ char DgramSocket::cvsid[] = "@(#)$Id:$";
 /*------------- constructors & destructors --------------------------------*/
 
 /** \brief Constructor
- */
+ *
+ * Use open to assign a system socket. No system socket is assigned by
+ * the constructor.
+ *
+ * \see DgramSocket::open
+ **/
 DgramSocket::DgramSocket():
     Socket()
 {
 }
 
+/** \brief Copy constructor
+ */
 DgramSocket::DgramSocket(const DgramSocket &source):
     Socket(source)
 {
 }
 
-/** \brief Destructor
+/** \brief Assign a socket
+ *
+ * <CODE>Open</CODE> assignes a system socket to the StreamSocket. 
+ *
+ * \see Socket::close 
  */
-
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
 void DgramSocket::open()
 {
     _sd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -146,6 +172,18 @@ void DgramSocket::open()
     setTTL(1);
 }
 
+/** \brief read the given number of bytes 
+ *
+ * Read size bytes into the buffer. Wait until size Bytes are available
+ * data maight be lossed, if size is smaller then the incomming package.
+ * This situation will not be treated as an error.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  Maximum count of bytes to read.
+ * \param from  Will be overwritten with the address of the sender
+ *
+ * \see Socket::recvAvailable Socket::recv
+ */
 int DgramSocket::recvFrom(void *buf,int size,Address &from)
 {
     int len;
@@ -175,6 +213,20 @@ int DgramSocket::recvFrom(void *buf,int size,Address &from)
     return len;
 }
 
+/** \brief peek the given number of bytes 
+ *
+ * Read size bytes into the buffer. Wait until size Bytes are available
+ * On Dgram sockets data maight be lossed, if size is smaller then the
+ * incomming package. This situation will not be treated as an error.
+ * The read bytes will not be removed from the in buffer. A call to
+ * recv after peek will result in the same data.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  Maximum count of bytes to read.
+ * \param from  Will be overwritten with the address of the sender
+ *
+ * \see recv Socket::recv
+ */
 int DgramSocket::peekFrom(void *buf,int size,Address &from)
 {
     int len;
@@ -204,6 +256,17 @@ int DgramSocket::peekFrom(void *buf,int size,Address &from)
     return len;
 }
 
+/** \brief Write the given number of bytes to the socket
+ *
+ * Write size bytes to the socket. This method maight block, if the
+ * output buffer is full.
+ *
+ * \param buf   Pointer to the data buffer.
+ * \param size  number of bytes to write
+ * \param to    destination address
+ *
+ * \see recv Socket::send
+ */
 int DgramSocket::sendTo(const void *buf,int size,const Address &to)
 {
     int len;
@@ -221,6 +284,14 @@ int DgramSocket::sendTo(const void *buf,int size,const Address &to)
     return len;
 }
 
+/** \brief Join to a multicast group
+ *
+ * The socket will receive all messages from the given multicast address
+ * It is possible to join more then on goup.
+ *
+ * \param group   Multicast group 
+ * \param interf  Which network interface to use. (Default AnyAddress)
+ */
 void DgramSocket::join(const Address &group,const Address &interf)
 {
     struct ip_mreq joinAddr;
@@ -243,6 +314,13 @@ void DgramSocket::join(const Address &group,const Address &interf)
     }
 }
 
+/** \brief Leave a multicast group
+ *
+ * Don't receive messages from the given group.
+ *
+ * \param group   Multicast group 
+ * \param interf  Which network interface to use. (Default AnyAddress)
+ */
 void DgramSocket::leave(const Address &group,const Address &interf)
 {
     struct ip_mreq joinAddr;
@@ -265,6 +343,13 @@ void DgramSocket::leave(const Address &group,const Address &interf)
     }
 }
 
+/** \brief Set TTL for broadcast and multicast
+ *
+ * Defines how many routers a package will pass until it is deleted.
+ * 0 = local host, 1 = local network, ...
+ *
+ * \param ttl     time to live
+ */
 void DgramSocket::setTTL(unsigned char ttl)
 {
     int rc=setsockopt(_sd, IPPROTO_IP,IP_MULTICAST_TTL,
@@ -275,6 +360,15 @@ void DgramSocket::setTTL(unsigned char ttl)
     }
 }
 
+/** \brief Send a SocketMessage to an address
+ *
+ * Workes like send, but buffer and size is taken from the SocketMessage
+ *
+ * \param msg   Reference to the SocketMessage
+ * \param to    Destination address
+ *
+ * \see Socket::send
+ */
 int DgramSocket::sendTo(SocketMessage &msg,const Address &to)
 {
     SocketMessage::Header &hdr=msg.getHeader();
@@ -282,6 +376,15 @@ int DgramSocket::sendTo(SocketMessage &msg,const Address &to)
     return sendTo(msg.getBuffer(),msg.getSize(),to);
 }
 
+/** \brief Receive a SocketMessage
+ *
+ * Workes like recv, but buffer and size is taken from the SocketMessage
+ *
+ * \param msg   Reference to the SocketMessage
+ * \param to    Source address
+ *
+ * \see Socket::recv
+ */
 int DgramSocket::recvFrom(SocketMessage &msg,Address &from)
 {
     SocketMessage::Header hdr;
@@ -299,15 +402,5 @@ const DgramSocket & DgramSocket::operator =(const DgramSocket &source)
     _sd=source._sd;
     return *this;
 }
-
-/*-------------------------- comparison -----------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 
 OSG_END_NAMESPACE

@@ -47,15 +47,15 @@
 
 OSG_BEGIN_NAMESPACE
 
-/*! \ingroup socketslib
- *  \brief Brief
- */
-
 class OSG_SOCKET_DLLMAPPING SocketMessage 
 {
     /*==========================  PUBLIC  =================================*/
   public:
     
+    /** \class Header
+     *  \ingroup SocketsLib
+     *  \brief Header of socket messages
+     **/
     struct Header
     {
         UInt32 size;
@@ -102,11 +102,6 @@ class OSG_SOCKET_DLLMAPPING SocketMessage
     /*=========================  PROTECTED  ===============================*/
   protected:
 
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Member                                  */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
   private:
 };
