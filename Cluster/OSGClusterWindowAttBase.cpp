@@ -51,7 +51,6 @@
 \*****************************************************************************/
 
 
-#define OSG_COMPILECLUSTERLIB
 #define OSG_COMPILECLUSTERWINDOWATTINST
 
 #include <stdlib.h>
@@ -169,11 +168,6 @@ FieldContainerType ClusterWindowAttBase::_type(
 
 /*------------------------------ get -----------------------------------*/
 
-static const char *getClassname(void)
-{
-    return "ClusterWindowAtt"; 
-}
-
 FieldContainerType &ClusterWindowAttBase::getType(void) 
 {
     return _type; 
@@ -210,6 +204,10 @@ void ClusterWindowAttBase::executeSync(      FieldContainer &other,
 
 //! Constructor
 
+#ifdef OSG_WIN32_ICL
+#pragma warning (disable : 383)
+#endif
+
 ClusterWindowAttBase::ClusterWindowAttBase(void) :
     _sfServerId               (), 
     _sfComposite              (), 
@@ -218,6 +216,10 @@ ClusterWindowAttBase::ClusterWindowAttBase(void) :
     Inherited() 
 {
 }
+
+#ifdef OSG_WIN32_ICL
+#pragma warning (default : 383)
+#endif
 
 //! Copy Constructor
 

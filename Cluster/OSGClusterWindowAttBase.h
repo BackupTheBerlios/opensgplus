@@ -108,8 +108,6 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \name                    Class Get                                 */
     /*! \{                                                                 */
 
-    static const  char               *getClassname(void);
-
     static        FieldContainerType &getClassType    (void); 
     static        UInt32              getClassTypeId  (void); 
 
@@ -235,8 +233,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
 
     // prohibit default functions (move to 'public' if you need one)
-
-    void operator =(const ClusterWindowAtt &source);
+    void operator =(const ClusterWindowAttBase &source);
 };
 
 //---------------------------------------------------------------------------
