@@ -105,7 +105,7 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
     /*==========================  PRIVATE  ================================*/
   private:
 
-    unsigned int _maxtests;
+    UInt16 _maxtests;
     GLboolean* _results;
 
     /*! \brief prohibit default function (move to 'public' if needed) */
