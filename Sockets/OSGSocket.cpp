@@ -207,7 +207,7 @@ int Socket::peek(void *buf,int size)
 
 int Socket::write(const void *buf,int size)
 {
-    int len=::send(_sd,(char*)buf,size,0);
+    int len=::send(_sd,(const char*)buf,size,0);
     if(len==-1)
     {
         throw SocketError("send()");
