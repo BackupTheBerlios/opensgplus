@@ -1,5 +1,8 @@
 #include <iostream>
 #include <stdlib.h>
+
+// do we have Myrinet configured in?
+#ifdef OSG_WITH_MYRINET
 #include "OSGMyrinetConnection.h"
 
 using namespace OSG;
@@ -76,5 +79,10 @@ int main(int argc,char **argv)
     }
 }
 
-
+#else
+int main()
+{
+    cerr << "Myrinet not available" << endl;
+}
+#endif
 
