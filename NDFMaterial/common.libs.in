@@ -32,6 +32,6 @@ ac_gdz_package_link_dep_NDFMaterial="SystemLib BaseLib"
 
 # Which additional directories/libraries are needed for compiling/linking the
 # test programs
-ac_gdz_package_testinc_dep_NDFMaterial=""
-ac_gdz_package_testlink_dep_NDFMaterial="GL"
+ac_gdz_package_testinc_dep_NDFMaterial="WindowSystem/GLUT GLUT"
+ac_gdz_package_testlink_dep_NDFMaterial="GL GLUT WindowGLUTLib"
 
