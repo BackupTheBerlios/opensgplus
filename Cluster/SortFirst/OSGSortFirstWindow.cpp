@@ -48,6 +48,7 @@
 #include <OSGConfig.h>
 #include <OSGTileCameraDecorator.h>
 #include <OSGViewport.h>
+#include <OSGGeometry.h>
 #include "OSGSortFirstWindow.h"
 #include "OSGViewBufferHandler.h"
 #include "OSGConnection.h"
@@ -263,24 +264,38 @@ void SortFirstWindow::serverSwap( WindowPtr window,
 void SortFirstWindow::clientInit( WindowPtr window,
                                   Connection * )
 {
-    ViewportPtr cvp;
     if(window == NullFC ||
        getPort().size()==0)
         return;
-    cvp=getPort()[0];
 
-    // duplucate viewport
-    ViewportPtr vp;
-    vp = Viewport::create();
+    // get cluster viewport. Currently there is only one viewport
+    // fore each window allowed!
+    ViewportPtr cvp=getPort()[0];
+
+    // create camera decorator
+    TileCameraDecoratorPtr deco = TileCameraDecorator::create();
+    beginEditCP(deco);
+    deco->setCamera( cvp->getCamera() );
+    deco->setSize( 0,0,1,1 );
+    deco->setFullWidth ( getWidth() );
+    deco->setFullHeight( getHeight() );
+    endEditCP(deco);
+
+    // create new client viewport
+    ViewportPtr vp = Viewport::create();
     beginEditCP(vp);
-    vp->setCamera( cvp->getCamera() );
+    vp->setCamera    ( deco );
     vp->setBackground( cvp->getBackground() );
-    vp->setRoot( cvp->getRoot() );
-    vp->setSize( 0,0, 1,1 );
+    vp->setRoot      ( cvp->getRoot() );
+    vp->setSize      ( 0,
+                       0, 
+                       1.0 * getWidth () / window->getWidth (),
+                       1.0 * getHeight() / window->getHeight());
     beginEditCP(window);
     window->addPort(vp);
     endEditCP(window);
     endEditCP(vp);
+
 }
 
 /*! client frame init
@@ -314,21 +329,22 @@ void SortFirstWindow::clientFrameInit( WindowPtr window,
     // distribute work
     // replace with load balancing algorithm !!!!!
     int i;
+    int num=getServers().size()+1;
     beginEditCP(ptr,
                 SortFirstWindow::LeftFieldMask|
                 SortFirstWindow::RightFieldMask|
                 SortFirstWindow::TopFieldMask|
                 SortFirstWindow::BottomFieldMask);
-    getLeft()  .resize(getServers().size());
-    getRight() .resize(getServers().size());
-    getTop()   .resize(getServers().size());
-    getBottom().resize(getServers().size());
-    for(i=0;i<getServers().size();i++)
+    getLeft()  .resize(num);
+    getRight() .resize(num);
+    getTop()   .resize(num);
+    getBottom().resize(num);
+    for(i=0;i<num;i++)
     {
         getTop()   [i]=1;
         getBottom()[i]=0;
-        getLeft()  [i]=((double)i)    /getServers().size();
-        getRight() [i]=((double)(i+1))/getServers().size();
+        getLeft()  [i]=((double)i)    /num;
+        getRight() [i]=((double)(i+1))/num;
     }
     endEditCP(ptr,
               SortFirstWindow::LeftFieldMask|
@@ -336,19 +352,23 @@ void SortFirstWindow::clientFrameInit( WindowPtr window,
               SortFirstWindow::TopFieldMask|
               SortFirstWindow::BottomFieldMask);
 
+    // client viewport
+    ViewportPtr vp=window->getPort()[0];
+    TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
+    vp->setSize( ((Int32)(getLeft  ()[num-1] * getWidth ())),
+                 ((Int32)(getBottom()[num-1] * getHeight())), 
+                 ((Int32)(getRight ()[num-1] * getWidth ())),
+                 ((Int32)(getTop   ()[num-1] * getHeight())));
+    deco->setSize( getLeft()  [num-1],
+                   getBottom()[num-1],
+                   getRight() [num-1],
+                   getTop()   [num-1] );
+    deco->setFullWidth ( getWidth() );
+    deco->setFullHeight( getHeight() );
+
+    distributeWork();
+
     Inherited::clientFrameInit( window,connection,aspect );
-}
-
-/*! render client window
- *
- *  No rendering on client side
- *
- */
-
-void SortFirstWindow::clientRenderAllViewports( WindowPtr ,
-                                                Connection *,
-                                                RenderAction * )
-{
 }
 
 /*! show data
@@ -357,11 +377,80 @@ void SortFirstWindow::clientRenderAllViewports( WindowPtr ,
 void SortFirstWindow::clientSwap( WindowPtr window,
                                   Connection *connection )
 {
+    glViewport(0,0,window->getWidth(),window->getHeight());
+    glScissor(0,0,window->getWidth(),window->getHeight());
     _bufferHandler.recv(*connection);
     Inherited::clientSwap(window,connection);
 }
 
 
+void SortFirstWindow::distributeWork()
+{
+    CameraPtr camera=getPort()[0]->getCamera();
+    NodePtr   root  =getPort()[0]->getRoot();
+
+    Matrix proj,view;
+
+    camera->getProjection(proj,getWidth(),getHeight());
+    camera->getViewing(view,getWidth(),getHeight());
+    proj.mult(view);
+
+    traverseGeometry(root,proj);
+}
+
+void SortFirstWindow::traverseGeometry(NodePtr np,Matrix &proj)
+{
+    MFNodePtr::iterator nodei;
+    NodeCorePtr core;
+    GeometryPtr geom;
+    Vec3f min,max;
+    Pnt3f pnt[8];
+    int i;
+    Real32 minx,miny;
+    Real32 maxx,maxy;
+
+    core=np->getCore();
+    if(core!=NullFC)
+    {
+        geom=GeometryPtr::dcast(core);
+        if(geom!=NullFC)
+        {
+            Matrix m=np->getToWorld();
+            m.mult(proj);
+            const BoxVolume *vol = (OSG::BoxVolume *)&np->getVolume();
+            vol->getBounds(min, max);
+            m.multFullMatrixPnt(Pnt3f( min[0] , min[1] , min[2]) , pnt[0]);
+            m.multFullMatrixPnt(Pnt3f( min[0] , min[1] , max[2]) , pnt[1]);
+            m.multFullMatrixPnt(Pnt3f( min[0] , max[1] , min[2]) , pnt[2]);
+            m.multFullMatrixPnt(Pnt3f( min[0] , max[1] , max[2]) , pnt[3]);
+            m.multFullMatrixPnt(Pnt3f( max[0] , min[1] , min[2]) , pnt[4]);
+            m.multFullMatrixPnt(Pnt3f( max[0] , min[1] , max[2]) , pnt[5]);
+            m.multFullMatrixPnt(Pnt3f( max[0] , max[1] , min[2]) , pnt[6]);
+            m.multFullMatrixPnt(Pnt3f( max[0] , max[1] , max[2]) , pnt[7]);
+            maxx=minx=pnt[0][0];
+            maxy=miny=pnt[0][1];
+            for(i=1;i<8;i++)
+            {
+                if(minx > pnt[i][0]) minx = pnt[i][0];
+                if(miny > pnt[i][1]) miny = pnt[i][1];
+                if(maxx < pnt[i][0]) maxx = pnt[i][0];
+                if(maxy < pnt[i][1]) maxy = pnt[i][1];
+            }
+            cout << minx << " "
+                 << miny << " "
+                 << maxx << " "
+                 << maxy << endl;
+        }
+    }
+    for(nodei =np->getMFChildren()->begin();
+        nodei!=np->getMFChildren()->end();
+        nodei++)
+    {
+        traverseGeometry(*nodei,proj);
+    }
 
 
+
+
+}
 

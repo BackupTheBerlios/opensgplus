@@ -37,6 +37,7 @@ int main(int argc,char **argv)
 {
     char           *name          ="ClusterServer";
     char           *connectionType="StreamSock";
+    bool           fullscreen=true;
 
     if(argc>1)
         name          =argv[1];
@@ -48,6 +49,9 @@ int main(int argc,char **argv)
             {
                 case 'm':
                     connectionType="Multicast";
+                    break;
+                case 'w':
+                    fullscreen=false;
                     break;
                 case 'h':
                     cout << argv[0] 
@@ -65,10 +69,12 @@ int main(int argc,char **argv)
         glutInitDisplayMode( GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
         winid = glutCreateWindow("OpenSG Cluster Client");
 
-//        glutFullScreen();
+        if(fullscreen)
+            glutFullScreen();
+        else
+            glutReshapeWindow(500,500);
 
-        glutReshapeWindow(500,500);
-
+        glutPopWindow();
         glutDisplayFunc(display);       
         glutIdleFunc(display);       
         glutReshapeFunc(reshape);       

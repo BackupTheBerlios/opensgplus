@@ -45,6 +45,7 @@
 #include <OSGConfig.h>
 #include <OSGViewBufferHandler.h>
 #include <OSGSortFirstWindowBase.h>
+#include <OSGCamera.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -88,9 +89,6 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     virtual void clientFrameInit         ( WindowPtr window,
                                            Connection *connection,
                                            RemoteAspect *aspect            );
-    virtual void clientRenderAllViewports( WindowPtr window,
-                                           Connection *connection,
-                                           RenderAction *action            );
     virtual void clientSwap              ( WindowPtr window,
                                            Connection *connection          );
 
@@ -121,6 +119,14 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \{                                                                 */
 
     virtual ~SortFirstWindow(void); 
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                utilities                                     */
+    /*! \{                                                                 */
+
+    void distributeWork(void);
+    void traverseGeometry(NodePtr root,Matrix &proj);
 
     /*! \}                                                                 */
     
