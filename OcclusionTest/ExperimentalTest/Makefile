@@ -3,7 +3,7 @@ OCTESTDIR=$(BASEDIR)/OcclusionTest/ExperimentalTest/
 CC = g++
 MAKE = make
 
-INCLUDEPATH = -I$(HOME)/packages/g++-3.2/include/ -I$(HOME)/packages/g++-3.2/include/OpenSG/ -I$(HOME)/packages/g++-3.2/include/ -I$(OCTESTDIR)/../Experimental/ -I.
+INCLUDEPATH = -I$(OCTESTDIR)/../Experimental/ -I$(HOME)/packages/g++-3.2/include/ -I$(HOME)/packages/g++-3.2/include/OpenSG/ -I$(HOME)/packages/g++-3.2/include/ -I.
 DEFINES = -DOSG_WITH_QT=1 -DQT_CLEAN_NAMESPACE -D__GCC__ -DUseOpenGL -DOPEN_GL -DUseAnsiCPlusPlus -D__linux -DUNIX -DOSG_OPT_DRAWTREE
 CFLAGS = -g -O3 -Wno-unknown-pragmas $(DEFINES) $(INCLUDEPATH)
 LIBS = -lOSGSystem -lOSGBase -lOSGWindowX -lOSGWindowQT -ltiff -lqt-mt -lGL -lGLU -lpthread -lm -ldl

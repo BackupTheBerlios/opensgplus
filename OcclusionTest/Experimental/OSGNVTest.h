@@ -50,6 +50,7 @@
 #include <OSGDynamicVolume.h>
 
 #include <OSGOcclusionTypes.h>
+#include <OSGGLEXT.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -109,6 +110,14 @@ class OSG_SYSTEMLIB_DLLMAPPING NVTest
   private:
 
     UInt32 _nvExtension;
+    UInt32 _funcGenOcclusionQueriesNV;
+    UInt32 _funcBeginOcclusionQueryNV;
+    UInt32 _funcEndOcclusionQueryNV;
+    UInt32 _funcGetOcclusionQueryuivNV;
+    void (OSG_APIENTRY* _glGenOcclusionQueriesNV)(GLsizei, GLuint*);
+    void (OSG_APIENTRY* _glBeginOcclusionQueryNV)(GLuint);
+    void (OSG_APIENTRY* _glEndOcclusionQueryNV)(void);
+    void (OSG_APIENTRY* _glGetOcclusionQueryuivNV)(GLuint, GLenum, GLuint*);
     UInt16 _maxtests;
     GLuint* _results;
     bool _extworks;

@@ -44,6 +44,9 @@
 #include <OSGConfig.h>
 #include <OSGDrawAction.h>
 #include <OSGViewport.h>
+#include <OSGGLEXT.h>
+
+#include<stdio.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -90,6 +93,10 @@ inline
 NVTest::NVTest(void):_maxtests(0), _results(NULL)
 {
 	_nvExtension = Window::registerExtension("GL_NV_occlusion_query");
+	_funcGenOcclusionQueriesNV  = Window::registerFunction (OSG_DLSYM_UNDERSCORE"glGenOcclusionQueriesNV");
+	_funcBeginOcclusionQueryNV  = Window::registerFunction (OSG_DLSYM_UNDERSCORE"glBeginOcclusionQueryNV");
+	_funcEndOcclusionQueryNV    = Window::registerFunction (OSG_DLSYM_UNDERSCORE"glEndOcclusionQueryNV");
+	_funcGetOcclusionQueryuivNV = Window::registerFunction (OSG_DLSYM_UNDERSCORE"glGetOcclusionQueryuivNV");
 };
 
 inline
@@ -111,10 +118,15 @@ void NVTest::frameExit(void)
 };
 
 inline
-void NVTest::setup(const UInt16& max, Viewport*, const UInt32)
+void NVTest::setup(const UInt16& max, Viewport* vp, const UInt32)
 {
-	WindowPtr win=vp->GetParent();
+	WindowPtr win=vp->getParent();
 	if(win->hasExtension(_nvExtension)){
+		void (OSG_APIENTRY* _glGenOcclusionQueriesNV)(GLsizei, GLuint *)=(void (OSG_APIENTRY*)(GLsizei, GLuint *)) win->getFunction(_funcGenOcclusionQueriesNV);
+		void (OSG_APIENTRY* _glBeginOcclusionQueryNV)(GLuint)=(void (OSG_APIENTRY*)(GLuint)) win->getFunction(_funcBeginOcclusionQueryNV);
+		void (OSG_APIENTRY* _glEndOcclusionQueryNV)(void)=(void (OSG_APIENTRY*)(void)) win->getFunction(_funcEndOcclusionQueryNV);
+		void (OSG_APIENTRY* _glGetOcclusionQueryuivNV)(GLuint, GLenum, GLuint*)=(void (OSG_APIENTRY*)(GLuint, GLenum, GLuint*)) win->getFunction(_funcGetOcclusionQueryuivNV);
+
 		_extworks=true;
 	}else{
 		_extworks=false;
@@ -133,8 +145,9 @@ void NVTest::init(void)
 	glDepthMask(GL_FALSE);
 	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
 #ifdef GL_NV_occlusion_query
-	if(_extworks)
+	if(_extworks){
 	        glGenOcclusionQueriesNV(_maxtests, _results);
+	}
 #endif
 };
 
@@ -171,7 +184,7 @@ void NVTest::perform(const UInt16& num, const OCTestNode* node)
 		glVertex3f( min[0], max[1], max[2]);
 		glEnd();
 	
-		glEndOcclusionQueryNV();
+		_glEndOcclusionQueryNV();
 	}
 #endif
 };

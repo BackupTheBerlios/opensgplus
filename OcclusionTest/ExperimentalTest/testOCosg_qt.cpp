@@ -311,7 +311,7 @@ int main( int argc, char **argv )
     
     ract = OCRenderAction::create();
     
-    ract->setOcclusionTest(OCRenderAction::OCTestHP);
+    ract->setOcclusionTest(OCRenderAction::OCTestNV);
     ract->setShowHiddenBB(true);
     ract->setShowVisibleBB(false);
     ract->setSoftTest(false);

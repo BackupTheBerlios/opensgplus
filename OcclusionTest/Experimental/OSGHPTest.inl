@@ -45,6 +45,7 @@
 #include <OSGDrawAction.h>
 #include <OSGViewport.h>
 #include <OSGWindow.h>
+#include <OSGWindowBase.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -114,7 +115,7 @@ void HPTest::frameExit(void)
 inline
 void HPTest::setup(const UInt16& max, Viewport* vp, const UInt32 maxpix)
 {
-	WindowPtr win=vp->GetParent();
+	WindowPtr win=vp->getParent();
 	if(win->hasExtension(_hpExtension)){
 		_extworks=true;
 	}else{
