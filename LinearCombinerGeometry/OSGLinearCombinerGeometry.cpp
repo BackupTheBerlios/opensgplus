@@ -50,7 +50,14 @@
 
 OSG_USING_NAMESPACE
 
+/***************************************************************************\
+ *                            Description                                  *
+\***************************************************************************/
+
 /*! \class osg::LinearCombinerGeometry
+    \ingroup GrpExperimentalLinearCombinerGeometry
+    
+See \ref PageExperimentalLinearCombinerGeometry for details.
 
 */
 
@@ -216,12 +223,13 @@ void LinearCombinerGeometry::recalculateGeometry()
 		
 	std::vector<Real32> 			weights;
 
+	// Optimize access if all geometries are 3f
 	if(getAllgeometries3f())
 	{
 		std::vector<GeoPositions3fPtr> 	positions;
 		GeoPositions3fPtr				dstpositions = GeoPositions3fPtr::dcast(getPositions());
 	
-		// Collect all positions that have a weight != 0
+		// Collect only position fields that have a weight != 0
 		for(int index=0; index < getMFWeights()->size(); index++)
 		{
 			if(getWeights(index) != 0.0) 
@@ -231,12 +239,13 @@ void LinearCombinerGeometry::recalculateGeometry()
 			}
 		}
 		
-		// interpolate all points
 		beginEditCP(dstpositions);
 		dstpositions->resize(positions[0]->getSize());
 		for(int index=0; index < positions[0]->getSize(); index++)
 		{
+			// Weight iterators
 			std::vector<Real32>::iterator wit, wend;
+			// point iterator
 			std::vector<GeoPositions3fPtr>::iterator pit;
 			
 			wit = weights.begin();
@@ -250,18 +259,18 @@ void LinearCombinerGeometry::recalculateGeometry()
 				p += (*pit)->getValue(index).subZero() * *wit;
 				pit++;
 			}
-			// set point
+
 			dstpositions->setValue(p, index);
 		}
 		endEditCP(dstpositions);
 	}
-	else
+	else	// use generic interface
 	{
 		std::vector<GeoPositionsPtr> positions;
 		GeoPositions3fPtr            dstpositions = 
                                       GeoPositions3fPtr::dcast(getPositions());
 	
-		// Collect all positions that have a weight != 0
+		// Collect only position fields that have a weight != 0
 		for(int index=0; index < getMFWeights()->size(); index++)
 		{
 			if(getWeights(index) != 0.0) 
@@ -271,7 +280,6 @@ void LinearCombinerGeometry::recalculateGeometry()
 			}
 		}
 		
-		// interpolate all points
 		beginEditCP(dstpositions);
 		dstpositions->resize(positions[0]->getSize());
 		for(int index=0; index < positions[0]->getSize(); index++)
@@ -290,7 +298,6 @@ void LinearCombinerGeometry::recalculateGeometry()
 				p += (*pit)->getValue(index).subZero() * *wit;
 				pit++;
 			}
-			// set point
 			dstpositions->setValue(p, index);
 		}
 		endEditCP(dstpositions);
@@ -301,48 +308,39 @@ void LinearCombinerGeometry::recalculateGeometry()
 
 void LinearCombinerGeometry::addGeometry(GeometryPtr source, Real32 weight)
 {
+	// if first geometry clone all fields
 	if(getPositions() == NullFC) 
     {
 		initWithGeometry(source);
 		return;	
 	}
 	
-    GeometryPtr destination = (GeometryPtr)this;
-    
     // add positions to srcpositions
-	beginEditCP(destination, LinearCombinerGeometry::WeightsFieldMask | LinearCombinerGeometry::SrcpositionsFieldMask);
-		getMFWeights()->push_back(weight);
-		getMFSrcpositions()->push_back(source->getPositions());
-	endEditCP(destination, LinearCombinerGeometry::WeightsFieldMask | LinearCombinerGeometry::SrcpositionsFieldMask);
+	getMFWeights()->push_back(weight);
+	getMFSrcpositions()->push_back(source->getPositions());
 }
 
 void LinearCombinerGeometry::initWithGeometry(GeometryPtr source)
 {
 	// Copy references to data from geometry and set srcpositions
-    LinearCombinerGeometryPtr destination = LinearCombinerGeometryPtr(this);
+    setNormals(source->getNormals());
+    setTypes(source->getTypes());
+    setLengths(source->getLengths());
+    setPositions(GeoPositions3f::create());
+    setColors(source->getColors());
+    setSecondaryColors(source->getSecondaryColors());
+    setTexCoords(source->getTexCoords());
+    setTexCoords1(source->getTexCoords1());
+    setTexCoords2(source->getTexCoords2());
+    setTexCoords3(source->getTexCoords3());
+    setIndices(source->getIndices());
+    setMaterial(source->getMaterial());
+    setDlistCache(source->getDlistCache());
+    getMFIndexMapping()->setValues(*(source->getMFIndexMapping()));
 
-    beginEditCP(destination);
-    {
-	    destination->setNormals(source->getNormals());
-	    destination->setTypes(source->getTypes());
-	    destination->setLengths(source->getLengths());
-	    destination->setPositions(GeoPositions3f::create());
-	    destination->setColors(source->getColors());
-	    destination->setSecondaryColors(source->getSecondaryColors());
-	    destination->setTexCoords(source->getTexCoords());
-	    destination->setTexCoords1(source->getTexCoords1());
-	    destination->setTexCoords2(source->getTexCoords2());
-	    destination->setTexCoords3(source->getTexCoords3());
-	    destination->setIndices(source->getIndices());
-	    destination->setMaterial(source->getMaterial());
-	    destination->setDlistCache(source->getDlistCache());
-	    destination->getMFIndexMapping()->setValues(*(source->getMFIndexMapping()));
-
-	    // Set first source geometry
-	    destination->getMFWeights()->push_back(1.0);
-	    destination->getMFSrcpositions()->push_back(source->getPositions());
-    }
-    endEditCP(destination);
+    // Set first source geometry
+    getMFWeights()->push_back(1.0);
+    getMFSrcpositions()->push_back(source->getPositions());
 
    	recalculateBoundingVolumes();
 }
@@ -356,10 +354,15 @@ NodePtr OSG::createLinearCombinerStructure(NodePtr source)
 	NodeCorePtr core = source->getCore();
 	GeometryPtr geo = GeometryPtr::dcast(core);
 	
+	// replace Geometries with LinearCombinerGeometries
 	if(geo != NullFC) 
     {
 		LinearCombinerGeometryPtr lingeo = LinearCombinerGeometry::create();
-		lingeo->initWithGeometry(geo);
+		
+		beginEditCP(lingeo);
+			lingeo->initWithGeometry(geo);
+		endEditCP(lingeo);
+		
 		core = lingeo;	
 	}
 	
@@ -400,8 +403,10 @@ void OSG::addToLinearCombinerStructure(NodePtr source, NodePtr dest)
 			SWARNING << "addToLinearCombinerStructure: Tree structure of src and dest differs" << std::endl;
 			return;
 		}
-		
-		lingeo->addGeometry(geo);
+
+		beginEditCP(lingeo, LinearCombinerGeometry::SrcpositionsFieldMask | LinearCombinerGeometry::WeightsFieldMask);
+			lingeo->addGeometry(geo, 0.0);
+		endEditCP(lingeo, LinearCombinerGeometry::SrcpositionsFieldMask | LinearCombinerGeometry::WeightsFieldMask);
 	}
 	
 	// recurse
@@ -453,7 +458,7 @@ void LinearCombinerGeometry::dump(      UInt32    ,
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGLinearCombinerGeometry.cpp,v 1.1 2003/04/05 16:17:42 dirk Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGLinearCombinerGeometry.cpp,v 1.2 2003/04/22 13:15:27 tklug Exp $";
     static Char8 cvsid_hpp       [] = OSGLINEARCOMBINERGEOMETRYBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGLINEARCOMBINERGEOMETRYBASE_INLINE_CVSID;
 

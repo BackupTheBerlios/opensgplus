@@ -135,14 +135,13 @@ class OSG_SYSTEMLIB_DLLMAPPING LinearCombinerGeometry : public LinearCombinerGeo
     void operator =(const LinearCombinerGeometry &source);
 };
 
-// FIXME: Documentation
+// Functions for efficiently manipulating a tree structure with LinearCombinerGeometries
 OSG_SYSTEMLIB_DLLMAPPING
 NodePtr     createLinearCombinerStructure(NodePtr source);
 OSG_SYSTEMLIB_DLLMAPPING
 void        addToLinearCombinerStructure(NodePtr source, NodePtr dest);
 OSG_SYSTEMLIB_DLLMAPPING
 void 	   getLinearCombinerCores(std::vector<LinearCombinerGeometryPtr> &cores, NodePtr node);
-
 
 
 typedef LinearCombinerGeometry *LinearCombinerGeometryP;
@@ -152,6 +151,6 @@ OSG_END_NAMESPACE
 #include <OSGLinearCombinerGeometryBase.inl>
 #include <OSGLinearCombinerGeometry.inl>
 
-#define OSGLINEARCOMBINERGEOMETRY_HEADER_CVSID "@(#)$Id: OSGLinearCombinerGeometry.h,v 1.1 2003/04/05 16:17:42 dirk Exp $"
+#define OSGLINEARCOMBINERGEOMETRY_HEADER_CVSID "@(#)$Id: OSGLinearCombinerGeometry.h,v 1.2 2003/04/22 13:15:27 tklug Exp $"
 
 #endif /* _OSGLINEARCOMBINERGEOMETRY_H_ */
