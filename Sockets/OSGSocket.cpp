@@ -149,7 +149,7 @@ Socket::Socket():
         WORD wVersionRequested = MAKEWORD( 2, 2 ); 
         if(WSAStartup( wVersionRequested, &wsaData )!=0)
         {
-            throw SocketException("WSAStartup()",getLastError());
+            throw SocketError("WSAStartup()");
         }
 #endif
     }
@@ -181,7 +181,7 @@ int Socket::recv(void *buf,int size)
 {
     int len;
 
-    len=::recv(_sd,(char*)buf,size,MSG_WAITALL);
+    len=::recv(_sd,(char*)buf,size,0);
     if(len==-1)
     {
         throw SocketError("recv()");
