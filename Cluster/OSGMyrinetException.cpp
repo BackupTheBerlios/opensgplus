@@ -75,7 +75,6 @@ const char *MyrinetException::getErrorStr( gm_status_t st)
 }
 
 
-#endif
-
 OSG_END_NAMESPACE
 
+#endif

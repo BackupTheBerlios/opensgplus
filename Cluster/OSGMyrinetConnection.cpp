@@ -42,6 +42,10 @@
 
 #define OSG_COMPILECLUTERLIB
 
+
+// do we have Myrinet configured in?
+#ifdef OSG_WITH_MYRINET
+
 #include <algorithm>
 #include <stdlib.h>
 #include <stdio.h>
@@ -391,4 +395,4 @@ MyrinetConnection& MyrinetConnection::operator = (const MyrinetConnection &sourc
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
 
-
+#endif
