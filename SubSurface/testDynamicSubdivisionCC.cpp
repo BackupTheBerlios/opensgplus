@@ -20,8 +20,9 @@ OSG_USING_NAMESPACE
 // The SimpleSceneManager to manage simple applications
 SimpleSceneManager* mgr = NULL;
 
-// DynamicSubdivisionCC on MyMesh=OpenMesh::PolyMesh_ArrayKernelT<MyTraits>
-MyDynamicSubdivisionPtr subdivCore;
+// DynamicSubdivisionCC on MyPolyMesh=OpenMesh::PolyMesh_ArrayKernelT<MyTraits>
+MyDynamicSubdivisionCCPtr subdivCore;
+MyPolyMesh* omesh = NULL;
 
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
@@ -31,9 +32,12 @@ int main(int argc, char **argv)
 {
    // check command line options
    if (argc < 2) {
-      std::cerr << "Usage:  " << argv[0] << " mesh-filename (obj or off)" << std::endl;
+      std::cerr << "Usage:  " << argv[0] << " mesh-filename (obj or off) [maxdepth]" << std::endl;
       exit(1);
    }
+
+   Int32 maxdepth=4;
+   if (argc >2) maxdepth=atoi(argv[2]);
 
    // OSG init
    osgInit(argc,argv);
@@ -47,14 +51,14 @@ int main(int argc, char **argv)
    gwin->init();
 
    // create OpenMesh object
-   MyMesh omesh;
-   if (!OpenMesh::IO::read_mesh(omesh,argv[1])) {
+   omesh = new MyPolyMesh();
+   if (!OpenMesh::IO::read_mesh(*omesh,argv[1])) {
       SWARNING << "Mesh " << argv[1] << " not found!" << std::endl;
    }
     
    //clear all edges		
-   MyMesh::EdgeIter eIt(omesh.edges_begin());
-   MyMesh::EdgeIter eEnd(omesh.edges_end());
+   MyPolyMesh::EdgeIter eIt(omesh->edges_begin());
+   MyPolyMesh::EdgeIter eEnd(omesh->edges_end());
    Int32 g=0;
    for (; eIt!=eEnd; ++eIt) {
       eIt->isCrease = 0;    	  // mark edges as smooth
@@ -62,17 +66,18 @@ int main(int argc, char **argv)
       //if (g==4 || g==6 || g==8 || g==10 || g==11 || g==9 || g==1 || g==3) eIt->isCrease = 1;
       g++;
        
-      // marjk border of mesh as creases
-      if (omesh.is_boundary(eIt.handle())) 
+      // mark border of mesh as creases
+      if (omesh->is_boundary(eIt.handle())) 
 	 eIt->isCrease = 1;
    }
 
    // create DynamicSubdivisionCC node core
-   subdivCore = MyDynamicSubdivision::create();
+   subdivCore = MyDynamicSubdivisionCC::create();
 
 	
    beginEditCP(subdivCore);
-   subdivCore->setMesh(&omesh);	
+   subdivCore->setMaxDepth(maxdepth);
+   subdivCore->setMesh(omesh);	
    endEditCP(subdivCore);
     
    NodePtr scene = Node::create();
@@ -120,6 +125,8 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
+   // update tesselation for viewport mgr->getWindow()->getPort(0)
+   subdivCore->prepareFrame(mgr->getWindow()->getPort(0));
    mgr->redraw();
 }
 

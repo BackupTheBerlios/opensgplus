@@ -6,8 +6,9 @@ Contact: Volker Settgast,   v.settgast@tu-bs.de
 
 Usage:
 
-The dynamic subdivision surfaces tesselation is implemented currently
-for the Catmull-Clark type (with creases) on quad meshes.
+The dynamic subdivision surfaces tesselation is implemented
+for the Catmull-Clark type (with creases) on quad meshes
+for the Loop type (with creases) on tri meshes.
 For an example have a look at the test program testDynamicSubdivisionCC.cpp.
 ./testDynamicSubdivisionCC.cpp lbox.obj
 with keys 's' solid shading
@@ -18,12 +19,20 @@ with keys 's' solid shading
 Compilation:
 
 To compile this package you need the OpenMesh, see http://www.openmesh.org
-(for example version 1.0.0.pre3 tested).
-Simplest you compile all files *.cc (reader, writer) into a static library 
-OpenMesh.
+(for example version 1.0.0.b2 and 1.0.0.b3 tested).
 
-For this configure OpenSG with the following options added
-(You have to change the paths according to your system!)
---with-add-incdir=/cygdrive/e/extern
---with-add-libdir=/cygdrive/e/extern/OpenMesh/lib 
---with-add-lib=OpenMesh
+Because the OpenMesh package contains a few *.cc (reader, writer) files, 
+there are two possibilities
+* Copy all files *.cc into OSG*.cpp files into directory SubSurface.
+  Then configure OpenSG with the following options added
+  (You have to change the paths according to your system!)
+  --with-add-incdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2
+  --with-add-libdir=
+  --with-add-lib=
+
+* Compile all files *.cc into a static library OpenMesh.
+  Then configure OpenSG with the following options added
+  (You have to change the paths according to your system!)
+  --with-add-incdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2
+  --with-add-libdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2/lib
+  --with-add-lib=OpenMesh
