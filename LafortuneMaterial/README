@@ -1,0 +1,21 @@
+/*********************************************************************/
+/*      LafortuneMaterial                                            */
+/*********************************************************************/
+
+Lafotune Model:
+----------------
+
+The Lafortune BRDF model is a simple but yet very powerful BRDF model.
+This OpenSG Material allows to render objects with this model, instead
+of the simple Phong model. Furthermore a diffuse texture can be set
+(or a combined diffuse/specular texture). 
+
+Characteristics:
+-------------------
+
+1. Use Vertex Program and (ARB Fragment Program or NVIDIA Register Combiners)
+   for shading. User can choose FP or RC mode.
+2. Possible to add a texture for the diffuse term. (If the
+   texture not needed, use white texture)
+3. Vertex and Fragment Programs are embedded in the code.
+

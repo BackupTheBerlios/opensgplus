@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="LafortuneMaterial"
+	parent="ChunkMaterial"
+	library="System"
+	pointerfieldtypes="none"
+	structure="concrete"
+	systemcomponent="false"
+	parentsystemcomponent="true"
+	decoratable="false"
+	useLocalIncludes="false"
+>
+Material with using of Lafortune reflectance function. BRDF is computed as follows: f_brdf = Ks*(Cx*(ux*vx+uy*vy)+Cz*uz*vz); and the color at the end is: c = tex*(rho + f_brdf) or c = tex*pho + f_brdf or c = pho + f_brdf
+	<Field
+		name="ambient"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	ambient color
+	</Field>
+	<Field
+		name="diffuse"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	diffuse color
+	</Field>
+	<Field
+		name="specular"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1,1,1"
+		access="public"
+	>
+	specular color
+	</Field>
+	<Field
+		name="Ka"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	coefficient for ambient term
+	</Field>
+	<Field
+		name="Rho_d"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	coefficient for diffuse term
+	</Field>
+	<Field
+		name="Ks"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	For scaling the contribution of specular term
+	</Field>
+	<Field
+		name="emission"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	emission
+	</Field>
+	<Field
+		name="transparency"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0"
+		access="public"
+	>
+	transparency
+	</Field>
+	<Field
+		name="Cx"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0.0, 0.0, 0.0"
+		access="public"
+	>
+	lobe parameter (Cx=Cy)
+	</Field>
+	<Field
+		name="Cz"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0.0, 0.0, 0.0"
+		access="public"
+	>
+	lobe parameter
+	</Field>
+	<Field
+		name="N"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0.0, 0.0, 0.0"
+		access="public"
+	>
+	lobe parameter (exponent)
+	</Field>
+	<Field
+		name="selector"
+		type="Int8"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	selector for choose the case of using the texture
+	</Field>
+	<Field
+		name="lightPos"
+		type="Pnt3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	Position of light source
+	</Field>
+	<Field
+		name="useweight"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	should be set to false if no weight texture is specified
+	</Field>
+	<Field
+		name="TextureImage"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer for the diffuse texture
+	</Field>
+	<Field
+		name="useFVorRC"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1"
+		access="public"
+	>
+	Use Fragment program or Register Combiners?
+	</Field>
+	<Field
+		name="CompTexCoord"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="false"
+		access="public"
+	>
+	Compute texture coordinates?
+	</Field>
+	<Field
+		name="HalfBBoxObj"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	Half of the object's bounding box
+	</Field>
+</FieldContainer>
