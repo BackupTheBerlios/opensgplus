@@ -11,7 +11,7 @@ for several applications
 * spatialization (using k-DOP hierarchies)
 * point location (using k-DOP hierarchies)
 * ray intersection (using k-DOP hierarchies or regular grid)
-* vertex clustering (using regular grid), currently ALPHA
+* vertex clustering (using regular grid)
 See the test programs...
 
 
@@ -27,5 +27,5 @@ For this configure OpenSG with the following options added
 --with-add-libdir=/cygdrive/e/extern/RAPID/lib 
 --with-add-lib=RAPID
 
-There is also a define GV_USE_RAPID in OSGGVBase.h to use the library
+There is also a define GV_WITH_RAPID in OSGGVBase.h to use the library
 RAPID or not.
