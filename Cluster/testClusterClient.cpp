@@ -71,6 +71,8 @@ OSG::Action::ResultE calcVNormal( OSG::CNodePtr &, OSG::Action * action )
 
 void createSceneGraph(int argc,char **argv)
 {
+    int width=servers.size()*500;
+    int height=500;
     int i;
     char *filename;
     QTWindowPtr window;
@@ -117,6 +119,14 @@ void createSceneGraph(int argc,char **argv)
 
     for(i=1;i<argc;i++)
     {
+        if(strlen(argv[i])>2 && strncmp(argv[i],"-w",2) == 0)
+        {
+            width=atoi(&argv[i][2]);
+        }
+        if(strlen(argv[i])>2 && strncmp(argv[i],"-h",2) == 0)
+        {
+            height=atoi(&argv[i][2]);
+        }
         if(strlen(argv[i])>2 &&
            strncmp(argv[i],"-f",2) == 0)
         {
@@ -136,8 +146,7 @@ void createSceneGraph(int argc,char **argv)
                 act->apply( file );
             }
             else
-                file = SceneFileHandler::the().read(filename);
-            break;
+                file = SceneFileHandler::the().read(filename,0);
         }
     }
 	if ( file == NullNode )
@@ -172,7 +181,7 @@ void createSceneGraph(int argc,char **argv)
 	beginEditCP(cam);
 	cam->setBeacon( b1n );
 	cam->setFov( 60 );
-	cam->setNear( 0.1 );
+	cam->setNear( 5 );
 	cam->setFar( 10000 );
 	endEditCP(cam);
 
@@ -190,12 +199,12 @@ void createSceneGraph(int argc,char **argv)
         deco = TileCameraDecorator::create();
         beginEditCP(deco);
         deco->setCamera( cam );
-        float start=.5 - servers.size()/2.0;
-        cout << start << endl;
-        deco->setSize( start + i,
+        deco->setSize( 1.0/servers.size() * i,
                        0.0, 
-                       start + i + 1,
+                       1.0/servers.size() * (i + 1),
                        1.0);
+        deco->setFullWidth(width);
+        deco->setFullHeight(height);
         endEditCP(deco);
 
         vp = Viewport::create();
@@ -209,7 +218,7 @@ void createSceneGraph(int argc,char **argv)
         window = QTWindow::create();
         beginEditCP(window);
         window->addPort( vp );
-        window->setSize(400,400);
+        window->setSize(width/servers.size(),height);
         endEditCP(window);
 
         windows.push_back(window);
@@ -327,7 +336,7 @@ int main( int argc, char **argv )
         }
         if(servers.size()==0)
         {
-            cout << argv[0] << " [-ffile] server1 server2 ... serverN" << endl;
+            cout << argv[0] << " [-ffile] [-wwidth] [-hheight] server1 server2 ... serverN" << endl;
             exit(0);
         }
         createSceneGraph(argc,argv);

@@ -287,6 +287,7 @@ void RemoteAspect::receiveSync(Connection &connection)
 
             case ADDREFED:
                 remoteId=getUInt32();
+                /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
@@ -294,11 +295,13 @@ void RemoteAspect::receiveSync(Connection &connection)
                              << endl; 
                 }
                 fcPtr=factory->getContainer(receivedFCI->second);
-                //                addRefCP(fcPtr);
+                addRefCP(fcPtr);
+                */
                 break;
 
             case SUBREFED:
                 remoteId=getUInt32();
+                /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
@@ -306,7 +309,8 @@ void RemoteAspect::receiveSync(Connection &connection)
                              << endl; 
                 }
                 fcPtr=factory->getContainer(receivedFCI->second);
-                //                subRefCP(fcPtr);
+                subRefCP(fcPtr);
+                */
                 break;
             }
         }
@@ -392,6 +396,7 @@ void RemoteAspect::sendSync(Connection &connection,
         // apply field filter
         if(filterI != _fieldFilter.end())
         {
+            cout << "filtet:" << fcPtr->getType().getName() << endl;
             mask &= 0xFFFFFFFF ^ filterI->second;
         }
 
@@ -441,9 +446,14 @@ void RemoteAspect::sendSync(Connection &connection,
         {
             send(connection);
         }
+        /*
+          !!! BUG, If it is destroyed, then there is no 
+          container ID. -> Bug in opensg sync
+
         putUInt8(DESTROYED);
         putUInt32(*destroyedI);
         FDEBUG (( "Destroyed: ID:%d\n",*destroyedI ))
+        */
     }
 
     // addref
@@ -458,13 +468,13 @@ void RemoteAspect::sendSync(Connection &connection,
         {
             send(connection);
         }
-        putUInt8(DESTROYED);
+        putUInt8(ADDREFED);
         putUInt32(id);
     }
-
-    // addref
-    for(subRefedI =changeList->beginAddRefd();
-        subRefedI!=changeList->endAddRefd();
+    
+    // subref
+    for(subRefedI =changeList->beginSubRefd();
+        subRefedI!=changeList->endSubRefd();
         subRefedI++)
     {
         //        id=subRefedI->getFieldContainerId();
@@ -474,7 +484,7 @@ void RemoteAspect::sendSync(Connection &connection,
         {
             send(connection);
         }
-        putUInt8(DESTROYED);
+        putUInt8(SUBREFED);
         putUInt32(id);
     }
 
@@ -675,7 +685,7 @@ Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect * aspect)
 {
     FDEBUG (( "Created:%s %d\n",
-              fcp->getType().getName(),
+              fcp->getType().getName().str(),
               fcp.getFieldContainerId() ))
     return true;
 }
@@ -684,7 +694,7 @@ Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect * aspect)
 {
     FDEBUG (( "Destroyed:%s %d\n",
-              fcp->getType().getName(), 
+              fcp->getType().getName().str(), 
               fcp.getFieldContainerId() ))
     return true;
 }
@@ -693,7 +703,7 @@ Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect * aspect)
 {
     FDEBUG (( "Changed:%s %d",
-              fcp->getType().getName(), 
+              fcp->getType().getName().str(), 
               fcp.getFieldContainerId() ))
     return true;
 }
