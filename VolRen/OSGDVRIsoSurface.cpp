@@ -50,27 +50,24 @@
 OSG_USING_NAMESPACE
 
 /*! \class osg::DVRIsoSurface
-Attachment for isosurface visualization using direct volume rendering.
-*/
+ *  Attachment for isosurface visualization using direct volume rendering.
+ */
 
 /*----------------------- constructors & destructors ----------------------*/
 
 //! Constructor
-
 DVRIsoSurface::DVRIsoSurface(void) :
     Inherited()
 {
 }
 
 //! Copy Constructor
-
 DVRIsoSurface::DVRIsoSurface(const DVRIsoSurface &source) :
     Inherited(source)
 {
 }
 
 //! Destructor
-
 DVRIsoSurface::~DVRIsoSurface(void)
 {
 }
@@ -78,20 +75,17 @@ DVRIsoSurface::~DVRIsoSurface(void)
 /*----------------------------- class specific ----------------------------*/
 
 //! initialize the static features of the class, e.g. action callbacks
-
 void DVRIsoSurface::initMethod (void)
 {
 }
 
 //! react to field changes
-
 void DVRIsoSurface::changed(BitVector whichField, UInt32 origin)
 {
     Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
-
 void DVRIsoSurface::dump(      UInt32    , 
                          const BitVector ) const
 {
@@ -112,7 +106,7 @@ void DVRIsoSurface::dump(      UInt32    ,
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurface.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurface.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRISOSURFACEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRISOSURFACEBASE_INLINE_CVSID;
 

@@ -156,5 +156,5 @@ void DVRClipGeometryBase::setBeacon(const NodePtr &value)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRCLIPGEOMETRYBASE_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometryBase.inl,v 1.1 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRCLIPGEOMETRYBASE_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometryBase.inl,v 1.2 2004/01/19 11:22:33 vossg Exp $"
 

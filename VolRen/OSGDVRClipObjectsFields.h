@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRClipObjects;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRClipObjectsPtr
 
 typedef FCPtr<AttachmentPtr, DVRClipObjects> DVRClipObjectsPtr;
@@ -115,6 +115,6 @@ OSG_DLLEXPORT_DECL1(SField, DVRClipObjectsPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRCLIPOBJECTSFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRClipObjectsFields.h,v 1.1 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRCLIPOBJECTSFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRClipObjectsFields.h,v 1.2 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRCLIPOBJECTSFIELDS_H_ */

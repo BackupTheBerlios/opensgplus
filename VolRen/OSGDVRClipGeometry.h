@@ -62,6 +62,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     typedef DVRClipGeometryBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -86,35 +87,34 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
 
     //! Prepare the object for clipping a volume's slices (transform it to 
     //! volume's space)
-    void initialize(const Matrix &volumeToWorld);
+    void initialize            (const Matrix &volumeToWorld                );
 
     //! Reset local data of vertices and triangles
-    void resetLocalData();
+    void resetLocalData        (      void                                 );
 
     //! Set the reference plane used in the clipping algorithm
-    void setReferencePlane(const Plane &referencePlane);
+    void setReferencePlane     (const Plane  &referencePlane               );
   
     //! set the number of additional per vertex attributes 
     /*!
         basically there are two attributes available, the vertex position and a
         3D texture coordinate. If one needs additional attributes, e.g.
-        color, texture coordinates,.., the number of (double) values needed has to 
-        be set with this function.
+        color, texture coordinates,.., the number of (double) values needed 
+        has to be set with this function.
     */
-    bool setNumAddPerVertexAttr(UInt32 additionalPerVertexAttributes);
+    bool setNumAddPerVertexAttr(      UInt32  additionalPerVertexAttributes);
   
     //! Compute the seed vertex set
-    void computeSeedVertices();
-
+    void computeSeedVertices   (      void                                 );
+    
     //! find contour made up by triangles which are cut by the current slice
-    const DVRTriangleList &getContours(float dist2RefPlane, 
-				       bool positiveWinding, 
-				       const Vec3f &sliceNormal);
-//      //!
-//      void correct();
+    const DVRTriangleList &getContours(      float dist2RefPlane, 
+                                             bool positiveWinding, 
+                                       const Vec3f &sliceNormal);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     /*! \}                                                                 */
@@ -123,34 +123,34 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     /*! \{                                                                 */
 
     //! is the clip geometry initialized?
-    bool initialized;
+    bool                       initialized;
 
     //! the core of the geometry node
-    GeometryPtr geometry;
+    GeometryPtr                geometry;
 
     //! list of vertices in the triangulated clip geometry
-    std::vector<DVRVertex> _mfVertices;
+    std::vector<DVRVertex>     _mfVertices;
 
     //! list of triangles in the triangulated clip geometry
-    std::vector<DVRTriangle> _mfTriangles;
+    std::vector<DVRTriangle>   _mfTriangles;
 
     //! The transformation matrix needed to transform the clip geoemtry to 
     //! the volume's space.
-    Matrix toVolumeSpace;
+    Matrix                     toVolumeSpace;
 
     //! the triangles which are cut by the current slice
-    DVRTriangle** activeTriangles;
-    UInt32 activeTrianglesCount;
-    UInt32 maxActiveTrianglesCount;
+    DVRTriangle              **activeTriangles;
+    UInt32                     activeTrianglesCount;
+    UInt32                     maxActiveTrianglesCount;
 
     //! the vertices which are closest to the reference plane
-    DVRVertex** seedVertices;
-    UInt32 seedVerticesCount;
-    UInt32 maxSeedVerticesCount;
+    DVRVertex                **seedVertices;
+    UInt32                     seedVerticesCount;
+    UInt32                     maxSeedVerticesCount;
 
     //! the start triangles of all contours made up by intersections with 
     //! the current slice
-    DVRTriangleList contours;
+    DVRTriangleList            contours;
   
     /*---------------------------------------------------------------------*/
     /*! \name                  Constructors                                */
@@ -167,8 +167,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     virtual ~DVRClipGeometry(void); 
 
     /*! \}                                                                 */
-
-    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Vertices                                   */
     /*! \{                                                                 */
@@ -179,7 +177,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
       they get unified, i.e. the index of the already existent vertex is 
       returned, else a new one is inserted
     */
-    Int32 insertVertex(Int32 idx);
+    Int32 insertVertex (Int32      idx   );
 
     //! returns true, iff this vertex is a local minimum 
     //! with respect to refPlaneDistance.
@@ -192,14 +190,17 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
 
     //! returns true, iff the plane with distance dist2RefPlane to the ref 
     //! plane cuts the triangle.
-    bool isCut(DVRTriangle *tri, float dist2RefPlane, DVRVertex *switchedVertices[3]);
+    bool isCut         (      DVRTriangle *tri, 
+                              Real32       dist2RefPlane, 
+                              DVRVertex   *switchedVertices[3]);
 
     //! returns true, iff dist2RefPlane is bigger than the distance to the 
     //! reference plane of all vertices within the triangle.
-    bool isBehindPlane(DVRTriangle &tri, float dist2RefPlane);
+    bool isBehindPlane (      DVRTriangle &tri, 
+                              Real32       dist2RefPlane      );
 
     //! Use OpenGL to render the triangle
-    void renderTriangle(const DVRTriangle &tri) const;
+    void renderTriangle(const DVRTriangle &tri                ) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -207,7 +208,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     /*! \{                                                                 */
 
     //! create the triangled geometry data structure
-    bool buildTriangledGeometry();
+    bool buildTriangledGeometry(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -215,30 +216,35 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     /*! \{                                                                 */
 
     //! Identifies all contours and links them
-    void buildContours(float dist2RefPlane, 
-		       bool positiveWinding, 
-		       const Vec3f &sliceNormal);
-
+    void buildContours        (      Real32       dist2RefPlane, 
+                                     bool         positiveWinding, 
+                               const Vec3f       &sliceNormal    );
+    
     //! Identifies and links a contour starting with the given triangle
-    void linkContour(DVRTriangle *startTriangle,
-		      float dist2RefPlane,
-		      const Vec3f &viewDir, 
-		      bool positiveWinding);
-
+    void linkContour          (      DVRTriangle *startTriangle,
+                                     Real32       dist2RefPlane,
+                               const Vec3f       &viewDir, 
+                                     bool         positiveWinding);
+    
     //! updates the active triangle list
-    void updateActiveTriangles(float dist2RefPlane, const Vec3f &sliceNormal);
+    void updateActiveTriangles(      Real32       dist2RefPlane, 
+                               const Vec3f       &sliceNormal    );
+    
+    //!
+    void addActiveTriangle    (      DVRTriangle *tri            );
 
     //!
-    void addActiveTriangle(DVRTriangle *tri);
-
-    //!
-    void addNewActiveTriangles(DVRVertex *vertex,
-			       float dist2RefPlane);
-
+    void addNewActiveTriangles(      DVRVertex   *vertex,
+                                     Real32       dist2RefPlane  );
+    
     //! 
-    Pnt3f interpolate(DVRTriangle *tri, int v1, int v2, float dist2RefPlane);
-
+    Pnt3f interpolate         (      DVRTriangle *tri, 
+                                     Int32        v1, 
+                                     Int32        v2, 
+                                     Real32       dist2RefPlane  );
+    
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -247,7 +253,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipGeometry : public DVRClipGeometryBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRClipGeometry &source);
 };
 
@@ -258,6 +263,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRClipGeometryBase.inl>
 #include <OSGDVRClipGeometry.inl>
 
-#define OSGDVRCLIPGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRClipGeometry.h,v 1.1 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRCLIPGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRClipGeometry.h,v 1.2 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRCLIPGEOMETRY_H_ */

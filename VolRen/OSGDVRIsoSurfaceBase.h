@@ -254,6 +254,6 @@ typedef DVRIsoSurfaceBase *DVRIsoSurfaceBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSURFACEBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRISOSURFACEBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRISOSURFACEBASE_H_ */

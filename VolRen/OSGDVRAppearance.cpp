@@ -49,43 +49,28 @@
 
 OSG_USING_NAMESPACE
 
-#ifdef __sgi
-#pragma set woff 1174
-#endif
-
-namespace
-{
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRAppearance.cpp,v 1.2 2003/10/07 15:26:36 weiler Exp $";
-    static char cvsid_hpp[] = OSGDVRAPPEARANCE_HEADER_CVSID;
-    static char cvsid_inl[] = OSGDVRAPPEARANCE_INLINE_CVSID;
-}
-
-#ifdef __sgi
-#pragma reset woff 1174
-#endif
 
 /*! \class osg::DVRAppearance
-Appearance used for the OpenSG direct volume rendering module. It represents the volume data to be rendered as long as some other visual parameters like transfer function or normal for shading.
-*/
+    Appearance used for the OpenSG direct volume rendering module. It
+    represents the volume data to be rendered as long as some other visual
+    parameters like transfer function or normal for shading. 
+ */
 
 /*----------------------- constructors & destructors ----------------------*/
 
 //! Constructor
-
 DVRAppearance::DVRAppearance(void) :
     Inherited()
 {
 }
 
 //! Copy Constructor
-
 DVRAppearance::DVRAppearance(const DVRAppearance &source) :
     Inherited(source)
 {
 }
 
 //! Destructor
-
 DVRAppearance::~DVRAppearance(void)
 {
 }
@@ -93,23 +78,38 @@ DVRAppearance::~DVRAppearance(void)
 /*----------------------------- class specific ----------------------------*/
 
 //! initialize the static features of the class, e.g. action callbacks
-
 void DVRAppearance::initMethod (void)
 {
 }
 
 //! react to field changes
-
 void DVRAppearance::changed(BitVector whichField, UInt32 origin)
 { 
     Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
-
 void DVRAppearance::dump(      UInt32    , 
                          const BitVector ) const
 {
     SLOG << "Dump DVRAppearance NI" << std::endl;
 }
 
+
+/*-------------------------------------------------------------------------*/
+/*                              cvs id's                                   */
+
+#ifdef __sgi
+#pragma set woff 1174
+#endif
+
+#ifdef OSG_LINUX_ICC
+#pragma warning( disable : 177 )
+#endif
+
+namespace
+{
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRAppearance.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_hpp[] = OSGDVRAPPEARANCE_HEADER_CVSID;
+    static char cvsid_inl[] = OSGDVRAPPEARANCE_INLINE_CVSID;
+}

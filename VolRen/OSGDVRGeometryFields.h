@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRGeometry;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRGeometryPtr
 
 typedef FCPtr<GeometryPtr, DVRGeometry> DVRGeometryPtr;
@@ -115,6 +115,6 @@ OSG_DLLEXPORT_DECL1(SField, DVRGeometryPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRGEOMETRYFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRGeometryFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRGEOMETRYFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRGeometryFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRGEOMETRYFIELDS_H_ */

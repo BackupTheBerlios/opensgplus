@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRAppearance;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRAppearancePtr
 
 typedef FCPtr<ChunkMaterialPtr, DVRAppearance> DVRAppearancePtr;
@@ -115,6 +115,6 @@ OSG_DLLEXPORT_DECL1(SField, DVRAppearancePtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRAPPEARANCEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRAppearanceFields.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRAPPEARANCEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRAppearanceFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRAPPEARANCEFIELDS_H_ */

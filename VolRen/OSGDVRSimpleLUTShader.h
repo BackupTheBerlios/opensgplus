@@ -54,7 +54,8 @@ OSG_BEGIN_NAMESPACE
 /*! \brief *put brief class description here* 
  */
 
-class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBase
+class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : 
+    public DVRSimpleLUTShaderBase
 {
   private:
 
@@ -84,22 +85,29 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     /*! \{                                                                 */
 
     // Callback to set up shader - register textures here
-    virtual bool initialize     (DVRVolume *volume, DrawActionBase *action);
+    virtual bool initialize   (DVRVolume      *volume, 
+                               DrawActionBase *action);
     
     // Callback before any slice is rendered - setup per volume
-    virtual void activate       (DVRVolume *volume, DrawActionBase *action);
+    virtual void activate     (DVRVolume      *volume, 
+                               DrawActionBase *action);
 
     // Callback before any brick - state setup per brick
-    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, Brick *brick);
+    virtual void brickActivate(DVRVolume      *volume, 
+                               DrawActionBase *action, 
+                               Brick          *brick );
 
     // Callback after all rendering of the volume is done
-    virtual void deactivate     (DVRVolume *volume, DrawActionBase *action);
+    virtual void deactivate   (DVRVolume      *volume, 
+                               DrawActionBase *action);
 
     // Callback to clean up shader resources
-    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
+    virtual void cleanup      (DVRVolume      *volume, 
+                               DrawActionBase *action);
     
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRSimpleLUTShaderBase.
@@ -109,14 +117,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     FragmentProgramChunkPtr m_pFragProg;
     TextureChunkPtr         m_pDepTexture;
 
-    enum LutMode {
+    enum LutMode 
+    {
         LM_AUTO = 0,
-	LM_TABLE_SGI,
-	LM_PALETTE_EXT,
-	LM_DEPENDENT,
-	LM_FRAGPROG,
-	LM_RELOAD,
-	LM_NO
+        LM_TABLE_SGI,
+        LM_PALETTE_EXT,
+        LM_DEPENDENT,
+        LM_FRAGPROG,
+        LM_RELOAD,
+        LM_NO
     };
     
     /*---------------------------------------------------------------------*/
@@ -138,30 +147,37 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     /*! \name                 Volume Rendering                             */
     /*! \{                                                                 */
 
-    // Returns suitable lookup table mode and texture formate for graphics adapter
-    void getPaletteFormat( DrawActionBase *action, UInt8 lutMode,
-			   GLenum & internalFormat, GLenum & externalFormat );
+    // Returns suitable lookup table mode and texture formate for 
+    // graphics adapter
+    void getPaletteFormat(DrawActionBase *action, 
+                          UInt8           lutMode,
+                          GLenum         &internalFormat, 
+                          GLenum         &externalFormat);
 
     // Checks whether the selected mode is supported
-    bool isModeSupported( DrawActionBase *action, UInt8 mode, Int8 textureMode );
+    bool isModeSupported (DrawActionBase *action, 
+                          UInt8           mode, 
+                          Int8            textureMode);
     // Automatically select a lookup table mode
-    UInt8 selectMode( DrawActionBase *action, Int8 textureMode );
+    UInt8 selectMode     (DrawActionBase *action, 
+                          Int8            textureMode);
     
     // Enable/disable palette
-    void enablePalette();
-    void disablePalette();
+    void enablePalette (void);
+    void disablePalette(void);
 
     // Handle dependent texture
-    void initDependentTexture(int size);
-    void updateDependentTexture(int size, const UInt8 * data);
-    void destroyDependentTexture();
+    void initDependentTexture   (      Int32  size);
+    void updateDependentTexture (      Int32  size, 
+                                 const UInt8 *data);
+    void destroyDependentTexture(      void       );
 
     // Register combiners
     void setupAlphaCorrectionRegisterCombiners(DrawActionBase *action);
 
     /*! \}                                                                 */
-    
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     // fragment programs used by fragment shader mode
@@ -186,15 +202,12 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     static UInt32 _funcCombinerInputNV;
     static UInt32 _funcCombinerOutputNV;
     
-  private:
-
     friend class FieldContainer;
     friend class DVRSimpleLUTShaderBase;
 
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRSimpleLUTShader &source);
 };
 
@@ -205,6 +218,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRSimpleLUTShader.inl>
 #include <OSGDVRSimpleLUTShaderBase.inl>
 
-#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.4 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRSIMPLELUTSHADER_H_ */

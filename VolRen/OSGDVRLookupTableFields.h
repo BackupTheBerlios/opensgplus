@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRLookupTable;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRLookupTablePtr
 
 typedef FCPtr<AttachmentPtr, DVRLookupTable> DVRLookupTablePtr;
@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRLookupTablePtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRLOOKUPTABLEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRLookupTableFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRLOOKUPTABLEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRLookupTableFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRLOOKUPTABLEFIELDS_H_ */

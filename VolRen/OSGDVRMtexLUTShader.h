@@ -8,7 +8,7 @@
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
- \*---------------------------------------------------------------------------*/
+\*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                License                                    *
  *                                                                           *
@@ -25,7 +25,7 @@
  * License along with this library; if not, write to the Free Software       *
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 *
  *                                                                           *
- \*---------------------------------------------------------------------------*/
+\*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                Changes                                    *
  *                                                                           *
@@ -34,7 +34,7 @@
  *                                                                           *
  *                                                                           *
  *                                                                           *
- \*---------------------------------------------------------------------------*/
+\*---------------------------------------------------------------------------*/
 
 #ifndef _OSGDVRMTEXLUTSHADER_H_
 #define _OSGDVRMTEXLUTSHADER_H_
@@ -61,7 +61,8 @@ private:
     typedef DVRMtexLUTShaderBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
-public:
+
+  public:
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -76,7 +77,7 @@ public:
     /*! \{                                                                 */
 
     virtual void dump(      UInt32     uiIndent = 0, 
-                            const BitVector  bvFlags  = 0) const;
+                      const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -84,34 +85,44 @@ public:
     /*! \{                                                                 */
     
     // Callback to set up shader - register textures here
-    virtual bool initialize        (DVRVolume *volume, DrawActionBase *action);
+    virtual bool initialize       (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback before any slice is rendered - setup per volume
-    virtual void activate          (DVRVolume *volume, DrawActionBase *action);
+    virtual void activate         (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback after all rendering of the volume is done
-    virtual void deactivate        (DVRVolume *volume, DrawActionBase *action);
+    virtual void deactivate       (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback for rendering slices
-    virtual void renderSlice       (DVRVolume *volume, DrawActionBase *action,
-				    Real32 *data, UInt32 vertices, UInt32 values);
+    virtual void renderSlice      (DVRVolume      *volume, 
+                                   DrawActionBase *action,
+                                   Real32         *data, 
+                                   UInt32          vertices, 
+                                   UInt32          values      );
 
     // Callback for rendering slices
-    virtual void renderSlice       (DVRVolume *volume, DrawActionBase *action,
-  				    DVRRenderSlice *clippedSlice);
+    virtual void renderSlice      (DVRVolume      *volume, 
+                                   DrawActionBase *action,
+                                   DVRRenderSlice *clippedSlice);
 
     // Callback to clean up shader resources
-    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
+    virtual void cleanup          (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Returns whether the shader has an implementation of 'renderSlice'
-    virtual bool hasRenderCallback () { return true; };
+    virtual bool hasRenderCallback(void                        );
     
-    // Returns whether the shader requires multitextured slabs instead of bricks
-    virtual bool useMTSlabs        () { return true; }; 
+    // Returns whether the shader requires multitextured slabs instead of
+    // bricks
+    virtual bool useMTSlabs       (void                        ); 
 
     /*! \{                                                                 */
     /*=========================  PROTECTED  ===============================*/
-protected:
+  
+  protected:
 
     // Variables should all be in DVRMtexLUTShaderBase.
 
@@ -132,7 +143,8 @@ protected:
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
-private:
+
+  private:
 
     // extension indices for used extensions;
     static UInt32 _arbMultitexture;
@@ -163,9 +175,7 @@ private:
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRMtexLUTShader &source);
-
 };
 
 typedef DVRMtexLUTShader *DVRMtexLUTShaderP;
@@ -175,6 +185,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRMtexLUTShader.inl>
 #include <OSGDVRMtexLUTShaderBase.inl>
 
-#define OSGDVRMTEXLUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRMTEXLUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShader.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRMTEXLUTSHADER_H_ */

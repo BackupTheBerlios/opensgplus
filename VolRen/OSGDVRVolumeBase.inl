@@ -632,5 +632,5 @@ const MFString &DVRVolumeBase::getDrawStyleNames(void) const
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeBase.inl,v 1.3 2003/12/09 14:01:28 weiler Exp $"
+#define OSGDVRVOLUMEBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeBase.inl,v 1.4 2004/01/19 11:22:33 vossg Exp $"
 

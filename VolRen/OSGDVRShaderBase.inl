@@ -74,5 +74,5 @@ OSG::UInt32 DVRShaderBase::getClassTypeId(void)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRShaderBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRShaderBase.inl,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 

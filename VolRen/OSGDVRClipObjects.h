@@ -60,14 +60,19 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipObjects : public DVRClipObjectsBase
     typedef DVRClipObjectsBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
-  public:
 
+  public:
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Constants                               */
     /*! \{                                                                 */
-    enum ClipMode {Off = 0, Intersection = 1, Difference = 2}; 
 
+    enum ClipMode 
+    {
+        Off          = 0, 
+        Intersection = 1, 
+        Difference   = 2
+    }; 
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -90,7 +95,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipObjects : public DVRClipObjectsBase
     /*! \{                                                                 */
 
     //! Returns the number of clip objects set
-    UInt32 count() const;
+    UInt32 count(void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -98,25 +103,25 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipObjects : public DVRClipObjectsBase
     /*! \{                                                                 */
   
     //! Get the ith object
-    DVRClipGeometryPtr get(UInt32 i);
+    DVRClipGeometryPtr get   (UInt32             i  );
 
     //! Add a clip object
-    void add(DVRClipGeometryPtr obj);
+    void               add   (DVRClipGeometryPtr obj);
 
     //! Remove a clip object
-    void remove(DVRClipGeometryPtr obj);
+    void               remove(DVRClipGeometryPtr obj);
 
     //! Remove the i-th clip object
-    void remove(UInt32 i);
+    void               remove(UInt32             i  );
   
-
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                     Clipping                                 */
     /*! \{                                                                 */
 
     //! Prepare the clip objects for clipping a volume's slices
-    void initialize(const Matrix &volumeToWorld, const Plane &referencePlane);
+    void initialize(const Matrix &volumeToWorld, 
+                    const Plane  &referencePlane);
 
     //! Prepare the clip objects for clipping a volume's slices
     // deprecated -> remove
@@ -128,6 +133,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipObjects : public DVRClipObjectsBase
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRClipObjectsBase.
@@ -157,7 +163,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRClipObjects : public DVRClipObjectsBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRClipObjects &source);
 };
 
@@ -168,6 +173,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRClipObjectsBase.inl>
 #include <OSGDVRClipObjects.inl>
 
-#define OSGDVRCLIPOBJECTS_HEADER_CVSID "@(#)$Id: OSGDVRClipObjects.h,v 1.1 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRCLIPOBJECTS_HEADER_CVSID "@(#)$Id: OSGDVRClipObjects.h,v 1.2 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRCLIPOBJECTS_H_ */

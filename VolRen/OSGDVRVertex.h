@@ -16,13 +16,13 @@ class DVRVertex
 public: // public methods
   
     //! Construct a new vertex 
-    DVRVertex();
+    DVRVertex(void);
   
     //! Copy
     DVRVertex(const DVRVertex &vertex);
 
     //! Destructor
-    ~DVRVertex();
+    ~DVRVertex(void);
   
     //! calculates the distance of the vertex to a reference plane.
     /*!
@@ -59,9 +59,9 @@ public: // public methods
     bool isCloser(float distance);
 
     //! Usefull for debugging
-    void dump() const;
+    void dump(void) const;
 
-public: // public attributes
+  public: // public attributes
 
     //! The vertex index in the parent geometry. 
     Pnt3f pos;
@@ -69,7 +69,7 @@ public: // public attributes
     //! The adjacent triangles of this vertex
     std::vector<Int32> adjacentTriangles;
 
-public: // local public attributes
+  public: // local public attributes
 
     //! 
     bool behindPlane;
@@ -82,7 +82,6 @@ public: // local public attributes
 
     //! The position of this vertex in volume coords
     Pnt3f transformedPos;
-
 };
 
 OSG_END_NAMESPACE

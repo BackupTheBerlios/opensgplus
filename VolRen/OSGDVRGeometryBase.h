@@ -188,6 +188,6 @@ typedef DVRGeometryBase *DVRGeometryBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRGEOMETRYBASE_HEADER_CVSID "@(#)$Id: OSGDVRGeometryBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRGEOMETRYBASE_HEADER_CVSID "@(#)$Id: OSGDVRGeometryBase.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRGEOMETRYBASE_H_ */

@@ -67,6 +67,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
     typedef DVRShaderBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -90,48 +91,45 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
     /*! \{                                                                 */
 
     // Callback to set up shader - register textures here
-    virtual bool initialize        (DVRVolume */* volume */, DrawActionBase */* action */) {
-      SLOG << "DVRShader::initialize - NI" << std::endl;
-      return false;
-    };
+    virtual bool initialize       (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback before any slice is rendered - setup per volume
-    virtual void activate          (DVRVolume */* volume */, DrawActionBase */* action */) {
-      SLOG << "DVRShader::activate - NI" << std::endl;
-    };
+    virtual void activate         (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback before any brick - state setup per brick
-    virtual void brickActivate     (DVRVolume */* volume */, DrawActionBase */* action */,
-				    Brick * /* brick */ ) {
-      SLOG << "DVRShader::brickActivate - NI" << std::endl;
-    };
+    virtual void brickActivate    (DVRVolume      *volume, 
+                                   DrawActionBase *action,
+                                   Brick          *brick       );
 
     // Callback after all rendering of the volume is done
-    virtual void deactivate        (DVRVolume */* volume */, DrawActionBase */* action */) {
-      SLOG << "DVRShader::brickActivate - NI" << std::endl;
-    };
+    virtual void deactivate       (DVRVolume      *volume, 
+                                   DrawActionBase *action      );
 
     // Callback for rendering non-clipped slices
-    virtual void renderSlice       (DVRVolume */* volume */, DrawActionBase */* action */,
-				    Real32 */* data */, UInt32 /* vertices */, UInt32 /* values */ ) {
-      SLOG << "DVRShader::renderSlice - NI" << std::endl;
-    };
-
+    virtual void renderSlice      (DVRVolume      *volume, 
+                                   DrawActionBase *action,
+                                   Real32         *data, 
+                                   UInt32          vertices, 
+                                   UInt32          values      ); 
+    
     // Callback for rendering clipped slices
-    virtual void renderSlice       (DVRVolume */* volume */, DrawActionBase */* action */,
-				    DVRRenderSlice */* clippedSlice */) {
-      SLOG << "DVRShader::renderSlice - NI" << std::endl;
-    };
+    virtual void renderSlice      (DVRVolume      *volume, 
+                                   DrawActionBase *action,
+                                   DVRRenderSlice *clippedSlice);
 
     // Returns whether the shader has an implementation of 'renderSlice'
-    virtual bool hasRenderCallback () { return false; };
+    virtual bool hasRenderCallback(void                        );
 
-    // Returns whether the shader requires multitextured slabs instead of bricks
-    virtual bool useMTSlabs () { return false; }; 
+    // Returns whether the shader requires multitextured slabs instead
+    // of bricks
+    virtual bool useMTSlabs       (void                        );
 
     
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRShaderBase.
@@ -154,6 +152,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -171,6 +170,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRShader.inl>
 #include <OSGDVRShaderBase.inl>
 
-#define OSGDVRSHADER_HEADER_CVSID "@(#)$Id: OSGDVRShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSHADER_HEADER_CVSID "@(#)$Id: OSGDVRShader.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRSHADER_H_ */

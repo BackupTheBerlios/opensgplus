@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRIsoSurface;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRIsoSurfacePtr
 
 typedef FCPtr<AttachmentPtr, DVRIsoSurface> DVRIsoSurfacePtr;
@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRIsoSurfacePtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSURFACEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRISOSURFACEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRISOSURFACEFIELDS_H_ */

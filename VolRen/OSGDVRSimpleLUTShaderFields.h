@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRSimpleLUTShader;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRSimpleLUTShaderPtr
 
 typedef FCPtr<DVRSimpleShaderPtr, DVRSimpleLUTShader> DVRSimpleLUTShaderPtr;
@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRSimpleLUTShaderPtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSIMPLELUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRSIMPLELUTSHADERFIELDS_H_ */

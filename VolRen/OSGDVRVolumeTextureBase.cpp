@@ -376,7 +376,8 @@ void DVRVolumeTextureBase::executeSyncImpl(      DVRVolumeTextureBase *pOther,
 OSG_BEGIN_NAMESPACE
 
 #if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
-DataType FieldDataTraits<DVRVolumeTexturePtr>::_type("DVRVolumeTexturePtr", "AttachmentPtr");
+DataType FieldDataTraits<DVRVolumeTexturePtr>::_type("DVRVolumeTexturePtr", 
+                                                     "AttachmentPtr");
 #endif
 
 
@@ -396,7 +397,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeTextureBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeTextureBase.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRVOLUMETEXTUREBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRVOLUMETEXTUREBASE_INLINE_CVSID;
 

@@ -58,6 +58,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRGeometry : public DVRGeometryBase
     typedef DVRGeometryBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -77,6 +78,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRGeometry : public DVRGeometryBase
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRGeometryBase.
@@ -98,6 +100,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRGeometry : public DVRGeometryBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -106,7 +109,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRGeometry : public DVRGeometryBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRGeometry &source);
 };
 
@@ -117,6 +119,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRGeometry.inl>
 #include <OSGDVRGeometryBase.inl>
 
-#define OSGDVRGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRGeometry.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRGeometry.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRGEOMETRY_H_ */

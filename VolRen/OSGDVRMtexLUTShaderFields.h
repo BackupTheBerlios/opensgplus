@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRMtexLUTShader;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRMtexLUTShaderPtr
 
 typedef FCPtr<DVRSimpleLUTShaderPtr, DVRMtexLUTShader> DVRMtexLUTShaderPtr;
@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRMtexLUTShaderPtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRMTEXLUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRMTEXLUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShaderFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRMTEXLUTSHADERFIELDS_H_ */

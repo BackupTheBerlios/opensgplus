@@ -13,19 +13,19 @@ OSG_BEGIN_NAMESPACE
 
 class DVRTriangle
 {
-public:
+  public:
 
     //! Constructor
-    DVRTriangle();
+    DVRTriangle(void);
 
     //! Copy
     DVRTriangle(const DVRTriangle &tri);
-
+    
     //! Destructor
-    ~DVRTriangle();
+    ~DVRTriangle(void);
 
     //! Usefull for debugging
-    void dump() const;
+    void dump(void) const;
 
     //! set the number of additional per vertex attributes for the cutpoint
     /*!
@@ -36,7 +36,8 @@ public:
     */
     bool setNumAddPerVertexAttr(UInt32 additionalPerVertexAttributes);
 
-public: // public attributes
+    // public attributes
+  public: 
 
     //! Indices of the neighbour triangles of this triangle
     Int32 neighbours[3];
@@ -47,7 +48,8 @@ public: // public attributes
     //! The triangles normal
     Vec3f normal;
 
-public: // local variables
+    // local variables
+  public: 
 
     //! The triangles normal
     Vec3f transformedNormal;
@@ -59,7 +61,7 @@ public: // local variables
     bool inContour;
 
     //! the next triangle in the contour
-    DVRTriangle* contourNeighbour;
+    DVRTriangle *contourNeighbour;
 
     //! The intersection point of the triangle and the current slice that 
     //! contributes to the contour
@@ -70,16 +72,16 @@ public: // local variables
     //! coordinates, needed because GLUTesselator needs an opaque pointer.
     //! The first three values represent the vertex position, the next
     //! three the (always available) first texture coordinate for this point 
-    //! and the following values the additional per vertex attributes (if any)  
+    //! and the following values the additional per vertex attributes (if any) 
+
     GLdouble *cutPoint;
 
     //! Indicates which edges are cut by the currently processed slice
     bool edgeCut[3];
-
 };
 
 //! A list of pointers to triangles, for local usage only
-typedef std::vector<DVRTriangle*> DVRTriangleList;
+typedef std::vector<DVRTriangle *> DVRTriangleList;
 
 OSG_END_NAMESPACE
 

@@ -156,5 +156,5 @@ void DVRIsoShaderBase::setActiveShadeMode(const Int8 &value)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoShaderBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRISOSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoShaderBase.inl,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 

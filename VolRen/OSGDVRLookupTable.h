@@ -58,6 +58,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTable : public DVRLookupTableBase
     typedef DVRLookupTableBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -76,30 +77,17 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTable : public DVRLookupTableBase
                       const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
-#if 1
     /*---------------------------------------------------------------------*/
     //!! TODO: This is a workaround for correctly loading data
     //!!       remove A.S.A.P !!!
     /*! \name                     Field set                                */
     /*! \{                                                                 */
 
-         void setTouched        ( const bool &value ) {
+    void setTouched(const bool &value);
 
-             //!! This is very tricky:
-	     //!! It prevents the common constructor from beeing called when
- 	     //!! loading the FC from an osg file
-             //!! Loading will initialize "size" before "touched" and will thus
-	     //!! not go in this brach - otherwhise "touched" is eventually
-  	     //!! altered and at this point the constructor is called if the
-	     //!! FC hasn't otherwise been initialized
-             if (_mfDataR.size() == 0)
-	         commonConstructor();
-
-	     DVRLookupTableBase::setTouched( value );
-         };
     /*! \}                                                                 */
-#endif
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRLookupTableBase.
@@ -129,14 +117,12 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTable : public DVRLookupTableBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRLookupTable &source);
 
     /*! \brief used to initialize class to initialize member variables -
      *         method is called by every constructor
      */
-    void commonConstructor( void );
-
+    void commonConstructor(void);
 };
 
 typedef DVRLookupTable *DVRLookupTableP;
@@ -146,6 +132,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRLookupTable.inl>
 #include <OSGDVRLookupTableBase.inl>
 
-#define OSGDVRLOOKUPTABLE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTable.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRLOOKUPTABLE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTable.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRLOOKUPTABLE_H_ */

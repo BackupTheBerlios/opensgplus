@@ -58,6 +58,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleShader : public DVRSimpleShaderBase
     typedef DVRSimpleShaderBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -81,22 +82,29 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleShader : public DVRSimpleShaderBase
     /*! \{                                                                 */
 
     // Callback to set up shader - register textures here
-    virtual bool initialize     (DVRVolume *volume, DrawActionBase *action);
+    virtual bool initialize   (DVRVolume      *volume, 
+                               DrawActionBase *action);
     
     // Callback before any slice is rendered - setup per volume
-    virtual void activate       (DVRVolume *volume, DrawActionBase *action);
+    virtual void activate     (DVRVolume      *volume, 
+                               DrawActionBase *action);
 
     // Callback before any brick - state setup per brick
-    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, Brick *brick);
+    virtual void brickActivate(DVRVolume      *volume, 
+                               DrawActionBase *action, 
+                               Brick          *brick );
 
     // Callback after all rendering of the volume is done
-    virtual void deactivate     (DVRVolume *volume, DrawActionBase *action);
+    virtual void deactivate   (DVRVolume      *volume, 
+                               DrawActionBase *action);
 
     // Callback to clean up shader resources
-    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
+    virtual void cleanup      (DVRVolume      *volume, 
+                               DrawActionBase *action);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRSimpleShaderBase.
@@ -120,6 +128,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleShader : public DVRSimpleShaderBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -128,7 +137,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleShader : public DVRSimpleShaderBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRSimpleShader &source);
 };
 
@@ -139,6 +147,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRSimpleShader.inl>
 #include <OSGDVRSimpleShaderBase.inl>
 
-#define OSGDVRSIMPLESHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSIMPLESHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShader.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRSIMPLESHADER_H_ */

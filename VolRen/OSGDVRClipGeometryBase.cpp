@@ -277,7 +277,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipGeometryBase.cpp,v 1.1 2003/10/07 15:26:36 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipGeometryBase.cpp,v 1.2 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRCLIPGEOMETRYBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRCLIPGEOMETRYBASE_INLINE_CVSID;
 

@@ -800,7 +800,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.3 2003/12/09 14:01:28 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.4 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRVOLUMEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRVOLUMEBASE_INLINE_CVSID;
 

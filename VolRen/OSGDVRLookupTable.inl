@@ -42,7 +42,25 @@
 
 OSG_BEGIN_NAMESPACE
 
+inline
+void DVRLookupTable::setTouched(const bool &value)
+{
+    
+    //!! This is very tricky:
+    //!! It prevents the common constructor from beeing called when
+    //!! loading the FC from an osg file
+    //!! Loading will initialize "size" before "touched" and will thus
+    //!! not go in this brach - otherwhise "touched" is eventually
+    //!! altered and at this point the constructor is called if the
+    //!! FC hasn't otherwise been initialized
+
+    if(_mfDataR.size() == 0)
+        commonConstructor();
+    
+    DVRLookupTableBase::setTouched( value );
+}
+
 OSG_END_NAMESPACE
 
-#define OSGDVRLOOKUPTABLE_INLINE_CVSID "@(#)$Id: OSGDVRLookupTable.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRLOOKUPTABLE_INLINE_CVSID "@(#)$Id: OSGDVRLookupTable.inl,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 

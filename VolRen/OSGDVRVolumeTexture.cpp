@@ -51,23 +51,9 @@
 
 OSG_USING_NAMESPACE
 
-#ifdef __sgi
-#pragma set woff 1174
-#endif
-
-namespace
-{
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
-    static char cvsid_hpp[] = OSGDVRVOLUMETEXTURE_HEADER_CVSID;
-    static char cvsid_inl[] = OSGDVRVOLUMETEXTURE_INLINE_CVSID;
-}
-
-#ifdef __sgi
-#pragma reset woff 1174
-#endif
-
 /*! \class osg::DVRVolumeTexture
-Attachment for storing and handling Volume-Textures for volume rendering. Here is the place of the voxel values.
+  Attachment for storing and handling Volume-Textures for volume rendering. 
+  Here is the place of the voxel values.
 */
 
 /*----------------------- constructors & destructors ----------------------*/
@@ -90,9 +76,10 @@ DVRVolumeTexture::DVRVolumeTexture(const DVRVolumeTexture &source) :
 
 DVRVolumeTexture::~DVRVolumeTexture(void)
 {
-    if (getImage() != NullFC) {
+    if (getImage() != NullFC)
+    {
         subRefCP(getImage());
-	setImage(NullFC);
+        setImage(NullFC);
     }
 }
 
@@ -112,73 +99,98 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
   
     FDEBUG(("DVRVolumeTexture::changed - \n"));
   
-    if (whichField & ImageFieldMask) {
+    if (whichField & ImageFieldMask) 
+    {
         FINFO(("DVRVolumeTexture::changed - new Image\n"));
-	_mfHistogram.resize(256);
-	
+        _mfHistogram.resize(256);
+        
         // update histogram
-        Real32 * hist = &(_mfHistogram[0]);
-	UChar8 * img  = getImage()->getData();
-	Real32 maxVal = 0;
-	
-	for (UInt32 i = 0; i < 256; i++)
-	    hist[i] = 0;
+        Real32 *hist   = &(_mfHistogram[0]);
+        UChar8 *img    = getImage()->getData();
+        Real32  maxVal = 0;
+        
+        for(UInt32 i = 0; i < 256; i++)
+            hist[i] = 0;
 
-	if (img == NULL) return;
+        if(img == NULL) 
+            return;
+    
+        FDEBUG(("Image: %d %d %d\n",
+                getImage()->getWidth(), 
+                getImage()->getHeight(), 
+                getImage()->getDepth()));
+    
+        for(UInt32 j = 0;
+            j < getImage()->getWidth () * 
+                getImage()->getHeight() * 
+                getImage()->getDepth ();
+            j++)
+        {
+//          cerr << j << ": " << (int) img[j] << std::endl ;
+            hist[img[j]]++;
+        }
+        
+        for(UInt32 k = 0; k < 256; k++)
+            maxVal = (hist[k] > maxVal) ? hist[k] : maxVal;
+        
+        _sfMaxVal.setValue(maxVal);
 
-	FDEBUG(("Image: %d %d %d\n",
-		getImage()->getWidth(), getImage()->getHeight(), getImage()->getDepth()));
-	
-	for (UInt32 j = 0;
-	     j < getImage()->getWidth() * getImage()->getHeight() * getImage()->getDepth();
-	     j++)
-	{
-//	  cerr << j << ": " << (int) img[j] << std::endl ;
-	    hist[img[j]]++;
-	}
+        // update sliceThickness
+        const std::string * sTatt = 
+            getImage()->findAttachmentField("SliceThickness");
 
-	for (UInt32 k = 0; k < 256; k++)
-	    maxVal = (hist[k] > maxVal) ? hist[k] : maxVal;
+        if(sTatt) 
+        {
+            Real64 sT[3];
 
-	_sfMaxVal.setValue(maxVal);
+            sscanf(sTatt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
 
+            _sfSliceThickness.setValue(Vec3f(sT[0], sT[1], sT[2]));
+        } 
+        else 
+        {
+            SWARNING << "DVRVolumeTexture::changed - No SliceThickness found"
+                     << std::endl;
+        }
+        
+        // update resolution
+        const std::string * resAtt = 
+            getImage()->findAttachmentField("Resolution");
 
-	// update sliceThickness
-	const std::string * sTatt = getImage()->findAttachmentField("SliceThickness");
-	if (sTatt) {
-	  double sT[3];
-	  sscanf(sTatt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
-	  _sfSliceThickness.setValue(Vec3f(sT[0], sT[1], sT[2]));
-	} else {
-	  SWARNING << "DVRVolumeTexture::changed - No SliceThickness found" << std::endl;
-	}
+        if (resAtt) 
+        {
+            Real64 sT[3];
 
-	// update resolution
-	const std::string * resAtt = getImage()->findAttachmentField("Resolution");
-	if (resAtt) {
-	  double sT[3];
-	  sscanf(resAtt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
-	  _sfResolution.setValue(Vec3f(sT[0], sT[1], sT[2]));
-	} else {
-	  SWARNING << "DVRVolumeTexture::changed - No Resolution found" << std::endl;
-	}
+            sscanf(resAtt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
 
-	//!! FIXME:
-	//!! you can either change the image pointer or the file name
-	whichField &= ~FileNameFieldMask;
+            _sfResolution.setValue(Vec3f(sT[0], sT[1], sT[2]));
+        } 
+        else 
+        {
+            SWARNING << "DVRVolumeTexture::changed - No Resolution found"
+                     << std::endl;
+        }
+
+        //!! FIXME:
+        //!! you can either change the image pointer or the file name
+        whichField &= ~FileNameFieldMask;
     }
-
+    
     if (whichField & FileNameFieldMask)
     {
         FINFO(("DVRVolumeTexture::changed - new fileName\n"));
+        
+        ImagePtr datImage = Image::create();
+    
+        datImage->read(_sfFileName.getValue().c_str());
 
-	ImagePtr datImage = Image::create();
-	
-	datImage->read(_sfFileName.getValue().c_str());
-	datImage->dump();
-	beginEditCP(thisP, ImageFieldMask);
-	setImage(datImage);
-	endEditCP  (thisP, ImageFieldMask);
+        datImage->dump();
+
+        beginEditCP(thisP, ImageFieldMask);
+        {
+            setImage(datImage);
+        }
+        endEditCP  (thisP, ImageFieldMask);
     }
 
     Inherited::changed(whichField, origin);
@@ -187,8 +199,27 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
 //! output the instance for debug purposes
 
 void DVRVolumeTexture::dump(      UInt32    , 
-                         const BitVector ) const
+                            const BitVector ) const
 {
     SLOG << "Dump DVRVolumeTexture NI" << std::endl;
+}
+
+
+/*-------------------------------------------------------------------------*/
+/*                              cvs id's                                   */
+
+#ifdef __sgi
+#pragma set woff 1174
+#endif
+
+#ifdef OSG_LINUX_ICC
+#pragma warning( disable : 177 )
+#endif
+
+namespace
+{
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_hpp[] = OSGDVRVOLUMETEXTURE_HEADER_CVSID;
+    static char cvsid_inl[] = OSGDVRVOLUMETEXTURE_INLINE_CVSID;
 }
 

@@ -58,6 +58,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRAppearance : public DVRAppearanceBase
     typedef DVRAppearanceBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -77,6 +78,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRAppearance : public DVRAppearanceBase
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRAppearanceBase.
@@ -98,6 +100,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRAppearance : public DVRAppearanceBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -106,7 +109,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRAppearance : public DVRAppearanceBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRAppearance &source);
 };
 
@@ -117,6 +119,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRAppearance.inl>
 #include <OSGDVRAppearanceBase.inl>
 
-#define OSGDVRAPPEARANCE_HEADER_CVSID "@(#)$Id: OSGDVRAppearance.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRAPPEARANCE_HEADER_CVSID "@(#)$Id: OSGDVRAppearance.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRAPPEARANCE_H_ */

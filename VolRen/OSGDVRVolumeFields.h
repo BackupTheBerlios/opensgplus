@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRVolume;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRVolumePtr
 
 typedef FCPtr<NodeCorePtr, DVRVolume> DVRVolumePtr;
@@ -102,6 +102,6 @@ struct FieldDataTraits<DVRVolumePtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRVolumeFields.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
+#define OSGDVRVOLUMEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRVolumeFields.h,v 1.4 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRVOLUMEFIELDS_H_ */

@@ -30,32 +30,41 @@ class DrawActionBase;
   management and bricking.
  */
 
-struct TextureRecord {
-    ImagePtr image;
-    UInt32   internalFormat;
-    UInt32   externalFormat;
-    Int32    textureStage0;
-    Int32    textureStage1;
+struct TextureRecord 
+{
+    ImagePtr _image;
+    UInt32   _internalFormat;
+    UInt32   _externalFormat;
+    Int32    _textureStage0;
+    Int32    _textureStage1;
   
-    TextureRecord(ImagePtr _img, UInt32 _internal, UInt32 _externalFormat,
-		  Int32 _stage0, Int32 _stage1);
-    ~TextureRecord();
+    TextureRecord(ImagePtr img, 
+                  UInt32   internal, 
+                  UInt32   externalFormat,
+                  Int32    stage0, 
+                  Int32    stage1);
+    ~TextureRecord(void);
 
-private:
+  private:
+
     //!! We do not want the copy constructor to be called -
     //!! would require deep copy
+
     TextureRecord(const TextureRecord &source);
+    void operator =(const TextureRecord &source);
 };
 
 
-typedef std::vector<TextureRecord*> TextureSet;
+typedef std::vector<TextureRecord *> TextureSet;
 
 
-class TextureManager {
+class TextureManager 
+{
+  public:
 
-public:
     //! Texture mode
-    enum TextureMode {
+    enum TextureMode 
+    {
         TM_3D = 0,
         TM_2D,
         TM_2D_Multi,
@@ -63,35 +72,41 @@ public:
     };
 
     //! Bricking mode
-    enum BrickingMode {
+    enum BrickingMode 
+    {
         BRICK_SUBDIVIDE_ON_TEXTURE_MEMORY = 0,
-	BRICK_SUBDIVIDE_STATIC,
-	BRICK_SUBDIVIDE_ON_BRICK_SIZE,
-	NUM_BRICKING_MODES
+        BRICK_SUBDIVIDE_STATIC,
+        BRICK_SUBDIVIDE_ON_BRICK_SIZE,
+        NUM_BRICKING_MODES
     };
     
     //! Constructor/ destructor
     TextureManager(DVRVolume * volume);
-    ~TextureManager();
+    ~TextureManager(void);
 
     //! Register texture
-    /*! \brief register an image for use as texture with direct volume rendering
+    /*! \brief register an image for use as texture with direct volume 
+     *         rendering
      *         image                   points to the image
      *         internal/externalFormat defines the texture format
-     *	       doBricking              specifies, whether the texture is uses as utility
-     *	                               texture or as volume texture (volume textures are
-     *                                 divided into bricks - utility textures are loaded
-     *                                 as they are)
-     *	       textureState0
-     *         textureState1           (optional) specifies which (multi-)texture stages
-     *	 			       the texture shall be bound
+     *         doBricking              specifies, whether the texture is uses 
+     *                                 as utility
+     *                                 texture or as volume texture 
+     *                                 (volume textures are
+     *                                 divided into bricks - utility textures
+     *                                  are loaded as they are)
+     *         textureState0
+     *         textureState1           (optional) specifies which 
+     *                                 (multi-)texture stages
+     *                                 the texture shall be bound
      */
+
     Int32 registerTexture(ImagePtr image,
-			  UInt32   internalFormat,
-			  UInt32   externalFormat,
-			  bool     doBricking    = 1,
-			  Int32    textureStage0 = 0,
-			  Int32    textureStage1 = -1);
+                          UInt32   internalFormat,
+                          UInt32   externalFormat,
+                          bool     doBricking    = 1,
+                          Int32    textureStage0 = 0,
+                          Int32    textureStage1 = -1);
     
     //! Remove texture
     void unregisterTexture(Int32 id);
@@ -101,26 +116,36 @@ public:
 
     //! Clear all registered textures
     void clearTextures(ChunkMaterialPtr material = NullFC);
-	  
+      
     //! Create texture chunks for registered textures
-    void buildTextures(ChunkMaterialPtr material, DVRVolume * volume, TextureMode mode = TM_3D);
+    void buildTextures(ChunkMaterialPtr  material, 
+                       DVRVolume        *volume, 
+                       TextureMode       mode = TM_3D);
 
     //! Return sorted brick list
-    Brick * sortBricks(DrawActionBase *da, Matrix modelMat, Vec3f eyePoint, DVRVolume * volume, TextureMode mode);
+    Brick *sortBricks(DrawActionBase *da, 
+                      Matrix          modelMat, 
+                      Vec3f           eyePoint, 
+                      DVRVolume      *volume, 
+                      TextureMode     mode);
     
     //! Output the instance for debug purposes
     void dump(      UInt32     uiIndent = 0, 
-		    const BitVector  bvFlags  = 0) const;
-	  
-private:
-    TextureSet   registeredTextures;
+              const BitVector  bvFlags  = 0) const;
+      
+  private:
 
-    DVRVolume   *parent;
+    TextureSet   _registeredTextures;
+    DVRVolume   *_parent;
 
-    BrickSet    *m_BrickSets;
+    BrickSet    *_brickSets;
 
     //! Calculate bricking 
-    static Vec3f calcBrickSubdivision(int resX, int resY, int resZ, int dataSize, DVRVolume * volume);
+    static Vec3f calcBrickSubdivision(Int32      resX, 
+                                      Int32      resY, 
+                                      Int32      resZ, 
+                                      Int32      dataSize, 
+                                      DVRVolume *volume);
 
     friend struct BrickSet;
 };

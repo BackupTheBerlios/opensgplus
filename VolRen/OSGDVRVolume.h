@@ -55,6 +55,7 @@
 
 
 //! Conveniance macros - makes code much more readable
+
 #define DVRVOLUME_PARAMETER(volume, class) \
 class##Ptr::dcast(volume->findParameter(class::getClassType()))
 
@@ -76,17 +77,18 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     typedef DVRVolumeBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-     void setAppearance     ( const DVRAppearancePtr &value );
-     void setGeometry       ( const DVRGeometryPtr &value );
-     void setShader         ( const DVRShaderPtr &value );
-     void setRenderMaterial ( const MaterialPtr &value );
-     void setTextureStorage ( const ChunkMaterialPtr &value );
+     void setAppearance    (const DVRAppearancePtr &value);
+     void setGeometry      (const DVRGeometryPtr   &value);
+     void setShader        (const DVRShaderPtr     &value);
+     void setRenderMaterial(const MaterialPtr      &value);
+     void setTextureStorage(const ChunkMaterialPtr &value);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -109,41 +111,53 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     /*! \name                     Draw                                     */
 
     // execute the OpenGL commands to draw the geometry	
-    Action::ResultE doDraw(Action * action );
+    Action::ResultE doDraw(Action         *action);
 	
     // low-level OpenGL calls, ignoring materials	
-    Action::ResultE draw(DrawActionBase *action);
+    Action::ResultE draw  (DrawActionBase *action);
 
     // generate draw tree
-    Action::ResultE render(Action *action);
+    Action::ResultE render(Action         *action);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                Volume Parameter                              */
+
+    AttachmentPtr findParameter(const FieldContainerType &type,
+                                      UInt16              binding = 0);
+
+    AttachmentPtr findParameter(      UInt32              groupId, 
+                                      UInt16              binding = 0);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                     Volume                                   */
 
-    AttachmentPtr findParameter(const FieldContainerType &type,
-				UInt16 binding = 0);
-    AttachmentPtr findParameter(UInt32 groupId, UInt16 binding = 0);
-
-    void buildDrawStyleList(Window *win = NULL);
-
-    TextureManager & getTextureManager() {return textureManager;};
+    void          buildDrawStyleList   (      Window         *win = NULL    );
 
     //! Prepare the clip objects for this volume    
-    void initializeClipObjects(DrawActionBase *action, const Matrix &volumeToWorld);
+    void          initializeClipObjects(      DrawActionBase *action, 
+                                        const Matrix          &volumeToWorld);
 
-    TextureManager::TextureMode getTextureMode(Window * window);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   TextureManager                             */
+
+    TextureManager              &getTextureManager(void          );
+
+    TextureManager::TextureMode  getTextureMode   (Window *window);
 
 //!! FIXME: This methods are to be removed as soon as the node gets informed
 //!!	about modified attachments of the appearance
+
     // updates the texture color table
-    void reload();
+    void reload(void);
     
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
-  protected:
 
-    // Variables should all be in DVRVolumeBase.
+  protected:
 
     /*---------------------------------------------------------------------*/
     /*! \name                  Constructors                                */
@@ -164,9 +178,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     /*! \name                      Volume                                  */
     /*! \{                                                                 */
 
-    virtual void adjustVolume    (Volume &volume);
-
-    // virtual void invalidateVolume(void          );
+    virtual void adjustVolume(Volume &volume);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -178,6 +190,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -195,21 +208,21 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     void commonConstructor( void );
 
     // intersect action: ray test
-    Action::ResultE intersect(Action * action );
+    Action::ResultE intersect(Action * action);
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Volume-Rendering                        */
     /*! \{                                                                 */
 
 #ifdef OSG_INCLUDE_SOVOLUME
-    SoVolume * volumeImpl;
-    UInt32     nextDrawStyle;
+    SoVolume       *volumeImpl;
+    UInt32          nextDrawStyle;
 #endif
-    bool       drawStyleListValid;
-    TextureManager textureManager;
-    bool       shadingInitialized;
+    bool            drawStyleListValid;
+    TextureManager  textureManager;
+    bool            shadingInitialized;
 
-    DVRClipper clipper;
+    DVRClipper      clipper;
     
     /*! \}                                                                 */
 
@@ -224,6 +237,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRVolume.inl>
 #include <OSGDVRVolumeBase.inl>
 
-#define OSGDVRVOLUME_HEADER_CVSID "@(#)$Id: OSGDVRVolume.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRVOLUME_HEADER_CVSID "@(#)$Id: OSGDVRVolume.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRVOLUME_H_ */

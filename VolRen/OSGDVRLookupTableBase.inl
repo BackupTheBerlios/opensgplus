@@ -352,5 +352,5 @@ const MFReal32 &DVRLookupTableBase::getDataA(void) const
 
 OSG_END_NAMESPACE
 
-#define OSGDVRLOOKUPTABLEBASE_INLINE_CVSID "@(#)$Id: OSGDVRLookupTableBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRLOOKUPTABLEBASE_INLINE_CVSID "@(#)$Id: OSGDVRLookupTableBase.inl,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 

@@ -100,5 +100,5 @@ DVRAppearancePtr DVRAppearanceBase::createEmpty(void)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRAPPEARANCEBASE_INLINE_CVSID "@(#)$Id: OSGDVRAppearanceBase.inl,v 1.2 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRAPPEARANCEBASE_INLINE_CVSID "@(#)$Id: OSGDVRAppearanceBase.inl,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 

@@ -47,61 +47,83 @@ OSG_BEGIN_NAMESPACE
 inline
 bool DVRClipGeometry::isLocalMinimum(DVRVertex &vertex)
 {  
-  for(MFInt32::const_iterator triIdx = vertex.adjacentTriangles.begin(); 
-      triIdx != vertex.adjacentTriangles.end(); 
-      triIdx++)
+    for(MFInt32::const_iterator triIdx  = vertex.adjacentTriangles.begin(); 
+                                triIdx != vertex.adjacentTriangles.end  (); 
+                                triIdx++)
     {
-    const Int32 *vertIndices = _mfTriangles[*triIdx].vertices;
-    for (unsigned int j = 0; j < 3; j++){
-      if (&_mfVertices[vertIndices[j]] != &vertex){
-	if (_mfVertices[vertIndices[j]].isCloser(vertex.refPlaneDistance)){
-	  return false;
-	}
-      }
+        const Int32 *vertIndices = _mfTriangles[*triIdx].vertices;
+
+        for(unsigned int j = 0; j < 3; j++)
+        {
+            if (&_mfVertices[vertIndices[j]] != &vertex)
+            {
+                if(_mfVertices[vertIndices[j]].isCloser(
+                       vertex.refPlaneDistance))
+                {
+                    return false;
+                }
+            }
+        }
     }
-  }
-  return true;
+
+    return true;
 }
 
 inline
 void DVRClipGeometry::renderTriangle(const DVRTriangle &tri) const
 {
-  glBegin(GL_TRIANGLES);
-  for (unsigned int i = 0; i < 3; i++)
-    glVertex3fv(_mfVertices[tri.vertices[i]].transformedPos.getValues());
-  glEnd();
+    glBegin(GL_TRIANGLES);
+    {
+        for(unsigned int i = 0; i < 3; i++)
+            glVertex3fv(
+                _mfVertices[tri.vertices[i]].transformedPos.getValues());
+    }
+    glEnd();
 }
 
 inline
 bool DVRClipGeometry::isBehindPlane(DVRTriangle &tri,
-				    float dist2RefPlane)
+                                    Real32       dist2RefPlane)
 {
-  bool switched;
-  bool v[3];
-  for(unsigned int i = 0; i < 3; i++)
-    v[i] = _mfVertices[tri.vertices[i]].isBehindPlane(dist2RefPlane,switched);
-  return (v[0] && v[1] && v[2]);
+    bool switched;
+    bool v[3];
+
+    for(unsigned int i = 0; i < 3; i++)
+    {
+        v[i] = 
+            _mfVertices[tri.vertices[i]].isBehindPlane(dist2RefPlane,switched);
+    }
+
+    return (v[0] && v[1] && v[2]);
 }
 
 inline
 Pnt3f DVRClipGeometry::interpolate(DVRTriangle *tri, 
-				   int v1, int v2, float dist2RefPlane)
+                                   Int32        v1, 
+                                   Int32        v2, 
+                                   Real32       dist2RefPlane)
 {
+    float weight = 
 
-  float weight = 
-    ((_mfVertices[tri->vertices[v2]].refPlaneDistance - dist2RefPlane) /
-     (_mfVertices[tri->vertices[v2]].refPlaneDistance - _mfVertices[tri->vertices[v1]].refPlaneDistance));
-  
-  if (weight == 1.0){
-    // sorry, but without this we will have some really bad flickering...
-    weight += 0.000001;
+        ((_mfVertices[tri->vertices[v2]].refPlaneDistance - 
+          dist2RefPlane                                    ) /
+         (_mfVertices[tri->vertices[v2]].refPlaneDistance - 
+          _mfVertices[tri->vertices[v1]].refPlaneDistance  ));
+    
+  if(weight == 1.0)
+  {
+      // sorry, but without this we will have some really bad flickering...
+      weight += 0.000001;
   }
   
-  return (_mfVertices[tri->vertices[v1]].transformedPos * weight) +  (_mfVertices[tri->vertices[v2]].transformedPos * (1.0 - weight)).subZero();
+  return 
+      (_mfVertices[tri->vertices[v1]].transformedPos * weight) +  
+      (_mfVertices[tri->vertices[v2]].transformedPos * (1.0 - 
+                                                        weight)).subZero();
 }
 
 
 OSG_END_NAMESPACE
 
-#define OSGDVRCLIPGEOMETRY_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometry.inl,v 1.1 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRCLIPGEOMETRY_INLINE_CVSID "@(#)$Id: OSGDVRClipGeometry.inl,v 1.2 2004/01/19 11:22:33 vossg Exp $"
 

@@ -50,21 +50,6 @@
 
 OSG_USING_NAMESPACE
 
-#ifdef __sgi
-#pragma set woff 1174
-#endif
-
-namespace
-{
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
-    static char cvsid_hpp[] = OSGDVRLOOKUPTABLE_HEADER_CVSID;
-    static char cvsid_inl[] = OSGDVRLOOKUPTABLE_INLINE_CVSID;
-}
-
-#ifdef __sgi
-#pragma reset woff 1174
-#endif
-
 /*! \class osg::DVRLookupTable
 Attachment for storing and handling Lookup-Tables for volume rendering.
 */
@@ -72,7 +57,6 @@ Attachment for storing and handling Lookup-Tables for volume rendering.
 /*----------------------- constructors & destructors ----------------------*/
 
 //! Constructor
-
 DVRLookupTable::DVRLookupTable(void) :
     Inherited()
 {
@@ -82,7 +66,6 @@ DVRLookupTable::DVRLookupTable(void) :
 }
 
 //! Copy Constructor
-
 DVRLookupTable::DVRLookupTable(const DVRLookupTable &source) :
     Inherited(source)
 {
@@ -92,7 +75,6 @@ DVRLookupTable::DVRLookupTable(const DVRLookupTable &source) :
 }
 
 //! Destructor
-
 DVRLookupTable::~DVRLookupTable(void)
 {
 }
@@ -100,120 +82,189 @@ DVRLookupTable::~DVRLookupTable(void)
 /*----------------------------- class specific ----------------------------*/
 
 //! initialize the static features of the class, e.g. action callbacks
-
-void DVRLookupTable::initMethod (void)
+void DVRLookupTable::initMethod(void)
 {
 }
 
 //! react to field changes
-
 void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
 {
     SINFO << "DVRLookupTable::changed" << std::endl;
 
-    if (whichField & DataFieldMask) {
-      // copy data from interleaved field to single fields
-      UInt32 iter = 0;
-      for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-	for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-	  for (UInt32 k = 0; k < _sfChannel.getValue(); k++) {
+    if(whichField & DataFieldMask) 
+    {
+        // copy data from interleaved field to single fields
+        UInt32 iter = 0;
+
+        for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+        {
+            for(UInt32 j = 0; j < _mfSize[i]; j++) 
+            {
+                for (UInt32 k = 0; k < _sfChannel.getValue(); k++) 
+                {
 
 #if 1
-	    //!! TODO: REMOVE as soon as the loader works correctly
-	    if (_mfDataR.size() < _mfData.size() / 4) {
-	      int size = _mfData.size() / 4;
-	      _mfDataR.resize(size);
-	      _mfDataG.resize(size);
-	      _mfDataB.resize(size);
-	      _mfDataA.resize(size);
-	    }
+                    //!! TODO: REMOVE as soon as the loader works correctly
+                    if(_mfDataR.size() < _mfData.size() / 4) 
+                    {
+                        int size = _mfData.size() / 4;
+
+                        _mfDataR.resize(size);
+                        _mfDataG.resize(size);
+                        _mfDataB.resize(size);
+                        _mfDataA.resize(size);
+                    }
 #endif
 	    
-	    //!! setValue ( <value>, index )
-	    if (k == 0)
-	      _mfDataR.setValue((Real32) _mfData.getValue(iter++) / (Real32) TypeConstants<UInt8>::getMax(), j);
-	    if (k == 1)
-	      _mfDataG.setValue((Real32) _mfData.getValue(iter++) / (Real32) TypeConstants<UInt8>::getMax(), j);
-	    if (k == 2)
-	      _mfDataB.setValue((Real32) _mfData.getValue(iter++) / (Real32) TypeConstants<UInt8>::getMax(), j);
-	    if (k == 3)
-	      _mfDataA.setValue((Real32) _mfData.getValue(iter++) / (Real32) TypeConstants<UInt8>::getMax(), j);
-	  }
-	}
-      }
+                    //!! setValue ( <value>, index )
+                    if(k == 0)
+                    {
+                        _mfDataR[j] = 
+                            (Real32) _mfData[iter++] / 
+                            (Real32) TypeTraits<UInt8>::getMax();
+                    }
+                    else if(k == 1)
+                    {
+                        _mfDataG[j] =
+                            (Real32) _mfData[iter++] / 
+                            (Real32) TypeTraits<UInt8>::getMax();
+                    }
+                    else if(k == 2)
+                    {
+                        _mfDataB[j] = 
+                            (Real32) _mfData[iter++] / 
+                            (Real32) TypeTraits<UInt8>::getMax();
+                    }
+                    else if(k == 3)
+                    {
+                        _mfDataA[j] =
+                            (Real32) _mfData[iter++] / 
+                            (Real32) TypeTraits<UInt8>::getMax();
+                    }
+                }
+            }
+        }
     }
 
 
-    if (whichField & DataRFieldMask) {
+    if(whichField & DataRFieldMask) 
+    {
         // copy data from R field to channel 0 of interleaved field
-        UInt32 iter = 0;
-	UInt32 numChannels = _sfChannel.getValue();
-	for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-	  for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-	    //!! setValue ( <value>, index )
-	    _mfData.setValue((Real32) _mfDataR.getValue(j) * (Real32) TypeConstants<UInt8>::getMax(), iter);
-	    iter+=numChannels;
-	  }
-	}
+        UInt32 iter        = 0;
+        UInt32 numChannels = _sfChannel.getValue();
+
+        for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+        {
+            for(UInt32 j = 0; j < _mfSize[i]; j++) 
+            {
+                //!! setValue ( <value>, index )
+                
+                _mfData[iter] = 
+                    (Real32) _mfDataR[j] * 
+                    (Real32) TypeTraits<UInt8>::getMax();
+
+                iter += numChannels;
+            }
+        }
     }
 
     
-    if (whichField & DataGFieldMask) {
+    if(whichField & DataGFieldMask) 
+    {
         // copy data from G field to channel 1 of interleaved field
-	UInt32 iter = 1;
+        UInt32 iter        = 1;
         UInt32 numChannels = _sfChannel.getValue();
-	for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-	  for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-	    //!! setValue ( <value>, index )
-	    _mfData.setValue((Real32) _mfDataG.getValue(j) * (Real32) TypeConstants<UInt8>::getMax(), iter);
-	    iter+=numChannels;
-	  }
-	}
+
+        for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+        {
+            for(UInt32 j = 0; j < _mfSize[i]; j++) 
+            {
+                //!! setValue ( <value>, index )
+                _mfData[iter] = 
+                    (Real32) _mfDataG[j] * 
+                    (Real32) TypeTraits<UInt8>::getMax();
+
+                iter += numChannels;
+            }
+        }
     }
 
-    if (whichField & DataBFieldMask) {
+    if(whichField & DataBFieldMask) 
+    {
         // copy data from B field to channel 2 of interleaved field
-	UInt32 iter = 2;
+        UInt32 iter        = 2;
         UInt32 numChannels = _sfChannel.getValue();
-	for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-	  for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-	    //!! setValue ( <value>, index )
-	    _mfData.setValue((Real32) _mfDataB.getValue(j) * (Real32) TypeConstants<UInt8>::getMax(), iter);
-	    iter+=numChannels;
-	  }
-	}
+        
+        for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+        {
+            for(UInt32 j = 0; j < _mfSize[i]; j++) 
+            {
+                //!! setValue ( <value>, index )
+                _mfData[iter] =
+                    (Real32) _mfDataB[j] * 
+                    (Real32) TypeTraits<UInt8>::getMax();
+
+                iter += numChannels;
+            }
+        }
     }
 
     
-    if (whichField & DataAFieldMask) {
+    if(whichField & DataAFieldMask) 
+    {
         // copy data from A field to to channel 3 interleaved field
-	UInt32 iter = 3;
+        UInt32 iter        = 3;
         UInt32 numChannels = _sfChannel.getValue();
-	for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-	  for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-	    //!! setValue ( <value>, index )
-	    _mfData.setValue((Real32) _mfDataA.getValue(j) * (Real32) TypeConstants<UInt8>::getMax(), iter);
-	    iter+=numChannels;
-	  }
-	}
+        
+        for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+        {
+            for(UInt32 j = 0; j < _mfSize[i]; j++) 
+            {
+                //!! setValue ( <value>, index )
+                _mfData[iter] = 
+                    (Real32) _mfDataA[j] * 
+                    (Real32) TypeTraits<UInt8>::getMax();
+
+                iter += numChannels;
+            }
+        }
     }
 
     
-    if (whichField & (DimensionFieldMask | SizeFieldMask | ChannelFieldMask)) {
-        SINFO << "DVRLookupTable::changed - DimensionFieldMask | SizeFieldMask | ChannelFieldMask " << std::endl;
-	if (whichField & DimensionFieldMask) 
-	  SINFO << "DVRLookupTable::changed - dimension " << _sfDimension.getValue() << std::endl;
-	if (whichField & SizeFieldMask) 
-	  SINFO << "DVRLookupTable::changed - size " << _mfSize.getValue(0) << std::endl;
-	if (whichField & ChannelFieldMask) 
-	  SINFO << "DVRLookupTable::changed - channel " << _sfChannel.getValue() << std::endl;
+    if(whichField & (DimensionFieldMask | SizeFieldMask | ChannelFieldMask)) 
+    {
+        SINFO << "DVRLookupTable::changed - DimensionFieldMask | "
+              << "SizeFieldMask | ChannelFieldMask " 
+              << std::endl;
+
+        if(whichField & DimensionFieldMask) 
+        {
+            SINFO << "DVRLookupTable::changed - dimension " 
+                  << _sfDimension.getValue() 
+                  << std::endl;
+        }
+
+        if(whichField & SizeFieldMask) 
+        {
+            SINFO << "DVRLookupTable::changed - size " 
+                  << _mfSize[0] 
+                  << std::endl;
+        }
+
+        if(whichField & ChannelFieldMask) 
+        {
+            SINFO << "DVRLookupTable::changed - channel " 
+                  << _sfChannel.getValue() 
+                  << std::endl;
+        }
 
 #if 0
         commonConstructor();
 #endif
     }
 
-    if (whichField & TouchedFieldMask) {
+    if(whichField & TouchedFieldMask) 
+    {
         SINFO << "DVRLookupTable::changed - touched " << std::endl;
     }
 
@@ -224,18 +275,22 @@ void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
     
 
     // notify parent if appearance 
-    MFFieldContainerPtr * par = getMFParents();
-    for (UInt32 i = 0; i < par->size(); i++) {
+    // CHECK
+#if 0
+    MFFieldContainerPtr *par = getMFParents();
+
+    for(UInt32 i = 0; i < par->size(); i++) 
+    {
     }
+#endif
 
     Inherited::changed(whichField, origin);
 }
 
 
 //! output the instance for debug purposes
-
 void DVRLookupTable::dump(      UInt32    uiIndent, 
-                          const BitVector ) const
+                          const BitVector         ) const
 {
     UInt32 col = 8; // print 8 values in each row
     UInt32   i = 0;
@@ -247,66 +302,129 @@ void DVRLookupTable::dump(      UInt32    uiIndent,
     PLOG << "DVRLookupTable at " << this << std::endl;
 
     indentLog(uiIndent, PLOG);
-    PLOG << "dim: " << (int) getDimension() << " channel: " << (int) getChannel() << std::endl;
+    PLOG << "dim: " 
+         << (int) getDimension() 
+         << " channel: "
+         << (int) getChannel() 
+         << std::endl;
 
     indentLog(uiIndent, PLOG);
     PLOG << "sizes: ";
-    for(MFUInt32::const_iterator it = _mfSize.begin(); it != _mfSize.end(); it++)
+
+    for(MFUInt32::const_iterator   it  = _mfSize.begin(); 
+                                   it != _mfSize.end  (); 
+                                 ++it)
+    {
         PLOG << std::dec << (int) *it << " ";
+    }
+
     PLOG << std::endl;
 
     // Data
     indentLog(uiIndent, PLOG);
-    PLOG << "Data:" << std::endl; uiIndent += 4;
+    PLOG << "Data:" << std::endl; 
+
+    uiIndent += 4;
+
     indentLog(uiIndent, PLOG);
-    for (i = 0; i < _mfData.size(); i++) {
-        PLOG << std::setw(9) << std::left << (int) _mfData.getValue(i) << " ";
-	if ((i + 1) % getChannel() == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    for(i = 0; i < _mfData.size(); i++) 
+    {
+        PLOG << std::setw(9) << std::left << (int) _mfData[i] << " ";
+
+        if((i + 1) % getChannel() == 0) 
+        {
+            PLOG << std::endl; indentLog(uiIndent, PLOG); 
+        }
     }
+
     uiIndent -= 4;
     
     // DataR
     PLOG << std::endl;
+
     indentLog(uiIndent, PLOG);
-    PLOG << "DataR:" << std::endl; uiIndent += 4;
+    PLOG << "DataR:" << std::endl; 
+    
+    uiIndent += 4;
+
     indentLog(uiIndent, PLOG);
-    for (i = 0; i < _mfDataR.size(); i++) {
-        PLOG << std::setw(9) << std::left <<_mfDataR.getValue(i) << " ";
-	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+
+    for(i = 0; i < _mfDataR.size(); i++) 
+    {
+        PLOG << std::setw(9) << std::left <<_mfDataR[i] << " ";
+
+        if((i + 1) % col == 0) 
+        {
+            PLOG << std::endl; indentLog(uiIndent, PLOG); 
+        }
     }
+
     uiIndent -= 4;
 
     // DataG
     PLOG << std::endl;
+
     indentLog(uiIndent, PLOG);
-    PLOG << "DataG:" << std::endl; uiIndent += 4;
+    PLOG << "DataG:" << std::endl; 
+
+    uiIndent += 4;
+
     indentLog(uiIndent, PLOG);
-    for (i = 0; i < _mfDataG.size(); i++) {
-        PLOG << std::setw(9) << std::left << _mfDataG.getValue(i) << " ";
-	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    
+    for(i = 0; i < _mfDataG.size(); i++) 
+    {
+        PLOG << std::setw(9) << std::left << _mfDataG[i] << " ";
+
+        if((i + 1) % col == 0) 
+        {
+            PLOG << std::endl; indentLog(uiIndent, PLOG); 
+        }
     }
+
     uiIndent -= 4;
 
     // DataB
     PLOG << std::endl;
+
     indentLog(uiIndent, PLOG);
-    PLOG << "DataB:" << std::endl; uiIndent += 4;
+    PLOG << "DataB:" << std::endl; 
+    
+    uiIndent += 4;
+
     indentLog(uiIndent, PLOG);
-    for (i = 0; i < _mfDataB.size(); i++) {
-        PLOG << std::setw(9) << std::left << _mfDataB.getValue(i) << " ";
-	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+
+    for(i = 0; i < _mfDataB.size(); i++) 
+    {
+        PLOG << std::setw(9) << std::left << _mfDataB[i] << " ";
+
+        if((i + 1) % col == 0)
+        {
+            PLOG << std::endl; indentLog(uiIndent, PLOG); 
+        }
     }
+
     uiIndent -= 4;
     
     // DataA
     PLOG << std::endl;
+
     indentLog(uiIndent, PLOG);
-    PLOG << "DataA:" << std::endl; uiIndent += 4;
+    PLOG << "DataA:" << std::endl; 
+
+    uiIndent += 4;
+
     indentLog(uiIndent, PLOG);
-    for (i = 0; i < _mfDataA.size(); i++) {
-        PLOG << std::setw(9) << std::left << _mfDataA.getValue(i) << " ";
-	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+
+    for(i = 0; i < _mfDataA.size(); i++) 
+    {
+        PLOG << std::setw(9) << std::left << _mfDataA[i] << " ";
+
+        if((i + 1) % col == 0) 
+        {
+            PLOG << std::endl; indentLog(uiIndent, PLOG); 
+        }
     }
+
     uiIndent -= 4;
 
     PLOG << std::endl;
@@ -314,45 +432,81 @@ void DVRLookupTable::dump(      UInt32    uiIndent,
 
 
 //! used to initialize member variables - called by every constructor
-void DVRLookupTable::commonConstructor( void )
+void DVRLookupTable::commonConstructor(void)
 {
-  SLOG << "DVRLookupTable::commonConstructor" << std::endl;
-
-//  return;
+    SLOG << "DVRLookupTable::commonConstructor" << std::endl;
+    
+    UInt32 size = _sfDimension.getValue();
   
-  UInt32 size = _sfDimension.getValue();
-  
-  // set default size for every dimension
-  _mfSize.resize(_sfDimension.getValue());
-  for (UInt32 j = 0; j < _sfDimension.getValue(); j++) {
-    _mfSize.setValue(256, j);
-    size *= _mfSize.getValue(j);
-  }
+    // set default size for every dimension
+    _mfSize.resize(_sfDimension.getValue());
 
-  // allocate data field
-  _mfData.resize(size * _sfChannel.getValue());
-  _mfDataR.resize(size);
-  _mfDataG.resize(size);
-  _mfDataB.resize(size);
-  _mfDataA.resize(size);
+    for(UInt32 j = 0; j < _sfDimension.getValue(); j++) 
+    {
+        _mfSize[j] = 256;
 
-  // store default ramp
-  UInt32 iter = 0;
-  UInt32 singleIter = 0;
-  for (UInt32 i = 0; i < _sfDimension.getValue(); i++) {
-    for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
-      
-      //!! setValue ( <value>, index )
-      _mfDataR.setValue((Real32) j / (Real32) TypeConstants<UInt8>::getMax(), singleIter);
-      _mfDataG.setValue((Real32) j / (Real32) TypeConstants<UInt8>::getMax(), singleIter);
-      _mfDataB.setValue((Real32) j / (Real32) TypeConstants<UInt8>::getMax(), singleIter);
-      _mfDataA.setValue((Real32) j / (Real32) TypeConstants<UInt8>::getMax(), singleIter);
-
-      singleIter++;
-      
-      for (UInt32 k = 0; k < _sfChannel.getValue(); k++) {
-	_mfData.setValue(j, iter++);
-      }
+        size *= _mfSize[j];
     }
-  }
+
+    // allocate data field
+    _mfData .resize(size * _sfChannel.getValue());
+    _mfDataR.resize(size                        );
+    _mfDataG.resize(size                        );
+    _mfDataB.resize(size                        );
+    _mfDataA.resize(size                        );
+
+    // store default ramp
+    UInt32 iter       = 0;
+    UInt32 singleIter = 0;
+
+    for(UInt32 i = 0; i < _sfDimension.getValue(); i++) 
+    {
+        for(UInt32 j = 0; j < _mfSize[i]; j++) 
+        {
+            //!! setValue ( <value>, index )
+
+            _mfDataR[singleIter] = 
+                (Real32) j / 
+                (Real32) TypeTraits<UInt8>::getMax();
+
+            _mfDataG[singleIter] = 
+                (Real32) j / 
+                (Real32) TypeTraits<UInt8>::getMax();
+
+            _mfDataB[singleIter] = 
+                (Real32) j / 
+                (Real32) TypeTraits<UInt8>::getMax();
+
+            _mfDataA[singleIter] = 
+                (Real32) j / 
+                (Real32) TypeTraits<UInt8>::getMax();
+            
+            singleIter++;
+            
+            for(UInt32 k = 0; k < _sfChannel.getValue(); k++) 
+            {
+                _mfData[iter++] = j;
+            }
+        }
+    }
 }
+
+
+/*-------------------------------------------------------------------------*/
+/*                              cvs id's                                   */
+
+#ifdef __sgi
+#pragma set woff 1174
+#endif
+
+#ifdef OSG_LINUX_ICC
+#pragma warning( disable : 177 )
+#endif
+
+namespace
+{
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_hpp[] = OSGDVRLOOKUPTABLE_HEADER_CVSID;
+    static char cvsid_inl[] = OSGDVRLOOKUPTABLE_INLINE_CVSID;
+}
+

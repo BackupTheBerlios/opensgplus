@@ -21,29 +21,28 @@ OSG_BEGIN_NAMESPACE
 // forward references
 
 
-class Slicer {
-  
-  public:
-    enum SliceDir {
-      SD_X_FRONT_TO_BACK,
-      SD_X_BACK_TO_FRONT,
-      SD_Y_FRONT_TO_BACK,
-      SD_Y_BACK_TO_FRONT,
-      SD_Z_FRONT_TO_BACK,
-      SD_Z_BACK_TO_FRONT
+struct Slicer 
+{
+    enum SliceDir 
+    {
+        SD_X_FRONT_TO_BACK,
+        SD_X_BACK_TO_FRONT,
+        SD_Y_FRONT_TO_BACK,
+        SD_Y_BACK_TO_FRONT,
+        SD_Z_FRONT_TO_BACK,
+        SD_Z_BACK_TO_FRONT
     };
 
-    static void getModelMatrix(DrawActionBase * da, Matrix mat);
+//  static void  getModelMatrix       (DrawActionBase *da, Matrix  mat     );
+//  static void  getViewMatrix        (DrawActionBase *da, Matrix  mat     );
 
-    static void getViewMatrix(DrawActionBase * da, Matrix mat);
+    static Int32 getAASlicingDirection(DrawActionBase *da, Vec3f  *pViewDir);
+    static Int32 getSlicingDirection  (DrawActionBase *da, Vec3f  *pViewDir);
 
-    static int getAASlicingDirection(DrawActionBase * da, Vec3f *pViewDir);
-    
-    static int getSlicingDirection(DrawActionBase * da, Vec3f *pViewDir);
+    static void  rotateToLocal        (DrawActionBase *da, Vec3f  &in, 
+                                                           Vec3f  &out     );
 
-    static void rotateToLocal(DrawActionBase * da, Vec3f &in, Vec3f &out);
-    
-    static bool isBackToFront(int sliceDir);  
+    static bool  isBackToFront        (                    Int32  sliceDir ); 
 };
 
 OSG_END_NAMESPACE

@@ -188,6 +188,6 @@ typedef DVRAppearanceBase *DVRAppearanceBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRAPPEARANCEBASE_HEADER_CVSID "@(#)$Id: OSGDVRAppearanceBase.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
+#define OSGDVRAPPEARANCEBASE_HEADER_CVSID "@(#)$Id: OSGDVRAppearanceBase.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRAPPEARANCEBASE_H_ */

@@ -204,7 +204,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRAppearanceBase.cpp,v 1.2 2003/10/07 15:26:36 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRAppearanceBase.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRAPPEARANCEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRAPPEARANCEBASE_INLINE_CVSID;
 

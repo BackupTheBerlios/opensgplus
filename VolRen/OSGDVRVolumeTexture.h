@@ -58,13 +58,14 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTexture : public DVRVolumeTextureBase
     typedef DVRVolumeTextureBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
     
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-    void setImage          ( const ImagePtr &value );
+    void setImage(const ImagePtr &value);
     
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -84,6 +85,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTexture : public DVRVolumeTextureBase
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRVolumeTextureBase.
@@ -105,6 +107,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTexture : public DVRVolumeTextureBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
+
   private:
 
     friend class FieldContainer;
@@ -124,6 +127,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRVolumeTexture.inl>
 #include <OSGDVRVolumeTextureBase.inl>
 
-#define OSGDVRVOLUMETEXTURE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeTexture.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRVOLUMETEXTURE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeTexture.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRVOLUMETEXTURE_H_ */

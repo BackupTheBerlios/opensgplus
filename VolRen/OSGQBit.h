@@ -135,7 +135,7 @@ struct FieldDataTraits1<QBit> :
 
             outVal = 2;
         }
-	else
+        else
         {
             return 0;
         }
@@ -155,12 +155,11 @@ struct FieldDataTraits1<QBit> :
         {
             outStr.assign("FALSE");
         }
-	else
-	{
-	    outStr.assign("AUTO");
-	}
+        else
+        {
+            outStr.assign("AUTO");
+        }
     }
-         
 };
 
 OSG_END_NAMESPACE

@@ -66,7 +66,7 @@ OSG_BEGIN_NAMESPACE
 
 class DVRShader;
 
-#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
+#if !defined(OSG_DO_DOC) // created as a dummy class, remove to prevent doubles
 //! DVRShaderPtr
 
 typedef FCPtr<FieldContainerPtr, DVRShader> DVRShaderPtr;
@@ -115,6 +115,6 @@ OSG_DLLEXPORT_DECL1(SField, DVRShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRShaderFields.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRSHADERFIELDS_H_ */

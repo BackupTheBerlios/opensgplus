@@ -15,12 +15,17 @@
 
 OSG_USING_NAMESPACE
 
-void DVRIsoShader::activate_ColorMatrixShading(DVRVolume *volume, DrawActionBase *)
+void DVRIsoShader::activate_ColorMatrixShading(DVRVolume      *volume, 
+                                               DrawActionBase *)
 {
-    DVRVolumeTexturePtr vol      = DVRVOLUME_PARAMETER(volume,DVRVolumeTexture);
-    DVRIsoSurfacePtr    isoParam = DVRVOLUME_PARAMETER(volume, DVRIsoSurface);
+    DVRVolumeTexturePtr vol      = DVRVOLUME_PARAMETER(volume,
+                                                       DVRVolumeTexture);
 
-    if ((volume == NULL) || (vol == NullFC)) {
+    DVRIsoSurfacePtr    isoParam = DVRVOLUME_PARAMETER(volume, 
+                                                       DVRIsoSurface);
+
+    if((volume == NULL) || (vol == NullFC)) 
+    {
         SWARNING << "NO Volume ..." << std::endl;
         return;
     }
@@ -29,32 +34,35 @@ void DVRIsoShader::activate_ColorMatrixShading(DVRVolume *volume, DrawActionBase
     UInt32 alphaMode;
 
     // get parameters from isosurface attachment if available
-    if(isoParam!=NullFC){
-        isoValue  = isoParam->getIsoValue();
+    if(isoParam!=NullFC)
+    {
+        isoValue  = isoParam->getIsoValue ();
         alphaMode = isoParam->getAlphaMode();
     }
-    else{
-        isoValue = 1.0;
+    else
+    {
+        isoValue  = 1.0;
         alphaMode = GL_GREATER;
     }
 
-    glPushAttrib(GL_COLOR_BUFFER_BIT |
-                 GL_ENABLE_BIT | 
-                 GL_DEPTH_BUFFER_BIT | 
+    glPushAttrib(GL_COLOR_BUFFER_BIT   |
+                 GL_ENABLE_BIT         | 
+                 GL_DEPTH_BUFFER_BIT   | 
                  GL_STENCIL_BUFFER_BIT | 
-                 GL_POLYGON_BIT |
+                 GL_POLYGON_BIT        |
                  GL_PIXEL_MODE_BIT);
 
-    if (volume->getDoTextures()) { 
+    if(volume->getDoTextures()) 
+    { 
         
         glGetIntegerv(GL_COLOR_WRITEMASK,m_colorWriteMask);
-
+        
         // draw color 1 for MODULATE
-        glColor4f(1.0,1.0,1.0,1.0);
+        glColor4f(1.0, 1.0, 1.0, 1.0);
 
         // Enable Alpha Test for isosurface
         glEnable(GL_ALPHA_TEST); 
-        glAlphaFunc(alphaMode,isoValue);
+        glAlphaFunc(alphaMode, isoValue);
 
         // no blending and lighting
         glDisable(GL_BLEND);
@@ -74,11 +82,12 @@ void DVRIsoShader::activate_ColorMatrixShading(DVRVolume *volume, DrawActionBase
 }
 
 
-void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume *volume, DrawActionBase *action)
+void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume      *volume, 
+                                                 DrawActionBase *action)
 {
-
-    if (volume->getDoTextures()) {
-
+    if(volume->getDoTextures()) 
+    {
+        
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);
@@ -97,15 +106,20 @@ void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume *volume, DrawActionBa
         getLightSources(diffuseLights,specularLights,ambientLight);
 
         // use the first available diffuse lightsource for shading
-        if(diffuseLights.empty()){
+        if(diffuseLights.empty())
+        {
             diffuseLightColor[0] = 0.0f;
             diffuseLightColor[1] = 0.0f;
             diffuseLightColor[2] = 0.0f;
             diffuseLightColor[3] = 0.0f;
         }
-        else{
+        else
+        {
             diffuseLightColor = diffuseLights.begin()->color;
-            Slicer::rotateToLocal(action, diffuseLights.begin()->dir, diffuseDir);
+
+            Slicer::rotateToLocal(action, 
+                                  diffuseLights.begin()->dir, 
+                                  diffuseDir);
         }
 
         // store the matrix mode
@@ -115,12 +129,13 @@ void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume *volume, DrawActionBa
         // store alpha scale and bias
         GLfloat oldAlphaBias;
         GLfloat oldAlphaScale;
-        glGetFloatv(GL_ALPHA_BIAS,&oldAlphaBias);
-        glGetFloatv(GL_ALPHA_SCALE,&oldAlphaScale);
+
+        glGetFloatv(GL_ALPHA_BIAS,  &oldAlphaBias);
+        glGetFloatv(GL_ALPHA_SCALE, &oldAlphaScale);
 
         // ensure alpha is 1 
-        glPixelTransferf(GL_ALPHA_SCALE,0.00001f);
-        glPixelTransferf(GL_ALPHA_BIAS,0.999999f);
+        glPixelTransferf(GL_ALPHA_SCALE, 0.00001f);
+        glPixelTransferf(GL_ALPHA_BIAS,  0.999999f);
 
         // compute shading
 
@@ -217,17 +232,25 @@ void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume *volume, DrawActionBa
 
         GLint vpOrigin[2];
         GLint vpSize[2];
+
         vpOrigin[0] = action->getViewport()->getPixelLeft();
         vpOrigin[1] = action->getViewport()->getPixelBottom();
-        vpSize[0] = action->getViewport()->getPixelRight()-action->getViewport()->getPixelLeft();
-        vpSize[1] = action->getViewport()->getPixelTop()-action->getViewport()->getPixelBottom();
+
+        vpSize[0]   = 
+            action->getViewport()->getPixelRight() -
+            action->getViewport()->getPixelLeft ();
+
+        vpSize[1]   = 
+            action->getViewport()->getPixelTop   () -
+            action->getViewport()->getPixelBottom();
     
         // compute covered pixels
         GLint sr[4];
-        sr[0] = (GLint)floorf(vpOrigin[0]+(screenS[0]+1.0)*(vpSize[0]/2));
-        sr[1] = (GLint)floorf(vpOrigin[1]+(screenS[1]+1.0)*(vpSize[1]/2));
-        sr[2] = (GLint)ceilf(vpOrigin[0]+(screenS[2]+1.0)*(vpSize[0]/2));
-        sr[3] = (GLint)ceilf(vpOrigin[1]+(screenS[3]+1.0)*(vpSize[1]/2));
+
+        sr[0] = (GLint) floorf(vpOrigin[0]+(screenS[0]+1.0)*(vpSize[0]/2));
+        sr[1] = (GLint) floorf(vpOrigin[1]+(screenS[1]+1.0)*(vpSize[1]/2));
+        sr[2] = (GLint) ceilf (vpOrigin[0]+(screenS[2]+1.0)*(vpSize[0]/2));
+        sr[3] = (GLint) ceilf (vpOrigin[1]+(screenS[3]+1.0)*(vpSize[1]/2));
 
         // copy covered pixels 
         glMatrixMode(GL_MODELVIEW);
@@ -254,47 +277,58 @@ void DVRIsoShader::deactivate_ColorMatrixShading(DVRVolume *volume, DrawActionBa
         glMatrixMode(oldMatrixMode);
 
     }
- 
+
     glPopAttrib();
 }
 
-void DVRIsoShader::getCoveredScreenRect(DVRVolume *volume, DrawActionBase *action, 
-                                        GLfloat screenRect[4])
+void DVRIsoShader::getCoveredScreenRect(DVRVolume      *volume, 
+                                        DrawActionBase *action, 
+                                        GLfloat         screenRect[4])
 {
     int vpSize[2];
+
     vpSize[0] = action->getViewport()->getPixelWidth();
     vpSize[1] = action->getViewport()->getPixelHeight();
     
     DVRVolumeTexturePtr tex = DVRVOLUME_PARAMETER(volume, DVRVolumeTexture);
-    if (tex != NullFC) {
-      
+
+    if(tex != NullFC) 
+    {
+        
         Matrix4f modelMatrix = action->getActNode()->getToWorld();
         Matrix4f viewMatrix  = action->getCamera()->getBeacon()->getToWorld();
+
         viewMatrix.invert();
+
         Matrix4f prjTranslationMatrix;
+
         action->getCamera()->getProjectionTranslation(prjTranslationMatrix,
                                                       vpSize[0],
                                                       vpSize[1]);
         Matrix4f prjMatrix;
+
         action->getCamera()->getProjection(prjMatrix,
                                            vpSize[0],
                                            vpSize[1]);       
 
         Matrix4f toScreenMatrix = modelMatrix;
+
         toScreenMatrix.multLeft(viewMatrix);
         toScreenMatrix.multLeft(prjTranslationMatrix);
         toScreenMatrix.multLeft(prjMatrix);        
         
  
         Vec3f & res   = tex->getResolution();
-	Vec3f & slice = tex->getSliceThickness();
+        Vec3f & slice = tex->getSliceThickness();
         
         Pnt3f minBB(-0.5 * res[0] * slice[0], 
                     -0.5 * res[1] * slice[1], 
                     -0.5 * res[2] * slice[2]);
-	Pnt3f maxBB(-minBB);
+
+        Pnt3f maxBB(-minBB);
 	
-        Pnt3f BB[8] = {
+        Pnt3f BB[8] = 
+        {
             Pnt3f(minBB[0],minBB[1],minBB[2]),
             Pnt3f(maxBB[0],minBB[1],minBB[2]),
             Pnt3f(maxBB[0],maxBB[1],minBB[2]),
@@ -315,29 +349,40 @@ void DVRIsoShader::getCoveredScreenRect(DVRVolume *volume, DrawActionBase *actio
         screenRect[3] = tBB[1];
 
         // get min,max coordinates
-        for(unsigned int i = 1; i < 8; i++){
-          
+        for(unsigned int i = 1; i < 8; i++)
+        {
             toScreenMatrix.multFullMatrixPnt(BB[i],tBB);
+            
+            if(tBB[0] < screenRect[0]) 
+            {
+                screenRect[0] = tBB[0];
+            }
+            else if(tBB[0] > screenRect[2]) 
+            {
+                screenRect[2] = tBB[0]; 
+            }
           
-            if(tBB[0] < screenRect[0]) screenRect[0] = tBB[0];
-            else if(tBB[0] > screenRect[2]) screenRect[2] = tBB[0]; 
-          
-            if(tBB[1] < screenRect[1]) screenRect[1] = tBB[1]; 
-            else if(tBB[1] > screenRect[3]) screenRect[3] = tBB[1]; 
-          
+            if(tBB[1] < screenRect[1]) 
+            {
+                screenRect[1] = tBB[1]; 
+            }
+            else if(tBB[1] > screenRect[3])
+            {
+                screenRect[3] = tBB[1]; 
+            }
         }
-
+        
         // clamp covered rectangle to viewport
-        for(unsigned int i = 0; i < 4; i++){
+        for(unsigned int i = 0; i < 4; i++)
+        {
             if(screenRect[i] < -1.0) 
                 screenRect[i] = -1.0;
             else if(screenRect[i] > 1.0) 
                 screenRect[i] = 1.0;
-
         }
-        
     }    
-    else {
+    else 
+    {
         // something wrong with initialization - do not copy anything
         screenRect[0] = screenRect[1] = screenRect[2] = screenRect[3] = 0;
     }

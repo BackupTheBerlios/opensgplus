@@ -346,7 +346,8 @@ void DVRIsoSurfaceBase::executeSyncImpl(      DVRIsoSurfaceBase *pOther,
 OSG_BEGIN_NAMESPACE
 
 #if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
-DataType FieldDataTraits<DVRIsoSurfacePtr>::_type("DVRIsoSurfacePtr", "AttachmentPtr");
+DataType FieldDataTraits<DVRIsoSurfacePtr>::_type("DVRIsoSurfacePtr", 
+                                                  "AttachmentPtr");
 #endif
 
 
@@ -366,7 +367,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurfaceBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurfaceBase.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRISOSURFACEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRISOSURFACEBASE_INLINE_CVSID;
 

@@ -230,6 +230,6 @@ typedef DVRIsoShaderBase *DVRIsoShaderBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoShaderBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRISOSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoShaderBase.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRISOSHADERBASE_H_ */

@@ -381,6 +381,6 @@ typedef DVRVolumeBase *DVRVolumeBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.3 2003/12/09 14:01:28 weiler Exp $"
+#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.4 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRVOLUMEBASE_H_ */

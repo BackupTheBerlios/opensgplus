@@ -58,6 +58,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoSurface : public DVRIsoSurfaceBase
     typedef DVRIsoSurfaceBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
+
   public:
 
     /*---------------------------------------------------------------------*/
@@ -77,6 +78,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoSurface : public DVRIsoSurfaceBase
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
+
   protected:
 
     // Variables should all be in DVRIsoSurfaceBase.
@@ -106,7 +108,6 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoSurface : public DVRIsoSurfaceBase
     static void initMethod(void);
 
     // prohibit default functions (move to 'public' if you need one)
-
     void operator =(const DVRIsoSurface &source);
 };
 
@@ -117,6 +118,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRIsoSurfaceBase.inl>
 #include <OSGDVRIsoSurface.inl>
 
-#define OSGDVRISOSURFACE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurface.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
+#define OSGDVRISOSURFACE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurface.h,v 1.3 2004/01/19 11:22:33 vossg Exp $"
 
 #endif /* _OSGDVRISOSURFACE_H_ */

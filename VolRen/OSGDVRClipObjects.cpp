@@ -59,21 +59,18 @@ OSG_USING_NAMESPACE
 /*----------------------- constructors & destructors ----------------------*/
 
 //! Constructor
-
 DVRClipObjects::DVRClipObjects(void) :
     Inherited()
 {
 }
 
 //! Copy Constructor
-
 DVRClipObjects::DVRClipObjects(const DVRClipObjects &source) :
     Inherited(source)
 {
 }
 
 //! Destructor
-
 DVRClipObjects::~DVRClipObjects(void)
 {
 }
@@ -81,45 +78,42 @@ DVRClipObjects::~DVRClipObjects(void)
 /*----------------------------- class specific ----------------------------*/
 
 //! initialize the static features of the class, e.g. action callbacks
-
 void DVRClipObjects::initMethod (void)
 {
 }
 
 //! react to field changes
-
 void DVRClipObjects::changed(BitVector whichField, UInt32 origin)
 {
     Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
-
 void DVRClipObjects::dump(      UInt32    , 
-                                const BitVector ) const
+                          const BitVector ) const
 {
     SLOG << "Dump DVRClipObjects NI" << std::endl;
 }
 
 //! Count objects in the list
-
-UInt32 DVRClipObjects::count() const
+UInt32 DVRClipObjects::count(void) const
 {
     return _mfClipObjects.size();
 }
 
 //! Prepare the clip objects for clipping a volume's slices
-
-void DVRClipObjects::initialize(const Matrix &volumeToWorld, const Plane &referencePlane)
+void DVRClipObjects::initialize(const Matrix &volumeToWorld, 
+                                const Plane  &referencePlane)
 {
-    for(UInt32 i = 0; i < _mfClipObjects.size(); i++){
-        _mfClipObjects[i]->initialize(volumeToWorld);
+    for(UInt32 i = 0; i < _mfClipObjects.size(); i++)
+    {
+        _mfClipObjects[i]->initialize       (volumeToWorld );
         _mfClipObjects[i]->setReferencePlane(referencePlane);
     }
 }
 
+// deprecated -> remove
 void DVRClipObjects::initialize(const Matrix &volumeToWorld)
-    // deprecated -> remove
 {
     for(UInt32 i = 0; i < _mfClipObjects.size(); i++)
         _mfClipObjects[i]->initialize(volumeToWorld);
@@ -144,7 +138,9 @@ void DVRClipObjects::add(DVRClipGeometryPtr obj)
 {
     if(obj == NullFC)
         return;
+
     addRefCP(obj);
+
     _mfClipObjects.push_back(obj);
 }
 
@@ -154,8 +150,12 @@ void DVRClipObjects::remove(DVRClipGeometryPtr obj)
     if(obj == NullFC)
         return;
 
-    for(MFDVRClipGeometryPtr::iterator i = _mfClipObjects.begin(); i != _mfClipObjects.end(); i++){
-        if(*i == obj){
+    for(MFDVRClipGeometryPtr::iterator i  = _mfClipObjects.begin(); 
+                                       i != _mfClipObjects.end(); 
+                                       i++)
+    {
+        if(*i == obj)
+        {
             _mfClipObjects.erase(i);
             subRefCP(obj);
             break;
@@ -166,9 +166,13 @@ void DVRClipObjects::remove(DVRClipGeometryPtr obj)
 //! Remove the i-th clip object
 void DVRClipObjects::remove(UInt32 n)
 {
-    MFDVRClipGeometryPtr::iterator it = _mfClipObjects.begin();;
-    for(UInt32 i = 0; i < n && it != _mfClipObjects.end(); i++) it++;  
-    if(it != _mfClipObjects.end()){
+    MFDVRClipGeometryPtr::iterator it = _mfClipObjects.begin();
+
+    for(UInt32 i = 0; i < n && it != _mfClipObjects.end(); i++) 
+        it++;  
+
+    if(it != _mfClipObjects.end())
+    {
         subRefCP(*it);
         _mfClipObjects.erase(it);    
     }
@@ -187,7 +191,7 @@ void DVRClipObjects::remove(UInt32 n)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipObjects.cpp,v 1.1 2003/10/07 15:26:36 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRClipObjects.cpp,v 1.2 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRCLIPOBJECTSBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRCLIPOBJECTSBASE_INLINE_CVSID;
 

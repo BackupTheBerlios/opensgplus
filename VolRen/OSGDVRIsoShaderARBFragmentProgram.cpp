@@ -21,52 +21,73 @@ Vec4f cToV (Color4f & col)
 
 
 // setup state for shading with fragment program
-void DVRIsoShader::activate_FragmentProgramShading(DVRVolume *volume, DrawActionBase *action)
+void DVRIsoShader::activate_FragmentProgramShading(DVRVolume      *volume, 
+                                                   DrawActionBase *action)
 {
     // Initialize the fragment program 
-    if (m_pFragProg == NullFC) {
+    if(m_pFragProg == NullFC) 
+    {
         FDEBUG(("Initializing fragment program "));
-	m_pFragProg = FragmentProgramChunk::create();
-	addRefCP( m_pFragProg );
-	FDEBUG((" - DONE\n"));
+        m_pFragProg = FragmentProgramChunk::create();
 
-	// Load the appropriate program
-        switch (m_shadingMode) {
-	    case SM_FRAGMENT_PROGRAM_3D:
-	        // SLOG << "Loading ... isoFragProg3D.asm" << std::endl;
-		beginEditCP(m_pFragProg);
-		m_pFragProg->setProgram(_fragProg3D);
-		// m_pFragProg->read( "isoFragProg3D.asm" );
-		endEditCP(m_pFragProg);
-		break;
-	    case SM_FRAGMENT_PROGRAM_2D:
-	        // SLOG << "Loading ... isoFragProg2D.asm" << std::endl;
-		beginEditCP(m_pFragProg);
-		m_pFragProg->setProgram(_fragProg2D);
-		// m_pFragProg->read( "isoFragProg2D.asm" );
-		endEditCP(m_pFragProg);
-		break;
-	    default:
-	        FFATAL(( "Texture mode for fragment programs not supported by DVRSimpleLUTShader" ));
-		return;
-		// break;
-	}
+        addRefCP( m_pFragProg );
+
+        FDEBUG((" - DONE\n"));
+
+        // Load the appropriate program
+        switch(m_shadingMode) 
+        {
+            case SM_FRAGMENT_PROGRAM_3D:
+                // SLOG << "Loading ... isoFragProg3D.asm" << std::endl;
+
+                beginEditCP(m_pFragProg);
+                {
+                    m_pFragProg->setProgram(_fragProg3D);
+                    // m_pFragProg->read( "isoFragProg3D.asm" );
+                }
+                endEditCP  (m_pFragProg);
+
+                break;
+
+            case SM_FRAGMENT_PROGRAM_2D:
+
+                // SLOG << "Loading ... isoFragProg2D.asm" << std::endl;
+                
+                beginEditCP(m_pFragProg);
+                {
+                    m_pFragProg->setProgram(_fragProg2D);
+                    // m_pFragProg->read( "isoFragProg2D.asm" );
+                }
+                endEditCP(m_pFragProg);
+
+                break;
+
+            default:
+                FFATAL(("Texture mode for fragment programs not supported "
+                        "by DVRSimpleLUTShader"));
+                return;
+                // break;
+        }
     }
-
+    
     // get parameters from isosurface attachment if available
     Real32 isoValue;
     UInt32 alphaMode;
     bool   doSpecular;
-    DVRIsoSurfacePtr    isoParam = DVRVOLUME_PARAMETER(volume, DVRIsoSurface);
-    if(isoParam != NullFC){
-        isoValue   = isoParam->getIsoValue();
-	alphaMode  = isoParam->getAlphaMode();
-	doSpecular = isoParam->getSpecularLighting();
+
+    DVRIsoSurfacePtr isoParam = DVRVOLUME_PARAMETER(volume, DVRIsoSurface);
+
+    if(isoParam != NullFC)
+    {
+        isoValue   = isoParam->getIsoValue        ();
+        alphaMode  = isoParam->getAlphaMode       ();
+        doSpecular = isoParam->getSpecularLighting();
     }
-    else{
+    else
+    {
         isoValue   = 1.0;
-	alphaMode  = GL_GREATER;
-	doSpecular = false;
+        alphaMode  = GL_GREATER;
+        doSpecular = false;
     }
 
     unsigned int maxDiffuseLights  = 6; // Hard-coded in the fragment program
@@ -76,52 +97,96 @@ void DVRIsoShader::activate_FragmentProgramShading(DVRVolume *volume, DrawAction
     DirLightList diffuseLights;
     DirLightList specularLights;
     Color4f      ambientLight;
+
     getLightSources(diffuseLights, specularLights, ambientLight);
 
     beginEditCP(m_pFragProg, ProgramChunk::ParamValuesFieldMask);
-    m_pFragProg->setParameter((short int) 0, cToV(ambientLight)); // ambient color
+    {
+        m_pFragProg->setParameter((short int) 0, 
+                                  cToV(ambientLight)); // ambient color
 
-    // Diffuse lights
-    unsigned int i;
-    DirLightList::iterator l = diffuseLights.begin();
-    for(i = 0; i < maxDiffuseLights && l != diffuseLights.end(); i++){ 
-        Vec3f tmp;
-        Slicer::rotateToLocal(action,l->dir,tmp);
-        tmp.normalize();
-	m_pFragProg->setParameter(1 + 2*i,     Vec4f(tmp));       // diffuse direction
-	m_pFragProg->setParameter(1 + 2*i + 1, cToV(l->color));   // diffuse color
-        l++;
-    }
-    for (; i < maxDiffuseLights; i++) {
-	m_pFragProg->setParameter(1 + 2*i,     Vec4f(0, 0, 0, 0)); // diffuse direction
-	m_pFragProg->setParameter(1 + 2*i + 1, Vec4f(0, 0, 0, 0)); // diffuse color
-    }
+        // Diffuse lights
+        unsigned int i;
 
-    // Specular lights
-    unsigned int firstSpecId = 1 + 2*maxDiffuseLights;
-    i = 0;
-    if (doSpecular) {
-        // get and classify the slicing direction
-        Vec3f  viewDir;
-	Slicer::getSlicingDirection(action, &viewDir);
-	viewDir.normalize();
+        DirLightList::iterator l = diffuseLights.begin();
 
-	DirLightList::iterator ls = specularLights.begin();
-	for(i = 0; i < maxSpecularLights && ls != specularLights.end(); i++){ 
-	    Vec3f tmp;
-	    Slicer::rotateToLocal(action,ls->dir,tmp);
-	    tmp.normalize();
-	    // calc halfway
-	    tmp += viewDir;
-	    tmp.normalize();
-	    m_pFragProg->setParameter(firstSpecId + 2*i,     Vec4f(tmp));       // halfway vector
-	    m_pFragProg->setParameter(firstSpecId + 2*i + 1, cToV(ls->color));  // specular color
-	    ls++;
-	}
-    }
-    for (; i < maxSpecularLights; i++) {
-	m_pFragProg->setParameter(firstSpecId + 2*i,     Vec4f(0, 0, 0, 0)); // specular direction
-	m_pFragProg->setParameter(firstSpecId + 2*i + 1, Vec4f(0, 0, 0, 0)); // specular color
+        for(i = 0; i < maxDiffuseLights && l != diffuseLights.end(); i++)
+        { 
+            Vec3f tmp;
+
+            Slicer::rotateToLocal(action,l->dir,tmp);
+
+            tmp.normalize();
+
+            // diffuse direction
+            m_pFragProg->setParameter(1 + 2 * i,     Vec4f(tmp));
+
+            // diffuse color
+            m_pFragProg->setParameter(1 + 2 * i + 1, cToV(l->color)); 
+
+            ++l;
+        }
+
+        for(; i < maxDiffuseLights; i++) 
+        {
+            // diffuse direction
+            m_pFragProg->setParameter(1 + 2 * i,     Vec4f(0, 0, 0, 0));
+
+            // diffuse color
+            m_pFragProg->setParameter(1 + 2 * i + 1, Vec4f(0, 0, 0, 0)); 
+        }
+        
+        // Specular lights
+        unsigned int firstSpecId = 1 + 2 * maxDiffuseLights;
+
+        i = 0;
+
+        if(doSpecular) 
+        {
+            // get and classify the slicing direction
+            Vec3f  viewDir;
+
+            Slicer::getSlicingDirection(action, &viewDir);
+
+            viewDir.normalize();
+            
+            DirLightList::iterator ls = specularLights.begin();
+
+            for(i = 0; 
+                i < maxSpecularLights && ls != specularLights.end(); 
+                i++)
+            { 
+                Vec3f tmp;
+
+                Slicer::rotateToLocal(action,ls->dir,tmp);
+
+                tmp.normalize();
+
+                // calc halfway
+                tmp += viewDir;
+                tmp.normalize();
+
+                // halfway vector
+                m_pFragProg->setParameter(firstSpecId + 2 * i,     
+                                          Vec4f(tmp));
+                // specular color
+                m_pFragProg->setParameter(firstSpecId + 2 * i + 1, 
+                                          cToV(ls->color));  
+
+                ++ls;
+            }
+        }
+
+        for(; i < maxSpecularLights; i++) 
+        {
+            // specular direction
+            m_pFragProg->setParameter(firstSpecId + 2 * i,     
+                                      Vec4f(0, 0, 0, 0)); 
+
+            // specular color
+            m_pFragProg->setParameter(firstSpecId + 2 * i + 1, 
+                                      Vec4f(0, 0, 0, 0)); 
+        }
     }
     endEditCP(m_pFragProg, ProgramChunk::ParamValuesFieldMask);
 
@@ -129,43 +194,48 @@ void DVRIsoShader::activate_FragmentProgramShading(DVRVolume *volume, DrawAction
     glPushAttrib(GL_ENABLE_BIT);
 
     // activate fragment program chunk
-    m_pFragProg->activate( action );
+    m_pFragProg->activate(action);
 
     // no blending and lighting
-    glDisable(GL_BLEND);
+    glDisable(GL_BLEND   );
     glDisable(GL_LIGHTING);
     
     // Enable Alpha Test for isosurface
-    glEnable(GL_ALPHA_TEST); 
+    glEnable   (GL_ALPHA_TEST      ); 
     glAlphaFunc(alphaMode, isoValue);
 }
 
 // cleanup state for shading with fragment program
-void DVRIsoShader::deactivate_FragmentProgramShading(DVRVolume *volume, DrawActionBase *action)
+void DVRIsoShader::deactivate_FragmentProgramShading(
+    DVRVolume      *volume, 
+    DrawActionBase *action)
 {
     glPopAttrib();
     
     // de-activate fragment program chunk
-    m_pFragProg->deactivate( action );
-
+    m_pFragProg->deactivate(action);
 }
 
 // render a slice for 2D multitexture fragment program shading
-void DVRIsoShader::renderSlice_FragmentProgramShading(DVRVolume *volume, 
-                                                      DrawActionBase *action,
-                                                      Real32 *data, 
-                                                      UInt32 vertices, 
-                                                      UInt32 values)
+void DVRIsoShader::renderSlice_FragmentProgramShading(
+    DVRVolume      *volume, 
+    DrawActionBase *action,
+    Real32         *data, 
+    UInt32          vertices, 
+    UInt32          values  )
 {
-    SLOG << "DVRIsoShader::renderSlice for fragment program shading NI" << std::endl;
+    SLOG << "DVRIsoShader::renderSlice for fragment program shading NI"
+         << std::endl;
 }
 
 // render a clipped slice for 2D multitexture fragment program shading
-void DVRIsoShader::renderSlice_FragmentProgramShading(DVRVolume *volume, 
-                                                      DrawActionBase *action,
-                                                      DVRRenderSlice *clippedSlice)
+void DVRIsoShader::renderSlice_FragmentProgramShading(
+    DVRVolume      *volume, 
+    DrawActionBase *action,
+    DVRRenderSlice *clippedSlice)
 {
-    SLOG << "DVRIsoShader::renderSlice for fragment program shading NI" << std::endl;
+    SLOG << "DVRIsoShader::renderSlice for fragment program shading NI"
+         << std::endl;
 }
 
 

@@ -201,7 +201,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRMtexLUTShaderBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRMtexLUTShaderBase.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRMTEXLUTSHADERBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRMTEXLUTSHADERBASE_INLINE_CVSID;
 

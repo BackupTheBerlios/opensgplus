@@ -9,50 +9,54 @@
 
 OSG_USING_NAMESPACE
 
-
-void
-Slicer::getModelMatrix(DrawActionBase * da, Matrix mat) {
-
+/*
+void Slicer::getModelMatrix(DrawActionBase *da, Matrix mat) 
+{
     mat = da->getActNode()->getToWorld();
 }
 
 
-void
-Slicer::getViewMatrix(DrawActionBase * da, Matrix mat) {
-  
+void Slicer::getViewMatrix(DrawActionBase *da, Matrix mat) 
+{
     mat =  da->getCamera()->getBeacon()->getToWorld();
     mat.invert();
 }
+*/
 
-
-int
-Slicer::getAASlicingDirection(DrawActionBase * da, Vec3f *pViewDir) {
-
-    int             dir = getSlicingDirection(da, NULL);
+Int32 Slicer::getAASlicingDirection(DrawActionBase *da, Vec3f *pViewDir) 
+{
+    Int32 dir           = getSlicingDirection(da, NULL);
     Vec3f finalSliceDir;
 
-    switch (dir) {
-    case SD_Z_FRONT_TO_BACK:
-	finalSliceDir = Vec3f(0, 0, 1);
-	break;
-    case SD_Z_BACK_TO_FRONT:
-	finalSliceDir = Vec3f(0, 0, -1);
-	break;
-    case SD_Y_BACK_TO_FRONT:
-	finalSliceDir = Vec3f(0, -1, 0);
-	break;
-    case SD_Y_FRONT_TO_BACK:
-	finalSliceDir = Vec3f(0, 1, 0);
-	break;
-    case SD_X_BACK_TO_FRONT:
-	finalSliceDir = Vec3f(-1, 0, 0);
-	break;
-    case SD_X_FRONT_TO_BACK:
-	finalSliceDir = Vec3f(1, 0, 0);
-	break;
-    default:
-	finalSliceDir = Vec3f(0, 0, 1);
-	break;
+    switch (dir) 
+    {
+        case SD_Z_FRONT_TO_BACK:
+            finalSliceDir = Vec3f(0, 0, 1);
+            break;
+
+        case SD_Z_BACK_TO_FRONT:
+            finalSliceDir = Vec3f(0, 0, -1);
+            break;
+
+        case SD_Y_BACK_TO_FRONT:
+            finalSliceDir = Vec3f(0, -1, 0);
+            break;
+
+        case SD_Y_FRONT_TO_BACK:
+            finalSliceDir = Vec3f(0, 1, 0);
+            break;
+
+        case SD_X_BACK_TO_FRONT:
+            finalSliceDir = Vec3f(-1, 0, 0);
+            break;
+
+        case SD_X_FRONT_TO_BACK:
+            finalSliceDir = Vec3f(1, 0, 0);
+            break;
+
+        default:
+            finalSliceDir = Vec3f(0, 0, 1);
+            break;
     }
 
     if (pViewDir != NULL)
@@ -62,27 +66,28 @@ Slicer::getAASlicingDirection(DrawActionBase * da, Vec3f *pViewDir) {
 }
 
 
-int
-Slicer::getSlicingDirection(DrawActionBase * da, Vec3f *pViewDir) {
-
-    static const Vec3f	 zAxis(0.0, 0.0, 1.0);
-    static Quaternion   dummyRot;	// static over all SoVolume instances
-    static Vec3f	 vecToCam;	// but only temporally used, so it does not matter
-    static Vec3f        volTranslation;
-    static Vec3f        volScale;
-    static Vec3f        dummyVec;
-    static Quaternion   volRotationInv;
-    static Quaternion   camRotationInv;	
-    Vec3f    finalSliceDir;
+Int32 Slicer::getSlicingDirection(DrawActionBase *da, Vec3f *pViewDir) 
+{
+    static const Vec3f      zAxis(0.0, 0.0, 1.0);
+    static       Quaternion dummyRot;   // static over all SoVolume instances
+    static       Vec3f      vecToCam;   // only temporally, does not matter
+    static       Vec3f      volTranslation;
+    static       Vec3f      volScale;
+    static       Vec3f      dummyVec;
+    static       Quaternion volRotationInv;
+    static       Quaternion camRotationInv;   
+                 Vec3f      finalSliceDir;
    
     // Get viewing matrix
-    Matrix	 viewMat = da->getCamera()->getBeacon()->getToWorld();
+    Matrix   viewMat = da->getCamera()->getBeacon()->getToWorld();
+
     viewMat.invert();
     viewMat.getTransform(vecToCam, camRotationInv, dummyVec, dummyRot);
     camRotationInv.invert();
 
     // Get model matrix
-    Matrix	 modelMat = da->getActNode()->getToWorld();
+    Matrix   modelMat = da->getActNode()->getToWorld();
+
     modelMat.getTransform(volTranslation, volRotationInv, volScale, dummyRot); 
     volRotationInv.invert();
 
@@ -90,47 +95,62 @@ Slicer::getSlicingDirection(DrawActionBase * da, Vec3f *pViewDir) {
     camRotationInv.multVec(zAxis, vecToCam);
     volRotationInv.multVec(vecToCam, finalSliceDir);
 
-    double x = finalSliceDir[0];
-    double y = finalSliceDir[1];
-    double z = finalSliceDir[2];
-    double X = (x > 0)? x: -x;
-    double Y = (y > 0)? y: -y;
-    double Z = (z > 0)? z: -z;
+    Real64 x = finalSliceDir[0];
+    Real64 y = finalSliceDir[1];
+    Real64 z = finalSliceDir[2];
+    Real64 X = (x > 0) ? x: -x;
+    Real64 Y = (y > 0) ? y: -y;
+    Real64 Z = (z > 0) ? z: -z;
    
-    int nfinalSliceDir;
+    Int32 nfinalSliceDir;
 
-    if ((Z > Y) && (Z > X)) { // Z is the largest component
-        if (z > 0) { 
+    if((Z > Y) && (Z > X))  // Z is the largest component
+    {
+        if (z > 0) 
+        { 
             nfinalSliceDir = SD_Z_FRONT_TO_BACK;
-        } else {
+        } 
+        else 
+        {
             nfinalSliceDir = SD_Z_BACK_TO_FRONT;
         }
-    } else {
-        if (Y > X) {
-            if (y < 0) {
+    } 
+    else
+    {
+        if(Y > X) 
+        {
+            if(y < 0) 
+            {
                 nfinalSliceDir = SD_Y_BACK_TO_FRONT;
-            } else {
+            } 
+            else 
+            {
                 nfinalSliceDir = SD_Y_FRONT_TO_BACK;
             }
-        } else {
-            if (x < 0) {
+        } 
+        else 
+        {
+            if(x < 0) 
+            {
                 nfinalSliceDir = SD_X_BACK_TO_FRONT;
-            } else {
+            } 
+            else 
+            {
                 nfinalSliceDir = SD_X_FRONT_TO_BACK;
             }
         }
     }
 
-    if (pViewDir != NULL) {
-	*pViewDir = finalSliceDir;
+    if(pViewDir != NULL) 
+    {
+        *pViewDir = finalSliceDir;
     }
 
     return nfinalSliceDir;
 }
 
 
-void
-Slicer::rotateToLocal(DrawActionBase * da, Vec3f &in, Vec3f &out)
+void Slicer::rotateToLocal(DrawActionBase *da, Vec3f &in, Vec3f &out)
 {
     static Quaternion   dummyRot;
     static Vec3f        tempVec;
@@ -139,41 +159,44 @@ Slicer::rotateToLocal(DrawActionBase * da, Vec3f &in, Vec3f &out)
     static Vec3f        volScale;
     static Vec3f        camScale;
     static Quaternion   volRotationInv;
-    static Quaternion   camRotationInv;	
+    static Quaternion   camRotationInv; 
    
     // Get viewing matrix
-    Matrix	 viewMat = da->getCamera()->getBeacon()->getToWorld();
+    Matrix viewMat = da->getCamera()->getBeacon()->getToWorld();
+
     viewMat.invert();
     viewMat.getTransform(camTranslation, camRotationInv, camScale, dummyRot);
     camRotationInv.invert();
    
     // Get model matrix
-    Matrix	 modelMat = da->getActNode()->getToWorld();
+    Matrix modelMat = da->getActNode()->getToWorld();
+
     modelMat.getTransform(volTranslation, volRotationInv, volScale, dummyRot); 
     volRotationInv.invert();
    
     // Rotate vector invers to view camera and model matrix
-    camRotationInv.multVec(in, tempVec);
-    volRotationInv.multVec(tempVec, out);
+    camRotationInv.multVec(in,      tempVec);
+    volRotationInv.multVec(tempVec, out    );
 }
 
 
-bool
-Slicer::isBackToFront(int sliceDir)
+bool Slicer::isBackToFront(int sliceDir)
 {
-    switch (sliceDir)
-        {
+    switch(sliceDir)
+    {
         case SD_Z_FRONT_TO_BACK:
         case SD_Y_FRONT_TO_BACK:
         case SD_X_FRONT_TO_BACK:
             return false;
+
         case SD_Z_BACK_TO_FRONT:
         case SD_Y_BACK_TO_FRONT:
         case SD_X_BACK_TO_FRONT:
             return true;
+
         default:
             // undefined 
             return false;
-        }
+    }
 }
   
