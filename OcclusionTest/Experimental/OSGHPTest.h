@@ -84,7 +84,7 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const UInt16&, Viewport* v=NULL);
+    void setup(const UInt16&, Viewport* v=NULL, const UInt32 maxpix=0);
 
     void frameInit(void);
     void frameExit(void);
@@ -108,6 +108,7 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
   private:
 
     UInt16 _maxtests;
+    UInt32 _vispix;
     GLboolean* _results;
 
     /*! \brief prohibit default function (move to 'public' if needed) */

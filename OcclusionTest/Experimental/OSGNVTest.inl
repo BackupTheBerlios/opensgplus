@@ -110,7 +110,7 @@ void NVTest::frameExit(void)
 };
 
 inline
-void NVTest::setup(const UInt16& max, Viewport*)
+void NVTest::setup(const UInt16& max, Viewport*, const UInt32)
 {
 	if(_maxtests!=max){
 		if(_results) delete[] _results;

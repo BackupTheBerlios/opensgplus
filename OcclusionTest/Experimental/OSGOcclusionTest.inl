@@ -132,9 +132,9 @@ void OcclusionTest<octest, ocstatistics>::frameExit(void)
 */
 template<typename octest, typename ocstatistics>
 inline
-void OcclusionTest<octest, ocstatistics>::setup(const UInt16& i, Viewport* v)
+void OcclusionTest<octest, ocstatistics>::setup(const UInt16& i, Viewport* v, const UInt32 maxpix)
 {
-	_octest.setup(i,v);
+	_octest.setup(i,v,maxpix);
 };
 
 

@@ -111,7 +111,7 @@ void StencilTest::frameExit(void)
 };
 
 inline
-void StencilTest::setup(const UInt16& max, Viewport* port)
+void StencilTest::setup(const UInt16& max, Viewport* port, const UInt32 maxpix)
 {
 	_port=port;
 	UInt16 w=_port->getPixelWidth();
@@ -127,6 +127,7 @@ void StencilTest::setup(const UInt16& max, Viewport* port)
 		_results=new UInt32[max];
 		_maxtests=max;
 	}
+	_maxpix=maxpix;
 };
 
 inline
@@ -230,7 +231,8 @@ void StencilTest::perform(const UInt16& num, const OCTestNode* node)
 		for(short x=minx; x<maxx; x++){
 			if(_stencilbuf[x]==_count){
 				_results[num]++;
-				y=maxy;
+				if(_results[num]>_maxpix)
+					y=maxy;
 			}
 		}
 	}

@@ -91,7 +91,7 @@ class OSG_SYSTEMLIB_DLLMAPPING OcclusionTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const UInt16&, Viewport* v=NULL);
+    void setup(const UInt16&, Viewport* v=NULL, const UInt32 maxpix=0);
 
     void frameInit(void);
     void frameExit(void);

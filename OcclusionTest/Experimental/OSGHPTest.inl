@@ -110,8 +110,10 @@ void HPTest::frameExit(void)
 };
 
 inline
-void HPTest::setup(const UInt16& max, Viewport*)
+void HPTest::setup(const UInt16& max, Viewport*, const UInt32 maxpix)
 {
+	_vispix=maxpix+1;
+
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
 		_results=new GLboolean[max];
@@ -169,7 +171,7 @@ void HPTest::perform(const UInt16& num, const OCTestNode* node)
 inline
 UInt32 HPTest::result(const UInt16& num)
 {
-	return(_results[num]);
+	return(_results[num]?_vispix:0);
 };
 			
 inline

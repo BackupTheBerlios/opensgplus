@@ -84,7 +84,7 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const UInt16&, Viewport*);
+    void setup(const UInt16&, Viewport*, const UInt32 maxpix=0);
 
     void frameInit(void);
     void frameExit(void);
@@ -113,6 +113,7 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
     UInt16 _count;
     UInt16 _maxtests;
     UInt32* _results;
+    UInt32 _maxpix;
 
     /*! \brief prohibit default function (move to 'public' if needed) */
     StencilTest(const StencilTest &source);
