@@ -80,14 +80,14 @@ You need write access to the repository. For Berlios and other SourceForge
 clones that means becoming a project developer. See the site docs for details
 on how to do that.
 
-Now add your new directory to the repository by going one directory higher in
-the hierarchy and calling "cvs add @newname@". Note that the details of the
-cvs call depend on the repository setup. For Berlios you will have to use
+Now add your new directory as a new module to the repository by going into it
+and calling "cvs import @newname@ initial release". Note that the details of
+the cvs call depend on the repository setup. For Berlios you will have to use
 "setenv CVS_RSH ssh; cvs -duser@opensgplus.berlios.de:/cvsroot/opensgplus
 import @newname@ initial release". This will include all the files and
 directories in the current directory into the CVS module @newname@, so make
-sure you only have the files you actually want to keep in the repository in the
-current directory.
+sure you only have the files you actually want to keep in the repository in
+the current directory and its subdirectories.
 
 
 If you have any questions or problems, don't hesitate to send a mail to
