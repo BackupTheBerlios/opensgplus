@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 22:09:40 $
 //                                                                            
 //=============================================================================
 
@@ -73,7 +73,7 @@ typedef DoubleTraverserFixedBase<OpenSGTraits>         OSGDoubleTraverserFixed;
     The traversal proceeds down to depths D0, D1 given in the remaining template 
     arguments.
     For this class there are two different implementations:
-    If GV_GENERIC_DEPTHCOUNT is defined, then the depth counting is done 
+    If GV_META_DEPTHCOUNT is defined, then the depth counting is done 
     at compile-time with template member functions.
     Otherwise depth counting is done during traversal.
  */
@@ -130,343 +130,6 @@ public:
    /*---------------------------------------------------------------------*/
 
 protected:
-#ifdef GV_GENERIC_DEPTHCOUNT
-   template <int C>
-   class GeneralT : public GeneralType
-   {
-     enum { Count = C };
-   };
-   template <int C>
-   class GroupT : public GroupType
-   {
-     enum { Count = C };
-   };
-   template <int C>
-   class AdapterT : public AdapterType
-   {
-     enum { Count = C };
-   };
-   template <int C0, int C1>
-   inline void   traverse (GroupT<C0>* g0,   GroupT<C1>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-	  const typename GroupType::Container& sons0 = g0->getSons();
-	  const typename GroupType::Container& sons1 = g1->getSons();
-	  
-	  assert(sons0.size() >= 2);
-	  assert(sons1.size() >= 2);
-	  traverse<C0-1,C1-1>((GeneralT<C0-1>*)sons0[0], (GeneralT<C1-1>*)sons1[0]);
-	  traverse<C0-1,C1-1>((GeneralT<C0-1>*)sons0[0], (GeneralT<C1-1>*)sons1[1]);
-	  traverse<C0-1,C1-1>((GeneralT<C0-1>*)sons0[1], (GeneralT<C1-1>*)sons1[0]);
-	  traverse<C0-1,C1-1>((GeneralT<C0-1>*)sons0[1], (GeneralT<C1-1>*)sons1[1]);
-	  return;
-     }
-   }
-
-   template <int C0, int C1>
-   inline void   traverse (GroupT<C0>* g0,   AdapterT<C1>* p1) {
-     if (bpFunc.call(g0, p1) == CONTINUE) {
-	  const typename GroupType::Container& sons0 = g0->getSons();
-	  
-	  assert(sons0.size() >= 2);
-	  traverse<C0-1,C1>((GeneralT<C0-1>*)sons0[0], p1);
-	  traverse<C0-1,C1>((GeneralT<C0-1>*)sons0[1], p1);
-	  
-	  return;
-     }
-   }
-   template <int C0, int C1>
-   inline void   traverse (AdapterT<C0>* p0, GroupT<C1>* g1) {
-     if (pbFunc.call(p0, g1) == CONTINUE) {
-	  const typename GroupType::Container& sons1 = g1->getSons();
-	  
-	  assert(sons1.size() >= 2);
-	  traverse<C0,C1-1>(p0, (GeneralT<C1-1>*)sons1[0]);
-	  traverse<C0,C1-1>(p0, (GeneralT<C1-1>*)sons1[1]);
-	  
-	  return;
-     }
-   }
-   template <int C0, int C1>
-   inline void   traverse (AdapterT<C0>* p0, AdapterT<C1>* p1) {
-     ppFunc.call(p0, p1);
-   }
-
-   template <int C0, int C1>
-   inline void traverse (GeneralT<C0>* b0, AdapterT<C1>* p1) {
-     m_d0 = D0-C0; m_d1 = D1-C1;
-#ifdef GV_DISPATCHBYCAST
-     if (dynamic_cast<AdapterType*>(b0) != NULL) {
-#else
-     if (b0->isLeaf()) {
-#endif
-       traverse<C0,C1>((AdapterT<C0>*)b0, p1);	
-     } else {
-       traverse<C0,C1>((GroupT<C0>*)b0,   p1);	
-     }
-   }
-   template <int C0, int C1>
-   inline void traverse (AdapterT<C0>* p0, GeneralT<C1>* b1) {
-     m_d0 = D0-C0; m_d1 = D1-C1;
-#ifdef GV_DISPATCHBYCAST
-     if (dynamic_cast<AdapterType*>(b1) != NULL) {
-#else
-     if (b1->isLeaf()) {
-#endif
-       traverse<C0,C1>(p0, (AdapterT<C1>*)b1);	
-     } else {
-       traverse<C0,C1>(p0, (GroupT<C1>*)b1);	
-     }
-   }
-   template <int C0, int C1>
-   inline void traverse (GeneralT<C0>* b0, GroupT<C1>* g1) {
-     m_d0 = D0-C0; m_d1 = D1-C1;
-#ifdef GV_DISPATCHBYCAST
-     if (dynamic_cast<AdapterType*>(b0) != NULL) {
-#else
-     if (b0->isLeaf()) {
-#endif
-        traverse<C0,C1>((AdapterT<C0>*)b0, g1);	
-     } else {
-        traverse<C0,C1>((GroupT<C0>*)b0,   g1); 	
-     }
-   }
-   template <int C0, int C1>
-   inline void traverse (GroupT<C0>* g0, GeneralT<C1>* b1) {
-     m_d0 = D0-C0; m_d1 = D1-C1;
-#ifdef GV_DISPATCHBYCAST
-     if (dynamic_cast<AdapterType*>(b1) != NULL) {
-#else
-     if (b1->isLeaf()) {
-#endif
-       traverse<C0,C1>(g0, (AdapterT<C1>*)b1);	
-     } else {
-       traverse<C0,C1>(g0, (GroupT<C1>*)b1);	
-     }
-   }
-   template <int C0, int C1>
-   inline void traverse (GeneralT<C0>* b0, GeneralT<C1>* b1) {
-#ifdef GV_DISPATCHBYCAST
-     if (dynamic_cast<AdapterType*>(b0) != NULL) {
-#else
-     if (b0->isLeaf()) {
-#endif
-       traverse<C0,C1>((AdapterT<C0>*)b0, b1);	
-     } else {
-       traverse<C0,C1>((GroupT<C0>*)b0,   b1);	
-     }
-   }
-
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<0>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<1>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<2>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<3>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<4>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<5>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, AdapterT<6>* p1) {
-     bool result = (bpFunc.call(g0, p1) == CONTINUE);
-     return;
-   }
-
-   template <>
-   inline void traverse (AdapterT<0>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<1>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<2>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<3>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<4>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<5>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (AdapterT<6>* p0, GroupT<0>*   g1) {
-     bool result = (pbFunc.call(p0, g1) == CONTINUE);
-     return;
-   }
-
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<0>* g1) {
-     bool result = (bbFunc.call(g0, g1) == CONTINUE);
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<1>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();       
-       assert(sons0.size() >= 2);
-       traverse<0,0>((GeneralT<0>*)sons0[0], g1);
-       traverse<0,0>((GeneralT<0>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<1>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,0>(g0, (GeneralT<0>*)sons1[0]);
-       traverse<0,0>(g0, (GeneralT<0>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<2>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();
-       assert(sons0.size() >= 2);
-       traverse<1,0>((GeneralT<1>*)sons0[0], g1);
-       traverse<1,0>((GeneralT<1>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<2>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,1>(g0, (GeneralT<1>*)sons1[0]);
-       traverse<0,1>(g0, (GeneralT<1>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<3>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();
-       assert(sons0.size() >= 2);
-       traverse<2,0>((GeneralT<2>*)sons0[0], g1);
-       traverse<2,0>((GeneralT<2>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<3>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,2>(g0, (GeneralT<2>*)sons1[0]);
-       traverse<0,2>(g0, (GeneralT<2>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<4>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();
-       assert(sons0.size() >= 2);
-       traverse<3,0>((GeneralT<3>*)sons0[0], g1);
-       traverse<3,0>((GeneralT<3>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<4>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,3>(g0, (GeneralT<3>*)sons1[0]);
-       traverse<0,3>(g0, (GeneralT<3>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<5>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();
-       assert(sons0.size() >= 2);
-       traverse<4,0>((GeneralT<4>*)sons0[0], g1);
-       traverse<4,0>((GeneralT<4>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<5>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,4>(g0, (GeneralT<4>*)sons1[0]);
-       traverse<0,4>(g0, (GeneralT<4>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<6>* g0, GroupT<0>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons0 = g0->getSons();
-       assert(sons0.size() >= 2);
-       traverse<5,0>((GeneralT<5>*)sons0[0], g1);
-       traverse<5,0>((GeneralT<5>*)sons0[1], g1);
-       return;
-     }
-     return;
-   }
-   template <>
-   inline void traverse (GroupT<0>* g0, GroupT<6>* g1) {
-     if (bbFunc.call(g0, g1) == CONTINUE) {
-       const typename GroupType::Container& sons1 = g1->getSons();
-       assert(sons1.size() >= 2);
-       traverse<0,5>(g0, (GeneralT<5>*)sons1[0]);
-       traverse<0,5>(g0, (GeneralT<5>*)sons1[1]);
-       return;
-     }
-     return;
-   }
-
-#else
    /*---------------------------------------------------------------------*/
    /*! \name Dispatching.                                                 */
    /*! \{                                                                 */
@@ -485,7 +148,6 @@ protected:
    inline void traverse (AdapterType* p0, AdapterType* p1);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-#endif
 
 private:
    ObjectT          m_data;
@@ -500,11 +162,10 @@ private:
    PrimPrimFunctorT ppFunc;
 };
 
-#ifndef GV_GENERIC_DEPTHCOUNT
-
 template <class BasicTraits, class DoubleTraits, int D0, int D1>
 inline void   
-DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse (GroupType* g0,   GroupType* g1x)
+DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::traverse 
+(GroupType* g0,   GroupType* g1)
 {
    if (bbFunc.call(g0, g1) == CONTINUE) {
       const typename GroupType::Container& sons0 = g0->getSons();
@@ -650,7 +311,6 @@ inline void
    }
 }
 
-#endif
 
 template <class BasicTraits, class DoubleTraits, int D0, int D1>
 inline const DataBase<BasicTraits>& 
@@ -750,7 +410,7 @@ inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply
 #endif
    if (initFunc.call() &&
        initDoubleFunc.call(root0, m0, root1, m1)) { 
-#ifdef GV_GENERIC_DEPTHCOUNT
+#ifdef GV_META_DEPTHCOUNT
       traverse<D0,D1>((GroupT<D0>*)root0, (GroupT<D1>*)root1);
 #else
       traverse(root0, root1);
@@ -784,7 +444,7 @@ inline bool DoubleTraverserFixed<BasicTraits,DoubleTraits,D0,D1>::apply
    _PGOPTI_Prof_Reset();
 #endif
    if (initDoubleFunc.call(root0, m0, root1, m1)) { 
-#ifdef GV_GENERIC_DEPTHCOUNT
+#ifdef GV_META_DEPTHCOUNT
       traverse<D0,D1>((GroupT<D0>*)root0, (GroupT<D1>*)root1);
 #else
       traverse(root0, root1);
