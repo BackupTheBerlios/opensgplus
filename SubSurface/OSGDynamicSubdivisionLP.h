@@ -127,8 +127,13 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLP : public DynamicSubdivis
     /*==========================  PRIVATE  ================================*/
   private:
 
+#ifdef WIN32
     friend class FieldContainer;
     friend class DynamicSubdivisionLPBase<MESH>;
+#else
+    friend class DynamicSubdivisionLP<MESH>::FieldContainer;
+    friend class DynamicSubdivisionLP<MESH>::DynamicSubdivisionLPBase<MESH>;
+#endif
 
     static void initMethod(void);
 
@@ -143,6 +148,6 @@ OSG_END_NAMESPACE
 #include "OSGDynamicSubdivisionLPBase.inl"
 #include "OSGDynamicSubdivisionLP.inl"
 
-#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.8 2004/07/09 09:00:18 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.9 2004/07/14 08:19:47 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLP_H_ */
