@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $\Revision$
-//   $\Date$
+//   $Revision: 1.3 $
+//   $Date: 2003/10/13 09:46:34 $
 //                                                                            
 //=============================================================================
 
@@ -33,6 +33,7 @@
 
 #include "OSGGVBase.h"
 #include "OSGGVInput.h"
+#include "OSGGVBVolHierarchy.h"
 #include "OSGGVSpatialize.h"
 #include "OSGGVFaceSpatialize.h"
 #include "OSGGVGenvisPreprocAction.h"
@@ -44,11 +45,12 @@ BEGIN_GENVIS_NAMESPACE
 template <class BVOL>
 inline NodePtr objectSpatialize (const NodePtr& orgFile,
 				 unsigned levels, unsigned prims, Oracle* oracle,
-				 unsigned mergeLevels=0)
+				 unsigned mergeLevels=0,
+				 bool     modifyCache=true)
 {
    NodePtr file;
    // fill cache
-   {
+   if (modifyCache) {
      OSGCache::the().clear();
      GenvisPreprocAction().apply(orgFile);
    }
@@ -71,17 +73,21 @@ inline NodePtr objectSpatialize (const NodePtr& orgFile,
      hierarchy.destroy();
    }
    // clear cache
-   OSGCache::the().clear();
+   if (modifyCache) {
+      OSGCache::the().clear();
+   }
    return file;
 }
+
 template <class BVOL>
 inline NodePtr faceSpatialize (const NodePtr& orgFile,
 			       unsigned levels, unsigned prims, Oracle* oracle,
-			       unsigned mergeLevels=0)
+			       unsigned mergeLevels=0,
+			       bool     modifyCache=true)
 {
    NodePtr file;
    // fill cache
-   {
+   if (modifyCache) {
      OSGCache::the().clear();
      GenvisPreprocAction().apply(orgFile);
    }
@@ -104,7 +110,9 @@ inline NodePtr faceSpatialize (const NodePtr& orgFile,
      hierarchy.destroy();
    }
    // clear cache
-   OSGCache::the().clear();
+   if (modifyCache) {
+      OSGCache::the().clear();
+   }
    return file;
 }
 
@@ -121,8 +129,9 @@ inline NodePtr faceSpatialize2 (const NodePtr& orgFile,
    }
    {
      // build face adapters
-     typedef FaceBVolHierarchy<OpenSGTraits,OpenSGFaceInput<BVOL> > AdapterType;
-     FaceBVolHierarchy<OpenSGTraits,OpenSGFaceInput<BVOL> > hierarchy;
+     typedef FaceBVolHierarchy<OpenSGTraits,OpenSGFaceInput<BVOL> > HierarchyType;
+     typedef typename HierarchyType::AdapterType                    AdapterType;
+     HierarchyType hierarchy;
      hierarchy.setParameter(oracle, levels, prims);
      OSGCache::the().setHierarchy (&hierarchy);
      OSGCache::the().apply(orgFile);
@@ -131,6 +140,7 @@ inline NodePtr faceSpatialize2 (const NodePtr& orgFile,
      act.getData().setFlat(true);
 
      // build bvol-hierarchy on faces for each node separately
+     SINFO << "phase 1:" << std::endl;
      unsigned i = 0;
      for (OSGCache::EntryIterator it = OSGCache::the().begin();
 	  it != OSGCache::the().end();
@@ -148,55 +158,55 @@ inline NodePtr faceSpatialize2 (const NodePtr& orgFile,
 	   continue;
 	 }
 
-	 std::cout << i << "/" << data.getAdapter(AdapterType::getAdapterId()).size()
-		   << ": ";
+	 SINFO << i << "/" << data.getAdapter(AdapterType::getAdapterId()).size()
+	       << std::endl;
 	 hierarchy.clear();
-	 std::cout << "*" << std::flush;
+
 	 unsigned depth = hierarchy.hierarchyNode(node);
-	 std::cout << depth << "*" << std::flush;
+
 	 // restructure
 	 act.getData().setLevel(depth);
 	 act.apply(data, hierarchy.getRoot(), data.getToWorldMatrix()); 
-	 std::cout << "*" << std::flush;
+
 	 file = act.getData().getRoot(); 
 	 beginEditCP(parent);
 	 parent->replaceChildBy(node, file);
 	 endEditCP(parent);
-	 std::cout << "*" << std::endl;
        }
      }
      hierarchy.destroy();
    }
-   std::cout << "*" << std::flush;
    // fill cache
    {
      OSGCache::the().clear();
      GenvisPreprocAction().apply(orgFile);
    }
-   std::cout << "*" << std::flush;
+   SINFO << "phase 2" << std::endl;
    // build bvol-hierarchy on nodes
    {
-     ObjectBVolHierarchy<OpenSGTraits,OpenSGObjectInput<BVOL> > hierarchy;
+     typedef ObjectBVolHierarchy<OpenSGTraits,OpenSGObjectInput<BVOL> > HierarchyType;
+     HierarchyType hierarchy;
      hierarchy.setParameter(oracle, levels, 2);
      OSGCache::the().setHierarchy (&hierarchy);
      OSGCache::the().apply(orgFile);
+
      unsigned depth = hierarchy.hierarchy();
      MergeLevels(mergeLevels).merge(hierarchy.getRoot()); 
-     std::cout << "*" << std::flush;
 
      SingleEnterLeaveTraverser<OpenSGTraits,SpatializeTraits<OpenSGTraits> > act;
      act.getData().setLevel(depth >> mergeLevels);
      act.apply(OSGCache::the()[orgFile], hierarchy.getRoot(), OSGCache::the()[orgFile].getToWorldMatrix()); 
      file = act.getData().getRoot(); 
-     std::cout << "*" << std::flush;
      hierarchy.destroy();
-     std::cout << "*" << std::endl;
    }
    // clear cache
-   OSGCache::the().clear();
+   {
+     OSGCache::the().clear();
+   }
    return file;
 }
 
 END_GENVIS_NAMESPACE
 
 #endif
+
