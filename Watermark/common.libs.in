@@ -1,0 +1,13 @@
+# Add the Watermark library to the system
+
+ac_gdz_packages="${ac_gdz_packages} Watermark" 
+ac_gdz_package_order="${ac_gdz_package_order} WatermarkLib"
+
+ac_gdz_package_name_Watermark="Watermark"
+ac_gdz_package_fact_init_Watermark="1"
+ac_gdz_package_dirs_Watermark="${ac_gdz_package_dirs_Watermark} Watermark@"
+ac_gdz_package_inc_dep_Watermark="@Base@ @System@"
+ac_gdz_package_link_dep_Watermark="BaseLib SystemLib GL"
+ac_gdz_package_testinc_dep_Watermark="WindowSystem/GLUT GLUT"
+ac_gdz_package_testlink_dep_Watermark="WindowGLUTLib GLUT GL TIF JPG PNG MNG"
+ac_gdz_package_def_Watermark="OSG_COMPILEWATERMARKLIB"
