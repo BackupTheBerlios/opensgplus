@@ -291,9 +291,9 @@ void GeometryClustered::fillGrid ()
       CellData& cell1 = getGrid()->primitives(tri.getPosition(1));
       CellData& cell2 = getGrid()->primitives(tri.getPosition(2));
 
-      Vec3f norm = tri.getPosition(0).subZero().cross(
-		   tri.getPosition(1))+tri.getPosition(1).subZero().cross(
-		   tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0));
+      Vec3f norm = tri.getPosition(0).subZero().cross(tri.getPosition(1).subZero())
+	           +tri.getPosition(1).subZero().cross(tri.getPosition(2).subZero())
+	           +tri.getPosition(2).subZero().cross(tri.getPosition(0).subZero());
       // update cell data
       cell0->getNormal() += norm;
       if (&cell0 != &cell1) {
@@ -303,11 +303,11 @@ void GeometryClustered::fillGrid ()
 	 cell2->getNormal() += norm;
       }
       cell0->setNumPoints(cell0->getNumPoints() + 1);
-      cell0->getPointRep() += tri.getPosition(0);
+      cell0->getPointRep() += tri.getPosition(0).subZero();
       cell1->setNumPoints(cell1->getNumPoints() + 1);
-      cell1->getPointRep() += tri.getPosition(1);
+      cell1->getPointRep() += tri.getPosition(1).subZero();
       cell2->setNumPoints(cell2->getNumPoints() + 1);
-      cell2->getPointRep() += tri.getPosition(2);
+      cell2->getPointRep() += tri.getPosition(2).subZero();
    }
    Real32 slen;
    for (i64 i=0; i<getGrid()->getNumVoxels(); ++i) {
@@ -328,7 +328,9 @@ void GeometryClustered::fillGrid ()
       CellData& cell0 = getGrid()->primitives(tri.getPosition(0));
       CellData& cell1 = getGrid()->primitives(tri.getPosition(1));
       CellData& cell2 = getGrid()->primitives(tri.getPosition(2));
-      Vec3f  n2(tri.getPosition(0).subZero().cross(tri.getPosition(1))+tri.getPosition(1).subZero().cross(tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0)));
+      Vec3f  n2(tri.getPosition(0).subZero().cross(tri.getPosition(1).subZero())
+                +tri.getPosition(1).subZero().cross(tri.getPosition(2).subZero())
+                +tri.getPosition(2).subZero().cross(tri.getPosition(0).subZero()));
       Matrix triQuad(tri.getPosition(0), tri.getPosition(1), tri.getPosition(2));
       Vec4f  n(n2[0], n2[1], n2[2], -triQuad.det3());
       for (i=0; i<4; ++i) {
@@ -407,9 +409,9 @@ void GeometryClustered::fillGrid ()
    for (TriangleIterator tri = beginTriangles(); 
 	tri!=end; 
 	++tri) {
-      Vec3f norm = tri.getPosition(0).subZero().cross(
-		   tri.getPosition(1))+tri.getPosition(1).subZero().cross(
-		   tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0));
+      Vec3f norm = tri.getPosition(0).subZero().cross(tri.getPosition(1).subZero())
+                   +tri.getPosition(1).subZero().cross(tri.getPosition(2).subZero())
+                   +tri.getPosition(2).subZero().cross(tri.getPosition(0).subZero());
       // fetch grid cells
       SetUnionGrid::CellType* intern0 = getGrid()->getLeafCell(tri.getPosition(0));
       // sort into lowest three levels
@@ -418,7 +420,7 @@ void GeometryClustered::fillGrid ()
 	 CellData& cell = intern0->getContainer();
 	 // update cell data
 	 cell->setNumPoints(cell->getNumPoints() + 1);
-	 cell->getPointRep() += tri.getPosition(0);
+	 cell->getPointRep() += tri.getPosition(0).subZero();
 	 cell->getNormal()   += norm;
       } 
       SetUnionGrid::CellType* intern1 = getGrid()->getLeafCell(tri.getPosition(1));
@@ -427,7 +429,7 @@ void GeometryClustered::fillGrid ()
 	 CellData& cell = intern1->getContainer();
 	 // update cell data
 	 cell->setNumPoints(cell->getNumPoints() + 1);
-	 cell->getPointRep() += tri.getPosition(1);
+	 cell->getPointRep() += tri.getPosition(1).subZero();
 	 cell->getNormal()   += norm;
       } 
       SetUnionGrid::CellType* intern2 = getGrid()->getLeafCell(tri.getPosition(2));
@@ -436,7 +438,7 @@ void GeometryClustered::fillGrid ()
 	 CellData& cell = intern2->getContainer();
 	 // update cell data
 	 cell->setNumPoints(cell->getNumPoints() + 1);
-	 cell->getPointRep() += tri.getPosition(2);
+	 cell->getPointRep() += tri.getPosition(2).subZero();
 	 cell->getNormal()   += norm;
       } 
    }
@@ -550,9 +552,9 @@ void GeometryClustered::fillGridFile (std::istream& is)
                     if (indexType == 0) { // position index
 	 	       tri[n++] = index;
 		       if (n == 3) {
-			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(
-				     getPositions()->getValue(tri[1]))+getPositions()->getValue(tri[1]).subZero().cross(
-				     getPositions()->getValue(tri[2]))+getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]));
+			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(getPositions()->getValue(tri[1]).subZero())
+			             +getPositions()->getValue(tri[1]).subZero().cross(getPositions()->getValue(tri[2]).subZero())
+                                     +getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]).subZero());
 			  // fetch grid cells
 			  CellData& cell0 = getGrid()->primitives(getPositions()->getValue(tri[0]));
 			  CellData& cell1 = getGrid()->primitives(getPositions()->getValue(tri[1]));
@@ -566,11 +568,11 @@ void GeometryClustered::fillGridFile (std::istream& is)
 			    cell2->getNormal() += n2;
 			  }
 			  cell0->setNumPoints(cell0->getNumPoints() + 1);
-			  cell0->getPointRep() += getPositions()->getValue(tri[0]);
+			  cell0->getPointRep() += getPositions()->getValue(tri[0]).subZero();
 			  cell1->setNumPoints(cell1->getNumPoints() + 1);
-			  cell1->getPointRep() += getPositions()->getValue(tri[1]);
+			  cell1->getPointRep() += getPositions()->getValue(tri[1]).subZero();
 			  cell2->setNumPoints(cell2->getNumPoints() + 1);
-			  cell2->getPointRep() += getPositions()->getValue(tri[2]);
+			  cell2->getPointRep() += getPositions()->getValue(tri[2]).subZero();
 			  n = 0;
 		       }
 		    }
@@ -664,9 +666,9 @@ void GeometryClustered::fillGridFile (std::istream& is)
 		       }
 	 	       tri[n++] = index;
 		       if (n == 3) {
-			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(
-				     getPositions()->getValue(tri[1]))+getPositions()->getValue(tri[1]).subZero().cross(
-				     getPositions()->getValue(tri[2]))+getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]));
+			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(getPositions()->getValue(tri[1]).subZero())
+                                     +getPositions()->getValue(tri[1]).subZero().cross(getPositions()->getValue(tri[2]).subZero())
+                                     +getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]).subZero());
 			  // fetch grid cells
 			  SetUnionGrid::CellType* intern0 = getGrid()->getLeafCell(getPositions()->getValue(tri[0]));
 			  // sort into lowest three levels
@@ -675,7 +677,7 @@ void GeometryClustered::fillGridFile (std::istream& is)
 			    CellData& cell = intern0->getContainer();
 			    // update cell data
 			    cell->setNumPoints(cell->getNumPoints() + 1);
-			    cell->getPointRep() += getPositions()->getValue(tri[0]);
+			    cell->getPointRep() += getPositions()->getValue(tri[0]).subZero();
 			    cell->getNormal()   += n2;
 			  } 
 			  SetUnionGrid::CellType* intern1 = getGrid()->getLeafCell(getPositions()->getValue(tri[1]));
@@ -684,7 +686,7 @@ void GeometryClustered::fillGridFile (std::istream& is)
 			    CellData& cell = intern1->getContainer();
 			    // update cell data
 			    cell->setNumPoints(cell->getNumPoints() + 1);
-			    cell->getPointRep() += getPositions()->getValue(tri[1]);
+			    cell->getPointRep() += getPositions()->getValue(tri[1]).subZero();
 			    cell->getNormal()   += n2;
 			  } 
 			  SetUnionGrid::CellType* intern2 = getGrid()->getLeafCell(getPositions()->getValue(tri[2]));
@@ -693,7 +695,7 @@ void GeometryClustered::fillGridFile (std::istream& is)
 			    CellData& cell = intern2->getContainer();
 			    // update cell data
 			    cell->setNumPoints(cell->getNumPoints() + 1);
-			    cell->getPointRep() += getPositions()->getValue(tri[2]);
+			    cell->getPointRep() += getPositions()->getValue(tri[2]).subZero();
 			    cell->getNormal()   += n2;
 			  } 
 			  n = 0;
@@ -2148,7 +2150,7 @@ void GeometryClustered::adjustVolume (Volume& volume)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.5 2004/12/20 15:54:29 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.6 2004/12/21 17:44:10 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 
