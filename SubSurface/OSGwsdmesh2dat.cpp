@@ -30,7 +30,7 @@ WSDmesh2dat<WSDVector, Mesh, mtype>::WSDmesh2dat(MeshType *m)
    mesh = m;
    useCreases = m->get_property_handle(isCrease,"isCrease");
    if (useCreases) {
-      SLOG << "counting creases..." << std::endl;
+      SINFO << "counting creases" << std::endl;
       // property counting creases around a vertex
       mesh->add_property(creasecount);
       for (Mesh::VertexIter v_it=mesh->vertices_begin(); v_it!=mesh->vertices_end(); ++v_it) {
@@ -40,7 +40,7 @@ WSDmesh2dat<WSDVector, Mesh, mtype>::WSDmesh2dat(MeshType *m)
          }
       }
       //
-      SLOG << "done counting creases..." << std::endl;
+      SINFO << "counting creases done" << std::endl;
    }
 }
 

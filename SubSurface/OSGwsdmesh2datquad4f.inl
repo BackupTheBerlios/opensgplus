@@ -48,7 +48,7 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::collectCorner
                   if (mesh->property(creasecount,mesh->from_vertex_handle(test))<2) {                       
                      // we have a dart ending outside
                      ppatch->corcrease[i][cc] = CREASE_HALF_REG_ONCE;
-                     SLOG << "dart found!" << std::endl;
+                     SINFO << "dart found" << std::endl;
                   }
                }
             }
