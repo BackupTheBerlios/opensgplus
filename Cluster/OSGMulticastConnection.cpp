@@ -64,21 +64,38 @@ namespace
     char cvsid_hpp[] = OSG_MULTICASTCONNECTIONHEADER_CVSID;
 }
 
-/** \enum OSGVecBase::VectorSizeE
- *  \brief 
- */
-
-/** \var OSGVecBase::VectorSizeE OSGVecBase::_iSize
- * 
- */
-
-/** \fn const char *OSGVecBase::getClassname(void)
- *  \brief Classname
- */
-
-/** \var OSGValueTypeT OSGVecBase::_values[iSize];
- *  \brief Value store
- */
+/** \class osg::MulticastConnection
+ *  \ingroup ClusterLib
+ *  \brief Stream socket connection
+ *
+ * The StreamSockConnection implements the Connection interface. It
+ * uses UDP to establish a reliable multicast connection.
+ *
+ * Multicast address syntax: host:port:id. The id is used to distinguish
+ * two clients at the same host, using the same port. Bind is able
+ * to generate a unique id if no id is given.
+ *
+ * Connect: 
+ * <PRE>
+ * MulticastConnection con;
+ * con.connect( "dagobert:3333:1" );
+ * con.connect( "donald:3333:1" );
+ * con.connect( "tric:3333:1" );
+ * con.putUInt32(1234);
+ * con.flush();
+ * </PRE>
+ *
+ * Accept: 
+ * <PRE>
+ * MulticastConnection con;
+ * con.bind("224.100.100.100:3333:1");
+ * con.accept();
+ * con.selectChannel();
+ * UInt32 x;
+ * con.getUInt32(x);
+ * </PRE>
+ *
+ **/
 
 /***************************************************************************\
  *                               Types                                     *
@@ -88,29 +105,8 @@ namespace
  *                           Class variables                               *
 \***************************************************************************/
 
-char MulticastConnection::cvsid[] = "@(#)$Id:$";
 ConnectionType MulticastConnection::_type(&MulticastConnection::create,
                                           "Multicast");
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -198,12 +194,6 @@ MulticastConnection::~MulticastConnection(void)
 #   endif
 }
 
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
 /** \brief create conneciton
  */
 
@@ -214,8 +204,13 @@ Connection *MulticastConnection::create(void)
 
 /** Bind connection to the givven address
  *
- * @param address    Port number
+ * Describes, on which port the connection will accept incomming
+ * connecitons. If the address string contains no id, then
+ * a random id will be choosen. If group is empty, then 224.0.0.50 is used.
  *
+ * \param address    string with group:Port:id
+ *
+ * \return port:id
  **/
 string MulticastConnection::bind( const string &address )
 {
@@ -250,7 +245,6 @@ string MulticastConnection::bind( const string &address )
 }
 
 /** Wait for incommint connections on the given address
- *
  **/
 void MulticastConnection::accept( void )
 {
@@ -301,7 +295,7 @@ void MulticastConnection::accept( void )
 
 /** connect a connection at the given address
  *
- * @param address    Host:Port
+ * \param address    Host:Port:Id
  *
  **/
 void MulticastConnection::connect( const string &address )
@@ -450,6 +444,10 @@ void MulticastConnection::selectChannel()
     }
 }
 
+/** \brief Print statistic information
+ *
+ * \todo Use OpenSG statistic facilities if these are available.
+ **/
 void MulticastConnection::printStatistics(void)
 {
 #ifdef MULTICAST_STATISTICS
@@ -468,6 +466,8 @@ void MulticastConnection::printStatistics(void)
 #endif
 }
 
+/** \brief Clear statistic information
+ **/
 void MulticastConnection::clearStatistics()
 {
 #ifdef MULTICAST_STATISTICS
@@ -480,27 +480,18 @@ void MulticastConnection::clearStatistics()
 #endif
 }
 
-
-/*-------------------------- assignment -----------------------------------*/
-
-/** \brief assignment
- */
-
-/*-------------------------- comparison -----------------------------------*/
-
-/** \brief assignment
- */
-
-/** \brief equal
- */
-
-/** \brief unequal
- */
-
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
+/** \brief Write buffer
+ * 
+ * A simple reliable UDP package protocoll is used.
+ * 
+ * - write all packages as fast as possible
+ * - wait some time for acknolages
+ * - if unacknolaged packages, then retransmit and go to 2
+ **/
 void MulticastConnection::readBuffer()
 {
     UDPBuffersT::iterator currentBuffer=_udpReadBuffers.begin(); 
@@ -599,8 +590,13 @@ void MulticastConnection::readBuffer()
 #   endif
 }    
 
-/** Write buffer
+/** \brief Write buffer
  *
+ * A simple reliable UDP package protocoll is used.
+ * - read data
+ * - if acknolage request, the acknolage already read data 
+ *
+ * \see writeBuffer
  **/
 void MulticastConnection::writeBuffer(void)
 {
@@ -732,6 +728,12 @@ void MulticastConnection::writeBuffer(void)
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
 
+/** \brief Start alive thread
+ *
+ * To enable the receiver to detect a canceled sender, we need an 
+ * alive signal avery n seconds. Then the receiver is able to set 
+ * it's timeout to n+1 
+ **/
 void MulticastConnection::startAliveThread()
 {
     stopAliveThread();
@@ -740,6 +742,8 @@ void MulticastConnection::startAliveThread()
     _aliveThread->run( aliveProc, 0, (void *) (this) );
 }
 
+/** \brief Stop alive thread
+ **/
 void MulticastConnection::stopAliveThread()
 {
     char tag;
@@ -760,6 +764,10 @@ void MulticastConnection::stopAliveThread()
     }
 }
 
+/** \brief Start alive thread
+ *
+ * Send an alive package after _aliveTime 
+ **/
 void *MulticastConnection::aliveProc(void *arg) 
 { 
     MulticastConnection *connection=static_cast<MulticastConnection *>(arg);
@@ -790,7 +798,7 @@ void *MulticastConnection::aliveProc(void *arg)
 
 /** nterprete address
  *
- *   multicastgroup:port:client
+ *  multicastgroup:port:client
  *
  **/
 

@@ -47,6 +47,25 @@
 
 OSG_USING_NAMESPACE
 
+/** \class osg::Connection
+ *  \ingroup ClusterLib
+ *  \brief Abstract 1 to n connection
+ *
+ * Connection defines an interface for a reliable 1 to n connection.
+ * It implements a BinaryDataHandler which is used for reading and
+ * writing binary data and OpenSG FieldContainer contents.
+ *
+ * Writing to n destinations is easy to handle but reading from n
+ * simutanious sending sources is more complicated. To make things
+ * easier, you have to select one channel for exclusiv read. This
+ * is done by calling <EM>selectChannel</EM>. Implementations fo
+ * <EM>selectChannel</EM> should select the channel with the most
+ * pending data for getting the best read performance.
+ *
+ * <EM>wait</EM> and <EM>signal</EM> are used to synchronize a number
+ * of programms.
+ **/
+
 /***************************************************************************\
  *                               Types                                     *
 \***************************************************************************/
@@ -55,23 +74,8 @@ OSG_USING_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
+/** \brief cvsid **/
 char Connection::cvsid[] = "@(#)$Id:$";
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -98,34 +102,10 @@ Connection::~Connection(void)
 {
 }
 
-/*------------------------------ access -----------------------------------*/
 
-/*---------------------------- properties ---------------------------------*/
 
-/*-------------------------- your_category---------------------------------*/
 
-/*-------------------------- assignment -----------------------------------*/
 
-/** \brief assignment
- */
 
-/*-------------------------- comparison -----------------------------------*/
-
-/** \brief assignment
- */
-
-/** \brief equal
- */
-
-/** \brief unequal
- */
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 
 

@@ -51,18 +51,12 @@ OSG_BEGIN_NAMESPACE
 class ImageFileType;
 class Connection;
 
-/*! \ingroup clusterlib
- *  \brief Brief
- */
-
 class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
 {
     /*==========================  PUBLIC  =================================*/
   public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Types                                      */
-    /*! \{                                                                 */
 
+    /** \brief Buffer component */
     enum {
         RED      =1,
         GREEN    =2,
@@ -73,9 +67,9 @@ class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
         RGB      =RED|GREEN|BLUE,
         RGBA     =RED|GREEN|BLUE|ALPHA
     } Component;
+    /** \brief stl vector used as char buffer */
     typedef std::vector<Int8> BufferT;
 
-    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
@@ -101,7 +95,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   your_category                              */
+    /*! \name                   functions                                  */
     /*! \{                                                                 */
 
     void recv       (Connection &connection);
@@ -135,26 +129,6 @@ class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
 
     ImageFileType              *_imgTransType;
     UInt32                      _subTileSize;
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Member                                  */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Changed                                 */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   MT Destruction                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                       Sync                                   */
-    /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/

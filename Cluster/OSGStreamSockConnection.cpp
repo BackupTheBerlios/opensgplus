@@ -53,25 +53,33 @@
 
 OSG_USING_NAMESPACE
 
-/** \enum OSGVecBase::VectorSizeE
- *  \brief 
- */
-
-/** \var OSGVecBase::VectorSizeE OSGVecBase::_iSize
- * 
- */
-
-/** \fn const char *OSGVecBase::getStreamSockConnection(void)
- *  \brief StreamSockConnection
- */
-
-/** \var OSGValueTypeT OSGVecBase::_values[iSize];
- *  \brief Value store
- */
-
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
+/** \class osg::StreamSockConnection
+ *  \ingroup ClusterLib
+ *  \brief Stream socket connection
+ *
+ * The StreamSockConnection implements the Connection interface
+ *
+ * Connect: 
+ * <PRE>
+ * StreamSockConnection con;
+ * con.connect( "dagobert:3333" );
+ * con.connect( "donald:3333" );
+ * con.connect( "tric:3333" );
+ * con.putUInt32(1234);
+ * con.flush();
+ * </PRE>
+ *
+ * Accept: 
+ * <PRE>
+ * StreamSockConnection con;
+ * con.bind("3333");
+ * con.accept();
+ * con.selectChannel();
+ * UInt32 x;
+ * con.getUInt32(x);
+ * </PRE>
+ *
+ **/
 
 /***************************************************************************\
  *                           Class variables                               *
@@ -80,22 +88,6 @@ OSG_USING_NAMESPACE
 char StreamSockConnection::cvsid[] = "@(#)$Id:$";
 ConnectionType StreamSockConnection::_type(&StreamSockConnection::create,
                                            "StreamSock");
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -108,6 +100,9 @@ ConnectionType StreamSockConnection::_type(&StreamSockConnection::create,
 /*------------- constructors & destructors --------------------------------*/
 
 /** \brief Constructor
+ *
+ * Initialize a StreamSockConnection. By default a buffer of 16000 bytes
+ * is used.
  */
 
 StreamSockConnection::StreamSockConnection():
@@ -130,12 +125,6 @@ StreamSockConnection::~StreamSockConnection(void)
 {
     // TODO close all sockets
 }
-
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
 
 /** Read data into given memory
  *
@@ -184,6 +173,9 @@ void StreamSockConnection::readBuffer()
 
 /** Write data to all destinations
  *
+ * \param mem   Pointer to data buffer
+ * \param size  Size of bytes to write
+ *
  **/
 
 void StreamSockConnection::write(MemoryHandle mem,UInt32 size)
@@ -221,7 +213,7 @@ void StreamSockConnection::writeBuffer(void)
 
 /** Bind connection to the givven address
  *
- * @param address    Port number
+ * \param address    Port number
  *
  **/
 string StreamSockConnection::bind( const string &address )
@@ -276,8 +268,7 @@ void StreamSockConnection::connect( const string &address )
     _sockets.push_back(socket);
 }
 
-/** wait for sync
- *
+/** wait for sync signal
  **/
 void StreamSockConnection::wait(void)
 {
@@ -300,8 +291,7 @@ void StreamSockConnection::wait(void)
     }
 }
 
-/** send sync
- *
+/** send synchronisaiton signale
  **/
 void StreamSockConnection::signal(void)
 {
@@ -325,7 +315,6 @@ void StreamSockConnection::signal(void)
 }
 
 /** get number of links
- *
  **/
 UInt32 StreamSockConnection::getChannelCount(void)
 {
@@ -336,7 +325,6 @@ UInt32 StreamSockConnection::getChannelCount(void)
  *
  * A connection can have n links from which data can be read. So we
  * need to select one channel for exclusive read. 
- *
  **/
 void StreamSockConnection::selectChannel(void)
 {
@@ -401,8 +389,16 @@ Connection *StreamSockConnection::create(void)
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
+/** \brief Interprete an address string
+ *
+ * Hoststring syntax is host:port or :port or port
+ *
+ * \param address  Address string
+ * \param host     Hostname
+ * \param port     Port number
+ **/
 void StreamSockConnection::interpreteAddress(const string &address,
-                                             std::string  &host,
+                                             string       &host,
                                              UInt32       &port)
 {
     UInt32 pos=address.find(':',0);
@@ -431,7 +427,12 @@ void StreamSockConnection::interpreteAddress(const string &address,
     }
 }
 
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
 

@@ -51,9 +51,6 @@ class Connection;
 class ClusterServer;
 class RemoteAspect;
 
-/*! \brief *put brief class description here* 
- */
-
 class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
 {
   private:

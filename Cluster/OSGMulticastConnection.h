@@ -56,11 +56,7 @@ OSG_BEGIN_NAMESPACE
 
 class Thread;
 
-/*! \ingroup baselib
- *  \brief Brief
- */
 #define MULTICASTCONNECTION_MAX_WINDOW_SIZE 64
-
 #define MULTICAST_BUFFER_COUNT 12
 #define MULTICAST_BUFFER_SIZE  4000
 
@@ -97,9 +93,9 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    string bind            ( const std::string &address );
+    string bind            ( const string &address );
     void   accept          ( void );
-    void   connect         ( const std::string &address );
+    void   connect         ( const string &address );
     void   wait            ( void );
     void   signal          ( void );
     UInt32 getChannelCount ( void );
@@ -186,8 +182,8 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*---------------------------------------------------------------------*/
     /*! \name                  address handling                            */
     /*! \{                                                                 */
-    void interpreteAddress(const std::string  &address,
-                                 std::string  &group,
+    void interpreteAddress(const string  &address,
+                                 string  &group,
                                  UInt32       &port,
                                  UInt32       &member);
     /*! \}                                                                 */
@@ -232,7 +228,6 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                   Class Variable                             */
     /*! \{                                                                 */
 
-	static char cvsid[];
     static ConnectionType _type;
 
     /*! \}                                                                 */

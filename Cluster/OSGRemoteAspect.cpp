@@ -54,53 +54,21 @@
 
 OSG_USING_NAMESPACE
 
-/** \enum OSGVecBase::VectorSizeE
- *  \brief 
- */
-
-/** \var OSGVecBase::VectorSizeE OSGVecBase::_iSize
- * 
- */
-
-/** \fn const char *OSGVecBase::getClassname(void)
- *  \brief Classname
- */
-
-/** \var OSGValueTypeT OSGVecBase::_values[iSize];
- *  \brief Value store
- */
-
-/***************************************************************************\
- *                               Types                                     *
-\***************************************************************************/
+/** \class osg::RemoteAspect
+ *  \ingroup ClusterLib
+ *  \brief Remote aspect controll class
+ *
+ * The RemoteAspecet is used to synchronize changes of FieldContainers
+ * with remote hosts. All changes stored in the current change list
+ * are send to a Connection.
+ **/
 
 /***************************************************************************\
  *                           Class variables                               *
 \***************************************************************************/
 
+/** cvsid **/
 char RemoteAspect::cvsid[] = "@(#)$Id: OSGRemoteAspect.cpp,v 1.1 2001/08/12 20:34:25 dirk Exp $";
-
-/***************************************************************************\
- *                           Class methods                                 *
-\***************************************************************************/
-
-
-
-/*-------------------------------------------------------------------------*\
- -  public                                                                 -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  protected                                                              -
-\*-------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------*\
- -  private                                                                -
-\*-------------------------------------------------------------------------*/
-
-
 
 /***************************************************************************\
  *                           Instance methods                              *
@@ -167,12 +135,17 @@ RemoteAspect::~RemoteAspect(void)
     }
 }
 
-/*------------------------------ access -----------------------------------*/
-
-/*---------------------------- properties ---------------------------------*/
-
-/*-------------------------- your_category---------------------------------*/
-
+/** \brief Receive changes from a connection
+ *
+ * <EM>receiveSync</EM> reads changes from the given connection and
+ * applies them to the current thread aspect.
+ * Functors for registered types are called, if they occure in the
+ * sync stream.
+ * 
+ * \param connection   Read from this Connection
+ * 
+ * \see registerCreated registerChanged registerDeleted
+ */
 void RemoteAspect::receiveSync(Connection &connection)
 {
     Bool finish=false;
@@ -327,8 +300,17 @@ void RemoteAspect::receiveSync(Connection &connection)
     factory->setMapper(NULL);
 }
 
+/** \brief Write all changes from the given ChangeList to the connection.
+ *
+ * All changes are send to the connecteion except the fields which are
+ * filtered. Filters are used to avoid transmission of local states 
+ * e.g. GL variables.
+ *
+ * \param connection   Write to this Connection
+ * \param changeList   Read changes from this list. Default is current list
+ */
 void RemoteAspect::sendSync(Connection &connection,
-                            OSG::ChangeList *changeList)
+                            ChangeList *changeList)
 {
     ChangeList::changed_const_iterator changedI;
     ChangeList::idrefd_const_iterator  createdI;
@@ -439,6 +421,16 @@ void RemoteAspect::sendSync(Connection &connection,
     connection.flush();
 }
 
+/** \brief Register functor for create
+ *
+ * The given functor is called when a create of the specified type
+ * is received.
+ *
+ * \param type  FiieldContainerType 
+ * \param func  Functor
+ *
+ * \see receiveSync
+ */
 void RemoteAspect::registerCreated(const FieldContainerType &type, 
                                    const Functor &func)
 {
@@ -450,6 +442,16 @@ void RemoteAspect::registerCreated(const FieldContainerType &type,
     _createdFunctors[ type.getId() ] = func;
 }
 
+/** \brief Register functor for destroy
+ *
+ * The given functor is called when a destroy of the specified type
+ * is received.
+ *
+ * \param type  FiieldContainerType 
+ * \param func  Functor
+ *
+ * \see receiveSync
+ */
 void RemoteAspect::registerDestroyed(const FieldContainerType &type, 
                                      const Functor &func)
 {
@@ -461,6 +463,16 @@ void RemoteAspect::registerDestroyed(const FieldContainerType &type,
     _destroyedFunctors[ type.getId() ] = func;
 }
 
+/** \brief Register functor for destroy
+ *
+ * The given functor is called when a change of the specified type
+ * is received.
+ *
+ * \param type  FiieldContainerType 
+ * \param func  Functor
+ *
+ * \see receiveSync
+ */
 void RemoteAspect::registerChanged(const FieldContainerType &type, 
                                    const Functor &func)
 {
@@ -472,26 +484,14 @@ void RemoteAspect::registerChanged(const FieldContainerType &type,
     _changedFunctors[ type.getId() ] = func;
 }
 
-/*-------------------------- assignment -----------------------------------*/
-
-/** \brief assignment
- */
-
-/*-------------------------- comparison -----------------------------------*/
-
-/** \brief assignment
- */
-
-/** \brief equal
- */
-
-/** \brief unequal
- */
-
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
+/** \brief Call created functor for a given FieldContainer
+ *
+ * \see registerCreated
+ */
 Bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
 {
     Bool result;
@@ -505,6 +505,10 @@ Bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
     return result;
 }
 
+/** \brief Call destroyed functor for a given FieldContainer
+ *
+ * \see registerDestroyed
+ */
 Bool RemoteAspect::callDestroyed( FieldContainerPtr &fcp )
 {
     Bool result;
@@ -518,6 +522,10 @@ Bool RemoteAspect::callDestroyed( FieldContainerPtr &fcp )
     return result;
 }
 
+/** \brief Call changed functor for a given FieldContainer
+ *
+ * \see registerChanged
+ */
 Bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
 {
     Bool result;
@@ -536,6 +544,8 @@ Bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
 \*-------------------------------------------------------------------------*/
 
 
+/** \brief Default create functor
+ */
 Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
@@ -545,6 +555,8 @@ Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
     return true;
 }
 
+/** \brief Default destroyed functor
+ */
 Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
@@ -554,6 +566,8 @@ Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
     return true;
 }
 
+/** \brief Default changed functor
+ */
 Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
@@ -563,6 +577,14 @@ Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
     return true;
 }
 
+/** \brief Field contayner id mapper
+ *
+ * This mapper mappes remote field container id to local ids
+ *
+ * \param uiId  remote id
+ *
+ * \return local id
+ */
 
 UInt32 RemoteAspectFieldContainerMapper::map(UInt32 uiId)
 {

@@ -74,6 +74,13 @@ namespace
 #pragma reset woff 1174
 #endif
 
+/*! \defgroup ClusterLib Cluster library
+
+The cluster library includes all objects concerning with clustering
+and remote rendering
+
+*/
+
 /*! \class osg::ClusterWindow
 Base class for cluster configurations
 */

@@ -59,40 +59,11 @@
 
 OSG_BEGIN_NAMESPACE
 
-//---------------------------------------------------------------------------
-//  Forward References
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//   Types
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//  Class
-//---------------------------------------------------------------------------
-
-/*! \ingroup baselib
- *  \brief Brief
- *
- *  detailed
- */
-
 class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
 { 
+    /*==========================  PUBLIC  =================================*/
   public:
-
-    //-----------------------------------------------------------------------
-    //   constants                                                           
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
-
+    /** Message types */
     enum DataTypes 
     {
         SYNCENDED =1,
@@ -103,112 +74,65 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
         ADDREFED  =6,
         SUBREFED  =7
     };
+    /** functor called for changed containers **/
     typedef Functor2Base<Bool,    FieldContainerPtr &, RemoteAspect *> Functor;
+    /** Map of received containers **/
     typedef map<UInt32,UInt32>    ReceivedFCT;
+    /** Map of received types **/
     typedef map<UInt32,UInt32>    ReceivedTypeT;
+    /** Field filter map **/
     typedef map<UInt32,BitVector> FieldFilterT;
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Constructors                               */
+    /*! \{                                                                 */
 
     RemoteAspect();
     virtual ~RemoteAspect(void); 
 
-    /*------------------------- your_category -------------------------------*/
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Remote aspect functionaliy                 */
+    /*! \{                                                                 */
 
-    void receiveSync(Connection &connection);
-    void sendSync(Connection &connection,OSG::ChangeList *changeList=NULL);
+    void receiveSync       ( Connection &connection         );
+    void sendSync          ( Connection &connection,
+                             ChangeList *changeList=NULL    );
+    void registerCreated   ( const FieldContainerType &type, 
+                             const Functor &func            );
+    void registerDestroyed ( const FieldContainerType &type, 
+                             const Functor &func            );
+    void registerChanged   ( const FieldContainerType &type, 
+                             const Functor &func            );
 
-    void registerCreated(const FieldContainerType &type, 
-                         const Functor &func);
-    void registerDestroyed(const FieldContainerType &type, 
-                           const Functor &func);
-    void registerChanged(const FieldContainerType &type, 
-                         const Functor &func);
+    /*! \}                                                                 */
 
-    /*------------------------- your_operators ------------------------------*/
-
-    /*------------------------- assignment ----------------------------------*/
-
-    /*------------------------- comparison ----------------------------------*/
-
+    /*=========================  PROTECTED  ===============================*/
   protected:
 
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   class variables                                                     
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   instance variables                                                  
-    //-----------------------------------------------------------------------
-
-    // remote id to fieldcontainer mapping
+    /** remote id to fieldcontainer mapping **/
     ReceivedFCT                       _receivedFC;
-    // remote typeid mapping
+    /** remote typeid mapping **/
     ReceivedTypeT                     _receivedType;
-    // is type mapped
+    /** is type mapped **/
     set<UInt32>                       _sentType;
-    // fild filter
+    /** fild filter **/
     FieldFilterT                      _fieldFilter;
-
     vector<Functor>                   _createdFunctors;
     vector<Functor>                   _destroyedFunctors;
     vector<Functor>                   _changedFunctors;
     
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
-    
-    void   send(Connection &connection);
-    void   receive(Connection &connection);
-    Bool   callCreated( FieldContainerPtr &node );
-    Bool   callDestroyed( FieldContainerPtr &node );
-    Bool   callChanged( FieldContainerPtr &node );
+    void   send          ( Connection &connection    );
+    void   receive       ( Connection &connection    );
+    Bool   callCreated   ( FieldContainerPtr &node   );
+    Bool   callDestroyed ( FieldContainerPtr &node   );
+    Bool   callChanged   ( FieldContainerPtr &node   );
 
+    /*==========================  PRIVATE  ================================*/
   private:
 
-    //-----------------------------------------------------------------------
-    //   enums                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   types                                                               
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   friend classes                                                      
-    //-----------------------------------------------------------------------
     friend class RemoteAspectFieldContainerMapper;
-
-    //-----------------------------------------------------------------------
-    //   friend functions                                                    
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   class variables                                                     
-    //-----------------------------------------------------------------------
-
 	static char cvsid[];
-
-    //-----------------------------------------------------------------------
-    //   class functions                                                     
-    //-----------------------------------------------------------------------
 
     static Bool _defaultCreatedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
@@ -217,16 +141,7 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     static Bool _defaultChangedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
 
-    //-----------------------------------------------------------------------
-    //   instance variables                                                  
-    //-----------------------------------------------------------------------
-
-    //-----------------------------------------------------------------------
-    //   instance functions                                                  
-    //-----------------------------------------------------------------------
-
 	// prohibit default functions (move to 'public' if you need one)
-
     RemoteAspect(const RemoteAspect &source);
     RemoteAspect &operator =(const RemoteAspect &source);
 };

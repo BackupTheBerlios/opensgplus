@@ -68,25 +68,32 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \class osg::ViewBufferHandler
-    ViewBufferHandler documentation,
- */
-
-
-/*! \enum ViewBufferHandler::Component
-  
- */
-
-
-/*! \var VARTYPE ViewBufferHandler::_VARNAME
-    variable documentation
- */
-
+/** \class osg::ViewBufferHandler
+ *  \ingroup ClusterLib
+ *  \brief Viewbuffer functions
+ *
+ * This class provides an interface to an OpenGL view buffer.
+ * The Buffer contents can be transfered over a Connection.
+ * All Image types can be used for image compression. The
+ * ViewBufferHandler can access RGBA, Stencil and Z-Buffer values.
+ * 
+ * The whole imagebuffer is divided into subtiles. Each subtile
+ * is read from the buffer, compressed and send over the nertwork.
+ * In most cases, the buffer read and the network send of the previous
+ * tile is done in parallel.
+ * 
+ * \todo currently ViewBufferHandler works on the activated window.
+ *       Is this a good idea. Better WindowPtr as parameter and then
+ *       call activate before send,recv? MR
+ **/
 
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
 /*! Constructor documentation
+ *
+ * Initialize a ViewBufferHandler. By default, no image compression
+ * is set and the subtile size is set to 32
  */
 ViewBufferHandler::ViewBufferHandler(void):
     _imgTransType(NULL),
@@ -103,7 +110,13 @@ ViewBufferHandler::~ViewBufferHandler(void)
 {
 }
 
-
+/** \brief Receive image data from a network connection
+ *
+ * Receive image data from all channels of a conneciton. The receive is
+ * finished, when the last channel signals a transmission end.
+ *
+ * \param connection   Connection from which read is done
+ */
 void ViewBufferHandler::recv(Connection &connection)
 {
     UInt32             tx,ty,tw,th;
@@ -215,6 +228,17 @@ void ViewBufferHandler::recv(Connection &connection)
     glEnable(GL_DEPTH_TEST);  
 }
 
+/** \brief Send parts of a view buffer to a Connection
+ *
+ * \param connection   send to this connection
+ * \param component    Component to transfer
+ * \param x            left begin of rectangle to be transfered
+ * \param y            bottom begin of rectangle to be transfered
+ * \param width        width of rectangle
+ * \param height       height of rectangle
+ * \param toX          copy to this x position on destination buffer
+ * \param toY          copy to this y position on destination buffer
+ */
 void ViewBufferHandler::send(Connection &connection,
                              UInt32     component,
                              UInt32     x,
@@ -344,6 +368,13 @@ void ViewBufferHandler::send(Connection &connection,
     glMatrixMode(GL_MODELVIEW);
 }
 
+/** \brief Send parts of a view buffer to a Connection
+ *
+ * \param connection   send to this connection
+ * \param component    Component to transfer
+ * \param toX          copy to this x position on destination buffer
+ * \param toY          copy to this y position on destination buffer
+ */
 void ViewBufferHandler::send(Connection &connection,
                              UInt32     component,
                              UInt32     toX,
@@ -352,6 +383,14 @@ void ViewBufferHandler::send(Connection &connection,
     send(connection,component,0,0,getBufferWidth(),getBufferHeight(),toX,toY);
 }
 
+/** \brief Set compression type
+ *
+ * By default, no compression is used for image transmission. 
+ * The given mime type identifies an ImageType e.g. "JPEG".
+ * This image type is used for compression. 
+ *
+ * \param mimeType   Image mime type or NULL for no compression.
+ */
 void ViewBufferHandler::setImgTransType(const char *mimeType)
 {
     if(mimeType==NULL)
@@ -364,11 +403,24 @@ void ViewBufferHandler::setImgTransType(const char *mimeType)
     }
 }
 
+/** \brief Set subtile size
+ *
+ * The whole buffer is transfered as small subtiles. Increasing or 
+ * decreasing the subtile size will result in changes to the performance.
+ * The best size depends on network package size and the ration 
+ * between network performance and buffer read/write performance.
+ *
+ * \param size   Subtile size
+ */
 void ViewBufferHandler::setSubtileSize(UInt32 size)
 {
     _subTileSize=size;
 }
 
+/** \brief Get buffer width
+ *
+ * \return current buffer width
+ */
 UInt32 ViewBufferHandler::getBufferWidth()
 {
     GLint view[4];
@@ -376,6 +428,10 @@ UInt32 ViewBufferHandler::getBufferWidth()
     return view[2];
 }
 
+/** \brief Get buffer width
+ *
+ * \return current buffer height
+ */
 UInt32 ViewBufferHandler::getBufferHeight()
 {
     GLint view[4];

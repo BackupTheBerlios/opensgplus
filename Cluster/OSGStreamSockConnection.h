@@ -56,32 +56,10 @@
 
 OSG_BEGIN_NAMESPACE
 
-//---------------------------------------------------------------------------
-//  Forward References
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//   Types
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//  Class
-//---------------------------------------------------------------------------
-
-/*! \ingroup baselib
- *  \brief Brief
- *
- *  detailed
- */
-
 class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
 {
     /*==========================  PUBLIC  =================================*/
   public:
-
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Types                                   */
-    /*! \{                                                                 */
 
     struct SocketBufferHeader {
         UInt32 size;
@@ -89,8 +67,6 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     typedef Connection Inherited;
     typedef std::vector<StreamSocket> SocketsT;
     typedef std::vector<UInt8>        SocketBufferT;
-
-    /*! \}                                                                 */
 
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructor                                */
@@ -139,9 +115,9 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     virtual void      readBuffer();
     virtual void      write(MemoryHandle mem,UInt32 size);
     virtual void      writeBuffer();
-    void              interpreteAddress(const std::string  &address,
-                                              std::string  &host,
-                                              UInt32       &port);
+    void              interpreteAddress(const string  &address,
+                                              string  &host,
+                                              UInt32  &port);
 
     /*! \}                                                                 */
 
