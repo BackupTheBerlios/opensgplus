@@ -117,6 +117,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRAppearance.inl>
 #include <OSGDVRAppearanceBase.inl>
 
-#define OSGDVRAPPEARANCE_HEADER_CVSID "@(#)$Id: OSGDVRAppearance.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRAPPEARANCE_HEADER_CVSID "@(#)$Id: OSGDVRAppearance.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
 
 #endif /* _OSGDVRAPPEARANCE_H_ */

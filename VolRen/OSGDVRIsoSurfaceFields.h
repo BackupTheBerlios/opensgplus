@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,21 +66,23 @@ OSG_BEGIN_NAMESPACE
 
 class DVRIsoSurface;
 
+#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
 //! DVRIsoSurfacePtr
 
 typedef FCPtr<AttachmentPtr, DVRIsoSurface> DVRIsoSurfacePtr;
 
-/*! \brief DVRIsoSurfacePtr field traits 
-    \ingroup FieldLib
-*/
+#endif
+
+#if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+/*! \ingroup GrpVolRenFieldTraits
+ */
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \hideinhierarchy */
+#endif
 
 template <>
-struct FieldDataTraits<DVRIsoSurfacePtr> :
-#ifdef MW_OSG_1_1
-    public FieldTraitsRecurseMapper<DVRIsoSurfacePtr>
-#else
+struct FieldDataTraits<DVRIsoSurfacePtr> : 
     public FieldTraitsRecurseMapper<DVRIsoSurfacePtr, true>
-#endif
 {
     static DataType             _type;                       
 
@@ -88,9 +90,18 @@ struct FieldDataTraits<DVRIsoSurfacePtr> :
     enum                        { bHasParent        = 0x01 };
 };
 
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \class  FieldTraitsRecurseMapper<DVRIsoSurfacePtr, true>
+    \hideinhierarchy
+ */
+#endif
+
+#endif // !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+
+
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSURFACEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceFields.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSURFACEFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRISOSURFACEFIELDS_H_ */

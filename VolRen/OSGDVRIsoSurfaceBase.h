@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -99,12 +99,14 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoSurfaceBase : public Attachment
         NextFieldId             = SpecularLightingFieldId + 1
     };
 
-    static const osg::BitVector IsoValueFieldMask;
-    static const osg::BitVector IsoThicknessFieldMask;
-    static const osg::BitVector IsoOpacityFieldMask;
-    static const osg::BitVector AlphaModeFieldMask;
-    static const osg::BitVector SpecularLightingFieldMask;
+    static const OSG::BitVector IsoValueFieldMask;
+    static const OSG::BitVector IsoThicknessFieldMask;
+    static const OSG::BitVector IsoOpacityFieldMask;
+    static const OSG::BitVector AlphaModeFieldMask;
+    static const OSG::BitVector SpecularLightingFieldMask;
 
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -115,7 +117,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoSurfaceBase : public Attachment
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -252,6 +254,6 @@ typedef DVRIsoSurfaceBase *DVRIsoSurfaceBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSURFACEBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSURFACEBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRISOSURFACEBASE_H_ */

@@ -42,6 +42,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <iomanip.h>
 
 #include <OSGConfig.h>
 
@@ -55,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRLookupTable.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRLOOKUPTABLE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRLOOKUPTABLE_INLINE_CVSID;
 }
@@ -75,7 +76,9 @@ Attachment for storing and handling Lookup-Tables for volume rendering.
 DVRLookupTable::DVRLookupTable(void) :
     Inherited()
 {
+#if 0
     commonConstructor();
+#endif
 }
 
 //! Copy Constructor
@@ -83,7 +86,9 @@ DVRLookupTable::DVRLookupTable(void) :
 DVRLookupTable::DVRLookupTable(const DVRLookupTable &source) :
     Inherited(source)
 {
+#if 0
     commonConstructor();
+#endif
 }
 
 //! Destructor
@@ -102,7 +107,7 @@ void DVRLookupTable::initMethod (void)
 
 //! react to field changes
 
-void DVRLookupTable::changed(BitVector whichField, UInt32)
+void DVRLookupTable::changed(BitVector whichField, UInt32 origin)
 {
     SINFO << "DVRLookupTable::changed" << std::endl;
 
@@ -113,6 +118,17 @@ void DVRLookupTable::changed(BitVector whichField, UInt32)
 	for (UInt32 j = 0; j < _mfSize.getValue(i); j++) {
 	  for (UInt32 k = 0; k < _sfChannel.getValue(); k++) {
 
+#if 1
+	    //!! TODO: REMOVE as soon as the loader works correctly
+	    if (_mfDataR.size() < _mfData.size() / 4) {
+	      int size = _mfData.size() / 4;
+	      _mfDataR.resize(size);
+	      _mfDataG.resize(size);
+	      _mfDataB.resize(size);
+	      _mfDataA.resize(size);
+	    }
+#endif
+	    
 	    //!! setValue ( <value>, index )
 	    if (k == 0)
 	      _mfDataR.setValue((Real32) _mfData.getValue(iter++) / (Real32) TypeConstants<UInt8>::getMax(), j);
@@ -185,44 +201,125 @@ void DVRLookupTable::changed(BitVector whichField, UInt32)
     
     if (whichField & (DimensionFieldMask | SizeFieldMask | ChannelFieldMask)) {
         SINFO << "DVRLookupTable::changed - DimensionFieldMask | SizeFieldMask | ChannelFieldMask " << std::endl;
+	if (whichField & DimensionFieldMask) 
+	  SINFO << "DVRLookupTable::changed - dimension " << _sfDimension.getValue() << std::endl;
+	if (whichField & SizeFieldMask) 
+	  SINFO << "DVRLookupTable::changed - size " << _mfSize.getValue(0) << std::endl;
+	if (whichField & ChannelFieldMask) 
+	  SINFO << "DVRLookupTable::changed - channel " << _sfChannel.getValue() << std::endl;
+
+#if 0
         commonConstructor();
+#endif
     }
 
+    if (whichField & TouchedFieldMask) {
+        SINFO << "DVRLookupTable::changed - touched " << std::endl;
+    }
 
+#if 0
     // mark table as being changed
     setTouched( true );
+#endif
     
 
     // notify parent if appearance 
     MFFieldContainerPtr * par = getMFParents();
     for (UInt32 i = 0; i < par->size(); i++) {
     }
+
+    Inherited::changed(whichField, origin);
 }
 
 
 //! output the instance for debug purposes
 
-void DVRLookupTable::dump(      UInt32    , 
-                         const BitVector ) const
+void DVRLookupTable::dump(      UInt32    uiIndent, 
+                          const BitVector ) const
 {
-    SINFO << "Dump DVRLookupTable NI" << std::endl;
+    UInt32 col = 8; // print 8 values in each row
+    UInt32   i = 0;
 
-    UInt32 i = 0;
+    DVRLookupTablePtr thisP(*this);
+    thisP.dump(uiIndent, FCDumpFlags::RefCount);
 
-    for (i = 0; i < _mfDataR.size() / 2; i++)
-      SLOG << _mfDataR.getValue(i) << _mfDataR.getValue(i + 1) << std::endl;
-    for (i = 0; i < _mfDataG.size() / 2; i++)
-      SLOG << _mfDataG.getValue(i) << _mfDataG.getValue(i + 1) << std::endl;
-    for (i = 0; i < _mfDataB.size() / 2; i++)
-      SLOG << _mfDataB.getValue(i) << _mfDataB.getValue(i + 1) << std::endl;
-    for (i = 0; i < _mfDataA.size() / 2; i++)
-      SLOG << _mfDataA.getValue(i) << _mfDataA.getValue(i + 1) << std::endl;
+    indentLog(uiIndent, PLOG);
+    PLOG << "DVRLookupTable at " << this << std::endl;
+
+    indentLog(uiIndent, PLOG);
+    PLOG << "dim: " << (int) getDimension() << " channel: " << (int) getChannel() << std::endl;
+
+    indentLog(uiIndent, PLOG);
+    PLOG << "sizes: ";
+    for(MFUInt32::const_iterator it = _mfSize.begin(); it != _mfSize.end(); it++)
+        PLOG << std::dec << (int) *it << " ";
+    PLOG << std::endl;
+
+    // Data
+    indentLog(uiIndent, PLOG);
+    PLOG << "Data:" << std::endl; uiIndent += 4;
+    indentLog(uiIndent, PLOG);
+    for (i = 0; i < _mfData.size(); i++) {
+        PLOG << std::setw(9) << std::left << (int) _mfData.getValue(i) << " ";
+	if ((i + 1) % getChannel() == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    }
+    uiIndent -= 4;
+    
+    // DataR
+    PLOG << std::endl;
+    indentLog(uiIndent, PLOG);
+    PLOG << "DataR:" << std::endl; uiIndent += 4;
+    indentLog(uiIndent, PLOG);
+    for (i = 0; i < _mfDataR.size(); i++) {
+        PLOG << std::setw(9) << std::left <<_mfDataR.getValue(i) << " ";
+	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    }
+    uiIndent -= 4;
+
+    // DataG
+    PLOG << std::endl;
+    indentLog(uiIndent, PLOG);
+    PLOG << "DataG:" << std::endl; uiIndent += 4;
+    indentLog(uiIndent, PLOG);
+    for (i = 0; i < _mfDataG.size(); i++) {
+        PLOG << std::setw(9) << std::left << _mfDataG.getValue(i) << " ";
+	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    }
+    uiIndent -= 4;
+
+    // DataB
+    PLOG << std::endl;
+    indentLog(uiIndent, PLOG);
+    PLOG << "DataB:" << std::endl; uiIndent += 4;
+    indentLog(uiIndent, PLOG);
+    for (i = 0; i < _mfDataB.size(); i++) {
+        PLOG << std::setw(9) << std::left << _mfDataB.getValue(i) << " ";
+	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    }
+    uiIndent -= 4;
+    
+    // DataA
+    PLOG << std::endl;
+    indentLog(uiIndent, PLOG);
+    PLOG << "DataA:" << std::endl; uiIndent += 4;
+    indentLog(uiIndent, PLOG);
+    for (i = 0; i < _mfDataA.size(); i++) {
+        PLOG << std::setw(9) << std::left << _mfDataA.getValue(i) << " ";
+	if ((i + 1) % col == 0) { PLOG << std::endl; indentLog(uiIndent, PLOG); }
+    }
+    uiIndent -= 4;
+
+    PLOG << std::endl;
 }
 
 
 //! used to initialize member variables - called by every constructor
 void DVRLookupTable::commonConstructor( void )
 {
+  SLOG << "DVRLookupTable::commonConstructor" << std::endl;
+
+//  return;
+  
   UInt32 size = _sfDimension.getValue();
   
   // set default size for every dimension
@@ -238,7 +335,7 @@ void DVRLookupTable::commonConstructor( void )
   _mfDataG.resize(size);
   _mfDataB.resize(size);
   _mfDataA.resize(size);
-  
+
   // store default ramp
   UInt32 iter = 0;
   UInt32 singleIter = 0;

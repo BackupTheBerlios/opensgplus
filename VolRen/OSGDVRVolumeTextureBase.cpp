@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -65,28 +65,31 @@
 OSG_USING_NAMESPACE
 
 const OSG::BitVector  DVRVolumeTextureBase::ImageFieldMask = 
-    (1 << DVRVolumeTextureBase::ImageFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::ImageFieldId);
 
 const OSG::BitVector  DVRVolumeTextureBase::HistogramFieldMask = 
-    (1 << DVRVolumeTextureBase::HistogramFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::HistogramFieldId);
 
 const OSG::BitVector  DVRVolumeTextureBase::MaxValFieldMask = 
-    (1 << DVRVolumeTextureBase::MaxValFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::MaxValFieldId);
 
 const OSG::BitVector  DVRVolumeTextureBase::SliceThicknessFieldMask = 
-    (1 << DVRVolumeTextureBase::SliceThicknessFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::SliceThicknessFieldId);
 
 const OSG::BitVector  DVRVolumeTextureBase::ResolutionFieldMask = 
-    (1 << DVRVolumeTextureBase::ResolutionFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::ResolutionFieldId);
 
 const OSG::BitVector  DVRVolumeTextureBase::FileNameFieldMask = 
-    (1 << DVRVolumeTextureBase::FileNameFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeTextureBase::FileNameFieldId);
 
+const OSG::BitVector DVRVolumeTextureBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
 // Field descriptions
 
-/*! \var ImageP          DVRVolumeTextureBase::_sfImage
+/*! \var ImagePtr        DVRVolumeTextureBase::_sfImage
     
 */
 /*! \var Real32          DVRVolumeTextureBase::_mfHistogram
@@ -101,7 +104,7 @@ const OSG::BitVector  DVRVolumeTextureBase::FileNameFieldMask =
 /*! \var Vec3f           DVRVolumeTextureBase::_sfResolution
     
 */
-/*! \var string          DVRVolumeTextureBase::_sfFileName
+/*! \var std::string     DVRVolumeTextureBase::_sfFileName
     // FIXME: Since there are several clumps in OpenSG Image handling this node will do the filehandling itself.
 */
 
@@ -109,7 +112,7 @@ const OSG::BitVector  DVRVolumeTextureBase::FileNameFieldMask =
 
 FieldDescription *DVRVolumeTextureBase::_desc[] = 
 {
-    new FieldDescription(SFImageP::getClassType(), 
+    new FieldDescription(SFImagePtr::getClassType(), 
                      "image", 
                      ImageFieldId, ImageFieldMask,
                      true,
@@ -141,7 +144,6 @@ FieldDescription *DVRVolumeTextureBase::_desc[] =
                      (FieldAccessMethod) &DVRVolumeTextureBase::getSFFileName)
 };
 
-//! DVRVolumeTexture type
 
 FieldContainerType DVRVolumeTextureBase::_type(
     "DVRVolumeTexture",
@@ -190,14 +192,12 @@ void DVRVolumeTextureBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
 
 DVRVolumeTextureBase::DVRVolumeTextureBase(void) :
-    _sfImage                  (ImageP(NULL)), 
+    _sfImage                  (ImagePtr(NullFC)), 
     _mfHistogram              (), 
     _sfMaxVal                 (), 
     _sfSliceThickness         (Vec3f(1,1,1)), 
@@ -211,8 +211,6 @@ DVRVolumeTextureBase::DVRVolumeTextureBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRVolumeTextureBase::DVRVolumeTextureBase(const DVRVolumeTextureBase &source) :
     _sfImage                  (source._sfImage                  ), 
     _mfHistogram              (source._mfHistogram              ), 
@@ -225,8 +223,6 @@ DVRVolumeTextureBase::DVRVolumeTextureBase(const DVRVolumeTextureBase &source) :
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRVolumeTextureBase::~DVRVolumeTextureBase(void)
 {
@@ -379,7 +375,9 @@ void DVRVolumeTextureBase::executeSyncImpl(      DVRVolumeTextureBase *pOther,
 
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRVolumeTexturePtr>::_type("DVRVolumeTexturePtr", "AttachmentPtr");
+#endif
 
 
 OSG_END_NAMESPACE
@@ -398,7 +396,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeTextureBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeTextureBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRVOLUMETEXTUREBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRVOLUMETEXTUREBASE_INLINE_CVSID;
 

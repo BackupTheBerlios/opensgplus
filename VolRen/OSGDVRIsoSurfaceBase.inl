@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -73,7 +73,7 @@ DVRIsoSurfacePtr DVRIsoSurfaceBase::create(void)
 {
     DVRIsoSurfacePtr fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != OSG::NullFC) 
     {
         fc = DVRIsoSurfacePtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -96,30 +96,35 @@ DVRIsoSurfacePtr DVRIsoSurfaceBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
+//! Get the DVRIsoSurface::_sfIsoValue field.
 inline
 SFReal32 *DVRIsoSurfaceBase::getSFIsoValue(void)
 {
     return &_sfIsoValue;
 }
 
+//! Get the DVRIsoSurface::_sfIsoThickness field.
 inline
 SFReal32 *DVRIsoSurfaceBase::getSFIsoThickness(void)
 {
     return &_sfIsoThickness;
 }
 
+//! Get the DVRIsoSurface::_sfIsoOpacity field.
 inline
 SFReal32 *DVRIsoSurfaceBase::getSFIsoOpacity(void)
 {
     return &_sfIsoOpacity;
 }
 
+//! Get the DVRIsoSurface::_sfAlphaMode field.
 inline
 SFUInt32 *DVRIsoSurfaceBase::getSFAlphaMode(void)
 {
     return &_sfAlphaMode;
 }
 
+//! Get the DVRIsoSurface::_sfSpecularLighting field.
 inline
 SFBool *DVRIsoSurfaceBase::getSFSpecularLighting(void)
 {
@@ -127,90 +132,105 @@ SFBool *DVRIsoSurfaceBase::getSFSpecularLighting(void)
 }
 
 
+//! Get the value of the DVRIsoSurface::_sfIsoValue field.
 inline
 Real32 &DVRIsoSurfaceBase::getIsoValue(void)
 {
     return _sfIsoValue.getValue();
 }
 
+//! Get the value of the DVRIsoSurface::_sfIsoValue field.
 inline
 const Real32 &DVRIsoSurfaceBase::getIsoValue(void) const
 {
     return _sfIsoValue.getValue();
 }
 
+//! Set the value of the DVRIsoSurface::_sfIsoValue field.
 inline
 void DVRIsoSurfaceBase::setIsoValue(const Real32 &value)
 {
     _sfIsoValue.setValue(value);
 }
 
+//! Get the value of the DVRIsoSurface::_sfIsoThickness field.
 inline
 Real32 &DVRIsoSurfaceBase::getIsoThickness(void)
 {
     return _sfIsoThickness.getValue();
 }
 
+//! Get the value of the DVRIsoSurface::_sfIsoThickness field.
 inline
 const Real32 &DVRIsoSurfaceBase::getIsoThickness(void) const
 {
     return _sfIsoThickness.getValue();
 }
 
+//! Set the value of the DVRIsoSurface::_sfIsoThickness field.
 inline
 void DVRIsoSurfaceBase::setIsoThickness(const Real32 &value)
 {
     _sfIsoThickness.setValue(value);
 }
 
+//! Get the value of the DVRIsoSurface::_sfIsoOpacity field.
 inline
 Real32 &DVRIsoSurfaceBase::getIsoOpacity(void)
 {
     return _sfIsoOpacity.getValue();
 }
 
+//! Get the value of the DVRIsoSurface::_sfIsoOpacity field.
 inline
 const Real32 &DVRIsoSurfaceBase::getIsoOpacity(void) const
 {
     return _sfIsoOpacity.getValue();
 }
 
+//! Set the value of the DVRIsoSurface::_sfIsoOpacity field.
 inline
 void DVRIsoSurfaceBase::setIsoOpacity(const Real32 &value)
 {
     _sfIsoOpacity.setValue(value);
 }
 
+//! Get the value of the DVRIsoSurface::_sfAlphaMode field.
 inline
 UInt32 &DVRIsoSurfaceBase::getAlphaMode(void)
 {
     return _sfAlphaMode.getValue();
 }
 
+//! Get the value of the DVRIsoSurface::_sfAlphaMode field.
 inline
 const UInt32 &DVRIsoSurfaceBase::getAlphaMode(void) const
 {
     return _sfAlphaMode.getValue();
 }
 
+//! Set the value of the DVRIsoSurface::_sfAlphaMode field.
 inline
 void DVRIsoSurfaceBase::setAlphaMode(const UInt32 &value)
 {
     _sfAlphaMode.setValue(value);
 }
 
+//! Get the value of the DVRIsoSurface::_sfSpecularLighting field.
 inline
 bool &DVRIsoSurfaceBase::getSpecularLighting(void)
 {
     return _sfSpecularLighting.getValue();
 }
 
+//! Get the value of the DVRIsoSurface::_sfSpecularLighting field.
 inline
 const bool &DVRIsoSurfaceBase::getSpecularLighting(void) const
 {
     return _sfSpecularLighting.getValue();
 }
 
+//! Set the value of the DVRIsoSurface::_sfSpecularLighting field.
 inline
 void DVRIsoSurfaceBase::setSpecularLighting(const bool &value)
 {
@@ -220,5 +240,5 @@ void DVRIsoSurfaceBase::setSpecularLighting(const bool &value)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSURFACEBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSURFACEBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoSurfaceBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 

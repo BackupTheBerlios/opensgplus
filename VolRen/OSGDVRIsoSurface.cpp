@@ -85,8 +85,9 @@ void DVRIsoSurface::initMethod (void)
 
 //! react to field changes
 
-void DVRIsoSurface::changed(BitVector, UInt32)
+void DVRIsoSurface::changed(BitVector whichField, UInt32 origin)
 {
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
@@ -111,7 +112,7 @@ void DVRIsoSurface::dump(      UInt32    ,
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurface.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurface.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRISOSURFACEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRISOSURFACEBASE_INLINE_CVSID;
 

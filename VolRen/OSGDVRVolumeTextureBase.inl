@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -73,7 +73,7 @@ DVRVolumeTexturePtr DVRVolumeTextureBase::create(void)
 {
     DVRVolumeTexturePtr fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != OSG::NullFC) 
     {
         fc = DVRVolumeTexturePtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -96,36 +96,42 @@ DVRVolumeTexturePtr DVRVolumeTextureBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
+//! Get the DVRVolumeTexture::_sfImage field.
 inline
-SFImageP *DVRVolumeTextureBase::getSFImage(void)
+SFImagePtr *DVRVolumeTextureBase::getSFImage(void)
 {
     return &_sfImage;
 }
 
+//! Get the DVRVolumeTexture::_mfHistogram field.
 inline
 MFReal32 *DVRVolumeTextureBase::getMFHistogram(void)
 {
     return &_mfHistogram;
 }
 
+//! Get the DVRVolumeTexture::_sfMaxVal field.
 inline
 SFReal32 *DVRVolumeTextureBase::getSFMaxVal(void)
 {
     return &_sfMaxVal;
 }
 
+//! Get the DVRVolumeTexture::_sfSliceThickness field.
 inline
 SFVec3f *DVRVolumeTextureBase::getSFSliceThickness(void)
 {
     return &_sfSliceThickness;
 }
 
+//! Get the DVRVolumeTexture::_sfResolution field.
 inline
 SFVec3f *DVRVolumeTextureBase::getSFResolution(void)
 {
     return &_sfResolution;
 }
 
+//! Get the DVRVolumeTexture::_sfFileName field.
 inline
 SFString *DVRVolumeTextureBase::getSFFileName(void)
 {
@@ -133,90 +139,105 @@ SFString *DVRVolumeTextureBase::getSFFileName(void)
 }
 
 
+//! Get the value of the DVRVolumeTexture::_sfImage field.
 inline
-ImageP &DVRVolumeTextureBase::getImage(void)
+ImagePtr &DVRVolumeTextureBase::getImage(void)
 {
     return _sfImage.getValue();
 }
 
+//! Get the value of the DVRVolumeTexture::_sfImage field.
 inline
-const ImageP &DVRVolumeTextureBase::getImage(void) const
+const ImagePtr &DVRVolumeTextureBase::getImage(void) const
 {
     return _sfImage.getValue();
 }
 
+//! Set the value of the DVRVolumeTexture::_sfImage field.
 inline
-void DVRVolumeTextureBase::setImage(const ImageP &value)
+void DVRVolumeTextureBase::setImage(const ImagePtr &value)
 {
     _sfImage.setValue(value);
 }
 
+//! Get the value of the DVRVolumeTexture::_sfMaxVal field.
 inline
 Real32 &DVRVolumeTextureBase::getMaxVal(void)
 {
     return _sfMaxVal.getValue();
 }
 
+//! Get the value of the DVRVolumeTexture::_sfMaxVal field.
 inline
 const Real32 &DVRVolumeTextureBase::getMaxVal(void) const
 {
     return _sfMaxVal.getValue();
 }
 
+//! Set the value of the DVRVolumeTexture::_sfMaxVal field.
 inline
 void DVRVolumeTextureBase::setMaxVal(const Real32 &value)
 {
     _sfMaxVal.setValue(value);
 }
 
+//! Get the value of the DVRVolumeTexture::_sfSliceThickness field.
 inline
 Vec3f &DVRVolumeTextureBase::getSliceThickness(void)
 {
     return _sfSliceThickness.getValue();
 }
 
+//! Get the value of the DVRVolumeTexture::_sfSliceThickness field.
 inline
 const Vec3f &DVRVolumeTextureBase::getSliceThickness(void) const
 {
     return _sfSliceThickness.getValue();
 }
 
+//! Set the value of the DVRVolumeTexture::_sfSliceThickness field.
 inline
 void DVRVolumeTextureBase::setSliceThickness(const Vec3f &value)
 {
     _sfSliceThickness.setValue(value);
 }
 
+//! Get the value of the DVRVolumeTexture::_sfResolution field.
 inline
 Vec3f &DVRVolumeTextureBase::getResolution(void)
 {
     return _sfResolution.getValue();
 }
 
+//! Get the value of the DVRVolumeTexture::_sfResolution field.
 inline
 const Vec3f &DVRVolumeTextureBase::getResolution(void) const
 {
     return _sfResolution.getValue();
 }
 
+//! Set the value of the DVRVolumeTexture::_sfResolution field.
 inline
 void DVRVolumeTextureBase::setResolution(const Vec3f &value)
 {
     _sfResolution.setValue(value);
 }
 
+//! Get the value of the DVRVolumeTexture::_sfFileName field.
 inline
 std::string &DVRVolumeTextureBase::getFileName(void)
 {
     return _sfFileName.getValue();
 }
 
+//! Get the value of the DVRVolumeTexture::_sfFileName field.
 inline
 const std::string &DVRVolumeTextureBase::getFileName(void) const
 {
     return _sfFileName.getValue();
 }
 
+//! Set the value of the DVRVolumeTexture::_sfFileName field.
 inline
 void DVRVolumeTextureBase::setFileName(const std::string &value)
 {
@@ -224,18 +245,21 @@ void DVRVolumeTextureBase::setFileName(const std::string &value)
 }
 
 
+//! Get the value of the \a index element the DVRVolumeTexture::_mfHistogram field.
 inline
 Real32 &DVRVolumeTextureBase::getHistogram(const UInt32 index)
 {
     return _mfHistogram[index];
 }
 
+//! Get the DVRVolumeTexture::_mfHistogram field.
 inline
 MFReal32 &DVRVolumeTextureBase::getHistogram(void)
 {
     return _mfHistogram;
 }
 
+//! Get the DVRVolumeTexture::_mfHistogram field.
 inline
 const MFReal32 &DVRVolumeTextureBase::getHistogram(void) const
 {
@@ -244,5 +268,5 @@ const MFReal32 &DVRVolumeTextureBase::getHistogram(void) const
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMETEXTUREBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeTextureBase.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRVOLUMETEXTUREBASE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeTextureBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 

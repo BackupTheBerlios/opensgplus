@@ -53,7 +53,8 @@ OSG_BEGIN_NAMESPACE
 
 //! forward declatations
 class DVRVolume;
-
+class DVRRenderSlice;
+class Brick;
 
 /*! \brief *put brief class description here* 
  */
@@ -101,7 +102,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
 
     // Callback before any brick - state setup per brick
     virtual void brickActivate     (DVRVolume */* volume */, DrawActionBase */* action */,
-				    UInt8 /* brickId */ ) {
+				    Brick * /* brick */ ) {
       SLOG << "DVRShader::brickActivate - NI" << std::endl;
     };
 
@@ -110,9 +111,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
       SLOG << "DVRShader::brickActivate - NI" << std::endl;
     };
 
-    // Callback for rendering slices
+    // Callback for rendering non-clipped slices
     virtual void renderSlice       (DVRVolume */* volume */, DrawActionBase */* action */,
 				    Real32 */* data */, UInt32 /* vertices */, UInt32 /* values */ ) {
+      SLOG << "DVRShader::renderSlice - NI" << std::endl;
+    };
+
+    // Callback for rendering clipped slices
+    virtual void renderSlice       (DVRVolume */* volume */, DrawActionBase */* action */,
+				    DVRRenderSlice */* clippedSlice */) {
       SLOG << "DVRShader::renderSlice - NI" << std::endl;
     };
 
@@ -159,13 +166,11 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShader : public DVRShaderBase
     void operator =(const DVRShader &source);
 };
 
-typedef DVRShaderPtr DVRShaderP;
-
 OSG_END_NAMESPACE
 
 #include <OSGDVRShader.inl>
 #include <OSGDVRShaderBase.inl>
 
-#define OSGDVRSHADER_HEADER_CVSID "@(#)$Id: OSGDVRShader.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSHADER_HEADER_CVSID "@(#)$Id: OSGDVRShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSHADER_H_ */

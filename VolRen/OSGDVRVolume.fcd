@@ -41,7 +41,7 @@ OpenSG NodeCore for direct volume rendering
 	</Field>
 	<Field
 		name="fileName"
-		type="string"
+		type="std::string"
 		cardinality="single"
 		visibility="external"
 		access="public"
@@ -167,7 +167,7 @@ OpenSG NodeCore for direct volume rendering
 	</Field>
 	<Field
 		name="drawStyleNames"
-		type="string"
+		type="std::string"
 		cardinality="multi"
 		visibility="internal"
 		access="protected"

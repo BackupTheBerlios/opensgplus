@@ -24,7 +24,6 @@ Attachment for storing and handling Lookup-Tables for volume rendering.
 		type="UInt32"
 		cardinality="multi"
 		visibility="external"
-		defaultValue="1"
 		access="public"
 	>
 	</Field>
@@ -79,7 +78,7 @@ Attachment for storing and handling Lookup-Tables for volume rendering.
 	</Field>
 	<Field
 		name="touched"
-		type="Bool"
+		type="bool"
 		cardinality="single"
 		visibility="external"
 		defaultValue="false"

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,20 +66,23 @@
 OSG_USING_NAMESPACE
 
 const OSG::BitVector  DVRIsoSurfaceBase::IsoValueFieldMask = 
-    (1 << DVRIsoSurfaceBase::IsoValueFieldId);
+    (TypeTraits<BitVector>::One << DVRIsoSurfaceBase::IsoValueFieldId);
 
 const OSG::BitVector  DVRIsoSurfaceBase::IsoThicknessFieldMask = 
-    (1 << DVRIsoSurfaceBase::IsoThicknessFieldId);
+    (TypeTraits<BitVector>::One << DVRIsoSurfaceBase::IsoThicknessFieldId);
 
 const OSG::BitVector  DVRIsoSurfaceBase::IsoOpacityFieldMask = 
-    (1 << DVRIsoSurfaceBase::IsoOpacityFieldId);
+    (TypeTraits<BitVector>::One << DVRIsoSurfaceBase::IsoOpacityFieldId);
 
 const OSG::BitVector  DVRIsoSurfaceBase::AlphaModeFieldMask = 
-    (1 << DVRIsoSurfaceBase::AlphaModeFieldId);
+    (TypeTraits<BitVector>::One << DVRIsoSurfaceBase::AlphaModeFieldId);
 
 const OSG::BitVector  DVRIsoSurfaceBase::SpecularLightingFieldMask = 
-    (1 << DVRIsoSurfaceBase::SpecularLightingFieldId);
+    (TypeTraits<BitVector>::One << DVRIsoSurfaceBase::SpecularLightingFieldId);
 
+const OSG::BitVector DVRIsoSurfaceBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
 // Field descriptions
@@ -131,7 +134,6 @@ FieldDescription *DVRIsoSurfaceBase::_desc[] =
                      (FieldAccessMethod) &DVRIsoSurfaceBase::getSFSpecularLighting)
 };
 
-//! DVRIsoSurface type
 
 FieldContainerType DVRIsoSurfaceBase::_type(
     "DVRIsoSurface",
@@ -180,8 +182,6 @@ void DVRIsoSurfaceBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
@@ -200,8 +200,6 @@ DVRIsoSurfaceBase::DVRIsoSurfaceBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRIsoSurfaceBase::DVRIsoSurfaceBase(const DVRIsoSurfaceBase &source) :
     _sfIsoValue               (source._sfIsoValue               ), 
     _sfIsoThickness           (source._sfIsoThickness           ), 
@@ -213,8 +211,6 @@ DVRIsoSurfaceBase::DVRIsoSurfaceBase(const DVRIsoSurfaceBase &source) :
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRIsoSurfaceBase::~DVRIsoSurfaceBase(void)
 {
@@ -349,7 +345,9 @@ void DVRIsoSurfaceBase::executeSyncImpl(      DVRIsoSurfaceBase *pOther,
 
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRIsoSurfacePtr>::_type("DVRIsoSurfacePtr", "AttachmentPtr");
+#endif
 
 
 OSG_END_NAMESPACE
@@ -368,7 +366,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurfaceBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoSurfaceBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRISOSURFACEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRISOSURFACEBASE_INLINE_CVSID;
 

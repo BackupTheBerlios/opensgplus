@@ -1,5 +1,5 @@
 
-SUB_DIR     := VolRen
+SUB_DIR     := System/VolRen
 PACKAGENAME := VolRen
 
 INCL_DIR    := $($(PROJ)POOL)/$(SUB_DIR)

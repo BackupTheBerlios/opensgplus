@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -65,6 +65,8 @@
 
 #include <OSGDVRSimpleShader.h> // Parent
 
+#include <OSGInt8Fields.h> // LutMode type
+#include <OSGInt8Fields.h> // ActiveLutMode type
 
 #include <OSGDVRSimpleLUTShaderFields.h>
 
@@ -84,6 +86,18 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShaderBase : public DVRSimpleShader
     /*==========================  PUBLIC  =================================*/
   public:
 
+    enum
+    {
+        LutModeFieldId       = Inherited::NextFieldId,
+        ActiveLutModeFieldId = LutModeFieldId       + 1,
+        NextFieldId          = ActiveLutModeFieldId + 1
+    };
+
+    static const OSG::BitVector LutModeFieldMask;
+    static const OSG::BitVector ActiveLutModeFieldMask;
+
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -94,7 +108,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShaderBase : public DVRSimpleShader
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -143,6 +157,14 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShaderBase : public DVRSimpleShader
   protected:
 
     /*---------------------------------------------------------------------*/
+    /*! \name                      Fields                                  */
+    /*! \{                                                                 */
+
+    SFInt8              _sfLutMode;
+    SFInt8              _sfActiveLutMode;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
@@ -158,6 +180,27 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShaderBase : public DVRSimpleShader
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
+    /*! \name                    Field Get                                 */
+    /*! \{                                                                 */
+
+           SFInt8              *getSFLutMode        (void);
+           SFInt8              *getSFActiveLutMode  (void);
+
+           Int8                &getLutMode        (void);
+     const Int8                &getLutMode        (void) const;
+           Int8                &getActiveLutMode  (void);
+     const Int8                &getActiveLutMode  (void) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Set                                 */
+    /*! \{                                                                 */
+
+     void setLutMode        (const Int8 &value);
+     void setActiveLutMode  (const Int8 &value);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
     /*! \name                       Sync                                   */
     /*! \{                                                                 */
 
@@ -170,6 +213,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShaderBase : public DVRSimpleShader
 
     friend class FieldContainer;
 
+    static FieldDescription   *_desc[];
     static FieldContainerType  _type;
 
 
@@ -186,6 +230,6 @@ typedef DVRSimpleLUTShaderBase *DVRSimpleLUTShaderBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSIMPLELUTSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSIMPLELUTSHADERBASE_H_ */

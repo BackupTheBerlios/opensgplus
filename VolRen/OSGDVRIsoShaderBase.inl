@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -73,7 +73,7 @@ DVRIsoShaderPtr DVRIsoShaderBase::create(void)
 {
     DVRIsoShaderPtr fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != OSG::NullFC) 
     {
         fc = DVRIsoShaderPtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -96,9 +96,65 @@ DVRIsoShaderPtr DVRIsoShaderBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
+//! Get the DVRIsoShader::_sfShadeMode field.
+inline
+SFInt8 *DVRIsoShaderBase::getSFShadeMode(void)
+{
+    return &_sfShadeMode;
+}
+
+//! Get the DVRIsoShader::_sfActiveShadeMode field.
+inline
+SFInt8 *DVRIsoShaderBase::getSFActiveShadeMode(void)
+{
+    return &_sfActiveShadeMode;
+}
+
+
+//! Get the value of the DVRIsoShader::_sfShadeMode field.
+inline
+Int8 &DVRIsoShaderBase::getShadeMode(void)
+{
+    return _sfShadeMode.getValue();
+}
+
+//! Get the value of the DVRIsoShader::_sfShadeMode field.
+inline
+const Int8 &DVRIsoShaderBase::getShadeMode(void) const
+{
+    return _sfShadeMode.getValue();
+}
+
+//! Set the value of the DVRIsoShader::_sfShadeMode field.
+inline
+void DVRIsoShaderBase::setShadeMode(const Int8 &value)
+{
+    _sfShadeMode.setValue(value);
+}
+
+//! Get the value of the DVRIsoShader::_sfActiveShadeMode field.
+inline
+Int8 &DVRIsoShaderBase::getActiveShadeMode(void)
+{
+    return _sfActiveShadeMode.getValue();
+}
+
+//! Get the value of the DVRIsoShader::_sfActiveShadeMode field.
+inline
+const Int8 &DVRIsoShaderBase::getActiveShadeMode(void) const
+{
+    return _sfActiveShadeMode.getValue();
+}
+
+//! Set the value of the DVRIsoShader::_sfActiveShadeMode field.
+inline
+void DVRIsoShaderBase::setActiveShadeMode(const Int8 &value)
+{
+    _sfActiveShadeMode.setValue(value);
+}
 
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoShaderBase.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRIsoShaderBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 

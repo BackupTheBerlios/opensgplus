@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,44 +66,42 @@ OSG_BEGIN_NAMESPACE
 
 class DVRSimpleShader;
 
+#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
 //! DVRSimpleShaderPtr
 
 typedef FCPtr<DVRShaderPtr, DVRSimpleShader> DVRSimpleShaderPtr;
 
-/*! \brief DVRSimpleShaderPtr field traits 
-    \ingroup FieldLib
-    \ingroup SingleFields
-*/
+#endif
+
+#if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+/*! \ingroup GrpVolRenFieldTraits
+ */
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \hideinhierarchy */
+#endif
 
 template <>
-struct FieldDataTraits<DVRSimpleShaderPtr> :
-#ifdef MW_OSG_1_1
-    public FieldTraitsRecurseMapper<DVRSimpleShaderPtr>
-#else
+struct FieldDataTraits<DVRSimpleShaderPtr> : 
     public FieldTraitsRecurseMapper<DVRSimpleShaderPtr, true>
-#endif
 {
     static DataType             _type;                       
 
     enum                        { StringConvertable = 0x00 };
     enum                        { bHasParent        = 0x01 };
-
-    static DataType &getType (void) { return _type;        }
-
-    static char     *getSName(void) { return "SFDVRSimpleShaderPtr"; }
 };
 
-//! SFDVRSimpleShaderPtr
-//! \ingroup SingleFields
-
-typedef SField<DVRSimpleShaderPtr> SFDVRSimpleShaderPtr;
-
-#ifndef OSG_COMPILEDVRSIMPLESHADERINST
-OSG_DLLEXPORT_DECL1(SField, DVRSimpleShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \class  FieldTraitsRecurseMapper<DVRSimpleShaderPtr, true>
+    \hideinhierarchy
+ */
 #endif
+
+#endif // !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+
+
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSIMPLESHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShaderFields.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSIMPLESHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSIMPLESHADERFIELDS_H_ */

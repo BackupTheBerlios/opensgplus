@@ -76,6 +76,29 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTable : public DVRLookupTableBase
                       const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
+#if 1
+    /*---------------------------------------------------------------------*/
+    //!! TODO: This is a workaround for correctly loading data
+    //!!       remove A.S.A.P !!!
+    /*! \name                     Field set                                */
+    /*! \{                                                                 */
+
+         void setTouched        ( const bool &value ) {
+
+             //!! This is very tricky:
+	     //!! It prevents the common constructor from beeing called when
+ 	     //!! loading the FC from an osg file
+             //!! Loading will initialize "size" before "touched" and will thus
+	     //!! not go in this brach - otherwhise "touched" is eventually
+  	     //!! altered and at this point the constructor is called if the
+	     //!! FC hasn't otherwise been initialized
+             if (_mfDataR.size() == 0)
+	         commonConstructor();
+
+	     DVRLookupTableBase::setTouched( value );
+         };
+    /*! \}                                                                 */
+#endif
     /*=========================  PROTECTED  ===============================*/
   protected:
 
@@ -123,6 +146,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRLookupTable.inl>
 #include <OSGDVRLookupTableBase.inl>
 
-#define OSGDVRLOOKUPTABLE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTable.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRLOOKUPTABLE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTable.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRLOOKUPTABLE_H_ */

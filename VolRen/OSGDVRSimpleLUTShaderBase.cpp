@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -64,9 +64,42 @@
 
 OSG_USING_NAMESPACE
 
+const OSG::BitVector  DVRSimpleLUTShaderBase::LutModeFieldMask = 
+    (TypeTraits<BitVector>::One << DVRSimpleLUTShaderBase::LutModeFieldId);
+
+const OSG::BitVector  DVRSimpleLUTShaderBase::ActiveLutModeFieldMask = 
+    (TypeTraits<BitVector>::One << DVRSimpleLUTShaderBase::ActiveLutModeFieldId);
+
+const OSG::BitVector DVRSimpleLUTShaderBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
-//! DVRSimpleLUTShader type
+// Field descriptions
+
+/*! \var Int8            DVRSimpleLUTShaderBase::_sfLutMode
+    Debug field to manually select a harware method
+*/
+/*! \var Int8            DVRSimpleLUTShaderBase::_sfActiveLutMode
+    READ ONLY - The currently active hardware method
+*/
+
+//! DVRSimpleLUTShader description
+
+FieldDescription *DVRSimpleLUTShaderBase::_desc[] = 
+{
+    new FieldDescription(SFInt8::getClassType(), 
+                     "lutMode", 
+                     LutModeFieldId, LutModeFieldMask,
+                     true,
+                     (FieldAccessMethod) &DVRSimpleLUTShaderBase::getSFLutMode),
+    new FieldDescription(SFInt8::getClassType(), 
+                     "activeLutMode", 
+                     ActiveLutModeFieldId, ActiveLutModeFieldMask,
+                     true,
+                     (FieldAccessMethod) &DVRSimpleLUTShaderBase::getSFActiveLutMode)
+};
+
 
 FieldContainerType DVRSimpleLUTShaderBase::_type(
     "DVRSimpleLUTShader",
@@ -74,8 +107,8 @@ FieldContainerType DVRSimpleLUTShaderBase::_type(
     NULL,
     (PrototypeCreateF) &DVRSimpleLUTShaderBase::createEmpty,
     DVRSimpleLUTShader::initMethod,
-    NULL,
-    0);
+    _desc,
+    sizeof(_desc));
 
 //OSG_FIELD_CONTAINER_DEF(DVRSimpleLUTShaderBase, DVRSimpleLUTShaderPtr)
 
@@ -115,13 +148,13 @@ void DVRSimpleLUTShaderBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
 
 DVRSimpleLUTShaderBase::DVRSimpleLUTShaderBase(void) :
+    _sfLutMode                (Int8(0)), 
+    _sfActiveLutMode          (), 
     Inherited() 
 {
 }
@@ -130,16 +163,14 @@ DVRSimpleLUTShaderBase::DVRSimpleLUTShaderBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRSimpleLUTShaderBase::DVRSimpleLUTShaderBase(const DVRSimpleLUTShaderBase &source) :
+    _sfLutMode                (source._sfLutMode                ), 
+    _sfActiveLutMode          (source._sfActiveLutMode          ), 
     Inherited                 (source)
 {
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRSimpleLUTShaderBase::~DVRSimpleLUTShaderBase(void)
 {
@@ -151,6 +182,16 @@ UInt32 DVRSimpleLUTShaderBase::getBinSize(const BitVector &whichField)
 {
     UInt32 returnValue = Inherited::getBinSize(whichField);
 
+    if(FieldBits::NoField != (LutModeFieldMask & whichField))
+    {
+        returnValue += _sfLutMode.getBinSize();
+    }
+
+    if(FieldBits::NoField != (ActiveLutModeFieldMask & whichField))
+    {
+        returnValue += _sfActiveLutMode.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -160,6 +201,16 @@ void DVRSimpleLUTShaderBase::copyToBin(      BinaryDataHandler &pMem,
 {
     Inherited::copyToBin(pMem, whichField);
 
+    if(FieldBits::NoField != (LutModeFieldMask & whichField))
+    {
+        _sfLutMode.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ActiveLutModeFieldMask & whichField))
+    {
+        _sfActiveLutMode.copyToBin(pMem);
+    }
+
 
 }
 
@@ -167,6 +218,16 @@ void DVRSimpleLUTShaderBase::copyFromBin(      BinaryDataHandler &pMem,
                                     const BitVector    &whichField)
 {
     Inherited::copyFromBin(pMem, whichField);
+
+    if(FieldBits::NoField != (LutModeFieldMask & whichField))
+    {
+        _sfLutMode.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ActiveLutModeFieldMask & whichField))
+    {
+        _sfActiveLutMode.copyFromBin(pMem);
+    }
 
 
 }
@@ -177,18 +238,23 @@ void DVRSimpleLUTShaderBase::executeSyncImpl(      DVRSimpleLUTShaderBase *pOthe
 
     Inherited::executeSyncImpl(pOther, whichField);
 
+    if(FieldBits::NoField != (LutModeFieldMask & whichField))
+        _sfLutMode.syncWith(pOther->_sfLutMode);
+
+    if(FieldBits::NoField != (ActiveLutModeFieldMask & whichField))
+        _sfActiveLutMode.syncWith(pOther->_sfActiveLutMode);
+
 
 }
 
 
 
-#include <OSGSFieldTypeDef.inl>
-
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRSimpleLUTShaderPtr>::_type("DVRSimpleLUTShaderPtr", "DVRSimpleShaderPtr");
+#endif
 
-OSG_DLLEXPORT_SFIELD_DEF1(DVRSimpleLUTShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING);
 
 OSG_END_NAMESPACE
 
@@ -206,7 +272,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRSimpleLUTShaderBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRSimpleLUTShaderBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRSIMPLELUTSHADERBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRSIMPLELUTSHADERBASE_INLINE_CVSID;
 

@@ -42,6 +42,8 @@
 #pragma once
 #endif
 
+#undef OSG_INCLUDE_SOVOLUME
+
 
 #include <OSGConfig.h>
 
@@ -49,6 +51,7 @@
 #include <OSGAction.h>
 #include <OSGDrawAction.h>
 #include <OSGTextureManager.h>
+#include <OSGDVRClipper.h>
 
 
 //! Conveniance macros - makes code much more readable
@@ -56,6 +59,10 @@
 class##Ptr::dcast(volume->findParameter(class::getClassType()))
 
 
+
+#ifdef OSG_INCLUDE_SOVOLUME
+class SoVolume;
+#endif
 
 OSG_BEGIN_NAMESPACE
 
@@ -121,6 +128,11 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     void buildDrawStyleList(Window *win = NULL);
 
     TextureManager & getTextureManager() {return textureManager;};
+
+    //! Prepare the clip objects for this volume    
+    void initializeClipObjects(DrawActionBase *action, const Matrix &volumeToWorld);
+
+    TextureManager::TextureMode getTextureMode(Window * window);
 
 //!! FIXME: This methods are to be removed as soon as the node gets informed
 //!!	about modified attachments of the appearance
@@ -189,9 +201,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolume : public DVRVolumeBase
     /*! \name                      Volume-Rendering                        */
     /*! \{                                                                 */
 
+#ifdef OSG_INCLUDE_SOVOLUME
+    SoVolume * volumeImpl;
+    UInt32     nextDrawStyle;
+#endif
     bool       drawStyleListValid;
     TextureManager textureManager;
     bool       shadingInitialized;
+
+    DVRClipper clipper;
     
     /*! \}                                                                 */
 
@@ -206,6 +224,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRVolume.inl>
 #include <OSGDVRVolumeBase.inl>
 
-#define OSGDVRVOLUME_HEADER_CVSID "@(#)$Id: OSGDVRVolume.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRVOLUME_HEADER_CVSID "@(#)$Id: OSGDVRVolume.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRVOLUME_H_ */

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -73,7 +73,7 @@ DVRSimpleLUTShaderPtr DVRSimpleLUTShaderBase::create(void)
 {
     DVRSimpleLUTShaderPtr fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != OSG::NullFC) 
     {
         fc = DVRSimpleLUTShaderPtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -96,9 +96,65 @@ DVRSimpleLUTShaderPtr DVRSimpleLUTShaderBase::createEmpty(void)
 
 /*------------------------------ get -----------------------------------*/
 
+//! Get the DVRSimpleLUTShader::_sfLutMode field.
+inline
+SFInt8 *DVRSimpleLUTShaderBase::getSFLutMode(void)
+{
+    return &_sfLutMode;
+}
+
+//! Get the DVRSimpleLUTShader::_sfActiveLutMode field.
+inline
+SFInt8 *DVRSimpleLUTShaderBase::getSFActiveLutMode(void)
+{
+    return &_sfActiveLutMode;
+}
+
+
+//! Get the value of the DVRSimpleLUTShader::_sfLutMode field.
+inline
+Int8 &DVRSimpleLUTShaderBase::getLutMode(void)
+{
+    return _sfLutMode.getValue();
+}
+
+//! Get the value of the DVRSimpleLUTShader::_sfLutMode field.
+inline
+const Int8 &DVRSimpleLUTShaderBase::getLutMode(void) const
+{
+    return _sfLutMode.getValue();
+}
+
+//! Set the value of the DVRSimpleLUTShader::_sfLutMode field.
+inline
+void DVRSimpleLUTShaderBase::setLutMode(const Int8 &value)
+{
+    _sfLutMode.setValue(value);
+}
+
+//! Get the value of the DVRSimpleLUTShader::_sfActiveLutMode field.
+inline
+Int8 &DVRSimpleLUTShaderBase::getActiveLutMode(void)
+{
+    return _sfActiveLutMode.getValue();
+}
+
+//! Get the value of the DVRSimpleLUTShader::_sfActiveLutMode field.
+inline
+const Int8 &DVRSimpleLUTShaderBase::getActiveLutMode(void) const
+{
+    return _sfActiveLutMode.getValue();
+}
+
+//! Set the value of the DVRSimpleLUTShader::_sfActiveLutMode field.
+inline
+void DVRSimpleLUTShaderBase::setActiveLutMode(const Int8 &value)
+{
+    _sfActiveLutMode.setValue(value);
+}
 
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSIMPLELUTSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderBase.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADERBASE_INLINE_CVSID "@(#)$Id: OSGDVRSimpleLUTShaderBase.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 

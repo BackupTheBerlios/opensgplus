@@ -16,9 +16,9 @@
 #include <OSGTextureChunk.h>
 #include <OSGImage.h>
 
-#include <OSGDVRShader.h>
-#include <OSGTextureManager.h>
-
+#include "OSGDVRShader.h"
+#include "OSGDVRClipper.h"
+#include "OSGTextureManager.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -41,6 +41,8 @@ struct BrickSet {
     Orientation       m_nOrientation;
   
     BrickSet() : m_pBricks(0), m_nNumBricks(0), m_nOrientation(UNDEF) {};
+
+    ~BrickSet();
   
     //! Return sorted brick list
     Brick * sortBricks3D( const Matrix & modelMat, const Vec3f & eyePoint );
@@ -64,7 +66,7 @@ struct BrickSet {
     void buildBricks2D(DVRVolume * volume, Orientation ori);
 
     //! Create texture chunk for image
-    static TextureChunkPtr makeTexture(UInt32 internalFormat, UInt32 externalFormat, ImageP image);
+    static TextureChunkPtr makeTexture(UInt32 internalFormat, UInt32 externalFormat, ImagePtr image);
 };
 
 
@@ -91,6 +93,9 @@ private:
     Brick               * prev;
     Brick               * next;
 
+    DVRSlice            slice;
+    DVRRenderSlice      clippedSlice;
+
 public:
     //! Returns next brick in sorted order
     Brick * getNext() {return next;};
@@ -109,22 +114,61 @@ public:
     void deactivateTexture(DrawActionBase * action);
 
     //! Render slices
-    void renderSlices(DVRVolume * volume, DrawActionBase * action,
-		      DVRShaderP shader,  TextureManager::TextureMode mode);
+    void renderSlices(DVRVolume      * volume, 
+		      DrawActionBase * action,
+		      DVRShaderPtr     shader,  
+		      DVRClipper     * clipper,
+		      TextureManager::TextureMode mode);
 
     //! Render brick boundaries
     void renderBrick();
-    
+
+    //! Transform vertex to texture coordinates
+    void vertToTex(Real32 * vx, Real32 * vy, Real32 * vz,
+		   Real32 * tx, Real32 * ty, Real32 * tz);
+    void vertToTex(Vec3f & vert, Vec3f & tex);
+      
 private:
     //! Render slices
-    void render3DSlices(DVRVolume * volume, DrawActionBase * action,
-			DVRShaderP  shader, Vec3f sliceDir);
-    void render2DSlices(DVRVolume * volume, DrawActionBase * action, DVRShaderP shader);
+    void render3DSlices(DVRVolume      * volume, 
+			DrawActionBase * action,
+			DVRShaderPtr     shader, 
+			DVRClipper     * clipper,
+			const Vec3f    & sliceDir);
+
+    void render2DSlices(DVRVolume      * volume, 
+			DrawActionBase * action, 
+			DVRShaderPtr     shader, 
+			DVRClipper     * clipper,
+			const Vec3f    & sliceDir);
+
     void render2DMultiSlices(DVRVolume             * volume,
 			     DrawActionBase        * action,
-			     DVRShaderP              shader,
-			     BrickSet::Orientation   ori,
-			     bool                    btf);
+			     DVRShaderPtr            shader,
+                             DVRClipper            * clipper,
+			     bool                    btf,
+                             const Vec3f    & sliceDir);
+
+    void render2DSliceXY(DVRVolume      * volume, 
+                         DrawActionBase * action, 
+                         DVRShaderPtr     shader,	
+                         DVRClipper     * clipper,
+                         const Vec3f    & sliceDir,
+                         const Real32   & zCoord);
+
+    void render2DSliceXZ(DVRVolume      * volume, 
+                         DrawActionBase * action, 
+                         DVRShaderPtr     shader,	
+                         DVRClipper     * clipper,
+                         const Vec3f    & sliceDir,
+                         const Real32   & yCoord);
+
+    void render2DSliceYZ(DVRVolume      * volume, 
+                         DrawActionBase * action, 
+                         DVRShaderPtr     shader,	
+                         DVRClipper     * clipper,
+                         const Vec3f    & sliceDir,
+                         const Real32   & xCoord);
 
     friend class BrickSet;
 };

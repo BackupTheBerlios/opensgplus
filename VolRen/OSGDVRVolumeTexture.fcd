@@ -13,10 +13,10 @@
 Attachment for storing and handling Volume-Textures for volume rendering. Here is the place of the voxel values.
 	<Field
 		name="image"
-		type="ImageP"
+		type="ImagePtr"
 		cardinality="single"
 		visibility="internal"
-		defaultValue="NULL"
+		defaultValue="NullFC"
 		access="public"
 	>
 	</Field>
@@ -57,7 +57,7 @@ Attachment for storing and handling Volume-Textures for volume rendering. Here i
 	</Field>
 	<Field
 		name="fileName"
-		type="string"
+		type="std::string"
 		cardinality="single"
 		visibility="external"
 		access="public"

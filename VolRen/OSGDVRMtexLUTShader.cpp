@@ -62,7 +62,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRMTEXLUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRMTEXLUTSHADER_INLINE_CVSID;
 }
@@ -107,8 +107,11 @@ void DVRMtexLUTShader::initMethod (void)
 
 //! react to field changes
 
-void DVRMtexLUTShader::changed(BitVector, UInt32)
+void DVRMtexLUTShader::changed(BitVector whichField, UInt32 origin)
 {
+    SWARNING << "DVRMtexLUTShader::changed" << std::endl;
+    
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
@@ -123,11 +126,36 @@ void DVRMtexLUTShader::dump(      UInt32    ,
 bool DVRMtexLUTShader::initialize     (DVRVolume *volume, DrawActionBase *action)
 {
 //    FDEBUG(("DVRMtexLUTShader::initialize\n"));
+    FWARNING(("DVRMtexLUTShader::initialize\n"));
 
     GLenum nInternalFormat;
     GLenum nExternalFormat;
 
-    getPaletteFormat( action, nInternalFormat, nExternalFormat, m_nTexturePaletteMode );
+    // Determine lookup table mechanism
+    if (getLutMode() != LM_AUTO)
+    {
+        // A certain mode has been selected
+        if (isModeSupported( action, getLutMode() ))
+	{
+	    SWARNING << "DVRMtexLUTShader - User specified lookup table mode "
+		     << int(getLutMode()) << std::endl;
+	    m_nTexturePaletteMode =  getLutMode();
+	}
+	else
+	{
+	    SWARNING << "DVRMtexLUTShader - Unsupported lookup table mode " 
+		     << int(getLutMode()) << " disabling LUT" << std::endl;
+	    m_nTexturePaletteMode = LM_NO;
+	}
+    }
+    else {
+        // Use automatic mode selection
+        m_nTexturePaletteMode = selectMode( action );
+    }
+    setActiveLutMode( m_nTexturePaletteMode );
+
+    
+    getPaletteFormat( action, m_nTexturePaletteMode, nInternalFormat, nExternalFormat );
 
     DVRLookupTablePtr   lut = DVRVOLUME_PARAMETER(volume, DVRLookupTable);
     DVRVolumeTexturePtr vol = DVRVOLUME_PARAMETER(volume, DVRVolumeTexture);
@@ -140,17 +168,17 @@ bool DVRMtexLUTShader::initialize     (DVRVolume *volume, DrawActionBase *action
     // This shader requires ARB_multitexture and NV_register_combiner extensions
     if (!action->getWindow()->hasExtension(_arbMultitexture))
     {
-        SWARNING << "NO mulit textures ..." << std::endl;
+        SWARNING << "NO multi textures ..." << std::endl;
         return false;
     }
-    std::cerr << "Multitextures found" << std::endl;
+    SWARNING << "Multitextures found" << std::endl;
 
     if (!action->getWindow()->hasExtension(_nvRegisterCombiners))
     {
         SWARNING << "NO register combiners" << std::endl;
 	return false;
     }
-    std::cerr << "Register Combiners found" << std::endl;
+    SWARNING << "Register Combiners found" << std::endl;
     
     m_nTextureId = volume->getTextureManager().registerTexture(
                                                  vol->getImage(), // image
@@ -158,12 +186,15 @@ bool DVRMtexLUTShader::initialize     (DVRVolume *volume, DrawActionBase *action
 						 nExternalFormat, // externalFormat
 						 1,               // doBricking
 						 0,               // textureStage0
-						 1,               // textureStage1
-						 0);              // doCopy
+						 1);              // textureStage1
 
     if (m_nTextureId == -1) {
         SWARNING << "Error registering textures ..." << std::endl;
         return false;
+    }
+    else
+    {
+        SWARNING << "New texture Id: " << m_nTextureId << std::endl;
     }
     
     if (lut != NullFC)
@@ -217,6 +248,16 @@ void DVRMtexLUTShader::deactivate(DVRVolume *volume, DrawActionBase *action)
 #endif // required extensions available
 }
 
+//! callback to clean up shader resources
+void DVRMtexLUTShader::cleanup        (DVRVolume *volume, DrawActionBase */*action*/)
+{
+    if (volume != NULL)
+    {
+        if (m_nTextureId != -1)
+	    volume->getTextureManager().unregisterTexture(m_nTextureId);
+    }
+}
+
 
 //! callback for rendering slices
 void DVRMtexLUTShader::renderSlice( DVRVolume *volume, DrawActionBase *action,
@@ -241,14 +282,10 @@ void DVRMtexLUTShader::renderSlice( DVRVolume *volume, DrawActionBase *action,
     }
 
 
-    float col[4] = {0, 0, 0, data[5]};
-//     FINFO(("DVRMtexLUTShader::renderSlice - slice (%f %f %f %f %f %f)\n",
-// 	   data[0], data[1], data[2], data[3], data[4], data[5]));
-    
-//     FINFO(("DVRMtexLUTShader::renderSlice - constant color (%f %f %f %f)\n",
-//  	   col[0], col[1], col[2], col[3]));
+    float col[4] = {0.f, 0.f, 0.f, data[5]};
     CombinerParameterfvNV(GL_CONSTANT_COLOR0_NV, col);
-    
+    glFogfv(GL_FOG_COLOR, col);
+
     if (volume->getDoTextures())
     {
         glBegin(GL_TRIANGLE_FAN);
@@ -273,18 +310,109 @@ void DVRMtexLUTShader::renderSlice( DVRVolume *volume, DrawActionBase *action,
 	  
 	MultiTexCoord2dARB(GL_TEXTURE0_ARB, vert[3], vert[4]);
 	MultiTexCoord2dARB(GL_TEXTURE1_ARB, vert[3], vert[4]);
-	glVertex3f(vert[0], vert[1], vert[2]);
-	
-// 	FINFO(("DVRMtexLUTShader::renderSlices (texcoor): %f %f %f\n",
-// 	       vert[3], vert[4], vert[5])); 
-	
-// 	FINFO(("DVRMtexLUTShader::renderSlices (coor): %f %f %f\n",
-// 	       vert[0], vert[1], vert[2]));
+	glVertex3f(vert[0], vert[1], vert[2]);	
 
     }
 
     glEnd();
 
+#endif // required extensions
+}
+
+// Callback for rendering clipped slices
+void DVRMtexLUTShader::renderSlice(DVRVolume *volume, DrawActionBase *action,
+                                           DVRRenderSlice *clippedSlice)
+{
+#if !defined(GL_ARB_multitexture) || !defined(GL_NV_register_combiners)
+    SWARNING << "DVRtexLUTShader requires ARB_multitexture and "
+	     << "NV_register_combiners extensions" << std::endl;
+    volume = volume; action = action; clippedSlice = clippedSlice; // calm down compiler
+#else
+
+    Window * win = action->getWindow();
+    void (*CombinerParameterfvNV) (GLenum, const GLfloat *) = (void (*) (GLenum, const GLfloat *)) win->getFunction(_funcCombinerParameterfvNV);
+    void (*MultiTexCoord2dARB) (GLenum, GLdouble, GLdouble) = (void (*) (GLenum, GLdouble, GLdouble)) win->getFunction(_funcMultiTexCoord2dARB); 
+   
+    GLfloat intFactor;
+    switch(clippedSlice->orientation){
+    case DVRRenderSlice::XY:
+      intFactor = (*(*clippedSlice->begin())->vertices.begin())[5];
+      break;
+    case DVRRenderSlice::XZ:
+      intFactor = (*(*clippedSlice->begin())->vertices.begin())[4];
+      break;
+    case DVRRenderSlice::YZ:
+      intFactor = (*(*clippedSlice->begin())->vertices.begin())[3];
+      break;
+    default:
+      break;
+    }
+
+    if(intFactor<0||intFactor>1)
+      std::cerr<<intFactor<<std::endl;
+    
+    float col[4] = {0.f, 0.f, 0.f, intFactor};
+
+    CombinerParameterfvNV(GL_CONSTANT_COLOR0_NV, col);
+    glFogfv(GL_FOG_COLOR, col);
+
+    if (volume->getDoTextures())
+    {
+//          glBegin(GL_TRIANGLE_FAN);
+    }
+    else
+    {
+        //!! TODO - alpha correction
+        glColor4f(1.0, 1.0, 1.0, 1.0);
+//  	glBegin(GL_LINE_LOOP);
+    }
+
+    switch(clippedSlice->orientation){
+    case DVRRenderSlice::XY:
+      for(std::vector<DVRRenderSlicePrimitive*>::const_iterator prim = clippedSlice->begin();
+          prim != clippedSlice->end();
+          prim++){
+        glBegin((*prim)->type);
+        std::vector<GLdouble*>::const_iterator vert = (*prim)->vertices.begin();        
+        for(; vert != (*prim)->vertices.end(); vert++){
+          MultiTexCoord2dARB(GL_TEXTURE0_ARB, (*vert)[3], (*vert)[4]);
+          MultiTexCoord2dARB(GL_TEXTURE1_ARB, (*vert)[3], (*vert)[4]);
+          glVertex3dv(*vert);
+        }      
+        glEnd();
+      }     
+      break;
+    case DVRRenderSlice::XZ:
+      for(std::vector<DVRRenderSlicePrimitive*>::const_iterator prim = clippedSlice->begin();
+          prim != clippedSlice->end();
+          prim++){
+        glBegin((*prim)->type);
+        std::vector<GLdouble*>::const_iterator vert = (*prim)->vertices.begin();        
+        for(; vert != (*prim)->vertices.end(); vert++){
+          MultiTexCoord2dARB(GL_TEXTURE0_ARB, (*vert)[3], (*vert)[5]);
+          MultiTexCoord2dARB(GL_TEXTURE1_ARB, (*vert)[3], (*vert)[5]);
+          glVertex3dv(*vert);
+        }      
+        glEnd();
+      }     
+      break;
+    case DVRRenderSlice::YZ:
+      for(std::vector<DVRRenderSlicePrimitive*>::const_iterator prim = clippedSlice->begin();
+          prim != clippedSlice->end();
+          prim++){
+        glBegin((*prim)->type);
+        std::vector<GLdouble*>::const_iterator vert = (*prim)->vertices.begin();        
+        for(; vert != (*prim)->vertices.end(); vert++){
+          MultiTexCoord2dARB(GL_TEXTURE0_ARB, (*vert)[4], (*vert)[5]);
+          MultiTexCoord2dARB(GL_TEXTURE1_ARB, (*vert)[4], (*vert)[5]);
+          glVertex3dv(*vert);
+        }      
+        glEnd();
+      }
+      break;
+    default:
+      break;
+    }
 #endif // required extensions
 }
 

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -64,9 +64,42 @@
 
 OSG_USING_NAMESPACE
 
+const OSG::BitVector  DVRIsoShaderBase::ShadeModeFieldMask = 
+    (TypeTraits<BitVector>::One << DVRIsoShaderBase::ShadeModeFieldId);
+
+const OSG::BitVector  DVRIsoShaderBase::ActiveShadeModeFieldMask = 
+    (TypeTraits<BitVector>::One << DVRIsoShaderBase::ActiveShadeModeFieldId);
+
+const OSG::BitVector DVRIsoShaderBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
-//! DVRIsoShader type
+// Field descriptions
+
+/*! \var Int8            DVRIsoShaderBase::_sfShadeMode
+    Debug field to manually select a hardware method
+*/
+/*! \var Int8            DVRIsoShaderBase::_sfActiveShadeMode
+    READ ONLY - The currently active hardware method
+*/
+
+//! DVRIsoShader description
+
+FieldDescription *DVRIsoShaderBase::_desc[] = 
+{
+    new FieldDescription(SFInt8::getClassType(), 
+                     "shadeMode", 
+                     ShadeModeFieldId, ShadeModeFieldMask,
+                     true,
+                     (FieldAccessMethod) &DVRIsoShaderBase::getSFShadeMode),
+    new FieldDescription(SFInt8::getClassType(), 
+                     "activeShadeMode", 
+                     ActiveShadeModeFieldId, ActiveShadeModeFieldMask,
+                     true,
+                     (FieldAccessMethod) &DVRIsoShaderBase::getSFActiveShadeMode)
+};
+
 
 FieldContainerType DVRIsoShaderBase::_type(
     "DVRIsoShader",
@@ -74,8 +107,8 @@ FieldContainerType DVRIsoShaderBase::_type(
     NULL,
     (PrototypeCreateF) &DVRIsoShaderBase::createEmpty,
     DVRIsoShader::initMethod,
-    NULL,
-    0);
+    _desc,
+    sizeof(_desc));
 
 //OSG_FIELD_CONTAINER_DEF(DVRIsoShaderBase, DVRIsoShaderPtr)
 
@@ -115,13 +148,13 @@ void DVRIsoShaderBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
 
 DVRIsoShaderBase::DVRIsoShaderBase(void) :
+    _sfShadeMode              (Int8(0)), 
+    _sfActiveShadeMode        (), 
     Inherited() 
 {
 }
@@ -130,16 +163,14 @@ DVRIsoShaderBase::DVRIsoShaderBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRIsoShaderBase::DVRIsoShaderBase(const DVRIsoShaderBase &source) :
+    _sfShadeMode              (source._sfShadeMode              ), 
+    _sfActiveShadeMode        (source._sfActiveShadeMode        ), 
     Inherited                 (source)
 {
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRIsoShaderBase::~DVRIsoShaderBase(void)
 {
@@ -151,6 +182,16 @@ UInt32 DVRIsoShaderBase::getBinSize(const BitVector &whichField)
 {
     UInt32 returnValue = Inherited::getBinSize(whichField);
 
+    if(FieldBits::NoField != (ShadeModeFieldMask & whichField))
+    {
+        returnValue += _sfShadeMode.getBinSize();
+    }
+
+    if(FieldBits::NoField != (ActiveShadeModeFieldMask & whichField))
+    {
+        returnValue += _sfActiveShadeMode.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -160,6 +201,16 @@ void DVRIsoShaderBase::copyToBin(      BinaryDataHandler &pMem,
 {
     Inherited::copyToBin(pMem, whichField);
 
+    if(FieldBits::NoField != (ShadeModeFieldMask & whichField))
+    {
+        _sfShadeMode.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ActiveShadeModeFieldMask & whichField))
+    {
+        _sfActiveShadeMode.copyToBin(pMem);
+    }
+
 
 }
 
@@ -167,6 +218,16 @@ void DVRIsoShaderBase::copyFromBin(      BinaryDataHandler &pMem,
                                     const BitVector    &whichField)
 {
     Inherited::copyFromBin(pMem, whichField);
+
+    if(FieldBits::NoField != (ShadeModeFieldMask & whichField))
+    {
+        _sfShadeMode.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ActiveShadeModeFieldMask & whichField))
+    {
+        _sfActiveShadeMode.copyFromBin(pMem);
+    }
 
 
 }
@@ -177,18 +238,23 @@ void DVRIsoShaderBase::executeSyncImpl(      DVRIsoShaderBase *pOther,
 
     Inherited::executeSyncImpl(pOther, whichField);
 
+    if(FieldBits::NoField != (ShadeModeFieldMask & whichField))
+        _sfShadeMode.syncWith(pOther->_sfShadeMode);
+
+    if(FieldBits::NoField != (ActiveShadeModeFieldMask & whichField))
+        _sfActiveShadeMode.syncWith(pOther->_sfActiveShadeMode);
+
 
 }
 
 
 
-#include <OSGSFieldTypeDef.inl>
-
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRIsoShaderPtr>::_type("DVRIsoShaderPtr", "DVRShaderPtr");
+#endif
 
-OSG_DLLEXPORT_SFIELD_DEF1(DVRIsoShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING);
 
 OSG_END_NAMESPACE
 
@@ -206,7 +272,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoShaderBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRIsoShaderBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRISOSHADERBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRISOSHADERBASE_INLINE_CVSID;
 

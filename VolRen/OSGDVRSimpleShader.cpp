@@ -58,7 +58,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleShader.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleShader.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRSIMPLESHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRSIMPLESHADER_INLINE_CVSID;
 }
@@ -103,8 +103,9 @@ void DVRSimpleShader::initMethod (void)
 
 //! react to field changes
 
-void DVRSimpleShader::changed(BitVector, UInt32)
+void DVRSimpleShader::changed(BitVector whichField, UInt32 origin)
 {
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
@@ -131,8 +132,7 @@ bool DVRSimpleShader::initialize     (DVRVolume *volume, DrawActionBase */*actio
 						 GL_NONE,         // externalFormat
 						 1,               // doBricking
 						 0,               // textureStage0
-						 -1,              // textureStage1
-						 0);              // doCopy
+						 -1);             // textureStage1
 
     if (m_nTextureId == -1) {
         SWARNING << "Error registering textures ..." << std::endl;
@@ -172,7 +172,7 @@ void DVRSimpleShader::activate       (DVRVolume *volume, DrawActionBase */*actio
 }
 
 //! Callback before any brick - state setup per brick
-void DVRSimpleShader::brickActivate  (DVRVolume */*volume*/, DrawActionBase */*action*/, UInt8 /*brickId*/)
+void DVRSimpleShader::brickActivate  (DVRVolume */*volume*/, DrawActionBase */*action*/, Brick */*brick*/)
 {
 //    FDEBUG(("DVRSimpleShader::brickActivate\n"));
 }
@@ -184,3 +184,14 @@ void DVRSimpleShader::deactivate     (DVRVolume */*volume*/, DrawActionBase */*a
     
     glPopAttrib();
 }
+
+//! Callback to clean up shader resources
+void DVRSimpleShader::cleanup        (DVRVolume *volume, DrawActionBase */*action*/)
+{
+    if (volume != NULL)
+    {
+        if (m_nTextureId != -1)
+	    volume->getTextureManager().unregisterTexture(m_nTextureId);
+    }
+}
+

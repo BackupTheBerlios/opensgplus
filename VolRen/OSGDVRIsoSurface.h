@@ -117,6 +117,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRIsoSurfaceBase.inl>
 #include <OSGDVRIsoSurface.inl>
 
-#define OSGDVRISOSURFACE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurface.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSURFACE_HEADER_CVSID "@(#)$Id: OSGDVRIsoSurface.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRISOSURFACE_H_ */

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -64,9 +64,11 @@
 
 OSG_USING_NAMESPACE
 
+const OSG::BitVector DVRGeometryBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
-//! DVRGeometry type
 
 FieldContainerType DVRGeometryBase::_type(
     "DVRGeometry",
@@ -115,8 +117,6 @@ void DVRGeometryBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
@@ -130,16 +130,12 @@ DVRGeometryBase::DVRGeometryBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRGeometryBase::DVRGeometryBase(const DVRGeometryBase &source) :
     Inherited                 (source)
 {
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRGeometryBase::~DVRGeometryBase(void)
 {
@@ -186,7 +182,9 @@ void DVRGeometryBase::executeSyncImpl(      DVRGeometryBase *pOther,
 
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRGeometryPtr>::_type("DVRGeometryPtr", "GeometryPtr");
+#endif
 
 OSG_DLLEXPORT_SFIELD_DEF1(DVRGeometryPtr, OSG_VOLRENLIB_DLLTMPLMAPPING);
 
@@ -206,7 +204,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRGeometryBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRGeometryBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRGEOMETRYBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRGEOMETRYBASE_INLINE_CVSID;
 

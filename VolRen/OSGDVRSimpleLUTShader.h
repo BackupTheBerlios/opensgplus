@@ -46,6 +46,9 @@
 
 #include <OSGDVRSimpleLUTShaderBase.h>
 
+#include <OSGTextureChunk.h>
+#include <OSGFragmentProgramChunk.h>
+
 OSG_BEGIN_NAMESPACE
 
 /*! \brief *put brief class description here* 
@@ -87,18 +90,34 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     virtual void activate       (DVRVolume *volume, DrawActionBase *action);
 
     // Callback before any brick - state setup per brick
-    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, UInt8 brickId);
+    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, Brick *brick);
 
     // Callback after all rendering of the volume is done
     virtual void deactivate     (DVRVolume *volume, DrawActionBase *action);
 
+    // Callback to clean up shader resources
+    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
+    
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     // Variables should all be in DVRSimpleLUTShaderBase.
 
-    UInt8 m_nTexturePaletteMode;
+    UInt8                   m_nTexturePaletteMode;
+    Int8                    m_nTextureMode; 
+    FragmentProgramChunkPtr m_pFragProg;
+    TextureChunkPtr         m_pDepTexture;
+
+    enum LutMode {
+        LM_AUTO = 0,
+	LM_TABLE_SGI,
+	LM_PALETTE_EXT,
+	LM_DEPENDENT,
+	LM_FRAGPROG,
+	LM_RELOAD,
+	LM_NO
+    };
     
     /*---------------------------------------------------------------------*/
     /*! \name                  Constructors                                */
@@ -119,34 +138,46 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleLUTShader : public DVRSimpleLUTShaderBas
     /*! \name                 Volume Rendering                             */
     /*! \{                                                                 */
 
-    // Returns suitable palette format and texture formate for graphics adapter
-    void getPaletteFormat( DrawActionBase *action,
-			   GLenum & internalFormat,
-			   GLenum & externalFormat,
-			   UInt8  & texturePaletteMode );
+    // Returns suitable lookup table mode and texture formate for graphics adapter
+    void getPaletteFormat( DrawActionBase *action, UInt8 lutMode,
+			   GLenum & internalFormat, GLenum & externalFormat );
+
+    // Checks whether the selected mode is supported
+    bool isModeSupported( DrawActionBase *action, UInt8 mode );
+    // Automatically select a lookup table mode
+    UInt8 selectMode( DrawActionBase *action );
+    
     // Enable/disable palette
     void enablePalette();
     void disablePalette();
+
+    // Handle dependent texture
+    void initDependentTexture(int size);
+    void updateDependentTexture(int size, const UInt8 * data);
+    void destroyDependentTexture();
     
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
   private:
-    enum PaletteMode {
-        NO_PALETTE,
-	PALETTE_SGI,
-	PALETTE_EXT,
-	PALETTE_RELOAD
-    };
 
+    // fragment programs used by fragment shader mode
+    static char _fragProg2D[];	 
+    static char _fragProg3D[];
+    static char _fragProg2DMulti[];
+    
     // extension indices for used extensions;
     static UInt32 _sgiTexColorTable;
     static UInt32 _extPalettedTexture;
     static UInt32 _extSharedPalettedTexture;
+    static UInt32 _arbMultitexture;
+    static UInt32 _nvTextureShader2;
+    static UInt32 _arbFragmentProgram;
 
     // extension indices for used fucntions;
     static UInt32 _funcColorTableSGI;
     static UInt32 _funcColorTableEXT;
+    static UInt32 _funcActiveTextureARB;
     
   private:
 
@@ -167,6 +198,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRSimpleLUTShader.inl>
 #include <OSGDVRSimpleLUTShaderBase.inl>
 
-#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSIMPLELUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleLUTShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSIMPLELUTSHADER_H_ */

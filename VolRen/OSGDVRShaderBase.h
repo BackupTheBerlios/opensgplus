@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -85,6 +85,8 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShaderBase : public FieldContainer
   public:
 
 
+    static const OSG::BitVector MTInfluenceMask;
+
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
     /*! \{                                                                 */
@@ -94,7 +96,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRShaderBase : public FieldContainer
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -170,6 +172,6 @@ typedef DVRShaderBase *DVRShaderBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRShaderBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRShaderBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSHADERBASE_H_ */

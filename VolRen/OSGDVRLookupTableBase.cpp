@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -65,32 +65,35 @@
 OSG_USING_NAMESPACE
 
 const OSG::BitVector  DVRLookupTableBase::DimensionFieldMask = 
-    (1 << DVRLookupTableBase::DimensionFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DimensionFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::SizeFieldMask = 
-    (1 << DVRLookupTableBase::SizeFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::SizeFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::ChannelFieldMask = 
-    (1 << DVRLookupTableBase::ChannelFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::ChannelFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::DataFieldMask = 
-    (1 << DVRLookupTableBase::DataFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DataFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::DataRFieldMask = 
-    (1 << DVRLookupTableBase::DataRFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DataRFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::DataGFieldMask = 
-    (1 << DVRLookupTableBase::DataGFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DataGFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::DataBFieldMask = 
-    (1 << DVRLookupTableBase::DataBFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DataBFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::DataAFieldMask = 
-    (1 << DVRLookupTableBase::DataAFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::DataAFieldId);
 
 const OSG::BitVector  DVRLookupTableBase::TouchedFieldMask = 
-    (1 << DVRLookupTableBase::TouchedFieldId);
+    (TypeTraits<BitVector>::One << DVRLookupTableBase::TouchedFieldId);
 
+const OSG::BitVector DVRLookupTableBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
 // Field descriptions
@@ -119,7 +122,7 @@ const OSG::BitVector  DVRLookupTableBase::TouchedFieldMask =
 /*! \var Real32          DVRLookupTableBase::_mfDataA
     
 */
-/*! \var Bool            DVRLookupTableBase::_sfTouched
+/*! \var bool            DVRLookupTableBase::_sfTouched
     
 */
 
@@ -174,7 +177,6 @@ FieldDescription *DVRLookupTableBase::_desc[] =
                      (FieldAccessMethod) &DVRLookupTableBase::getSFTouched)
 };
 
-//! DVRLookupTable type
 
 FieldContainerType DVRLookupTableBase::_type(
     "DVRLookupTable",
@@ -223,15 +225,13 @@ void DVRLookupTableBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
 
 DVRLookupTableBase::DVRLookupTableBase(void) :
     _sfDimension              (UInt8(1)), 
-    _mfSize                   (UInt32(1)), 
+    _mfSize                   (), 
     _sfChannel                (UInt8(4)), 
     _mfData                   (), 
     _mfDataR                  (), 
@@ -246,8 +246,6 @@ DVRLookupTableBase::DVRLookupTableBase(void) :
 #ifdef OSG_WIN32_ICL
 #pragma warning (default : 383)
 #endif
-
-//! Copy Constructor
 
 DVRLookupTableBase::DVRLookupTableBase(const DVRLookupTableBase &source) :
     _sfDimension              (source._sfDimension              ), 
@@ -264,8 +262,6 @@ DVRLookupTableBase::DVRLookupTableBase(const DVRLookupTableBase &source) :
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRLookupTableBase::~DVRLookupTableBase(void)
 {
@@ -472,7 +468,9 @@ void DVRLookupTableBase::executeSyncImpl(      DVRLookupTableBase *pOther,
 
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRLookupTablePtr>::_type("DVRLookupTablePtr", "AttachmentPtr");
+#endif
 
 
 OSG_END_NAMESPACE
@@ -491,7 +489,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRLookupTableBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRLookupTableBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRLOOKUPTABLEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRLOOKUPTABLEBASE_INLINE_CVSID;
 

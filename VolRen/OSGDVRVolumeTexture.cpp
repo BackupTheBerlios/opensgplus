@@ -47,6 +47,8 @@
 
 #include "OSGDVRVolumeTexture.h"
 
+#include <OSGImage.h>
+
 OSG_USING_NAMESPACE
 
 #ifdef __sgi
@@ -55,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRVOLUMETEXTURE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRVOLUMETEXTURE_INLINE_CVSID;
 }
@@ -88,15 +90,10 @@ DVRVolumeTexture::DVRVolumeTexture(const DVRVolumeTexture &source) :
 
 DVRVolumeTexture::~DVRVolumeTexture(void)
 {
-#ifdef MW_OSG_1_1
-    if (getImage() != NULL) {
-        delete getImage();
-	setImage(NULL);
+    if (getImage() != NullFC) {
+        subRefCP(getImage());
+	setImage(NullFC);
     }
-#else
-    getImage()->subRef();
-    setImage(NULL);
-#endif
 }
 
 /*----------------------------- class specific ----------------------------*/
@@ -147,7 +144,7 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
 
 
 	// update sliceThickness
-	const std::string * sTatt = getImage()->findAttachment("SliceThickness");
+	const std::string * sTatt = getImage()->findAttachmentField("SliceThickness");
 	if (sTatt) {
 	  double sT[3];
 	  sscanf(sTatt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
@@ -157,7 +154,7 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
 	}
 
 	// update resolution
-	const std::string * resAtt = getImage()->findAttachment("Resolution");
+	const std::string * resAtt = getImage()->findAttachmentField("Resolution");
 	if (resAtt) {
 	  double sT[3];
 	  sscanf(resAtt->c_str(), "%lf %lf %lf", &sT[0], &sT[1], &sT[2]);
@@ -175,19 +172,13 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
     {
         FINFO(("DVRVolumeTexture::changed - new fileName\n"));
 
-	ImageP datImage = new Image();
-#ifndef MW_OSG_1_1
-	datImage->addRef();
-#endif
+	ImagePtr datImage = Image::create();
+	
 	datImage->read(_sfFileName.getValue().c_str());
 	datImage->dump();
 	beginEditCP(thisP, ImageFieldMask);
 	setImage(datImage);
 	endEditCP  (thisP, ImageFieldMask);
-
-#ifndef MW_OSG_1_1
-	datImage->subRef();
-#endif
     }
 
     Inherited::changed(whichField, origin);

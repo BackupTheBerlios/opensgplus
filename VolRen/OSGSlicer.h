@@ -12,6 +12,7 @@
 #include <OSGVector.h>
 #include <OSGMatrix.h>
 #include <OSGDrawActionBase.h>
+#include <OSGDVRClipper.h>
 
 
 OSG_USING_NAMESPACE
@@ -42,7 +43,7 @@ class Slicer {
 
     static void rotateToLocal(DrawActionBase * da, Vec3f &in, Vec3f &out);
     
-    static bool isBackToFront(int sliceDir);
+    static bool isBackToFront(int sliceDir);  
 };
 
 #endif

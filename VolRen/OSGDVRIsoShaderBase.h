@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -65,6 +65,8 @@
 
 #include <OSGDVRShader.h> // Parent
 
+#include <OSGInt8Fields.h> // ShadeMode type
+#include <OSGInt8Fields.h> // ActiveShadeMode type
 
 #include <OSGDVRIsoShaderFields.h>
 
@@ -84,6 +86,18 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoShaderBase : public DVRShader
     /*==========================  PUBLIC  =================================*/
   public:
 
+    enum
+    {
+        ShadeModeFieldId       = Inherited::NextFieldId,
+        ActiveShadeModeFieldId = ShadeModeFieldId       + 1,
+        NextFieldId            = ActiveShadeModeFieldId + 1
+    };
+
+    static const OSG::BitVector ShadeModeFieldMask;
+    static const OSG::BitVector ActiveShadeModeFieldMask;
+
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -94,7 +108,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoShaderBase : public DVRShader
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -143,6 +157,14 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoShaderBase : public DVRShader
   protected:
 
     /*---------------------------------------------------------------------*/
+    /*! \name                      Fields                                  */
+    /*! \{                                                                 */
+
+    SFInt8              _sfShadeMode;
+    SFInt8              _sfActiveShadeMode;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
@@ -158,6 +180,27 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoShaderBase : public DVRShader
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
+    /*! \name                    Field Get                                 */
+    /*! \{                                                                 */
+
+           SFInt8              *getSFShadeMode      (void);
+           SFInt8              *getSFActiveShadeMode(void);
+
+           Int8                &getShadeMode      (void);
+     const Int8                &getShadeMode      (void) const;
+           Int8                &getActiveShadeMode(void);
+     const Int8                &getActiveShadeMode(void) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Set                                 */
+    /*! \{                                                                 */
+
+     void setShadeMode      (const Int8 &value);
+     void setActiveShadeMode(const Int8 &value);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
     /*! \name                       Sync                                   */
     /*! \{                                                                 */
 
@@ -170,6 +213,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRIsoShaderBase : public DVRShader
 
     friend class FieldContainer;
 
+    static FieldDescription   *_desc[];
     static FieldContainerType  _type;
 
 
@@ -186,6 +230,6 @@ typedef DVRIsoShaderBase *DVRIsoShaderBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRISOSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoShaderBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRISOSHADERBASE_HEADER_CVSID "@(#)$Id: OSGDVRIsoShaderBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRISOSHADERBASE_H_ */

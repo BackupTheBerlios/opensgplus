@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -125,25 +125,27 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
         NextFieldId                   = TextureStorageFieldId         + 1
     };
 
-    static const osg::BitVector AppearanceFieldMask;
-    static const osg::BitVector GeometryFieldMask;
-    static const osg::BitVector ShaderFieldMask;
-    static const osg::BitVector FileNameFieldMask;
-    static const osg::BitVector SamplingFieldMask;
-    static const osg::BitVector SamplingInteractiveFieldMask;
-    static const osg::BitVector DoTexturesFieldMask;
-    static const osg::BitVector BrickOverlapFieldMask;
-    static const osg::BitVector Textures2DFieldMask;
-    static const osg::BitVector RenderMaterialFieldMask;
-    static const osg::BitVector BrickingModeFieldMask;
-    static const osg::BitVector BrickStaticMemoryMBFieldMask;
-    static const osg::BitVector BrickStaticSubdivisionFieldMask;
-    static const osg::BitVector BrickMaxSizeFieldMask;
-    static const osg::BitVector ShowBricksFieldMask;
-    static const osg::BitVector DrawStyleFieldMask;
-    static const osg::BitVector DrawStyleNamesFieldMask;
-    static const osg::BitVector TextureStorageFieldMask;
+    static const OSG::BitVector AppearanceFieldMask;
+    static const OSG::BitVector GeometryFieldMask;
+    static const OSG::BitVector ShaderFieldMask;
+    static const OSG::BitVector FileNameFieldMask;
+    static const OSG::BitVector SamplingFieldMask;
+    static const OSG::BitVector SamplingInteractiveFieldMask;
+    static const OSG::BitVector DoTexturesFieldMask;
+    static const OSG::BitVector BrickOverlapFieldMask;
+    static const OSG::BitVector Textures2DFieldMask;
+    static const OSG::BitVector RenderMaterialFieldMask;
+    static const OSG::BitVector BrickingModeFieldMask;
+    static const OSG::BitVector BrickStaticMemoryMBFieldMask;
+    static const OSG::BitVector BrickStaticSubdivisionFieldMask;
+    static const OSG::BitVector BrickMaxSizeFieldMask;
+    static const OSG::BitVector ShowBricksFieldMask;
+    static const OSG::BitVector DrawStyleFieldMask;
+    static const OSG::BitVector DrawStyleNamesFieldMask;
+    static const OSG::BitVector TextureStorageFieldMask;
 
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -154,7 +156,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeBase : public NodeCore
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -369,6 +371,6 @@ typedef DVRVolumeBase *DVRVolumeBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRVOLUMEBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRVOLUMEBASE_H_ */

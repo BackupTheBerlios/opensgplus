@@ -8,7 +8,7 @@
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                License                                    *
  *                                                                           *
@@ -25,7 +25,7 @@
  * License along with this library; if not, write to the Free Software       *
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                Changes                                    *
  *                                                                           *
@@ -34,7 +34,7 @@
  *                                                                           *
  *                                                                           *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 
 #ifndef _OSGDVRMTEXLUTSHADER_H_
 #define _OSGDVRMTEXLUTSHADER_H_
@@ -48,17 +48,20 @@
 
 OSG_BEGIN_NAMESPACE
 
+// forward reference
+class DVRRenderSlice;
+
 /*! \brief *put brief class description here* 
  */
 
 class OSG_VOLRENLIB_DLLMAPPING DVRMtexLUTShader : public DVRMtexLUTShaderBase
 {
-  private:
+private:
 
     typedef DVRMtexLUTShaderBase Inherited;
 
     /*==========================  PUBLIC  =================================*/
-  public:
+public:
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -73,7 +76,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRMtexLUTShader : public DVRMtexLUTShaderBase
     /*! \{                                                                 */
 
     virtual void dump(      UInt32     uiIndent = 0, 
-                      const BitVector  bvFlags  = 0) const;
+                            const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -93,6 +96,13 @@ class OSG_VOLRENLIB_DLLMAPPING DVRMtexLUTShader : public DVRMtexLUTShaderBase
     virtual void renderSlice       (DVRVolume *volume, DrawActionBase *action,
 				    Real32 *data, UInt32 vertices, UInt32 values);
 
+    // Callback for rendering slices
+    virtual void renderSlice       (DVRVolume *volume, DrawActionBase *action,
+  				    DVRRenderSlice *clippedSlice);
+
+    // Callback to clean up shader resources
+    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
+
     // Returns whether the shader has an implementation of 'renderSlice'
     virtual bool hasRenderCallback () { return true; };
     
@@ -101,7 +111,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRMtexLUTShader : public DVRMtexLUTShaderBase
 
     /*! \{                                                                 */
     /*=========================  PROTECTED  ===============================*/
-  protected:
+protected:
 
     // Variables should all be in DVRMtexLUTShaderBase.
 
@@ -122,7 +132,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRMtexLUTShader : public DVRMtexLUTShaderBase
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
-  private:
+private:
 
     // extension indices for used extensions;
     static UInt32 _arbMultitexture;
@@ -165,6 +175,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRMtexLUTShader.inl>
 #include <OSGDVRMtexLUTShaderBase.inl>
 
-#define OSGDVRMTEXLUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShader.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRMTEXLUTSHADER_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRMTEXLUTSHADER_H_ */

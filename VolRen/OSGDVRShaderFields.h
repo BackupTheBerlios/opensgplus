@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,22 +66,23 @@ OSG_BEGIN_NAMESPACE
 
 class DVRShader;
 
+#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
 //! DVRShaderPtr
 
 typedef FCPtr<FieldContainerPtr, DVRShader> DVRShaderPtr;
 
-/*! \brief DVRShaderPtr field traits 
-    \ingroup FieldLib
-    \ingroup SingleFields
-*/
+#endif
+
+#if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+/*! \ingroup GrpVolRenFieldTraits
+ */
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \hideinhierarchy */
+#endif
 
 template <>
 struct FieldDataTraits<DVRShaderPtr> : 
-#ifdef MW_OSG_1_1
-    public FieldTraitsRecurseMapper<DVRShaderPtr>
-#else
     public FieldTraitsRecurseMapper<DVRShaderPtr, true>
-#endif
 {
     static DataType             _type;                       
 
@@ -93,10 +94,20 @@ struct FieldDataTraits<DVRShaderPtr> :
     static char     *getSName(void) { return "SFDVRShaderPtr"; }
 };
 
-//! SFDVRShaderPtr
-//! \ingroup SingleFields
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \class  FieldTraitsRecurseMapper<DVRShaderPtr, true>
+    \hideinhierarchy
+ */
+#endif
+
+#endif // !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+
+
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_FIELD_TYPEDEFS)
+/*! \ingroup GrpVolRenFieldSingle */
 
 typedef SField<DVRShaderPtr> SFDVRShaderPtr;
+#endif
 
 #ifndef OSG_COMPILEDVRSHADERINST
 OSG_DLLEXPORT_DECL1(SField, DVRShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
@@ -104,6 +115,6 @@ OSG_DLLEXPORT_DECL1(SField, DVRShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRShaderFields.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSHADERFIELDS_H_ */

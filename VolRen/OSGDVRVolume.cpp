@@ -45,8 +45,6 @@
 
 #include <OSGConfig.h>
 
-#include "OSGDVRVolume.h"
-
 #include <OSGGL.h>
 
 #include <OSGAction.h>
@@ -58,7 +56,11 @@
 #include <OSGDVRVolumeTexture.h>
 #include <OSGDVRAppearance.h>
 #include <OSGBrick.h>
+#include <OSGSlicer.h>
 
+#include "OSGDVRVolume.h"
+#include "OSGDVRClipObjects.h"
+#include "OSGDVRClipper.h"
 
 
 OSG_USING_NAMESPACE
@@ -69,7 +71,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolume.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolume.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRVOLUME_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRVOLUME_INLINE_CVSID;
 }
@@ -159,7 +161,6 @@ DVRVolume::~DVRVolume(void)
     SINFO << "~DVRVolume::subRefCP(TextureStorage)" << std::endl;
     SINFO << "~DVRVolume textureStorage: " << getTextureStorage() << std::endl;
     subRefCP(_sfTextureStorage.getValue());
-
 }
 
 /*----------------------------- class specific ----------------------------*/
@@ -221,7 +222,7 @@ void DVRVolume::initMethod (void)
 
 //! react to field changes
 
-void DVRVolume::changed(BitVector whichField, UInt32)
+void DVRVolume::changed(BitVector whichField, UInt32 origin)
 {
     FDEBUG(("DVRVolume::changed\n"));
 
@@ -238,6 +239,8 @@ void DVRVolume::changed(BitVector whichField, UInt32)
     if ((whichField & Textures2DFieldMask)) {
         shadingInitialized = false;
     }
+
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
@@ -350,21 +353,7 @@ Action::ResultE DVRVolume::draw(DrawActionBase *action)
     if (getShader() != NullFC) {
 
         // determine texture mode
-        TextureManager::TextureMode mode;
-	switch (getTextures2D()) {
- 	    case 0: // 3D textures
-	        mode = TextureManager::TM_3D;
-		break;
-	    case 1: // 2D textures
-	        mode = TextureManager::TM_2D;
-		break;
-	    default: // auto
-	        mode = window->hasExtension(_extTex3D) ?
-		  TextureManager::TM_3D : TextureManager::TM_2D;
-	}
-	if (getShader()->useMTSlabs())
-	    mode = TextureManager::TM_2D_Multi;
-
+        TextureManager::TextureMode mode = getTextureMode(window);
 
 	FDEBUG(("DVRVolume::draw - using Shader: %s\n",
 //		getShader()->getClassname()));
@@ -386,6 +375,10 @@ Action::ResultE DVRVolume::draw(DrawActionBase *action)
 	    // create texture chunks
 	    SINFO << "TextureMode = " << mode << std::endl;
 	    textureManager.buildTextures( getTextureStorage(), this, mode );
+
+	    // initialize slice clipper
+	    clipper.initialize(this);
+
 	    shadingInitialized = true;
 	}
 
@@ -396,43 +389,55 @@ Action::ResultE DVRVolume::draw(DrawActionBase *action)
       
 	// SINFO << "DVRVolume::draw - modelMat " << modelMat << std::endl;
 	// SINFO << "DVRVolume::draw - eyePoint " << eyePointWorld << std::endl;
-	Brick * first = textureManager.sortBricks(modelMat, eyePointWorld, this, mode);
-	
+	//Brick * first = textureManager.sortBricks(action,modelMat, eyePointWorld, this, mode);
+	Brick * first = textureManager.sortBricks(action, modelMat, eyePointWorld, this, mode);
 	// render brick boundaries
 	if (getShowBricks())
 	  for (Brick * current = first; current != NULL; current = current->getNext())
 	    current->renderBrick();
+
+	// initialize clipping
+	initializeClipObjects(action,modelMat);
+
+	// Texture_3D bricks need per brick clipping setup
+	// whereas for Texture_2D bricks the clipper has to be initialized only once
+  	// in that case the reset is done in Brick::render3DSlices(..)
+  	if(mode != TextureManager::TM_3D) 
+	     clipper.reset(this);
 	
 	//!! Rendering
-	getShader()->activate(this, action);
-
-	// for all bricks
-	Brick * prev = NULL;
-	for (Brick * current = first;
-	     current != NULL;
-	     prev = current, current = current->getNext())
+	if (first != NULL)
 	{
-//	    FDEBUG(("DVRVolume::draw - render Brick: %d\n" i++));
+	    getShader()->activate(this, action);
 
-	    // switch to texture chunk
-	    if (getDoTextures()) {
-	      if (prev == NULL)
-		current->activateTexture(action);
-	      else
-		current->changeFromTexture(action, prev);
-	    }
+	    // for all bricks
+	    Brick * prev = NULL;
+	    for (Brick * current = first;
+		 current != NULL;
+		 prev = current, current = current->getNext())
+	    {
+//	        FDEBUG(("DVRVolume::draw - render Brick: %d\n" i++));
+
+	        // switch to texture chunk
+	        if (getDoTextures()) {
+		    if (prev == NULL)
+		        current->activateTexture(action);
+		    else
+		        current->changeFromTexture(action, prev);
+		}
 	    
-	    // activate shader
-	    getShader()->brickActivate(this, action, 0 /* brickId */);
+		// activate shader
+		getShader()->brickActivate(this, action, current);
 
-	    // render slices
-	    current->renderSlices(this, action, getShader(), mode);
-	}
+                // render slices
+                current->renderSlices(this, action, getShader(), &clipper, mode);
+            }
 
-	// deactivate last texture chunk
-	prev->deactivateTexture(action);
+	    // deactivate last texture chunk
+	    prev->deactivateTexture(action);
 	
-	getShader()->deactivate(this, action);
+	    getShader()->deactivate(this, action);
+	}
     }
     else {
         // Show some slices anyway
@@ -497,11 +502,14 @@ Action::ResultE DVRVolume::render(Action *action)
 //! used to initialize member variables - called by every constructor
 void DVRVolume::commonConstructor( void )
 {
-
     drawStyleListValid = false;
     shadingInitialized = false;
 
-    dump();
+    if (osgLog().getLogLevel() == LOG_DEBUG)
+    {
+        FDEBUG(("DVRVolume::commonConstructor: \n"));
+        dump();
+    }
 }
 
 
@@ -565,6 +573,30 @@ void DVRVolume::buildDrawStyleList(Window *OSG_CHECK_ARG(win))
 }
 
 
+//! determine which texture mode to use
+TextureManager::TextureMode DVRVolume::getTextureMode(Window * window)
+{
+    TextureManager::TextureMode mode;
+    
+    switch (getTextures2D()) {
+        case 0: // 3D textures
+	    mode = TextureManager::TM_3D;
+	    break;
+        case 1: // 2D textures
+	    mode = TextureManager::TM_2D;
+	    break;
+        default: // auto
+	    mode = window->hasExtension(_extTex3D) ?
+	      TextureManager::TM_3D : TextureManager::TM_2D;
+    }
+
+    if (getShader()->useMTSlabs())
+        mode = TextureManager::TM_2D_Multi;
+
+    return mode;
+}
+
+
 //! reinitialize inventor volume
 void DVRVolume::reload()
 {
@@ -574,4 +606,45 @@ void DVRVolume::reload()
     }
 }
 
+void DVRVolume::initializeClipObjects(DrawActionBase *action, const Matrix &volumeToWorld)
+{
+  DVRClipObjectsPtr clipObjects = DVRVOLUME_PARAMETER(this, DVRClipObjects);
+  
+  if(clipObjects != NullFC && clipObjects->getClipMode() != DVRClipObjects::Off){
 
+    DVRVolumeTexturePtr tex = DVRVOLUME_PARAMETER(this, DVRVolumeTexture);
+    if (tex != NullFC) {
+      Vec3f & res   = tex->getResolution();
+      Vec3f & slice = tex->getSliceThickness();
+      
+      Vec3f diag(res[0]*slice[0], res[1]*slice[1], res[2]*slice[2]);
+      
+      Vec3f sliceDir;
+
+      if (getShader()->useMTSlabs()){
+        Slicer::getAASlicingDirection(action,&sliceDir);
+      }
+      else{  
+        switch (getTextures2D()) {
+        case 0: // 3D textures
+          Slicer::getSlicingDirection(action,&sliceDir);	
+          break;
+        case 1: // 2D textures  
+          Slicer::getAASlicingDirection(action,&sliceDir);
+          break;
+        default: // auto
+          Window * window = action->getWindow();
+          if(window->hasExtension(_extTex3D))
+            Slicer::getSlicingDirection(action,&sliceDir);
+          else
+            Slicer::getAASlicingDirection(action,&sliceDir);
+        }
+      }
+
+      Plane clipReferencePlane(sliceDir, -0.5 * diag.length());  
+
+      clipObjects->initialize(volumeToWorld,clipReferencePlane);
+      clipper.setReferencePlane(clipReferencePlane);
+    }
+  }
+}

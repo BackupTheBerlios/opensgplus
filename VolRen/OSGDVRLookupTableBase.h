@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -107,16 +107,18 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTableBase : public Attachment
         NextFieldId      = TouchedFieldId   + 1
     };
 
-    static const osg::BitVector DimensionFieldMask;
-    static const osg::BitVector SizeFieldMask;
-    static const osg::BitVector ChannelFieldMask;
-    static const osg::BitVector DataFieldMask;
-    static const osg::BitVector DataRFieldMask;
-    static const osg::BitVector DataGFieldMask;
-    static const osg::BitVector DataBFieldMask;
-    static const osg::BitVector DataAFieldMask;
-    static const osg::BitVector TouchedFieldMask;
+    static const OSG::BitVector DimensionFieldMask;
+    static const OSG::BitVector SizeFieldMask;
+    static const OSG::BitVector ChannelFieldMask;
+    static const OSG::BitVector DataFieldMask;
+    static const OSG::BitVector DataRFieldMask;
+    static const OSG::BitVector DataGFieldMask;
+    static const OSG::BitVector DataBFieldMask;
+    static const OSG::BitVector DataAFieldMask;
+    static const OSG::BitVector TouchedFieldMask;
 
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -127,7 +129,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRLookupTableBase : public Attachment
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -284,6 +286,6 @@ typedef DVRLookupTableBase *DVRLookupTableBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRLOOKUPTABLEBASE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTableBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRLOOKUPTABLEBASE_HEADER_CVSID "@(#)$Id: OSGDVRLookupTableBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRLOOKUPTABLEBASE_H_ */

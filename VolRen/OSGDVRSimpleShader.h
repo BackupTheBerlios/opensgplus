@@ -87,10 +87,13 @@ class OSG_VOLRENLIB_DLLMAPPING DVRSimpleShader : public DVRSimpleShaderBase
     virtual void activate       (DVRVolume *volume, DrawActionBase *action);
 
     // Callback before any brick - state setup per brick
-    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, UInt8 brickId);
+    virtual void brickActivate  (DVRVolume *volume, DrawActionBase *action, Brick *brick);
 
     // Callback after all rendering of the volume is done
     virtual void deactivate     (DVRVolume *volume, DrawActionBase *action);
+
+    // Callback to clean up shader resources
+    virtual void cleanup        (DVRVolume *volume, DrawActionBase *action);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
@@ -136,6 +139,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRSimpleShader.inl>
 #include <OSGDVRSimpleShaderBase.inl>
 
-#define OSGDVRSIMPLESHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShader.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRSIMPLESHADER_HEADER_CVSID "@(#)$Id: OSGDVRSimpleShader.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRSIMPLESHADER_H_ */

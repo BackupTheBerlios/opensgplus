@@ -55,7 +55,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRAppearance.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRAppearance.cpp,v 1.2 2003/10/07 15:26:36 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRAPPEARANCE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRAPPEARANCE_INLINE_CVSID;
 }
@@ -100,8 +100,9 @@ void DVRAppearance::initMethod (void)
 
 //! react to field changes
 
-void DVRAppearance::changed(BitVector, UInt32)
-{
+void DVRAppearance::changed(BitVector whichField, UInt32 origin)
+{ 
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes

@@ -23,7 +23,7 @@ OSG_BEGIN_NAMESPACE
 class DVRVolume;
 class BrickSet;
 class Brick;
-
+class DrawActionBase;
 
 /*! \brief *put brief class description here* 
   Auxiliary class for DVRVolume. It is intended for texture
@@ -31,15 +31,14 @@ class Brick;
  */
 
 struct TextureRecord {
-    ImageP   image;
+    ImagePtr image;
     UInt32   internalFormat;
     UInt32   externalFormat;
     Int32    textureStage0;
     Int32    textureStage1;
-    bool     doCopy;
   
-    TextureRecord(ImageP _img, UInt32 _internal, UInt32 _externalFormat,
-		  Int32 _stage0, Int32 _stage1, bool _doCopy);
+    TextureRecord(ImagePtr _img, UInt32 _internal, UInt32 _externalFormat,
+		  Int32 _stage0, Int32 _stage1);
     ~TextureRecord();
 
 private:
@@ -86,20 +85,13 @@ public:
      *	       textureState0
      *         textureState1           (optional) specifies which (multi-)texture stages
      *	 			       the texture shall be bound
-     *	       doCopy                  when set to 0 the texture manager will use the
-     *	                               image referenced by the image pointer whenever needed
-     *                                 You must be sure the pointer is valid until the texture
-     *                                 will be unregistered again - otherwise the texture
-     *                                 manager will make a local copy of the image and take
-     *                                 care about cleanup
      */
-    Int32 registerTexture(ImageP image,
-			  UInt32 internalFormat,
-			  UInt32 externalFormat,
-			  bool   doBricking    = 1,
-			  Int32  textureStage0 = 0,
-			  Int32  textureStage1 = -1,
-			  bool   doCopy        = 0);
+    Int32 registerTexture(ImagePtr image,
+			  UInt32   internalFormat,
+			  UInt32   externalFormat,
+			  bool     doBricking    = 1,
+			  Int32    textureStage0 = 0,
+			  Int32    textureStage1 = -1);
     
     //! Remove texture
     void unregisterTexture(Int32 id);
@@ -114,7 +106,7 @@ public:
     void buildTextures(ChunkMaterialPtr material, DVRVolume * volume, TextureMode mode = TM_3D);
 
     //! Return sorted brick list
-    Brick * sortBricks(Matrix modelMat, Vec3f eyePoint, DVRVolume * volume, TextureMode mode);
+    Brick * sortBricks(DrawActionBase *da, Matrix modelMat, Vec3f eyePoint, DVRVolume * volume, TextureMode mode);
     
     //! Output the instance for debug purposes
     void dump(      UInt32     uiIndent = 0, 

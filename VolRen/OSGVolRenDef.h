@@ -43,12 +43,6 @@
 #pragma once
 #endif
 
-//!! FIXME:
-//!! This define because of the interface change between OpenSG-1.1.0 and
-//!! OpenSG-1.2.0 (currently Snapshot) - should be removed for future releases
-
-#define MW_OSG_1_1
-
 
 //---------------------------------------------------------------------------
 //  Includes

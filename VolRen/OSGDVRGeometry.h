@@ -117,6 +117,6 @@ OSG_END_NAMESPACE
 #include <OSGDVRGeometry.inl>
 #include <OSGDVRGeometryBase.inl>
 
-#define OSGDVRGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRGeometry.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRGEOMETRY_HEADER_CVSID "@(#)$Id: OSGDVRGeometry.h,v 1.2 2003/10/07 15:26:36 weiler Exp $"
 
 #endif /* _OSGDVRGEOMETRY_H_ */

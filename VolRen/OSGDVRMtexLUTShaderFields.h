@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,44 +66,42 @@ OSG_BEGIN_NAMESPACE
 
 class DVRMtexLUTShader;
 
+#if !defined(OSG_DO_DOC)   // created as a dummy class, remove to prevent doubles
 //! DVRMtexLUTShaderPtr
 
 typedef FCPtr<DVRSimpleLUTShaderPtr, DVRMtexLUTShader> DVRMtexLUTShaderPtr;
 
-/*! \brief DVRMtexLUTShaderPtr field traits 
-    \ingroup FieldLib
-    \ingroup SingleFields
-*/
+#endif
+
+#if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+/*! \ingroup GrpVolRenFieldTraits
+ */
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \hideinhierarchy */
+#endif
 
 template <>
-struct FieldDataTraits<DVRMtexLUTShaderPtr> :
-#ifdef MW_OSG_1_1
-    public FieldTraitsRecurseMapper<DVRMtexLUTShaderPtr>
-#else
+struct FieldDataTraits<DVRMtexLUTShaderPtr> : 
     public FieldTraitsRecurseMapper<DVRMtexLUTShaderPtr, true>
-#endif
 {
     static DataType             _type;                       
 
     enum                        { StringConvertable = 0x00 };
     enum                        { bHasParent        = 0x01 };
-
-    static DataType &getType (void) { return _type;        }
-
-    static char     *getSName(void) { return "SFDVRMtexLUTShaderPtr"; }
 };
 
-//! SFDVRMtexLUTShaderPtr
-//! \ingroup SingleFields
-
-typedef SField<DVRMtexLUTShaderPtr> SFDVRMtexLUTShaderPtr;
-
-#ifndef OSG_COMPILEDVRMTEXLUTSHADERINST
-OSG_DLLEXPORT_DECL1(SField, DVRMtexLUTShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING)
+#if !defined(OSG_DOC_DEV_TRAITS)
+/*! \class  FieldTraitsRecurseMapper<DVRMtexLUTShaderPtr, true>
+    \hideinhierarchy
+ */
 #endif
+
+#endif // !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
+
+
 
 OSG_END_NAMESPACE
 
-#define OSGDVRMTEXLUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShaderFields.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRMTEXLUTSHADERFIELDS_HEADER_CVSID "@(#)$Id: OSGDVRMtexLUTShaderFields.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRMTEXLUTSHADERFIELDS_H_ */

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -73,7 +73,7 @@ DVRAppearancePtr DVRAppearanceBase::create(void)
 {
     DVRAppearancePtr fc; 
 
-    if(getClassType().getPrototype() != osg::NullFC) 
+    if(getClassType().getPrototype() != OSG::NullFC) 
     {
         fc = DVRAppearancePtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
@@ -100,5 +100,5 @@ DVRAppearancePtr DVRAppearanceBase::createEmpty(void)
 
 OSG_END_NAMESPACE
 
-#define OSGDVRAPPEARANCEBASE_INLINE_CVSID "@(#)$Id: OSGDVRAppearanceBase.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRAPPEARANCEBASE_INLINE_CVSID "@(#)$Id: OSGDVRAppearanceBase.inl,v 1.2 2003/10/07 15:26:36 weiler Exp $"
 

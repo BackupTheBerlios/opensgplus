@@ -1,4 +1,4 @@
- /*---------------------------------------------------------------------------*\
+/*---------------------------------------------------------------------------*\
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
@@ -8,7 +8,7 @@
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                License                                    *
  *                                                                           *
@@ -25,7 +25,7 @@
  * License along with this library; if not, write to the Free Software       *
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*\
  *                                Changes                                    *
  *                                                                           *
@@ -34,7 +34,7 @@
  *                                                                           *
  *                                                                           *
  *                                                                           *
-\*---------------------------------------------------------------------------*/
+ \*---------------------------------------------------------------------------*/
 
 //---------------------------------------------------------------------------
 //  Includes
@@ -60,7 +60,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRIsoShader.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRIsoShader.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static char cvsid_hpp[] = OSGDVRISOSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRISOSHADER_INLINE_CVSID;
 }
@@ -76,22 +76,22 @@ UInt32 DVRIsoShader::_EXT_texture3D          = Window::registerExtension( "GL_EX
 UInt32 DVRIsoShader::_NV_register_combiners  = Window::registerExtension( "GL_NV_register_combiners");
 UInt32 DVRIsoShader::_NV_register_combiners2 = Window::registerExtension( "GL_NV_register_combiners2");
 UInt32 DVRIsoShader::_SGI_color_matrix       = Window::registerExtension( "GL_SGI_color_matrix");
+UInt32 DVRIsoShader::_ARB_fragment_program   = Window::registerExtension( "GL_ARB_fragment_program" );
 
-UInt32 DVRIsoShader::_funcActiveTextureARB            = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcMultiTexCoord2dARB          = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcTexImage3DEXT               = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcCombinerParameteriNV        = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcCombinerParameterfvNV       = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcCombinerStageParameterfvNV  = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcSecondaryColor3fEXT         = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcSecondaryColor3fvEXT        = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcCombinerInputNV             = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcCombinerOutputNV            = Window::invalidFunctionID;
-UInt32 DVRIsoShader::_funcFinalCombinerInputNV        = Window::invalidFunctionID;
-
+UInt32 DVRIsoShader::_funcActiveTextureARB            = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glActiveTextureARB" );
+UInt32 DVRIsoShader::_funcMultiTexCoord2dARB          = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB" );
+UInt32 DVRIsoShader::_funcTexImage3DEXT               = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glTexImage3DEXT" );
+UInt32 DVRIsoShader::_funcCombinerParameteriNV        = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV" );
+UInt32 DVRIsoShader::_funcCombinerParameterfvNV       = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV" );
+UInt32 DVRIsoShader::_funcCombinerStageParameterfvNV  = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glCombinerStageParameterfvNV" );
+UInt32 DVRIsoShader::_funcSecondaryColor3fEXT         = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glSecondaryColor3fEXT" );
+UInt32 DVRIsoShader::_funcSecondaryColor3fvEXT        = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glSecondaryColor3fvEXT" );
+UInt32 DVRIsoShader::_funcCombinerInputNV             = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glCombinerInputNV" );
+UInt32 DVRIsoShader::_funcCombinerOutputNV            = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glCombinerOutputNV" );
+UInt32 DVRIsoShader::_funcFinalCombinerInputNV        = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
 
 /*! \class osg::DVRIsoShader
-Simple iso surface shader
+  Simple iso surface shader
 */
 
 /*----------------------- constructors & destructors ----------------------*/
@@ -101,24 +101,10 @@ Simple iso surface shader
 DVRIsoShader::DVRIsoShader(void) :
     Inherited()
 {
-  _funcActiveTextureARB            = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glActiveTextureARB" );
-  _funcMultiTexCoord2dARB          = Window::registerFunction( OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB" );
-  _funcTexImage3DEXT               = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glTexImage3DEXT" );
-  _funcCombinerParameteriNV        = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV" );
-  _funcCombinerParameterfvNV       = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV" );
-  _funcCombinerStageParameterfvNV  = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerStageParameterfvNV" );
-  _funcSecondaryColor3fEXT         = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glSecondaryColor3fEXT" );
-  _funcSecondaryColor3fvEXT        = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glSecondaryColor3fvEXT" );
-  _funcCombinerInputNV             = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerInputNV" );
-  _funcCombinerOutputNV            = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glCombinerOutputNV" );
-  _funcFinalCombinerInputNV        = Window::registerFunction ( OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
-
-  hasColorMatrix       = false;
-  useTexture2D = true;
-  hasMultiTexture = false;
-  hasRegisterCombiners = false;
-  hasPerStageConstants = false;
-  maxCombiners = 0;
+    m_gradientImage = NullFC;
+    m_shadingMode = SM_NONE;
+    m_pFragProg = NullFC;
+    m_textureId = -1;
 }
 
 //! Copy Constructor
@@ -126,18 +112,27 @@ DVRIsoShader::DVRIsoShader(void) :
 DVRIsoShader::DVRIsoShader(const DVRIsoShader &source) :
     Inherited(source)
 {  
-  hasColorMatrix       = false;
-  useTexture2D = true;
-  hasMultiTexture = false;
-  hasRegisterCombiners = false;
-  hasPerStageConstants = false;
-  maxCombiners = 0;
+    m_gradientImage = NullFC;
+    m_shadingMode = SM_NONE;
+    m_pFragProg = NullFC;
+    m_textureId = -1;
 }
 
 //! Destructor
 
 DVRIsoShader::~DVRIsoShader(void)
 {
+    if (m_pFragProg != NullFC) {
+        subRefCP(m_pFragProg);
+        m_pFragProg = NullFC;
+    }
+
+    if (m_gradientImage != NullFC) {
+        subRefCP(m_gradientImage);
+        m_gradientImage = NullFC;
+    }
+
+    m_textureId = -1;
 }
 
 /*----------------------------- class specific ----------------------------*/
@@ -150,182 +145,192 @@ void DVRIsoShader::initMethod (void)
 
 //! react to field changes
 
-void DVRIsoShader::changed(BitVector, UInt32)
+void DVRIsoShader::changed(BitVector whichField, UInt32 origin)
 {
+    // trigger re-initialization
+    if (whichField & ShadeModeFieldMask)
+        setActiveShadeMode(SM_AUTO);
+
+    Inherited::changed(whichField, origin);
 }
 
 //! output the instance for debug purposes
 
 void DVRIsoShader::dump(      UInt32    , 
-                         const BitVector ) const
+                              const BitVector ) const
 {
-  SLOG << "Dump DVRIsoShader NI" << std::endl;
+    SLOG << "Dump DVRIsoShader NI" << std::endl;
 }
 
 // Callback to set up shader - register textures here
 bool DVRIsoShader::initialize(DVRVolume *volume, DrawActionBase *action)
 {  
-  hasColorMatrix       = false;
-  hasMultiTexture      = false;
-  hasRegisterCombiners = false;
-  maxCombiners         = 0;
-  hasPerStageConstants = false;
-  useTexture2D         = true;
-    
-  DVRVolumeTexturePtr vol = DVRVOLUME_PARAMETER(volume, DVRVolumeTexture);
+
+    DVRVolumeTexturePtr vol = DVRVOLUME_PARAMETER(volume, DVRVolumeTexture);
   
-  if ((volume == NULL) || (vol == NullFC)) {
-    SWARNING << "DVRIsoShader - NO Volume" << std::endl;
-    return false;
-  }
+    if ((volume == NULL) || (vol == NullFC)) {
+        SWARNING << "DVRIsoShader - NO Volume" << std::endl;
+        return false;
+    }
 
-  Window * win = action->getWindow();
+    // Determine shading mechanism
+    tryMode(volume, action, getShadeMode());
+
+    GLenum nInternalFormat = GL_RGBA;
+    GLenum nExternalFormat = GL_RGBA;
+
+    // create gradient texture
+    if(m_gradientImage != NullFC)
+        subRefCP(m_gradientImage);
+
+    m_gradientImage = createGradientImage(vol);
+
+    addRefCP(m_gradientImage);
   
-  if(!win){
-    SWARNING << "DVRIsoShader - No valid window" << std::endl;
-    return false;
-  }
-
-  // determine available hardware support
-  if(win->hasExtension(_EXT_texture3D)){
-    useTexture2D = false;
-    FINFO(("DVRIsoShader - found 3D textures\n"));
-  }
-
-  if(volume->getTextures2D() == 1){
-    useTexture2D = true;
-    FINFO(("DVRIsoShader - 2D textures forced\n"));
-  }
-  else if(volume->getTextures2D() == 0){
-    useTexture2D = false;
-    FINFO(("DVRIsoShader - 3D textures forced\n"));
-  }
-
-  if(win->hasExtension(_NV_register_combiners)){
-    glGetIntegerv(GL_MAX_GENERAL_COMBINERS_NV,&maxCombiners);    
-    FINFO(("DVRIsoShader - found %d general register combiners\n",maxCombiners));
-    if(maxCombiners>0)
-      hasRegisterCombiners = true;
-
-    if(win->hasExtension(_NV_register_combiners2)){
-      FINFO(("DVRIsoShader - found per (register combiner) stage constants\n"));
-      hasPerStageConstants = true;
-    }
-    
-    if(useTexture2D && win->hasExtension(_ARB_multitexture)){
-      FINFO(("DVRIsoShader - found multi textures\n"));
-      hasMultiTexture = true;
-    }
-  }
-  else{
-    if(win->hasExtension(_SGI_color_matrix) || checkGLVersion(1.2)){
-      FINFO(("DVRIsoShader - found color matrix support\n"));
-      hasColorMatrix = true;
+    if((m_shadingMode == SM_REGISTER_COMBINERS_MULTI2D) || (m_shadingMode == SM_FRAGMENT_PROGRAM_2D)){
+        // init multitexture 
+        m_textureId = volume->getTextureManager().registerTexture(m_gradientImage, 
+                                                                  nInternalFormat, 
+                                                                  nExternalFormat,                      
+                                                                  true,
+                                                                  0,
+                                                                  1);
     }
     else{
-      SWARNING << "DVRIsoShader - No appropriate OpenGL-Support found" << std::endl;
-      //return false;
+        // init single texture
+        m_textureId = volume->getTextureManager().registerTexture(m_gradientImage, 
+                                                                  nInternalFormat, 
+                                                                  nExternalFormat,
+                                                                  true,
+                                                                  0,
+                                                                  -1);
     }
-  }
 
-  // we need a stencil buffer for the color matrix shading
-  if(!hasRegisterCombiners && hasColorMatrix){
-    GLint numStencil;
-    glGetIntegerv(GL_STENCIL_BITS,&numStencil);
-    if(numStencil == 0){
-      SWARNING << "DVRIsoShader - No Stencil Buffer found" << std::endl;
-      return false;
+    if( m_textureId < 0){
+        SWARNING << "DVRIsoShader - Could not register texture: "<< m_textureId << std::endl; 
+        subRefCP(m_gradientImage);
+        return false;
     }
-  }
 
-  GLenum nInternalFormat = GL_RGBA;
-  GLenum nExternalFormat = GL_RGBA;
-
-
-  // create gradient texture
-  ImageP gradientImage = createGradientImage(vol);
-#ifndef MW_OSG_1_1
-  gradientImage->addRef();
-#endif
-  
-  // register texture
-  Int32 textureId = -1;
-
-  if(useTexture2D && hasMultiTexture && hasRegisterCombiners){
-    textureId = volume->getTextureManager().registerTexture(gradientImage, 
-                                                            nInternalFormat, 
-                                                            nExternalFormat,                      
-                                                            true,
-                                                            0,
-                                                            1,
-                                                            true);
-  }
-  else{
-    textureId = volume->getTextureManager().registerTexture(gradientImage, 
-                                                            nInternalFormat, 
-                                                            nExternalFormat,
-                                                            true,
-                                                            0,
-                                                            -1,
-                                                            true);
-  }
-
-  if( textureId < 0){
-    SWARNING << "DVRIsoShader - Could not register texture: "<< textureId << std::endl; 
-    return false;
-  }
-
-#ifdef MW_OSG_1_1
-  delete gradientImage;
-#else
-  gradientImage->subRef();
-#endif
-
-  return true;
+    return true;
 }
 
 
 // Callback before any slice is rendered - setup per volume
 void DVRIsoShader::activate(DVRVolume *volume, DrawActionBase *action)
 {
-  if(hasRegisterCombiners) {
-    activate_NVRegisterCombinerShading(volume,action);
-  }
-  else{
-    if(hasColorMatrix) {
-      activate_ColorMatrixShading(volume,action);
+    // reinitialize if hardware mode has not yet been chosen or mode has changed
+    if (getActiveShadeMode() == SM_AUTO) {
+
+        cleanup(volume, action);
+	initialize(volume, action);
+
+	// notify volume about shader changed
+	beginEditCP(DVRVolumePtr(volume), DVRVolume::ShaderFieldMask);
+	endEditCP(DVRVolumePtr(volume), DVRVolume::ShaderFieldMask);
     }
-  }
+
+    switch(m_shadingMode){
+    case SM_COLORMATRIX_2D:
+    case SM_COLORMATRIX_3D:
+        activate_ColorMatrixShading(volume,action);
+        break;
+    case SM_REGISTER_COMBINERS_2D:
+    case SM_REGISTER_COMBINERS_MULTI2D:
+    case SM_REGISTER_COMBINERS_3D: 
+        activate_NVRegisterCombinerShading(volume,action);
+        break;
+    case SM_FRAGMENT_PROGRAM_2D: 
+    case SM_FRAGMENT_PROGRAM_3D:
+        activate_FragmentProgramShading(volume,action);
+        break;
+    case SM_NONE:
+    default:
+        break;
+    }
 }
 
 
 // Callback before any brick - state setup per brick
-void DVRIsoShader::brickActivate(DVRVolume *, DrawActionBase *, UInt8)
+void DVRIsoShader::brickActivate(DVRVolume *, DrawActionBase *, Brick *)
 {
-  FDEBUG(("DVRIsoShader::brickActivate - nothing to do\n"));  
+    FDEBUG(("DVRIsoShader::brickActivate - nothing to do\n"));  
 }
 
 
 // Callback after all rendering of the volume is done
 void DVRIsoShader::deactivate(DVRVolume *volume, DrawActionBase *action)
 {
-  if(hasRegisterCombiners) {
-    deactivate_NVRegisterCombinerShading(volume,action);
-  }
-  else{
-    if(hasColorMatrix) {
-      deactivate_ColorMatrixShading(volume,action);
-    }    
-  }
+    switch(m_shadingMode){
+    case SM_COLORMATRIX_2D:
+    case SM_COLORMATRIX_3D:
+        deactivate_ColorMatrixShading(volume,action);
+        break;
+    case SM_REGISTER_COMBINERS_2D:
+    case SM_REGISTER_COMBINERS_MULTI2D:
+    case SM_REGISTER_COMBINERS_3D:
+        deactivate_NVRegisterCombinerShading(volume,action);
+        break;
+    case SM_FRAGMENT_PROGRAM_2D: 
+    case SM_FRAGMENT_PROGRAM_3D:
+        deactivate_FragmentProgramShading(volume,action);
+        break;
+    case SM_NONE:
+    default:
+        break;
+    }
 }
+
+
+// Callback to clean up shader resources
+void DVRIsoShader::cleanup(DVRVolume *volume, DrawActionBase *)
+{
+    if (m_pFragProg != NullFC) {
+        subRefCP(m_pFragProg);
+	m_pFragProg = NullFC;
+    }
+    if (m_gradientImage != NullFC) {
+        subRefCP(m_gradientImage);
+        m_gradientImage = NullFC;        
+    }
+    if (m_textureId != -1){
+        volume->getTextureManager().unregisterTexture(m_textureId);
+    }
+}
+
 
 // Own function for rendering a slice, only needed for 2D texturing with slice interpolation, 
 // otherwise this is done by the volume
 void DVRIsoShader::renderSlice(DVRVolume *volume, DrawActionBase *action,
                                Real32 *data, UInt32 vertices, UInt32 values)
 {
-  if(hasRegisterCombiners)
-    renderSlice_NVRegisterCombinerShading(volume,action,data,vertices,values);
+    switch(m_shadingMode){
+    case SM_REGISTER_COMBINERS_MULTI2D:
+        renderSlice_NVRegisterCombinerShading(volume,action,data,vertices,values);
+        break;
+    case SM_FRAGMENT_PROGRAM_2D:
+        renderSlice_FragmentProgramShading(volume,action,data,vertices,values);
+        break;
+    default:
+        break;
+    }
+}
+
+
+// Callback for rendering clipped slices
+void DVRIsoShader::renderSlice(DVRVolume * volume, DrawActionBase * action,
+                                DVRRenderSlice *clippedSlice) 
+{
+     switch(m_shadingMode){
+     case SM_REGISTER_COMBINERS_MULTI2D:
+         renderSlice_NVRegisterCombinerShading(volume,action,clippedSlice);
+         break;
+     case SM_FRAGMENT_PROGRAM_2D:
+         renderSlice_FragmentProgramShading(volume,action,clippedSlice);
+         break;
+     default:
+         break;
+     }
 }
 
 
@@ -333,90 +338,108 @@ void DVRIsoShader::renderSlice(DVRVolume *volume, DrawActionBase *action,
 // only needed for 2D texturing with slice interpolation
 bool DVRIsoShader::hasRenderCallback () 
 {
-  return useTexture2D && hasMultiTexture;
+    switch(m_shadingMode){
+    case SM_REGISTER_COMBINERS_MULTI2D:
+        return true;
+    case SM_FRAGMENT_PROGRAM_2D:
+        return true;
+    default:
+        break;
+    };
+    return false;
 }
 
 
 // Indicate whether slices should be multitextured or not
 bool DVRIsoShader::useMTSlabs ()
 {
-  return useTexture2D && hasMultiTexture;
+    switch(m_shadingMode){
+    case SM_REGISTER_COMBINERS_MULTI2D:
+        return true;
+    case SM_FRAGMENT_PROGRAM_2D:
+        return true;
+    default:
+        break;
+    };
+    return false;
 }
 
 
 // Compute gradients from a 3D volume
-ImageP DVRIsoShader::createGradientImage(DVRVolumeTexturePtr volTex)
+ImagePtr DVRIsoShader::createGradientImage(DVRVolumeTexturePtr volTex)
 { 
-  int resX = (int) volTex->getImage()->getWidth(); 
-  int resY = (int) volTex->getImage()->getHeight(); 
-  int resZ = (int) volTex->getImage()->getDepth(); 
+    int resX = (int) volTex->getImage()->getWidth(); 
+    int resY = (int) volTex->getImage()->getHeight(); 
+    int resZ = (int) volTex->getImage()->getDepth(); 
 
-  int nGradSetSize =   resX * resY * resZ * 4; 
-  int zOff         =   resX * resY; 
-  int yOff         =   resX;
+    int nGradSetSize =   resX * resY * resZ * 4; 
+    int zOff         =   resX * resY; 
+    int yOff         =   resX;
   
     
-  //  Compute the Gradients  
-  UChar8 *volData = volTex->getImage()->getData();
+    //  Compute the Gradients  
+    UChar8 *volData = volTex->getImage()->getData();
   
-  UChar8 *gradbuffer = new UChar8[nGradSetSize];  
+    UChar8 *gradbuffer = new UChar8[nGradSetSize];  
 
-  Vec3f gradient;
-  for(int z = 0 ; z < resZ ; z++) { 
-    for(int y = 0 ; y < resY ; y++) { 
-      for(int x = 0 ; x < resX ; x++) { 
+    Vec3f gradient;
+    for(int z = 0 ; z < resZ ; z++) { 
+        for(int y = 0 ; y < resY ; y++) { 
+            for(int x = 0 ; x < resX ; x++) { 
    
-	if (x == 0) {
-	  gradient = Vec3f(-1.0, 0.0, 0.0);
-	} else if (x == resX-1) {
-	  gradient = Vec3f( 1.0, 0.0, 0.0);
-	} else if (y == 0) {
-	  gradient = Vec3f(0.0, -1.0, 0.0);
-	} else if (y == resY-1) {
-	  gradient = Vec3f(0.0,  1.0, 0.0);
-	} else if (z == 0) {
-	  gradient = Vec3f(0.0, 0.0, -1.0);
-	} else if (z == resZ-1) {
-	  gradient = Vec3f(0.0, 0.0,  1.0);
-	} else {
+                if (x == 0) {
+                    gradient = Vec3f(-1.0, 0.0, 0.0);
+                } else if (x == resX-1) {
+                    gradient = Vec3f( 1.0, 0.0, 0.0);
+                } else if (y == 0) {
+                    gradient = Vec3f(0.0, -1.0, 0.0);
+                } else if (y == resY-1) {
+                    gradient = Vec3f(0.0,  1.0, 0.0);
+                } else if (z == 0) {
+                    gradient = Vec3f(0.0, 0.0, -1.0);
+                } else if (z == resZ-1) {
+                    gradient = Vec3f(0.0, 0.0,  1.0);
+                } else {
 	  
-	  UChar8 & dataXl = volData[ z    * zOff +  y    * yOff + x-1]; 
-	  UChar8 & dataXr = volData[ z    * zOff +  y    * yOff + x+1]; 
-	  UChar8 & dataYb = volData[ z    * zOff + (y-1) * yOff + x  ]; 
-	  UChar8 & dataYt = volData[ z    * zOff + (y+1) * yOff + x  ]; 
-	  UChar8 & dataZf = volData[(z-1) * zOff +  y    * yOff + x  ]; 
-	  UChar8 & dataZn = volData[(z+1) * zOff +  y    * yOff + x  ]; 
+                    UChar8 & dataXl = volData[ z    * zOff +  y    * yOff + x-1]; 
+                    UChar8 & dataXr = volData[ z    * zOff +  y    * yOff + x+1]; 
+                    UChar8 & dataYb = volData[ z    * zOff + (y-1) * yOff + x  ]; 
+                    UChar8 & dataYt = volData[ z    * zOff + (y+1) * yOff + x  ]; 
+                    UChar8 & dataZf = volData[(z-1) * zOff +  y    * yOff + x  ]; 
+                    UChar8 & dataZn = volData[(z+1) * zOff +  y    * yOff + x  ]; 
 					
-  	  gradient = Vec3f((float)(dataXl - dataXr), 
-                           (float)(dataYb - dataYt), 
-                           (float)(dataZf - dataZn));  
-          if (gradient.length() != 0.0)
-            gradient.normalize(); 
+                    gradient = Vec3f((float)(dataXl - dataXr), 
+                                     (float)(dataYb - dataYt), 
+                                     (float)(dataZf - dataZn));  
+                    if (gradient.length() != 0.0)
+                        gradient.normalize(); 
 
-	} 
+                } 
 		
-  	gradbuffer[4 * (z * zOff + y * yOff + x)  ] 
-          = (UChar8) (127.0 + gradient[0] * 127.0); // R 
-  	gradbuffer[4 * (z * zOff + y * yOff + x)+1] 
-          = (UChar8) (127.0 + gradient[1] * 127.0); // G 
-  	gradbuffer[4 * (z * zOff + y * yOff + x)+2] 
-          = (UChar8) (127.0 + gradient[2] * 127.0); // B 
-  	gradbuffer[4 * (z * zOff + y * yOff + x)+3] 
-          = volData[z * zOff +  y    * yOff + x  ]; // A 
+                gradbuffer[4 * (z * zOff + y * yOff + x)  ] 
+                    = (UChar8) (127.0 + gradient[0] * 127.0); // R 
+                gradbuffer[4 * (z * zOff + y * yOff + x)+1] 
+                    = (UChar8) (127.0 + gradient[1] * 127.0); // G 
+                gradbuffer[4 * (z * zOff + y * yOff + x)+2] 
+                    = (UChar8) (127.0 + gradient[2] * 127.0); // B 
+                gradbuffer[4 * (z * zOff + y * yOff + x)+3] 
+                    = volData[z * zOff +  y    * yOff + x  ]; // A 
 
-      } // for x 
+            } // for x 
 
-    } // for y 
+        } // for y 
 
-  } // for z 
+    } // for z 
 
-  ImageP gradientImage = new Image(Image::OSG_RGBA_PF, 
-                                   resX, resY, resZ, 
-                                   1, 1, 0.0, 
-                                   gradbuffer, 
-                                   true);       
+    ImagePtr m_gradientImage = Image::create();
 
-  return gradientImage;
+    m_gradientImage->set(Image::OSG_RGBA_PF,
+                       resX, resY, resZ,
+                       1, 1, 0.0, gradbuffer);
+
+    delete [] gradbuffer;
+
+    return m_gradientImage;
 
 }
 
@@ -426,58 +449,62 @@ void DVRIsoShader::getLightSources(DirLightList &diffuseLights,
 				   DirLightList &specularLights,
                                    Color4f      &ambientLight   )
 {
-  ambientLight.clear();
-  diffuseLights.clear();
-  specularLights.clear();
+    ambientLight.clear();
+    diffuseLights.clear();
+    specularLights.clear();
 
-  int maxNumLights;
-  glGetIntegerv(GL_MAX_LIGHTS, &maxNumLights);
+    int maxNumLights;
+    glGetIntegerv(GL_MAX_LIGHTS, &maxNumLights);
 
-  GLfloat  lightPos[4];
-  GLfloat  diffuseColor[4];
-  GLfloat  specularColor[4];
-  GLfloat  ambientColor[4];  
+    GLfloat  lightPos[4];
+    GLfloat  diffuseColor[4];
+    GLfloat  specularColor[4];
+    GLfloat  ambientColor[4];  
 
-  for(int i = 0; i < maxNumLights; i++) {
+    for(int i = 0; i < maxNumLights; i++) {
     
-    if(glIsEnabled(GLenum(GL_LIGHT0 + i))){
-      glGetLightfv(GLenum(GL_LIGHT0 + i), GL_POSITION, lightPos);
-      glGetLightfv(GLenum(GL_LIGHT0 + i), GL_AMBIENT,  ambientColor);
-      glGetLightfv(GLenum(GL_LIGHT0 + i), GL_DIFFUSE,  diffuseColor);
-      glGetLightfv(GLenum(GL_LIGHT0 + i), GL_SPECULAR, specularColor);
+        if(glIsEnabled(GLenum(GL_LIGHT0 + i))){
+            glGetLightfv(GLenum(GL_LIGHT0 + i), GL_POSITION, lightPos);
+            glGetLightfv(GLenum(GL_LIGHT0 + i), GL_AMBIENT,  ambientColor);
+            glGetLightfv(GLenum(GL_LIGHT0 + i), GL_DIFFUSE,  diffuseColor);
+            glGetLightfv(GLenum(GL_LIGHT0 + i), GL_SPECULAR, specularColor);
       
-      // check for directional light
-      if(1.0 ==  lightPos[3] + 1.0) { // homogenous coordinate = 0 -> infinity !
-        DirLight light;
+	    //	    SLOG << "LightSource: " << i << " enabled" << std::endl;
 
-	// set global light direction
-	light.dir.setValues(lightPos[0],lightPos[1],lightPos[2]);
+            // check for directional light
+            if(1.0 ==  lightPos[3] + 1.0) { // homogenous coordinate = 0 -> infinity !
+                DirLight light;
+
+                // set global light direction
+                light.dir.setValues(lightPos[0],lightPos[1],lightPos[2]);
 	  
-        // diffuse
-        if(diffuseColor[0] > 1e-6 || diffuseColor[1] > 1e-6 || diffuseColor[2] > 1e-6){
-          light.color = Color4f(diffuseColor[0],diffuseColor[1],diffuseColor[2],0.0f);
-          diffuseLights.push_back(light);
-        }
+		// SLOG << "Pos: " << i << " :" << light.dir << std::endl;
 
-	// specular
-        if(specularColor[0] > 1e-6 || specularColor[1] > 1e-6 || specularColor[2] > 1e-6){
-          light.color = Color4f(specularColor[0],specularColor[1],specularColor[2],0.0f);
-          specularLights.push_back(light);
-        }
+                // diffuse
+                if(diffuseColor[0] > 1e-6 || diffuseColor[1] > 1e-6 || diffuseColor[2] > 1e-6){
+                    light.color = Color4f(diffuseColor[0],diffuseColor[1],diffuseColor[2],0.0f);
+                    diffuseLights.push_back(light);
+                }
 
-        // ambient
-        for(unsigned int i = 0; i < 4; i++){
-          ambientLight[i] += ambientColor[i];
+                // specular
+                if(specularColor[0] > 1e-6 || specularColor[1] > 1e-6 || specularColor[2] > 1e-6){
+                    light.color = Color4f(specularColor[0],specularColor[1],specularColor[2],0.0f);
+                    specularLights.push_back(light);
+                }
+
+                // ambient
+                for(unsigned int i = 0; i < 4; i++){
+                    ambientLight[i] += ambientColor[i];
+                }
+            }
         }
-      }
     }
-  }
 
-  // global ambient
-  glGetFloatv(GL_LIGHT_MODEL_AMBIENT,ambientColor);
-  for(unsigned int i = 0; i < 4; i++){
-    ambientLight[i] += ambientColor[i];
-  }
+    // global ambient
+    glGetFloatv(GL_LIGHT_MODEL_AMBIENT,ambientColor);
+    for(unsigned int i = 0; i < 4; i++){
+        ambientLight[i] += ambientColor[i];
+    }
   
 }
 
@@ -485,11 +512,133 @@ void DVRIsoShader::getLightSources(DirLightList &diffuseLights,
 // Note: only the major and the minor version is checked!!
 bool DVRIsoShader::checkGLVersion(GLfloat minVersion)
 {
-  char *versionString = (char*)glGetString(GL_VERSION);
+    char *versionString = (char*)glGetString(GL_VERSION);
 
-  if(atof(versionString) >= minVersion)
-    return true;
-  else
-    return false;
+    if(atof(versionString) >= minVersion)
+        return true;
+    else
+        return false;
 }
 
+
+//! Automatically select a shading mode
+UInt8 DVRIsoShader::selectMode(DVRVolume *volume, DrawActionBase *action )
+{
+    if (isModeSupported( volume, action, SM_FRAGMENT_PROGRAM_3D ))
+    { 
+	FINFO(("DVRIsoShader - Autoselect: Using 3D textures and fragment program...\n"));
+	return SM_FRAGMENT_PROGRAM_3D;
+    }
+
+    if (isModeSupported( volume, action, SM_FRAGMENT_PROGRAM_2D ))
+    { 
+	FINFO(("DVRIsoShader - Autoselect: Using 2D textures and fragment program...\n"));
+	return SM_FRAGMENT_PROGRAM_2D;
+    }
+
+    if (isModeSupported( volume, action, SM_REGISTER_COMBINERS_3D ))
+    { 
+	FINFO(("DVRIsoShader - Autoselect: Using 3D textures and register combiners...\n"));
+	return SM_REGISTER_COMBINERS_3D;
+    }
+
+    if (isModeSupported( volume, action, SM_REGISTER_COMBINERS_MULTI2D ))
+    {
+        FINFO(("DVRIsoShader - Autoselect: Using 2D multi textures and register combiners...\n"));
+	return SM_REGISTER_COMBINERS_MULTI2D;
+    }
+
+    if (isModeSupported( volume, action, SM_REGISTER_COMBINERS_2D ))
+    { 
+	FINFO(("DVRIsoShader - Autoselect: Using 2D textures and register combiners...\n"));
+	return SM_REGISTER_COMBINERS_2D;
+    }
+
+    if (isModeSupported( volume, action, SM_COLORMATRIX_3D ))
+    {
+	FINFO(("DVRIsoShader - Autoselect: Using 3D textures and color matrix...\n"));
+	return SM_COLORMATRIX_3D;
+    }
+
+    if (isModeSupported( volume, action, SM_COLORMATRIX_2D ))
+    {
+        FINFO(("DVRIsoShader - Autoselect: Using 2D textures and color matrix...\n"));
+	return SM_COLORMATRIX_2D;
+    }
+
+    SWARNING<<"DVRIsoShader - None of the implemented shading algorithms"<<std::endl<<"is supported by this hardware!"<<std::endl;
+    return SM_NONE;
+}
+
+//! Checks whether the selected mode is supported
+bool DVRIsoShader::isModeSupported(DVRVolume *volume, DrawActionBase *action, UInt8 mode )
+{ 
+    Window * win = action->getWindow();
+  
+    if(!win){
+        SWARNING << "DVRIsoShader - No valid window" << std::endl;
+        return false;
+    }
+
+    GLint numStencil;
+    bool forceTexture2D = false;
+    bool forceTexture3D = false;
+
+    if(volume->getTextures2D() == 1){
+        forceTexture2D = true;
+        SLOG<<"DVRIsoShader - 2D textures forced"<<std::endl;
+    }
+    else if(volume->getTextures2D() == 0){
+        forceTexture3D = true;
+        SLOG<<"DVRIsoShader - 3D textures forced"<<std::endl;
+    }
+    
+    switch (mode) {
+    case SM_COLORMATRIX_2D:
+        glGetIntegerv(GL_STENCIL_BITS,&numStencil);
+        return numStencil > 0 && (win->hasExtension(_SGI_color_matrix) || checkGLVersion(1.2)) && !forceTexture3D;
+    case SM_COLORMATRIX_3D:
+        glGetIntegerv(GL_STENCIL_BITS,&numStencil);
+        return numStencil > 0 && win->hasExtension(_EXT_texture3D) && (win->hasExtension(_SGI_color_matrix) || checkGLVersion(1.2)) && !forceTexture2D;
+    case SM_REGISTER_COMBINERS_2D:
+        return win->hasExtension(_NV_register_combiners) && !forceTexture3D;
+    case SM_REGISTER_COMBINERS_MULTI2D:
+        return win->hasExtension(_ARB_multitexture) && win->hasExtension(_NV_register_combiners) && !forceTexture3D;
+    case SM_REGISTER_COMBINERS_3D:
+        return win->hasExtension(_EXT_texture3D) && win->hasExtension(_NV_register_combiners) && !forceTexture2D;
+    case SM_FRAGMENT_PROGRAM_2D:
+        return win->hasExtension(_ARB_multitexture) && win->hasExtension(_ARB_fragment_program) && forceTexture3D;
+    case SM_FRAGMENT_PROGRAM_3D:
+        return win->hasExtension(_EXT_texture3D) && win->hasExtension(_ARB_fragment_program) && !forceTexture2D;
+    case SM_NONE:  
+        return true;
+    default: 	
+        break;
+    }
+
+    return false;
+    
+}
+
+//! Checks whether the selected mode is supported
+bool DVRIsoShader::tryMode(DVRVolume *volume, DrawActionBase *action, UInt8 mode )
+{
+    if (mode != SM_AUTO){
+        // A certain mode has been selected
+        if (isModeSupported( volume, action, mode )){
+            SWARNING << "DVRIsoShader - User specified shading mode " << int(mode) << std::endl;
+            m_shadingMode =  mode;
+        }
+        else{
+	    SWARNING << "DVRIsoShader - Unsupported shading mode requested " << int(mode)
+		 << " disabling shading" << std::endl;
+	    m_shadingMode = SM_NONE;
+	}
+    }
+    else {
+        // Use automatic mode selection
+        m_shadingMode = selectMode( volume, action );
+    }
+    setActiveShadeMode(m_shadingMode);
+    return m_shadingMode == mode;
+}

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -65,7 +65,7 @@
 
 #include <OSGAttachment.h> // Parent
 
-#include <OSGImagePFields.h> // Image type
+#include <OSGImageFields.h> // Image type
 #include <OSGReal32Fields.h> // Histogram type
 #include <OSGReal32Fields.h> // MaxVal type
 #include <OSGVec3fFields.h> // SliceThickness type
@@ -101,13 +101,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTextureBase : public Attachment
         NextFieldId           = FileNameFieldId       + 1
     };
 
-    static const osg::BitVector ImageFieldMask;
-    static const osg::BitVector HistogramFieldMask;
-    static const osg::BitVector MaxValFieldMask;
-    static const osg::BitVector SliceThicknessFieldMask;
-    static const osg::BitVector ResolutionFieldMask;
-    static const osg::BitVector FileNameFieldMask;
+    static const OSG::BitVector ImageFieldMask;
+    static const OSG::BitVector HistogramFieldMask;
+    static const OSG::BitVector MaxValFieldMask;
+    static const OSG::BitVector SliceThicknessFieldMask;
+    static const OSG::BitVector ResolutionFieldMask;
+    static const OSG::BitVector FileNameFieldMask;
 
+
+    static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -118,7 +120,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTextureBase : public Attachment
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                       Get                                    */
+    /*! \name                FieldContainer Get                            */
     /*! \{                                                                 */
 
     virtual       FieldContainerType &getType  (void); 
@@ -131,15 +133,15 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTextureBase : public Attachment
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-           SFImageP            *getSFImage          (void);
+           SFImagePtr          *getSFImage          (void);
            MFReal32            *getMFHistogram      (void);
            SFReal32            *getSFMaxVal         (void);
            SFVec3f             *getSFSliceThickness (void);
            SFVec3f             *getSFResolution     (void);
            SFString            *getSFFileName       (void);
 
-           ImageP              &getImage          (void);
-     const ImageP              &getImage          (void) const;
+           ImagePtr            &getImage          (void);
+     const ImagePtr            &getImage          (void) const;
            Real32              &getMaxVal         (void);
      const Real32              &getMaxVal         (void) const;
            Vec3f               &getSliceThickness (void);
@@ -157,7 +159,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTextureBase : public Attachment
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-     void setImage          ( const ImageP &value );
+     void setImage          ( const ImagePtr &value );
      void setMaxVal         ( const Real32 &value );
      void setSliceThickness ( const Vec3f &value );
      void setResolution     ( const Vec3f &value );
@@ -207,7 +209,7 @@ class OSG_VOLRENLIB_DLLMAPPING DVRVolumeTextureBase : public Attachment
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    SFImageP            _sfImage;
+    SFImagePtr          _sfImage;
     MFReal32            _mfHistogram;
     SFReal32            _sfMaxVal;
     SFVec3f             _sfSliceThickness;
@@ -260,6 +262,6 @@ typedef DVRVolumeTextureBase *DVRVolumeTextureBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMETEXTUREBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeTextureBase.h,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRVOLUMETEXTUREBASE_HEADER_CVSID "@(#)$Id: OSGDVRVolumeTextureBase.h,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 
 #endif /* _OSGDVRVOLUMETEXTUREBASE_H_ */

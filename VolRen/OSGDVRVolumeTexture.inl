@@ -53,28 +53,14 @@ OSG_BEGIN_NAMESPACE
 /*------------------------------ access -----------------------------------*/
 
 inline
-void DVRVolumeTexture::setImage( const ImageP &value )
+void DVRVolumeTexture::setImage( const ImagePtr &value )
 {
-    if (_sfImage.getValue() != NULL)
-    {
-#ifdef MW_OSG_1_1
-	delete _sfImage.getValue();
-#else
-	_sfImage.getValue()->subRef();
-#endif
-    }
 
-#ifndef MW_OSG_1_1
-    if (value != NULL)
-    {
-	value->addRef();
-    }
-#endif
+    setRefdCP(_sfImage.getValue(), value);
 
-    _sfImage.setValue(value);
 }	
 
 OSG_END_NAMESPACE
 
-#define OSGDVRVOLUMETEXTURE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeTexture.inl,v 1.1 2002/10/10 11:11:26 weiler Exp $"
+#define OSGDVRVOLUMETEXTURE_INLINE_CVSID "@(#)$Id: OSGDVRVolumeTexture.inl,v 1.2 2003/10/07 15:26:37 weiler Exp $"
 

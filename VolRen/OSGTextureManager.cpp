@@ -27,40 +27,21 @@ OSG_BEGIN_NAMESPACE
 
 //!! --- CLASS TextureRecord ------------------------------------------------------
 
-TextureRecord::TextureRecord(ImageP _img, UInt32 _internal, UInt32 _externalFormat,
-			     Int32 _stage0, Int32 _stage1, bool _doCopy) :
+TextureRecord::TextureRecord(ImagePtr _img, UInt32 _internal, UInt32 _externalFormat,
+			     Int32 _stage0, Int32 _stage1) :
     internalFormat(_internal),
     externalFormat(_externalFormat),
     textureStage0(_stage0),
-    textureStage1(_stage1),
-    doCopy(_doCopy)
+    textureStage1(_stage1)
 {
-#ifdef MW_OSG_1_1
-    if (doCopy) {
-        image = new Image(*_img);
-//	std::cerr << "copy image: " << int(image) << std::endl;
-    }
-    else {
-        image = _img;
-//	std::cerr << "reference image: " << int(image) << std::endl;
-    }
-#else
     image = _img;
-    image->addRef();
-#endif
+    addRefCP(image);
 }
 
 TextureRecord::~TextureRecord()
 {
-#ifdef MW_OSG_1_1  
-    if (doCopy) {
-//      std::cerr << "deleting image: " << int(image) << std::endl;
-      delete image;
-    }
-#else
-    image->subRef();
-    image = NULL;
-#endif
+    subRefCP(image);
+    image = NullFC;
 }
 
 
@@ -80,13 +61,12 @@ TextureManager::~TextureManager()
 }
 
 //! Register texture
-Int32 TextureManager::registerTexture(ImageP image,
-				      UInt32 internalFormat,
-				      UInt32 externalFormat,
-				      bool   doBricking,
-				      Int32  textureStage0,
-				      Int32  textureStage1,
-				      bool   doCopy)
+Int32 TextureManager::registerTexture(ImagePtr image,
+				      UInt32   internalFormat,
+				      UInt32   externalFormat,
+				      bool     doBricking,
+				      Int32    textureStage0,
+				      Int32    textureStage1)
 { 
     FDEBUG(("TextureManager::registerTexture stage0: %d - stage1: %d\n",
 	    textureStage0, textureStage1));
@@ -125,8 +105,7 @@ Int32 TextureManager::registerTexture(ImageP image,
 					       internalFormat,
 					       externalFormat,
 					       textureStage0,
-					       textureStage1,
-					       doCopy);
+					       textureStage1);
     registeredTextures.push_back(record);
     
     return registeredTextures.size() - 1; 
@@ -143,22 +122,9 @@ void TextureManager::unregisterTexture(Int32 id)
 	return;
     }
 
-#if 1
     TextureSet::iterator iter = registeredTextures.begin();
     delete registeredTextures[id];
     registeredTextures.erase(iter+id);
-#else
-    for (TextureSet::iterator iter = registeredTextures.begin();
-	 iter != registeredTextures.end();
-	 iter++)
-    {
-        if ((*iter).image == image) {
-	    FDEBUG(("TextureManager::untegisterTexture - Texture found - %d \n", iter));
-	    delete registeredTextures[iter];
-	    registeredTextures.erase(iter);
-	}
-    }
-#endif
 }
 
 
@@ -171,28 +137,11 @@ void TextureManager::reloadTexture(Int32 id, DrawActionBase * action)
 	return;
     }
 
-#if 1
     for (int k = 0; k < 3; k++)
     {
         m_BrickSets[k].reloadBrickTextures(action, registeredTextures[id]->textureStage0);
 	m_BrickSets[k].reloadBrickTextures(action, registeredTextures[id]->textureStage1);
     }
-#else
-    
-    FDEBUG(("TextureManager::reloadTexture\n"));
-    for (int i = 0; i < registeredTextures.size(); i++) {
-        if (registeredTextures[i]->image == image) {
-	    FDEBUG(("TextureManager::reloadTexture - Texture found\n"));
-	    FDEBUG(("texture %d - Window %d\n", i, action->getWindow()));
-
-	    for (int k = 0; k < 3; k++)
-	    {
-	        m_BrickSets[k].reloadBrickTextures(action, registeredTextures[i]->textureStage0);
-		m_BrickSets[k].reloadBrickTextures(action, registeredTextures[i]->textureStage1);
-	    }
-	}
-    }
-#endif
 }
 
 
@@ -247,8 +196,6 @@ void TextureManager::buildTextures(ChunkMaterialPtr   material,
 	    Vec3f brickSizeY(res[0], 2, res[2]);
 	    Vec3f brickSizeZ(res[0], res[1], 2);
 
-	    std::cerr << "TextureManager::buildTextures " << res[0] << ", " << res[1] << "," << res[2] << std::endl;
-	
 	    m_BrickSets[BrickSet::XY].buildBricks3D(volume, brickSizeZ, 1, BrickSet::XY);
 	    m_BrickSets[BrickSet::XZ].buildBricks3D(volume, brickSizeY, 1, BrickSet::XZ);
 	    m_BrickSets[BrickSet::YZ].buildBricks3D(volume, brickSizeX, 1, BrickSet::YZ);
@@ -376,58 +323,44 @@ Vec3f TextureManager::calcBrickSubdivision(int resX, int resY, int resZ, int dat
 
 
 Brick *
-TextureManager::sortBricks(Matrix modelMat, Vec3f eyePoint, DVRVolume * volume, TextureMode mode) {
+TextureManager::sortBricks(DrawActionBase *da, Matrix modelMat, Vec3f eyePoint, DVRVolume * volume, TextureMode mode) {
 	
     FDEBUG(("TextureManager::sortBricks\n"));
     if ((mode == TM_2D) || (mode == TM_2D_Multi)) {
         // select the right bickset
-        Vec3f               finalSliceDir;
-	static Vec3f        volTranslation;
-	static Vec3f        volScale;
-	static Quaternion   volRotationInv;
-	static Quaternion   dummyRot;	// static over all instances
-
-	modelMat.getTransform( volTranslation, volRotationInv, volScale, dummyRot ); 
-	volRotationInv.invert();
-	volRotationInv.multVec( eyePoint, finalSliceDir );
-	
-	double x = finalSliceDir[0];
-	double y = finalSliceDir[1];
-	double z = finalSliceDir[2];
-	double X = (x > 0)? x: -x;
-	double Y = (y > 0)? y: -y;
-	double Z = (z > 0)? z: -z;
-	
-	BrickSet::Orientation ori = BrickSet::XY;
-	bool                  btf = true;
-	
-	if ((Z > Y) && (Z > X)) { // Z is the largest component
-	  ori = BrickSet::XY;
-	  if (z > 0) {
-	    btf = false;
-	  } else {
-	    btf = true;
-	  }
-	} else {
-	  if (Y > X) {
-	    ori = BrickSet::XZ;
-	    if (y > 0) {
-	      btf = false;
-	    } else {
-	      btf = true;
-	    }
-	  } else {
-	    ori = BrickSet::YZ;
-	    if (x > 0) {
-	      btf = false;
-	    } else {
-	      btf = true;
-	    }
-	  }
-	}
-
+  	BrickSet::Orientation ori = BrickSet::XY;
+  	bool                  btf = true;
+        switch(Slicer::getSlicingDirection(da,NULL)){
+        case Slicer::SD_X_FRONT_TO_BACK:
+            ori = BrickSet::YZ;
+            btf = false;
+            break;
+        case Slicer::SD_X_BACK_TO_FRONT:
+            ori = BrickSet::YZ;
+            btf = true;
+            break;
+        case Slicer::SD_Y_FRONT_TO_BACK:
+            ori = BrickSet::XZ;
+            btf = false;
+            break;
+        case Slicer::SD_Y_BACK_TO_FRONT:
+            ori = BrickSet::XZ;
+            btf = true;
+            break;
+        case Slicer::SD_Z_FRONT_TO_BACK:
+            ori = BrickSet::XY;
+            btf = false;
+            break;
+        case Slicer::SD_Z_BACK_TO_FRONT:
+            ori = BrickSet::XY;
+            btf = true;
+            break;
+        default:
+            break;
+        }
+        
 	// btf or ftb? 
-        return m_BrickSets[ori].sortBricks2D( btf );
+        return m_BrickSets[ori].sortBricks2D(btf);
     } else {
         return m_BrickSets[BrickSet::XY].sortBricks3D( modelMat, eyePoint );
     }

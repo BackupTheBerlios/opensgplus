@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -66,59 +66,62 @@
 OSG_USING_NAMESPACE
 
 const OSG::BitVector  DVRVolumeBase::AppearanceFieldMask = 
-    (1 << DVRVolumeBase::AppearanceFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::AppearanceFieldId);
 
 const OSG::BitVector  DVRVolumeBase::GeometryFieldMask = 
-    (1 << DVRVolumeBase::GeometryFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::GeometryFieldId);
 
 const OSG::BitVector  DVRVolumeBase::ShaderFieldMask = 
-    (1 << DVRVolumeBase::ShaderFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::ShaderFieldId);
 
 const OSG::BitVector  DVRVolumeBase::FileNameFieldMask = 
-    (1 << DVRVolumeBase::FileNameFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::FileNameFieldId);
 
 const OSG::BitVector  DVRVolumeBase::SamplingFieldMask = 
-    (1 << DVRVolumeBase::SamplingFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::SamplingFieldId);
 
 const OSG::BitVector  DVRVolumeBase::SamplingInteractiveFieldMask = 
-    (1 << DVRVolumeBase::SamplingInteractiveFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::SamplingInteractiveFieldId);
 
 const OSG::BitVector  DVRVolumeBase::DoTexturesFieldMask = 
-    (1 << DVRVolumeBase::DoTexturesFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::DoTexturesFieldId);
 
 const OSG::BitVector  DVRVolumeBase::BrickOverlapFieldMask = 
-    (1 << DVRVolumeBase::BrickOverlapFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BrickOverlapFieldId);
 
 const OSG::BitVector  DVRVolumeBase::Textures2DFieldMask = 
-    (1 << DVRVolumeBase::Textures2DFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::Textures2DFieldId);
 
 const OSG::BitVector  DVRVolumeBase::RenderMaterialFieldMask = 
-    (1 << DVRVolumeBase::RenderMaterialFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::RenderMaterialFieldId);
 
 const OSG::BitVector  DVRVolumeBase::BrickingModeFieldMask = 
-    (1 << DVRVolumeBase::BrickingModeFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BrickingModeFieldId);
 
 const OSG::BitVector  DVRVolumeBase::BrickStaticMemoryMBFieldMask = 
-    (1 << DVRVolumeBase::BrickStaticMemoryMBFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BrickStaticMemoryMBFieldId);
 
 const OSG::BitVector  DVRVolumeBase::BrickStaticSubdivisionFieldMask = 
-    (1 << DVRVolumeBase::BrickStaticSubdivisionFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BrickStaticSubdivisionFieldId);
 
 const OSG::BitVector  DVRVolumeBase::BrickMaxSizeFieldMask = 
-    (1 << DVRVolumeBase::BrickMaxSizeFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::BrickMaxSizeFieldId);
 
 const OSG::BitVector  DVRVolumeBase::ShowBricksFieldMask = 
-    (1 << DVRVolumeBase::ShowBricksFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::ShowBricksFieldId);
 
 const OSG::BitVector  DVRVolumeBase::DrawStyleFieldMask = 
-    (1 << DVRVolumeBase::DrawStyleFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::DrawStyleFieldId);
 
 const OSG::BitVector  DVRVolumeBase::DrawStyleNamesFieldMask = 
-    (1 << DVRVolumeBase::DrawStyleNamesFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::DrawStyleNamesFieldId);
 
 const OSG::BitVector  DVRVolumeBase::TextureStorageFieldMask = 
-    (1 << DVRVolumeBase::TextureStorageFieldId);
+    (TypeTraits<BitVector>::One << DVRVolumeBase::TextureStorageFieldId);
 
+const OSG::BitVector DVRVolumeBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
 // Field descriptions
@@ -132,7 +135,7 @@ const OSG::BitVector  DVRVolumeBase::TextureStorageFieldMask =
 /*! \var DVRShaderPtr    DVRVolumeBase::_sfShader
     
 */
-/*! \var string          DVRVolumeBase::_sfFileName
+/*! \var std::string     DVRVolumeBase::_sfFileName
     
 */
 /*! \var Real32          DVRVolumeBase::_sfSampling
@@ -171,7 +174,7 @@ const OSG::BitVector  DVRVolumeBase::TextureStorageFieldMask =
 /*! \var UInt32          DVRVolumeBase::_sfDrawStyle
     FIXME: only required for SoVolume
 */
-/*! \var string          DVRVolumeBase::_mfDrawStyleNames
+/*! \var std::string     DVRVolumeBase::_mfDrawStyleNames
     FIXME: only required for SoVolume
 */
 /*! \var ChunkMaterialPtr DVRVolumeBase::_sfTextureStorage
@@ -274,7 +277,6 @@ FieldDescription *DVRVolumeBase::_desc[] =
                      (FieldAccessMethod) &DVRVolumeBase::getSFTextureStorage)
 };
 
-//! DVRVolume type
 
 FieldContainerType DVRVolumeBase::_type(
     "DVRVolume",
@@ -323,8 +325,6 @@ void DVRVolumeBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
@@ -356,8 +356,6 @@ DVRVolumeBase::DVRVolumeBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRVolumeBase::DVRVolumeBase(const DVRVolumeBase &source) :
     _sfAppearance             (source._sfAppearance             ), 
     _sfGeometry               (source._sfGeometry               ), 
@@ -382,8 +380,6 @@ DVRVolumeBase::DVRVolumeBase(const DVRVolumeBase &source) :
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRVolumeBase::~DVRVolumeBase(void)
 {
@@ -750,6 +746,15 @@ void DVRVolumeBase::executeSyncImpl(      DVRVolumeBase *pOther,
 
 
 
+OSG_BEGIN_NAMESPACE
+
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
+DataType FieldDataTraits<DVRVolumePtr>::_type("DVRVolumePtr", "NodeCorePtr");
+#endif
+
+
+OSG_END_NAMESPACE
+
 
 /*------------------------------------------------------------------------*/
 /*                              cvs id's                                  */
@@ -764,7 +769,7 @@ void DVRVolumeBase::executeSyncImpl(      DVRVolumeBase *pOther,
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRVolumeBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRVOLUMEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRVOLUMEBASE_INLINE_CVSID;
 

@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *               Copyright (C) 2000-2002 by the OpenSG Forum                 *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -64,9 +64,11 @@
 
 OSG_USING_NAMESPACE
 
+const OSG::BitVector DVRSimpleShaderBase::MTInfluenceMask = 
+    (Inherited::MTInfluenceMask) | 
+    (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
 
-//! DVRSimpleShader type
 
 FieldContainerType DVRSimpleShaderBase::_type(
     "DVRSimpleShader",
@@ -115,8 +117,6 @@ void DVRSimpleShaderBase::executeSync(      FieldContainer &other,
 
 /*------------------------- constructors ----------------------------------*/
 
-//! Constructor
-
 #ifdef OSG_WIN32_ICL
 #pragma warning (disable : 383)
 #endif
@@ -130,16 +130,12 @@ DVRSimpleShaderBase::DVRSimpleShaderBase(void) :
 #pragma warning (default : 383)
 #endif
 
-//! Copy Constructor
-
 DVRSimpleShaderBase::DVRSimpleShaderBase(const DVRSimpleShaderBase &source) :
     Inherited                 (source)
 {
 }
 
 /*-------------------------- destructors ----------------------------------*/
-
-//! Destructor
 
 DVRSimpleShaderBase::~DVRSimpleShaderBase(void)
 {
@@ -182,13 +178,12 @@ void DVRSimpleShaderBase::executeSyncImpl(      DVRSimpleShaderBase *pOther,
 
 
 
-#include <OSGSFieldTypeDef.inl>
-
 OSG_BEGIN_NAMESPACE
 
+#if !defined(OSG_DO_DOC) || defined(OSG_DOC_DEV)
 DataType FieldDataTraits<DVRSimpleShaderPtr>::_type("DVRSimpleShaderPtr", "DVRShaderPtr");
+#endif
 
-OSG_DLLEXPORT_SFIELD_DEF1(DVRSimpleShaderPtr, OSG_VOLRENLIB_DLLTMPLMAPPING);
 
 OSG_END_NAMESPACE
 
@@ -206,7 +201,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRSimpleShaderBase.cpp,v 1.1 2002/10/10 11:11:26 weiler Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDVRSimpleShaderBase.cpp,v 1.2 2003/10/07 15:26:37 weiler Exp $";
     static Char8 cvsid_hpp       [] = OSGDVRSIMPLESHADERBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDVRSIMPLESHADERBASE_INLINE_CVSID;
 
