@@ -113,8 +113,9 @@ void StencilTest::frameExit(void)
 inline
 void StencilTest::setup(Viewport* port, const int& max)
 {
-	int w=port->getPixelWidth();
-	int h=port->getPixelHeight();
+	_port=port;
+	int w=_port->getPixelWidth();
+	int h=_port->getPixelHeight();
 	if(_w!=w || _h!=h || _stencilbuf==NULL){
 		_w=w;
 		_h=h;
@@ -141,15 +142,55 @@ void StencilTest::init(void)
 inline
 void StencilTest::perform(const int& num, const DynamicVolume& vol)
 {
+	/*
+	Matrix m,v;
+	_port->getCamera()->getProjection(m, _w, _h);
+	_port->getCamera()->getViewing(v, _w, _h);
+	m.mult(v);
+	*/
+
+	// FIXME
+	// UGLY, very slow implementation... :-(
+        Pnt3f min,max;
+	vol.getBounds( min, max );
+
+	Matrix transmatr,modelv;
+	GLfloat proj_f[16];
+	GLfloat modelv_f[16];
+
+	glGetFloatv(GL_MODELVIEW_MATRIX,modelv_f);
+	glGetFloatv(GL_PROJECTION_MATRIX,proj_f);
+	transmatr.setValue(proj_f);
+	modelv.setValue(modelv_f);
+	transmatr.mult(modelv);
+
+	short minx=_w, maxx=0;
+	short miny=_h, maxy=0;
+        for(int i=0; i<8; i++){
+		Pnt3f p1,p2;
+		p1[0]=(i&1)?min[0]:max[0];
+		p1[1]=(i&2)?min[1]:max[1];
+		p1[2]=(i&4)?min[2]:max[2];
+
+		transmatr.multFullMatrixPnt(p1,p2);
+
+		const short bb_x=(short)((p2[0]+1)*_w*0.5);
+		const short bb_y=(short)(_h-(p2[1]+1)*_h*0.5);
+		if(bb_x<minx) minx=bb_x;
+		if(bb_x>maxx) maxx=bb_x+1;
+		if(bb_y<miny) miny=bb_y;
+		if(bb_y>maxy) maxy=bb_y+1;
+        }
+
 	if(_count>15){		// FIXME
 		glClearStencil(0);
 		glClear(GL_STENCIL_BUFFER_BIT);
 		_count=1;
 	}else
 		_count++;
+
 	glStencilFunc(GL_ALWAYS, _count, (GLuint)(-1));
-	Pnt3f min,max;
-	vol.getBounds(min, max);
+
 	glBegin( GL_TRIANGLE_STRIP);
 	glVertex3f( min[0], min[1], max[2]);
 	glVertex3f( max[0], min[1], max[2]);
@@ -174,19 +215,6 @@ void StencilTest::perform(const int& num, const DynamicVolume& vol)
 		
 	_results[num]=0;
 
-	short minx=_w, maxx=0;
-	short miny=_h, maxy=0;
-
-	short bb_x[8];
-	short bb_y[8];
-	short b_z[8];
-	for(char j=0; j<8; j++){
-		if(bb_x[j]<minx) minx=bb_x[j];
-		if(bb_x[j]>maxx) maxx=bb_x[j]+1;
-		if(bb_y[j]<miny) miny=bb_y[j];
-		if(bb_y[j]>maxy) maxy=bb_y[j]+1;
-	}
-
 	// FIXME
 	short tmp=miny;
 	miny=_h-maxy;
@@ -195,6 +223,7 @@ void StencilTest::perform(const int& num, const DynamicVolume& vol)
 	short sx=minx-minx%32;
 	short sw=maxx-minx;
 	sw+=sw%32;
+
 	for(short y=miny; y<maxy; y++){
 		glReadPixels(sx,y,sw,1,GL_STENCIL_INDEX,GL_INT,_stencilbuf+sx);
 		for(short x=minx; x<maxx; x++){

@@ -106,6 +106,7 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
   private:
 
     GLuint* _stencilbuf;
+    Viewport* _port;
     unsigned int _w, _h;
     unsigned int _count;
     unsigned int _maxtests;
