@@ -49,6 +49,8 @@
 #include <OSGDrawAction.h>
 #include <OSGDynamicVolume.h>
 
+#include <OSGOcclusionTypes.h>
+
 OSG_BEGIN_NAMESPACE
 
 //! NVTest
@@ -82,13 +84,13 @@ class OSG_SYSTEMLIB_DLLMAPPING NVTest
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const UInt16&);
+    void setup(const UInt16&, Viewport* v=NULL);
 
     void frameInit(void);
     void frameExit(void);
 
     void init(void);
-    void perform(const UInt16&, const DynamicVolume&);
+    void perform(const UInt16&, const OCTestNode*);
     UInt32 result(const UInt16&);
     void exit(void);
     

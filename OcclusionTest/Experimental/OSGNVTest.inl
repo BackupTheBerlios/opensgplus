@@ -110,7 +110,7 @@ void NVTest::frameExit(void)
 };
 
 inline
-void NVTest::setup(const UInt16& max)
+void NVTest::setup(const UInt16& max, Viewport*)
 {
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
@@ -130,8 +130,10 @@ void NVTest::init(void)
 };
 
 inline
-void NVTest::perform(const UInt16& num, const DynamicVolume& vol)
+void NVTest::perform(const UInt16& num, const OCTestNode* node)
 {
+	const DynamicVolume& vol=node->_node->getVolume();
+
 #ifdef GL_NV_occlusion_query
 	glBeginOcclusionQueryNV(_results[num]);
 

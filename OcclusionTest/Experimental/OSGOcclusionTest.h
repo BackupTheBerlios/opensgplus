@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
- *                     OpenSG PLUS Occlusion Test                            *
+ *                     OpenSG PLUS OcclusionTest Test                            *
  *                                                                           *
  *                                                                           *
  *             Copyright (C) 2002 by the WSI/GRIS Uni Tuebingen              *
@@ -36,27 +36,34 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _OSGSTENCILTEST_H_
-#define _OSGSTENCILTEST_H_
+#ifndef _OSGOCCLUSIONTEST_H_
+#define _OSGOCCLUSIONTEST_H_
 
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <GL/gl.h>
 #include <OSGBaseTypes.h>
 #include <OSGSystemDef.h>
-#include <OSGDrawAction.h>
-#include <OSGDynamicVolume.h>
+
+#include <OSGOcclusionStatistics.h>
+
+#include <OSGHPTest.h>
+#include <OSGNVTest.h>
+#include <OSGOcclusionTest.h>
+#include <OSGStencilTest.h>
 
 #include <OSGOcclusionTypes.h>
 
 OSG_BEGIN_NAMESPACE
 
-//! StencilTest
+class Viewport;
+
+//! OcclusionTest
 //! \ingroup RenderingBackendLib
 
-class OSG_SYSTEMLIB_DLLMAPPING StencilTest
+template<typename octest, typename ocstatistics>
+class OSG_SYSTEMLIB_DLLMAPPING OcclusionTest
 {
     /*==========================  PUBLIC  =================================*/
   public:
@@ -70,21 +77,21 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    StencilTest(void);
+    OcclusionTest(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~StencilTest(void);
+    virtual ~OcclusionTest(void);
     
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Access                                    */
     /*! \{                                                                 */
 
-    void setup(const UInt16&, Viewport*);
+    void setup(const UInt16&, Viewport* v=NULL);
 
     void frameInit(void);
     void frameExit(void);
@@ -101,27 +108,28 @@ class OSG_SYSTEMLIB_DLLMAPPING StencilTest
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
-
+    ocstatistics _stats;
+    octest _octest;
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
   private:
 
-    GLuint* _stencilbuf;
-    Viewport* _port;
-    UInt16 _w, _h;
-    UInt16 _count;
-    UInt16 _maxtests;
-    UInt32* _results;
-
     /*! \brief prohibit default function (move to 'public' if needed) */
-    StencilTest(const StencilTest &source);
+    OcclusionTest(const OcclusionTest &source);
     /*! \brief prohibit default function (move to 'public' if needed) */
-    void operator =(const StencilTest &source);
+    void operator =(const OcclusionTest &source);
 };
+
+typedef OcclusionTest<HPTest, OcclusionStatisticsOff> OcclusionHPTest;
+typedef OcclusionTest<HPTest, OcclusionStatisticsOn> OcclusionHPTestStats;
+typedef OcclusionTest<NVTest, OcclusionStatisticsOff> OcclusionNVTest;
+typedef OcclusionTest<NVTest, OcclusionStatisticsOn> OcclusionNVTestStats;
+typedef OcclusionTest<StencilTest, OcclusionStatisticsOff> OcclusionStencilTest;
+typedef OcclusionTest<StencilTest, OcclusionStatisticsOn> OcclusionStencilTestStats;
 
 OSG_END_NAMESPACE
 
-#include "OSGStencilTest.inl"
+#include "OSGOcclusionTest.inl"
 
-#endif /* _OSGSTENCILTEST_H_ */
+#endif /* _OSGOCCLUSIONTEST_H_ */

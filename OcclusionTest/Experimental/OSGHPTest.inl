@@ -110,7 +110,7 @@ void HPTest::frameExit(void)
 };
 
 inline
-void HPTest::setup(const UInt16& max)
+void HPTest::setup(const UInt16& max, Viewport*)
 {
 	if(_maxtests!=max){
 		if(_results) delete[] _results;
@@ -127,8 +127,9 @@ void HPTest::init(void)
 };
 
 inline
-void HPTest::perform(const UInt16& num, const DynamicVolume& vol)
+void HPTest::perform(const UInt16& num, const OCTestNode* node)
 {
+	const DynamicVolume& vol=node->_node->getVolume();
 #ifdef GL_OCCLUSION_TEST_HP
 	glEnable(GL_OCCLUSION_TEST_HP);
 
