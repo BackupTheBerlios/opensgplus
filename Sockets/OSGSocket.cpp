@@ -108,66 +108,78 @@ int Socket::getHostError()
 #endif
 }
 
-const char *Socket::getErrorStr()
+string Socket::getErrorStr()
 {
+    const char *err=NULL;
+
 #ifdef WIN32
     switch(getError())
     {
-        case WSAEINTR: return "WSAEINTR"; 
-        case WSAEBADF: return "WSAEBADF"; 
-        case WSAEFAULT: return "WSAEFAULT"; 
-        case WSAEINVAL: return "WSAEINVAL"; 
-        case WSAEMFILE: return "WSAEMFILE"; 
-        case WSAEWOULDBLOCK: return "WSAEWOULDBLOCK"; 
-        case WSAEINPROGRESS: return "WSAEINPROGRESS"; 
-        case WSAEALREADY: return "WSAEALREADY"; 
-        case WSAENOTSOCK: return "WSAENOTSOCK"; 
-        case WSAEDESTADDRREQ: return "WSAEDESTADDRREQ"; 
-        case WSAEMSGSIZE: return "WSAEMSGSIZE"; 
-        case WSAEPROTOTYPE: return "WSAEPROTOTYPE"; 
-        case WSAENOPROTOOPT: return "WSAENOPROTOOPT"; 
-        case WSAEPROTONOSUPPORT: return "WSAEPROTONOSUPPORT"; 
-        case WSAESOCKTNOSUPPORT: return "WSAESOCKTNOSUPPORT"; 
-        case WSAEOPNOTSUPP: return "WSAEOPNOTSUPP"; 
-        case WSAEPFNOSUPPORT: return "WSAEPFNOSUPPORT"; 
-        case WSAEAFNOSUPPORT: return "WSAEAFNOSUPPORT"; 
-        case WSAEADDRINUSE: return "WSAEADDRINUSE"; 
-        case WSAEADDRNOTAVAIL: return "WSAEADDRNOTAVAIL"; 
-        case WSAENETDOWN: return "WSAENETDOWN"; 
-        case WSAENETUNREACH: return "WSAENETUNREACH"; 
-        case WSAENETRESET: return "WSAENETRESET"; 
-        case WSAECONNABORTED: return "WSAECONNABORTED"; 
-        case WSAECONNRESET: return "WSAECONNRESET"; 
-        case WSAENOBUFS: return "WSAENOBUFS"; 
-        case WSAEISCONN: return "WSAEISCONN"; 
-        case WSAENOTCONN: return "WSAENOTCONN"; 
-        case WSAESHUTDOWN: return "WSAESHUTDOWN"; 
-        case WSAETOOMANYREFS: return "WSAETOOMANYREFS"; 
-        case WSAETIMEDOUT: return "WSAETIMEDOUT"; 
-        case WSAECONNREFUSED: return "WSAECONNREFUSED"; 
-        case WSAELOOP: return "WSAELOOP"; 
-        case WSAENAMETOOLONG: return "WSAENAMETOOLONG"; 
-        case WSAEHOSTDOWN: return "WSAEHOSTDOWN"; 
-        case WSAEHOSTUNREACH: return "WSAEHOSTUNREACH"; 
-        case WSASYSNOTREADY: return "WSASYSNOTREADY"; 
-        case WSAVERNOTSUPPORTED: return "WSAVERNOTSUPPORTED"; 
-        case WSANOTINITIALISED: return "WSANOTINITIALISED"; 
-        case WSAHOST_NOT_FOUND: return "WSAHOST_NOT_FOUND"; 
-        case WSATRY_AGAIN: return "WSATRY_AGAIN"; 
-        case WSANO_RECOVERY: return "WSANO_RECOVERY"; 
-        case WSANO_DATA: return "WSANO_DATA"; 
+        case WSAEINTR: err= "WSAEINTR"; 
+        case WSAEBADF: err= "WSAEBADF"; 
+        case WSAEFAULT: err= "WSAEFAULT"; 
+        case WSAEINVAL: err= "WSAEINVAL"; 
+        case WSAEMFILE: err= "WSAEMFILE"; 
+        case WSAEWOULDBLOCK: err= "WSAEWOULDBLOCK"; 
+        case WSAEINPROGRESS: err= "WSAEINPROGRESS"; 
+        case WSAEALREADY: err= "WSAEALREADY"; 
+        case WSAENOTSOCK: err= "WSAENOTSOCK"; 
+        case WSAEDESTADDRREQ: err= "WSAEDESTADDRREQ"; 
+        case WSAEMSGSIZE: err= "WSAEMSGSIZE"; 
+        case WSAEPROTOTYPE: err= "WSAEPROTOTYPE"; 
+        case WSAENOPROTOOPT: err= "WSAENOPROTOOPT"; 
+        case WSAEPROTONOSUPPORT: err= "WSAEPROTONOSUPPORT"; 
+        case WSAESOCKTNOSUPPORT: err= "WSAESOCKTNOSUPPORT"; 
+        case WSAEOPNOTSUPP: err= "WSAEOPNOTSUPP"; 
+        case WSAEPFNOSUPPORT: err= "WSAEPFNOSUPPORT"; 
+        case WSAEAFNOSUPPORT: err= "WSAEAFNOSUPPORT"; 
+        case WSAEADDRINUSE: err= "WSAEADDRINUSE"; 
+        case WSAEADDRNOTAVAIL: err= "WSAEADDRNOTAVAIL"; 
+        case WSAENETDOWN: err= "WSAENETDOWN"; 
+        case WSAENETUNREACH: err= "WSAENETUNREACH"; 
+        case WSAENETRESET: err= "WSAENETRESET"; 
+        case WSAECONNABORTED: err= "WSAECONNABORTED"; 
+        case WSAECONNRESET: err= "WSAECONNRESET"; 
+        case WSAENOBUFS: err= "WSAENOBUFS"; 
+        case WSAEISCONN: err= "WSAEISCONN"; 
+        case WSAENOTCONN: err= "WSAENOTCONN"; 
+        case WSAESHUTDOWN: err= "WSAESHUTDOWN"; 
+        case WSAETOOMANYREFS: err= "WSAETOOMANYREFS"; 
+        case WSAETIMEDOUT: err= "WSAETIMEDOUT"; 
+        case WSAECONNREFUSED: err= "WSAECONNREFUSED"; 
+        case WSAELOOP: err= "WSAELOOP"; 
+        case WSAENAMETOOLONG: err= "WSAENAMETOOLONG"; 
+        case WSAEHOSTDOWN: err= "WSAEHOSTDOWN"; 
+        case WSAEHOSTUNREACH: err= "WSAEHOSTUNREACH"; 
+        case WSASYSNOTREADY: err= "WSASYSNOTREADY"; 
+        case WSAVERNOTSUPPORTED: err= "WSAVERNOTSUPPORTED"; 
+        case WSANOTINITIALISED: err= "WSANOTINITIALISED"; 
+        case WSAHOST_NOT_FOUND: err= "WSAHOST_NOT_FOUND"; 
+        case WSATRY_AGAIN: err= "WSATRY_AGAIN"; 
+        case WSANO_RECOVERY: err= "WSANO_RECOVERY"; 
+        case WSANO_DATA: err= "WSANO_DATA"; 
     }
+#else
+    err=strerror(getError());
 #endif
-    return strerror(getError());
+    if(err)
+        return string(err);
+    else
+        return string("Unknown error");
 }
 
-const char *Socket::getHostErrorStr()
+string Socket::getHostErrorStr()
 {
+    const char *err;
 #ifdef WIN32
-    return strerror(getHostError());
+    err = strerror(getHostError());
 #else
-    return hstrerror(getHostError());
+    err = hstrerror(getHostError());
 #endif
+    if(err)
+        return string(err);
+    else
+        return string("Unknown error");
 }
 
 /*-------------------------------------------------------------------------*\

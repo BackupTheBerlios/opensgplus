@@ -103,8 +103,8 @@ class OSG_SOCKET_DLLMAPPING Socket
 
     static int         getError();
     static int         getHostError();
-    static const char *getErrorStr();
-    static const char *getHostErrorStr();
+    static string      getErrorStr();
+    static string      getHostErrorStr();
 
     //-----------------------------------------------------------------------
     //   instance functions                                                  

@@ -63,13 +63,10 @@ SocketException::SocketException():
 SocketError::SocketError(const char *function):SocketException()
 {
     char estr[6];
-	const char *s;
-	
+    const char *s;
+    
     sprintf(estr,"%5d",Socket::getError());
-    _what=_what + function + " " + 
-          estr;
-	if ( s = Socket::getErrorStr() )
-		_what = _what + " " + s; 
+    _what=_what + function + " " + estr + " " + Socket::getErrorStr();
 }
 
 /** \brief Constructor
@@ -77,14 +74,10 @@ SocketError::SocketError(const char *function):SocketException()
 SocketHostError::SocketHostError(const char *function):SocketException()
 {
     char estr[6];
-	const char *s;
+    const char *s;
 
     sprintf(estr,"%5d",Socket::getHostError());
-    _what=_what + function + " " + 
-          estr + " " +
-          Socket::getHostErrorStr(); 
-	if ( s = Socket::getHostErrorStr() )
-		_what = _what + " " + s; 
+    _what=_what + function + " " + estr + " " + Socket::getHostErrorStr(); 
 }
 
 /** \brief Constructor
