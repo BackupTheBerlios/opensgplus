@@ -71,6 +71,7 @@
 #include <OSGUInt32Fields.h> // SubtileSize type
 #include <OSGBoolFields.h> // Compose type
 #include <OSGUInt32Fields.h> // Region type
+#include <OSGBoolFields.h> // UseFaceDistribution type
 
 #include <OSGSortFirstWindowFields.h>
 
@@ -92,17 +93,19 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
 
     enum
     {
-        CompressionFieldId = Inherited::NextFieldId,
-        SubtileSizeFieldId = CompressionFieldId + 1,
-        ComposeFieldId     = SubtileSizeFieldId + 1,
-        RegionFieldId      = ComposeFieldId     + 1,
-        NextFieldId        = RegionFieldId      + 1
+        CompressionFieldId         = Inherited::NextFieldId,
+        SubtileSizeFieldId         = CompressionFieldId         + 1,
+        ComposeFieldId             = SubtileSizeFieldId         + 1,
+        RegionFieldId              = ComposeFieldId             + 1,
+        UseFaceDistributionFieldId = RegionFieldId              + 1,
+        NextFieldId                = UseFaceDistributionFieldId + 1
     };
 
     static const osg::BitVector CompressionFieldMask;
     static const osg::BitVector SubtileSizeFieldMask;
     static const osg::BitVector ComposeFieldMask;
     static const osg::BitVector RegionFieldMask;
+    static const osg::BitVector UseFaceDistributionFieldMask;
 
 
     /*---------------------------------------------------------------------*/
@@ -127,29 +130,33 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-           SFString            *getSFCompression    (void);
-           SFUInt32            *getSFSubtileSize    (void);
-           SFBool              *getSFCompose        (void);
-           MFUInt32            *getMFRegion         (void);
+    inline       SFString            *getSFCompression    (void);
+    inline       SFUInt32            *getSFSubtileSize    (void);
+    inline       SFBool              *getSFCompose        (void);
+    inline       MFUInt32            *getMFRegion         (void);
+    inline       SFBool              *getSFUseFaceDistribution(void);
 
-           string              &getCompression    (void);
-     const string              &getCompression    (void) const;
-           UInt32              &getSubtileSize    (void);
-     const UInt32              &getSubtileSize    (void) const;
-           bool                &getCompose        (void);
-     const bool                &getCompose        (void) const;
-           UInt32              &getRegion         (UInt32 index);
-           MFUInt32            &getRegion         (void);
-     const MFUInt32            &getRegion         (void) const;
+    inline       string              &getCompression    (void);
+    inline const string              &getCompression    (void) const;
+    inline       UInt32              &getSubtileSize    (void);
+    inline const UInt32              &getSubtileSize    (void) const;
+    inline       bool                &getCompose        (void);
+    inline const bool                &getCompose        (void) const;
+    inline       bool                &getUseFaceDistribution(void);
+    inline const bool                &getUseFaceDistribution(void) const;
+    inline       UInt32              &getRegion         (UInt32 index);
+    inline       MFUInt32            &getRegion         (void);
+    inline const MFUInt32            &getRegion         (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-     void setCompression    ( const string &value );
-     void setSubtileSize    ( const UInt32 &value );
-     void setCompose        ( const bool &value );
+    inline void setCompression    ( const string &value );
+    inline void setSubtileSize    ( const UInt32 &value );
+    inline void setCompose        ( const bool &value );
+    inline void setUseFaceDistribution( const bool &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -199,6 +206,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
     SFUInt32            _sfSubtileSize;
     SFBool              _sfCompose;
     MFUInt32            _mfRegion;
+    SFBool              _sfUseFaceDistribution;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

@@ -60,12 +60,6 @@ OSG_USING_NAMESPACE
  *
  *
  *
- *  1. Face rendering cost
- *     
- *      a + b - (a*b)
- *
- *      2x-2x^2
- *
  *
  *
  **/
@@ -76,7 +70,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.10 2002/04/30 16:37:12 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.11 2002/05/03 15:48:00 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -97,7 +91,8 @@ double bestcutB_t=0;
 
 /*! Constructor
  */
-GeoLoadManager::GeoLoadManager(void) 
+GeoLoadManager::GeoLoadManager(bool useFaceDistribution):
+    _useFaceDistribution(useFaceDistribution)
 {
 }
 
@@ -105,7 +100,8 @@ GeoLoadManager::GeoLoadManager(void)
  */
 GeoLoadManager::GeoLoadManager(const GeoLoadManager &source):
     _geoLoad(source._geoLoad),
-    _renderNode(source._renderNode)
+    _renderNode(source._renderNode),
+    _useFaceDistribution(source._useFaceDistribution)
 {
 }
 
@@ -129,6 +125,7 @@ GeoLoadManager& GeoLoadManager::operator = (const GeoLoadManager &source)
         return *this;
     _geoLoad = source._geoLoad;
     _renderNode = source._renderNode;
+    _useFaceDistribution = source._useFaceDistribution;
     return *this;
 }
 
@@ -238,7 +235,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     // calculate region cost
     for(vi=visible.begin();vi!=visible.end();vi++)
     {
-        vi->updateCost(wmin,wmax);
+        vi->updateCost(_useFaceDistribution,wmin,wmax);
     }
     if(_renderNode.size()>1)
     {
@@ -266,9 +263,11 @@ void GeoLoadManager::balance(ViewportPtr    vp,
 /** Add new render node
  * 
  **/
-void GeoLoadManager::addRenderNode(const RenderNode &rn)
+void GeoLoadManager::addRenderNode(const RenderNode &rn,UInt32 id)
 {
-    _renderNode.push_back(rn);
+    while(_renderNode.size()<=id)
+        _renderNode.push_back(RenderNode());
+    _renderNode[id]=rn;
 }
 
 /** Add all geometry nodes in the given tree
@@ -367,8 +366,10 @@ void GeoLoadManager::splitRegion(UInt32          rnFrom,
                 {
                     visibleA.push_back(*vi);
                     visibleB.push_back(*vi);
-                    visibleA.rbegin()->updateCost(wmin,maxA);
-                    visibleB.rbegin()->updateCost(minB,wmax);
+                    visibleA.rbegin()->updateCost(_useFaceDistribution,
+                                                  wmin,maxA);
+                    visibleB.rbegin()->updateCost(_useFaceDistribution,
+                                                  minB,wmax);
                 }
         }
     }
@@ -431,8 +432,10 @@ Real32 GeoLoadManager::findBestCut (const RenderNode &renderNodeA,
                         costB+=vi->getCost(renderNodeB);
                     else
                     {
-                        costA+=vi->getCost(renderNodeA,wmin,maxA);
-                        costB+=vi->getCost(renderNodeB,minB,wmax);
+                        costA+=vi->getCost(renderNodeA,_useFaceDistribution,
+                                           wmin,maxA);
+                        costB+=vi->getCost(renderNodeB,_useFaceDistribution,
+                                           minB,wmax);
                     }
                 
             }

@@ -47,4 +47,14 @@ Cluster rendering configuration for sort first image composition
 	>
 	left,right,bottom,top for each viewport
 	</Field>
+	<Field
+		name="useFaceDistribution"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Enabe, disable analysation of face distribution
+	</Field>
 </FieldContainer>

@@ -94,6 +94,9 @@ const OSG::BitVector  SortFirstWindowBase::ComposeFieldMask =
 const OSG::BitVector  SortFirstWindowBase::RegionFieldMask = 
     (1 << SortFirstWindowBase::RegionFieldId);
 
+const OSG::BitVector  SortFirstWindowBase::UseFaceDistributionFieldMask = 
+    (1 << SortFirstWindowBase::UseFaceDistributionFieldId);
+
 
 
 // Field descriptions
@@ -109,6 +112,9 @@ const OSG::BitVector  SortFirstWindowBase::RegionFieldMask =
 */
 /*! \var UInt32          SortFirstWindowBase::_mfRegion
     left,right,bottom,top for each viewport
+*/
+/*! \var bool            SortFirstWindowBase::_sfUseFaceDistribution
+    Enabe, disable analysation of face distribution
 */
 
 //! SortFirstWindow description
@@ -134,7 +140,12 @@ FieldDescription *SortFirstWindowBase::_desc[] =
                      "region", 
                      RegionFieldId, RegionFieldMask,
                      false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getMFRegion)
+                     (FieldAccessMethod) &SortFirstWindowBase::getMFRegion),
+    new FieldDescription(SFBool::getClassType(), 
+                     "useFaceDistribution", 
+                     UseFaceDistributionFieldId, UseFaceDistributionFieldMask,
+                     false,
+                     (FieldAccessMethod) &SortFirstWindowBase::getSFUseFaceDistribution)
 };
 
 //! SortFirstWindow type
@@ -174,7 +185,7 @@ FieldContainerPtr SortFirstWindowBase::shallowCopy(void) const
 
 UInt32 SortFirstWindowBase::getContainerSize(void) const 
 { 
-    return sizeof(SortFirstWindow); 
+    return sizeof(SortFirstWindowBase); 
 }
 
 
@@ -197,6 +208,7 @@ SortFirstWindowBase::SortFirstWindowBase(void) :
     _sfSubtileSize            (UInt32(32)), 
     _sfCompose                (bool(true)), 
     _mfRegion                 (), 
+    _sfUseFaceDistribution    (bool(true)), 
     Inherited() 
 {
 }
@@ -212,6 +224,7 @@ SortFirstWindowBase::SortFirstWindowBase(const SortFirstWindowBase &source) :
     _sfSubtileSize            (source._sfSubtileSize            ), 
     _sfCompose                (source._sfCompose                ), 
     _mfRegion                 (source._mfRegion                 ), 
+    _sfUseFaceDistribution    (source._sfUseFaceDistribution    ), 
     Inherited                 (source)
 {
 }
@@ -250,6 +263,11 @@ UInt32 SortFirstWindowBase::getBinSize(const BitVector &whichField)
         returnValue += _mfRegion.getBinSize();
     }
 
+    if(FieldBits::NoField != (UseFaceDistributionFieldMask & whichField))
+    {
+        returnValue += _sfUseFaceDistribution.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -277,6 +295,11 @@ void SortFirstWindowBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (RegionFieldMask & whichField))
     {
         _mfRegion.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (UseFaceDistributionFieldMask & whichField))
+    {
+        _sfUseFaceDistribution.copyToBin(pMem);
     }
 
 
@@ -307,6 +330,11 @@ void SortFirstWindowBase::copyFromBin(      BinaryDataHandler &pMem,
         _mfRegion.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (UseFaceDistributionFieldMask & whichField))
+    {
+        _sfUseFaceDistribution.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -327,6 +355,9 @@ void SortFirstWindowBase::executeSyncImpl(      SortFirstWindowBase *pOther,
 
     if(FieldBits::NoField != (RegionFieldMask & whichField))
         _mfRegion.syncWith(pOther->_mfRegion);
+
+    if(FieldBits::NoField != (UseFaceDistributionFieldMask & whichField))
+        _sfUseFaceDistribution.syncWith(pOther->_sfUseFaceDistribution);
 
 
 }

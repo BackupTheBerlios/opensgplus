@@ -135,7 +135,7 @@ void SortFirstWindow::dump(      UInt32    ,
 /** transfer server cababilities to the client
  *
  **/
-void SortFirstWindow::serverInit( WindowPtr ,
+void SortFirstWindow::serverInit( WindowPtr serverWindow,
                                   UInt32 id)
 {
     UInt32 sync;
@@ -143,7 +143,7 @@ void SortFirstWindow::serverInit( WindowPtr ,
 
     // create cluster node information
     // get performance
-    renderNode.determinePerformance();
+    renderNode.determinePerformance(serverWindow);
     renderNode.dump();
     // transfer to client for load balancing
     _connection->putUInt32(id);
@@ -293,7 +293,7 @@ void SortFirstWindow::clientInit( void )
     UInt32 id;
     RenderNode renderNode;
 
-    _loadManager=new GeoLoadManager();
+    _loadManager=new GeoLoadManager(getUseFaceDistribution());
     // read all node infos
     for(UInt32 i=0;i<_connection->getChannelCount();++i)
     {
@@ -303,7 +303,7 @@ void SortFirstWindow::clientInit( void )
         renderNode.copyFromBin(*_connection);
         cout << id << endl;
         renderNode.dump();
-        _loadManager->addRenderNode(renderNode);    
+        _loadManager->addRenderNode(renderNode,id);    
     }
     cout << "sync" << endl;
     // sync servers

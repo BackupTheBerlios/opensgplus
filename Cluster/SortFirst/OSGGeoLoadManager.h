@@ -77,7 +77,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    GeoLoadManager(void);
+    GeoLoadManager(bool useFaceDistribution=true);
     GeoLoadManager(const GeoLoadManager &source);
 
     /*! \}                                                                 */
@@ -103,7 +103,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     void balance            (ViewportPtr       vp,
                              bool              shrink,
                              ResultT          &result );
-    void addRenderNode      (const RenderNode &rn     );
+    void addRenderNode      (const RenderNode &rn,UInt32 id);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -134,10 +134,12 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
         RegionLoad         ( GeoLoad *load=NULL           );
         Real32   getCost   ( const RenderNode &renderNode );
         Real32   getCost   ( const RenderNode &renderNode,
+                             bool useFaceDistribution,
                              const Int32 wmin[2],
                              const Int32 wmax[2]          ) const;
         GeoLoad *getLoad   ( void                         );
-        void     updateCost( const Int32 wmin[2],
+        void     updateCost( bool useFaceDistribution,
+                             const Int32 wmin[2],
                              const Int32 wmax[2]          );
       private:
         Real32   _visibleFaces;
@@ -154,6 +156,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 
     GeoLoadLstT           _geoLoad;
     RenderNodeLstT        _renderNode;
+    bool                  _useFaceDistribution;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -189,7 +192,7 @@ OSG_END_NAMESPACE
 
 #include "OSGGeoLoadManager.inl"
 
-#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.5 2002/04/30 16:37:12 marcus Exp $"
+#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.6 2002/05/03 15:48:00 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
 

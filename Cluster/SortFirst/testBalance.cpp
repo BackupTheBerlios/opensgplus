@@ -13,10 +13,11 @@
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
 
-bool           doSave=false;
-GeoLoadManager loadManager;
-char          *dumpImage="balance";
-int            dumpImageNr=0;
+bool            doSave=false;
+GeoLoadManager *loadManager;
+char           *dumpImage="balance";
+int             dumpImageNr=0;
+bool            useFaceDistribution=false;
 
 class MySceneManager:public SimpleSceneManager
 {
@@ -37,16 +38,17 @@ public:
         _win->frameInit();
         if(first)
         {
+            loadManager=new GeoLoadManager(useFaceDistribution);
+            RenderNode rn;
+            rn.determinePerformance(_win);
             for(int i=0;i<3;i++)
             {
-                RenderNode rn;
-//                rn.setDrawPixelCost(1.0/(1000+i*1000));
-                loadManager.addRenderNode(rn);
+                loadManager->addRenderNode(rn,i);
             }
             first=false;
         }
-        loadManager.update(_win->getPort()[0]->getRoot());
-        loadManager.balance(_win->getPort()[0],false,region);
+        loadManager->update(_win->getPort()[0]->getRoot());
+        loadManager->balance(_win->getPort()[0],false,region);
         _win->renderAllViewports( _action );
         glPushMatrix();
         glLoadIdentity();
@@ -197,24 +199,30 @@ int main (int argc, char **argv)
 
     for(i=1;i<argc;++i)
     {
-        if(argv[i][0] >='0' &&
-           argv[i][0] <='9')
-        {
-            if(ca==-1)
-                ca=atoi(argv[i]);
-            else
-                if(cb==-1)
-                    cb=atoi(argv[i]);
-                else
-                    if(cc==-1)
-                        cc=atoi(argv[i]);
-        }
+        if(argv[i][0] =='-' &&
+           argv[i][1] =='d')
+            useFaceDistribution=true;
         else
         {
-            file = OSG::SceneFileHandler::the().read(argv[1]);
-            beginEditCP(scene);
-            scene->addChild(file);
-            endEditCP(scene);
+            if(argv[i][0] >='0' &&
+               argv[i][0] <='9')
+            {
+                if(ca==-1)
+                    ca=atoi(argv[i]);
+                else
+                    if(cb==-1)
+                        cb=atoi(argv[i]);
+                    else
+                        if(cc==-1)
+                            cc=atoi(argv[i]);
+            }
+            else
+            {
+                file = OSG::SceneFileHandler::the().read(argv[1]);
+                beginEditCP(scene);
+                scene->addChild(file);
+                endEditCP(scene);
+            }
         }
     }
     if(ca==-1)
@@ -225,7 +233,10 @@ int main (int argc, char **argv)
         cc=cb;
     if(file == NullFC)
     {
+        GeometryPtr geo=makeBoxGeo(.6,.6,.6,5,5,5);
+
         NodePtr node;
+        NodePtr geoNode;
         TransformPtr trans;
         for(x=-ca/2 ; x<ca/2 ; x++)
             for(y=-cb/2 ; y<cb/2 ; y++)
@@ -233,13 +244,21 @@ int main (int argc, char **argv)
                 {
                     trans=Transform::create();
                     node=Node::create();
+                    geoNode=Node::create();
+
+                    beginEditCP(geoNode);
                     beginEditCP(trans);
                     beginEditCP(node);
+
                     node->setCore(trans);
                     trans->getMatrix().setTranslate(x,y,z);
-                    node->addChild( makeBox(.6,.6,.6,5,5,5) );
+                    geoNode=Node::create();
+                    geoNode->setCore(geo);
+                    node->addChild( geoNode );
                     beginEditCP(scene);
                     scene->addChild(node);
+
+                    endEditCP(geoNode);
                     endEditCP(scene);
                     endEditCP(trans);
                     endEditCP(node);
