@@ -42,8 +42,11 @@
 #include <stdio.h>
 #include "OSGConfig.h"
 #include "OSGOpenMeshPFields.h"
-//#include "OSGSFieldTypeDef.inl"
-//#include "OSGMFieldTypeDef.inl"
+#ifndef FIELD_TYPE_DEF
+#define FIELD_TYPE_DEF
+#include "OSGSFieldTypeDef.inl"
+#include "OSGMFieldTypeDef.inl"
+#endif
 
 OSG_USING_NAMESPACE
 
@@ -57,8 +60,8 @@ DataType FieldDataTraits<MESH*>::_type(getName(), "IntegralType");
 
 #else
 
-//OSG_DLLEXPORT_SFIELD_DEF1(OpenMeshP, OSG_TRIPSLIB_DLLTMPLMAPPING);
-//OSG_DLLEXPORT_MFIELD_DEF1(OpenMeshP, OSG_TRIPSLIB_DLLTMPLMAPPING);
+//OSG_DLLEXPORT_SFIELD_DEF1(OpenMeshP, OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+//OSG_DLLEXPORT_MFIELD_DEF1(OpenMeshP, OSG_SUBSURFACELIB_DLLTMPLMAPPING);
 
 #endif
 

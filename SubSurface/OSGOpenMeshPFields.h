@@ -39,23 +39,17 @@
 
 #ifndef _OSGOPENMESHP_H_
 #define _OSGOPENMESHP_H_
-
-#include "OSGSubSurfaceDef.h"
-
 #ifdef __sgi
 #pragma once
 #endif
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
-
 #include "OSGConfig.h"
-
+#include "OSGSubSurfaceDef.h"
 #include "OSGFieldContainerPtr.h"
 #include "OSGSField.h"
 #include "OSGMField.h"
 #include "OSGMeshIdentifier.h"
+
 
 OSG_BEGIN_NAMESPACE
 
@@ -72,83 +66,46 @@ struct FieldDataTraits<MESH*> :
     enum                        { StringConvertable = 0x00 };
     enum                        { bHasParent        = 0x01 };
 
-    static DataType &getType (void) { return _type;        }
-
-    static char     *getName(void) { 
-		static char sname[1000];
-		sprintf(sname, "OpenMeshP%d", MeshIdentifier<MESH>::id);
-		return sname; 
-	}
-    static char     *getSName(void) { 
-		static char sname[1000];
-		sprintf(sname, "SFOpenMeshP%d", MeshIdentifier<MESH>::id);
-		return sname; 
-	}
-    static char     *getMName(void) { 
-		static char sname[1000];
-		sprintf(sname, "MFOpenMeshP%d", MeshIdentifier<MESH>::id);
-		return sname; 
-	}
-
-
-    static       UInt32    getBinSize (const MESH*& )
-    {
-        return sizeof(MESH*);
+    static inline DataType& getType (void) { 
+       return _type;        
     }
 
-    static void   copyToBin  (      BinaryDataHandler &pMem, 
-                              const MESH*    &oObject)
-    {
-//	no implementation use
-//        Int32 value = (Int32)oObject;
-//       pMem.putValue(value);
+    static inline const Char8* getName(void) { 
+       static std::string sname;
+       sname = "OpenMeshP";
+       sname.append(MeshIdentifier<MESH>::getIdString());
+       return sname.c_str(); 
+    }
+    static inline const Char8* getSName(void) { 
+       static std::string sname;
+       sname = "SFOpenMeshP";
+       sname.append(MeshIdentifier<MESH>::getIdString());
+       return sname.c_str(); 
+    }
+    static inline const Char8* getMName(void) { 
+       static std::string sname;
+       sname = "MFOpenMeshP";
+       sname.append(MeshIdentifier<MESH>::getIdString());
+       return sname.c_str(); 
     }
 
-    static void   copyFromBin(      BinaryDataHandler &pMem, 
-                                    MESH*             &oObject)
-    {
-//	no implementation use
-//        Int32 value;
-//        pMem.getValue(value);
-//        oObject = (OpenMeshP)value;
+    static inline UInt32 getBinSize (const MESH*& ) {
+       return 0;
+    }
+
+    static inline void copyToBin  (      BinaryDataHandler& , 
+				   const MESH*&             ) {
+    }
+
+    static inline void copyFromBin (BinaryDataHandler& , 
+				    MESH*&             oObject) {
+       oObject = NULL;
     }
 };
 
-//! SFDAVESoundPtr
-
-//typedef SField<OpenMeshP> SFOpenMeshP;
-
-#ifndef OSG_COMPILEOPENMESHPFIELDSINST
-#if defined(__sgi)
-
-//#pragma do_not_instantiate SField<OpenMeshP>::_fieldType
-
-#else
-
-//OSG_DLLEXPORT_DECL1(SField, OpenMeshP, OSG_TRIPSLIB_DLLTMPLMAPPING)
-
-#endif
-#endif
-
-//! MFDAVESoundPtr
-
-//typedef MField<OpenMeshP> MFOpenMeshP;
-
-#ifndef OSG_COMPILEOPENMESHPFIELDSINST
-#if defined(__sgi)
-
-//#pragma do_not_instantiate MField<OpenMeshP>::_fieldType
-
-#else
-
-//OSG_DLLEXPORT_DECL1(MField, OpenMeshP, OSG_TRIPSLIB_DLLTMPLMAPPING)
-
-#endif
-#endif
-
 OSG_END_NAMESPACE
 
-#define OSGOPENMESHPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshPFields.h,v 1.1 2003/07/11 14:46:51 fuenfzig Exp $"
+#define OSGOPENMESHPFIELDS_HEADER_CVSID "@(#)$Id: OSGOpenMeshPFields.h,v 1.2 2003/12/23 18:37:09 fuenfzig Exp $"
 
 #endif
 
