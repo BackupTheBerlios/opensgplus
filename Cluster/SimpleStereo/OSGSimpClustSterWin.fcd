@@ -39,7 +39,7 @@ Cluster rendering configuration for a two server stereo display
 	</Field>
 	<Field
 		name="syncSwap"
-		type="Bool"
+		type="bool"
 		cardinality="single"
 		visibility="external"
 		defaultValue="true"

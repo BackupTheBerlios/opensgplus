@@ -172,19 +172,19 @@ void SimpClustSterWinBase::setZeroparallax(const Real32 &value)
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-Bool &SimpClustSterWinBase::getSyncSwap(void)
+bool &SimpClustSterWinBase::getSyncSwap(void)
 {
     return _sfSyncSwap.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-const Bool &SimpClustSterWinBase::getSyncSwap(void) const
+const bool &SimpClustSterWinBase::getSyncSwap(void) const
 {
     return _sfSyncSwap.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void SimpClustSterWinBase::setSyncSwap(const Bool &value)
+void SimpClustSterWinBase::setSyncSwap(const bool &value)
 {
     _sfSyncSwap.setValue(value);
 }
@@ -193,5 +193,5 @@ void SimpClustSterWinBase::setSyncSwap(const Bool &value)
 
 OSG_END_NAMESPACE
 
-#define OSGSIMPCLUSTSTERWINBASE_INLINE_CVSID "@(#)$Id: OSGSimpClustSterWinBase.inl,v 1.2 2002/01/02 16:41:27 marcus Exp $"
+#define OSGSIMPCLUSTSTERWINBASE_INLINE_CVSID "@(#)$Id: OSGSimpClustSterWinBase.inl,v 1.3 2002/02/05 13:26:46 marcus Exp $"
 

@@ -206,7 +206,7 @@ Connection *MulticastConnection::create(void)
  *
  * Describes, on which port the connection will accept incomming
  * connecitons. If the address string contains no id, then
- * a random id will be choosen. If group is empty, then 224.0.0.50 is used.
+ * a random id will be choosen. If group is empty, then 224.11.12.50 is used.
  *
  * \param address    string with group:Port:id
  *
@@ -221,7 +221,7 @@ string MulticastConnection::bind( const string &address )
     
     interpreteAddress(address,group,port,member);
     if(group.empty())
-        group     ="224.0.0.50";
+        group     ="224.11.12.50";
     if(port==0)
         port =6546;
 

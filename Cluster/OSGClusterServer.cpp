@@ -233,7 +233,7 @@ void ClusterServer::render(RenderAction *action)
  * a ClusterWindow.
  */
 
-Bool ClusterServer::configChanged(FieldContainerPtr& fcp,
+bool ClusterServer::configChanged(FieldContainerPtr& fcp,
                                   RemoteAspect *)
 {
     MFString::iterator i;

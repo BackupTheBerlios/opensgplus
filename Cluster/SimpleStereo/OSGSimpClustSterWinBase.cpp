@@ -71,7 +71,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGSimpClustSterWinBase.cpp,v 1.2 2002/01/02 16:41:27 marcus Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGSimpClustSterWinBase.cpp,v 1.3 2002/02/05 13:26:46 marcus Exp $";
     static Char8 cvsid_hpp       [] = OSGSIMPCLUSTSTERWINBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGSIMPCLUSTSTERWINBASE_INLINE_CVSID;
 
@@ -107,7 +107,7 @@ const OSG::BitVector  SimpClustSterWinBase::SyncSwapFieldMask =
 /*! \var Real32          SimpClustSterWinBase::_sfZeroparallax
     zero paralax
 */
-/*! \var Bool            SimpClustSterWinBase::_sfSyncSwap
+/*! \var bool            SimpClustSterWinBase::_sfSyncSwap
     Sync swap if true
 */
 //! SimpClustSterWin description
@@ -195,7 +195,7 @@ SimpClustSterWinBase::SimpClustSterWinBase(void) :
     _sfFov                    (), 
     _sfEyedistance            (), 
     _sfZeroparallax           (), 
-    _sfSyncSwap               (Bool(true)), 
+    _sfSyncSwap               (bool(true)), 
     Inherited() 
 {
 }

@@ -126,10 +126,10 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                    Comparison                                */
     /*! \{                                                                 */
 
-    //OSGBool operator < (const MulticastConnection &other) const;
+    //OSGbool operator < (const MulticastConnection &other) const;
     
-	//OSGBool operator == (const MulticastConnection &other) const;
-	//OSGBool operator != (const MulticastConnection &other) const;
+	//OSGbool operator == (const MulticastConnection &other) const;
+	//OSGbool operator != (const MulticastConnection &other) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -235,7 +235,7 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                 Alive thread handling                        */
     /*! \{                                                                 */
     Thread *_aliveThread;
-    Bool _stopAliveThread;
+    bool _stopAliveThread;
     void startAliveThread();
     void stopAliveThread();
     static void *aliveProc(void *arg);

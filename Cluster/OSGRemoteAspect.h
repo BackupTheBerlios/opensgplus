@@ -75,7 +75,7 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
         SUBREFED  =7
     };
     /** functor called for changed containers **/
-    typedef Functor2Base<Bool,    FieldContainerPtr &, RemoteAspect *> Functor;
+    typedef Functor2Base<bool,    FieldContainerPtr &, RemoteAspect *> Functor;
     /** Map of received containers **/
     typedef map<UInt32,UInt32>    ReceivedFCT;
     /** Map of received types **/
@@ -124,9 +124,9 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     
     void   send          ( Connection &connection    );
     void   receive       ( Connection &connection    );
-    Bool   callCreated   ( FieldContainerPtr &node   );
-    Bool   callDestroyed ( FieldContainerPtr &node   );
-    Bool   callChanged   ( FieldContainerPtr &node   );
+    bool   callCreated   ( FieldContainerPtr &node   );
+    bool   callDestroyed ( FieldContainerPtr &node   );
+    bool   callChanged   ( FieldContainerPtr &node   );
 
     /*==========================  PRIVATE  ================================*/
   private:
@@ -134,11 +134,11 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
     friend class RemoteAspectFieldContainerMapper;
 	static char cvsid[];
 
-    static Bool _defaultCreatedFunction(FieldContainerPtr& fcp,
+    static bool _defaultCreatedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
-    static Bool _defaultDestroyedFunction(FieldContainerPtr& fcp,
+    static bool _defaultDestroyedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
-    static Bool _defaultChangedFunction(FieldContainerPtr& fcp,
+    static bool _defaultChangedFunction(FieldContainerPtr& fcp,
                                                       RemoteAspect * aspect);
 
 	// prohibit default functions (move to 'public' if you need one)

@@ -105,8 +105,8 @@ class OSG_SOCKET_DLLMAPPING Socket
     int          getReadBufferSize (void);
     int          getWriteBufferSize(void);
     int          getAvailable      (void);
-    Bool         waitReadable      (double duration);
-    Bool         waitWritable      (double duration);
+    bool         waitReadable      (double duration);
+    bool         waitWritable      (double duration);
     int          send              (SocketMessage &msg);
     int          recv              (SocketMessage &msg);
 

@@ -148,7 +148,7 @@ RemoteAspect::~RemoteAspect(void)
  */
 void RemoteAspect::receiveSync(Connection &connection)
 {
-    Bool finish=false;
+    bool finish=false;
     UInt8  cmd;
     UInt32 remoteTypeId;
     UInt32 localTypeId;
@@ -492,9 +492,9 @@ void RemoteAspect::registerChanged(const FieldContainerType &type,
  *
  * \see registerCreated
  */
-Bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
+bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
 {
-    Bool result;
+    bool result;
     UInt32 uiFunctorIndex = fcp->getType().getId();
 
     if ( uiFunctorIndex < _createdFunctors.size() )
@@ -509,9 +509,9 @@ Bool RemoteAspect::callCreated( FieldContainerPtr &fcp )
  *
  * \see registerDestroyed
  */
-Bool RemoteAspect::callDestroyed( FieldContainerPtr &fcp )
+bool RemoteAspect::callDestroyed( FieldContainerPtr &fcp )
 {
-    Bool result;
+    bool result;
     UInt32 uiFunctorIndex = fcp->getType().getId();
 
     if ( uiFunctorIndex < _destroyedFunctors.size() )
@@ -526,9 +526,9 @@ Bool RemoteAspect::callDestroyed( FieldContainerPtr &fcp )
  *
  * \see registerChanged
  */
-Bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
+bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
 {
-    Bool result;
+    bool result;
     UInt32 uiFunctorIndex = fcp->getType().getId();
 
     if ( uiFunctorIndex < _changedFunctors.size() )
@@ -546,7 +546,7 @@ Bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
 
 /** \brief Default create functor
  */
-Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
+bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
     FDEBUG (( "Created:%s %d\n",
@@ -557,7 +557,7 @@ Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
 
 /** \brief Default destroyed functor
  */
-Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
+bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
     FDEBUG (( "Destroyed:%s %d\n\n",
@@ -568,7 +568,7 @@ Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
 
 /** \brief Default changed functor
  */
-Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
+bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
                                            RemoteAspect *)
 {
     FDEBUG (( "Changed:%s %d\n",

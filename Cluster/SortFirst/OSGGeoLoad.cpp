@@ -56,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.1 2002/01/11 18:00:01 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.2 2002/02/05 13:26:46 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -273,7 +273,7 @@ void GeoLoad::dump(void)
 
 Real32 GeoLoad::getServerLoad(UInt32 min[2],
                               UInt32 max[2],
-                              Bool clientRendering)
+                              bool clientRendering)
 {
     if(clientRendering || _visible==false)
         return 0;
@@ -306,7 +306,7 @@ Real32 GeoLoad::getServerLoad(UInt32 min[2],
 
 Real32 GeoLoad::getClientLoad(UInt32 min[2],
                               UInt32 max[2],
-                              Bool clientRendering)
+                              bool clientRendering)
 {
     UInt32 pixMin[2];
     UInt32 pixMax[2];

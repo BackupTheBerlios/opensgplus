@@ -40,7 +40,7 @@ GLUTWindowPtr         clientWindow;
 SortFirstWindowPtr    sortfirst;
 MultiDisplayWindowPtr multidisplay;
 SimpClustSterWinPtr   stereodisplay;
-Bool                  animate=false;
+bool                  animate=false;
 
 void showText(int x, int y, char *string)
 {
@@ -230,7 +230,7 @@ Action::ResultE wireDraw( CNodePtr &, Action * action )
 {
     NodePtr node = action->getActNode();
     node->updateVolume();
-    Bool l = glIsEnabled( GL_LIGHTING );
+    bool l = glIsEnabled( GL_LIGHTING );
     glDisable( GL_LIGHTING );
     glColor3f( .8,.8,.8 );
     drawVolume( node->getVolume() );

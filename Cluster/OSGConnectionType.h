@@ -103,9 +103,9 @@ class OSG_CLUSTERLIB_DLLMAPPING ConnectionType
     /*! \name                    Comparison                                */
     /*! \{                                                                 */
 
-    Bool operator < (const ConnectionType &other) const;
-    Bool operator == (const ConnectionType &other) const;
-    Bool operator != (const ConnectionType &other) const;
+    bool operator < (const ConnectionType &other) const;
+    bool operator == (const ConnectionType &other) const;
+    bool operator != (const ConnectionType &other) const;
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/

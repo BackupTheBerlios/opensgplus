@@ -106,7 +106,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    Bool configChanged(FieldContainerPtr& fcp,
+    bool configChanged(FieldContainerPtr& fcp,
                        RemoteAspect *);
 
     /*! \}                                                                 */
@@ -123,7 +123,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     UInt32           _servicePort;
     Thread          *_serviceThread;
     UInt32           _serverId;
-    Bool             _needUpdate; 
+    bool             _needUpdate; 
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/

@@ -674,7 +674,7 @@ int Socket::getAvailable(void)
  *
  * \return true, if data is abailable
  */
-Bool Socket::waitReadable(double duration)
+bool Socket::waitReadable(double duration)
 {
     Selection selection;
     selection.setRead(*this);
@@ -690,7 +690,7 @@ Bool Socket::waitReadable(double duration)
  *
  * \return true, if send will not block
  */
-Bool Socket::waitWritable(double duration)
+bool Socket::waitWritable(double duration)
 {
     Selection selection;
     selection.setWrite(*this);

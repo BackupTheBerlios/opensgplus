@@ -186,7 +186,7 @@ void ClusterWindow::init( void )
         BinSocketMessage msg;
         string           respServer;
         string           respAddress;
-        Bool             retry=true;
+        bool             retry=true;
 
         SINFO << "Connect to " << (*s) << endl;
         serviceSock.open();

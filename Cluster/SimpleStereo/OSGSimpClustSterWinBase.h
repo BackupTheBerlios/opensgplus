@@ -137,8 +137,8 @@ class OSG_CLUSTERLIB_DLLMAPPING SimpClustSterWinBase : public ClusterWindow
     inline const Real32              &getEyedistance    (void) const;
     inline       Real32              &getZeroparallax   (void);
     inline const Real32              &getZeroparallax   (void) const;
-    inline       Bool                &getSyncSwap       (void);
-    inline const Bool                &getSyncSwap       (void) const;
+    inline       bool                &getSyncSwap       (void);
+    inline const bool                &getSyncSwap       (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -148,7 +148,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SimpClustSterWinBase : public ClusterWindow
     inline void setFov            ( const Real32 &value );
     inline void setEyedistance    ( const Real32 &value );
     inline void setZeroparallax   ( const Real32 &value );
-    inline void setSyncSwap       ( const Bool &value );
+    inline void setSyncSwap       ( const bool &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -245,6 +245,6 @@ typedef SimpClustSterWinBase *SimpClustSterWinBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGSIMPCLUSTSTERWINBASE_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWinBase.h,v 1.2 2002/01/02 16:41:27 marcus Exp $"
+#define OSGSIMPCLUSTSTERWINBASE_HEADER_CVSID "@(#)$Id: OSGSimpClustSterWinBase.h,v 1.3 2002/02/05 13:26:46 marcus Exp $"
 
 #endif /* _OSGSIMPCLUSTSTERWINBASE_H_ */

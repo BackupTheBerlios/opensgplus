@@ -80,10 +80,10 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     void update            ( ViewportPtr prt );
     Real32 getServerLoad   ( UInt32 min[2],
                              UInt32 max[2],
-                             Bool clientRendering);
+                             bool clientRendering);
     Real32 getClientLoad   ( UInt32 min[2],
                              UInt32 max[2],
-                             Bool clientRendering);
+                             bool clientRendering);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -107,9 +107,9 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                    Comparison                                */
     /*! \{                                                                 */
 
-    Bool operator < (const GeoLoad &other) const;
-    //Bool operator == (const GeoLoad &other) const;
-    //Bool operator != (const GeoLoad &other) const;
+    bool operator < (const GeoLoad &other) const;
+    //bool operator == (const GeoLoad &other) const;
+    //bool operator != (const GeoLoad &other) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -142,7 +142,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     UInt32                _faces;
     UInt32                _min[2];
     UInt32                _max[2];
-    Bool                  _visible;
+    bool                  _visible;
 
     /*! \}                                                                 */
 
@@ -163,6 +163,6 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.2 2002/01/12 16:56:32 dirk Exp $"
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.3 2002/02/05 13:26:46 marcus Exp $"
 
 #endif /* _GEOLOAD_H_ */

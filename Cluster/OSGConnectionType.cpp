@@ -120,7 +120,7 @@ ConnectionType& ConnectionType::operator = (const ConnectionType &source)
 /*! less
  */
 
-Bool ConnectionType::operator < (const ConnectionType &other) const
+bool ConnectionType::operator < (const ConnectionType &other) const
 {
     return _name < other._name;
 }
@@ -128,7 +128,7 @@ Bool ConnectionType::operator < (const ConnectionType &other) const
 /*! equal
  */
 
-Bool ConnectionType::operator == (const ConnectionType &other) const
+bool ConnectionType::operator == (const ConnectionType &other) const
 {
     return _name == other._name;
 }
@@ -136,7 +136,7 @@ Bool ConnectionType::operator == (const ConnectionType &other) const
 /*! unequal
  */
 
-Bool ConnectionType::operator != (const ConnectionType &other) const
+bool ConnectionType::operator != (const ConnectionType &other) const
 {
     return ! (*this == other);
 }
