@@ -1,0 +1,5 @@
+
+- The following line must be copied in to CommonConf/common.libs.in  
+
+ac_gdz_package[6]="Sockets:0:Sockets@ : Base Log : BaseLib :::"
+

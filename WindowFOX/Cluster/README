@@ -1,0 +1,25 @@
+- Server 
+
+./testServer name [-m]
+
+The server will be started. If option -m is given, then a 
+multicast connection is used for communication. The 
+argument "name" is a symbolic name for the server.
+
+- Client 
+
+./testClient name1 name2 name3 ... [-m] [-C] -r -ffile
+
+Start client and connect to the given server. 
+
+-fxxx         File to load
+-m            Use multicast connection
+-C            Test image composition
+-r            Number of rows for tile rendering
+
+Keys:
+ESC   exit
+a     render as fast as possible
+j     use jpeg compression
+r     use rle compression
+n     no compression

@@ -1,0 +1,16 @@
+OpenSG Window and FOX Widget for the gui toolkit FOX
+====================================================
+
+For information on FOX see http://www.fox-toolkit.org
+(Tested with FOX version 1.0.7, Windows and RedHat-Linux!)
+
+To compile this optional package you need 
+the FOX include directory in the OpenSG include path, 
+the FOX library directory in the OpenSG library path 
+and you have to link the FOX library.
+
+For this configure OpenSG with the following options added
+(You have to change the paths according to your system!)
+--with-add-incdir=/cygdrive/e/extern/fox-0.99.181/include 
+--with-add-libdir=/cygdrive/e/extern/fox-0.99.181/lib 
+--with-add-lib=fox
