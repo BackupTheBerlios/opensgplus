@@ -15,7 +15,7 @@
 #include <OSGDVRClipper.h>
 
 
-OSG_USING_NAMESPACE
+OSG_BEGIN_NAMESPACE
 
 
 // forward references
@@ -45,5 +45,7 @@ class Slicer {
     
     static bool isBackToFront(int sliceDir);  
 };
+
+OSG_END_NAMESPACE
 
 #endif

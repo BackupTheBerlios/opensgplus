@@ -3,7 +3,7 @@
 
 #include <OSGVector.h>
 
-OSG_USING_NAMESPACE
+OSG_BEGIN_NAMESPACE
 
 class DVRSlice 
 {
@@ -63,5 +63,7 @@ private:
     //! the translation parameter used to create texture coordinates from vertex positions
     Vec3f texTranslate;
 };
+
+OSG_END_NAMESPACE
 
 #endif

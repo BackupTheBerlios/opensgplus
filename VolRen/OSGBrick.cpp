@@ -240,18 +240,20 @@ TextureChunkPtr BrickSet::makeTexture(UInt32 internalFormat,
   //!! FIXME: this is required by the PreIntegration shader but
   //!! may not be supported on all OpenSG platforms - so we must
   //!! add a way that the shader can specify the wrapping
+#if defined GL_ARB_texture_border_clamp
   chunk->setWrapS(GL_CLAMP_TO_BORDER);
   chunk->setWrapT(GL_CLAMP_TO_BORDER);
   chunk->setWrapR(GL_CLAMP_TO_BORDER);
-
+#else
 //   chunk->setWrapS(GL_CLAMP_TO_EDGE);
 //   chunk->setWrapT(GL_CLAMP_TO_EDGE);
 //   chunk->setWrapR(GL_CLAMP_TO_EDGE);
 
-  // chunk->setWrapS(GL_CLAMP);
-  // chunk->setWrapT(GL_CLAMP);
-  // chunk->setWrapR(GL_CLAMP);
-	    
+  chunk->setWrapS(GL_CLAMP);
+  chunk->setWrapT(GL_CLAMP);
+  chunk->setWrapR(GL_CLAMP);
+#endif
+
   chunk->setMinFilter(GL_LINEAR);
   chunk->setMagFilter(GL_LINEAR);
     
