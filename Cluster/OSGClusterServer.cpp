@@ -238,7 +238,6 @@ void ClusterServer::render(RenderAction *action)
 bool ClusterServer::windowChanged(FieldContainerPtr& fcp,
                                   RemoteAspect *)
 {
-    MFString::iterator i;
     ClusterWindowPtr window=ClusterWindowPtr::dcast(fcp);
 
     if(window->getServers().find(_serviceName) == window->getServers().end())
@@ -274,39 +273,48 @@ void *ClusterServer::serviceProc(void *arg)
     string           service;
     string           connectionType;
 
-    SINFO << "Waiting for request of " << server->_serviceName << endl;
-    serviceSock.open();
-    serviceSock.setReusePort(true);
-    serviceSock.bind(AnyAddress(server->_servicePort));
-    for(;;)
-    {        
-        try
-        {
-            if(!serviceSock.waitReadable(.1))
+    SINFO << "Waiting for request of " << server->_serviceName << " "
+          << server->_connection->getType()->getName() << endl;
+    try
+    {
+        serviceSock.open();
+        serviceSock.setReusePort(true);
+        serviceSock.bind(AnyAddress(server->_servicePort));
+        for(;;)
+        {        
+            try
             {
-                if(server->_serviceAvailable==false)
-                    break;
+                if(!serviceSock.waitReadable(.1))
+                {
+                    if(server->_serviceAvailable==false)
+                        break;
+                }
+                serviceSock.recvFrom(msg,addr);
+                service       =msg.getString();
+                connectionType=msg.getString();
+                SINFO << "Request for " << service << " " 
+                      << connectionType << endl;
+                if(service        == server->_serviceName &&
+                   connectionType == server->_connection->getType()->getName())
+                {
+                    msg.clear();
+                    msg.putString(service);
+                    msg.putString(server->_address);
+                    serviceSock.sendTo(msg,addr);
+                    SINFO << "Response " << server->_address << endl;
+                }
             }
-            serviceSock.recvFrom(msg,addr);
-            service       =msg.getString();
-            connectionType=msg.getString();
-            SINFO << "Request for " << service << endl;
-            if(service        == server->_serviceName &&
-               connectionType == server->_connection->getType()->getName())
+            catch(exception &e)
             {
-                msg.clear();
-                msg.putString(service);
-                msg.putString(server->_address);
-                serviceSock.sendTo(msg,addr);
-                SINFO << "Response " << server->_address << endl;
+                SWARNING << e.what() << endl;
             }
         }
-        catch(exception &e)
-        {
-            SLOG << e.what() << endl;
-        }
+        serviceSock.close();
     }
-    serviceSock.close();
+    catch(exception &e)
+    {
+        SFATAL << e.what() << ": Server is now unknown" << endl;
+    }
     SINFO << "Stop service thread" << endl;
     return NULL;
 }
