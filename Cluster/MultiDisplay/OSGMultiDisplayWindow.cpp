@@ -40,8 +40,6 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#define OSG_COMPILECLUSTERLIB
-
 #include <GL/gl.h>
 #include <stdlib.h>
 #include <stdio.h>
