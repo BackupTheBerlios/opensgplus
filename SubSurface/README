@@ -2,7 +2,7 @@ Dynamic Tesselation of Subdivision Surfaces
 ===========================================
 
 Contact: Volker Settgast,   v.settgast@tu-bs.de
-         Christoph Fünfzig, c.fuenfzig@tu-bs.de
+         Christoph Fuenfzig, c.fuenfzig@tu-bs.de
 
 Usage:
 
@@ -19,20 +19,13 @@ with keys 's' solid shading
 Compilation:
 
 To compile this package you need the OpenMesh, see http://www.openmesh.org
-(for example version 1.0.0.b2 and 1.0.0.b3 tested).
+* Version 1.0.0.beta4 tested
 
 Because the OpenMesh package contains a few *.cc (reader, writer) files, 
-there are two possibilities
-* Copy all files *.cc into OSG*.cpp files into directory SubSurface.
-  Then configure OpenSG with the following options added
-  (You have to change the paths according to your system!)
-  --with-add-incdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2
-  --with-add-libdir=
-  --with-add-lib=
-
+you have to add OpenMesh as an external library
 * Compile all files *.cc into a static library OpenMesh.
   Then configure OpenSG with the following options added
   (You have to change the paths according to your system!)
-  --with-add-incdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2
-  --with-add-libdir=/cygdrive/e/extern/OpenMesh-1.0.0.b2/lib
+  --with-add-incdir=/cygdrive/e/extern/OpenMesh-1.0.0.beta4
+  --with-add-libdir=/cygdrive/e/extern/OpenMesh-1.0.0.beta4/lib
   --with-add-lib=OpenMesh
