@@ -39,14 +39,11 @@
 //---------------------------------------------------------------------------
 //  Includes
 //---------------------------------------------------------------------------
-#define OSG_COMPILESOCKETLIB
 
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-
-#define OSG_COMPILESOCKETLIB
 #include <OSGSocketConfig.h>
 #include <OSGSocket.h>
 #include <OSGSocketException.h>
