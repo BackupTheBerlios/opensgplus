@@ -80,7 +80,8 @@ Cluster rendering configuration for sort first image composition
 //! Constructor
 
 SortFirstWindow::SortFirstWindow(void) :
-    Inherited()
+    Inherited(),
+    _loadManager(NULL)
 {
 }
 
@@ -161,10 +162,7 @@ void SortFirstWindow::serverInit( WindowPtr window,
     svp->setCamera    ( deco );
     svp->setBackground( cvp->getBackground() );
     svp->setRoot      ( cvp->getRoot() );
-    svp->setSize      ( 0,
-                        0, 
-                        1.0 * getWidth () / window->getWidth (),
-                        1.0 * getHeight() / window->getHeight());
+    svp->setSize      ( 0,0,1,1 );
     beginEditCP(window);
     window->addPort(svp);
     endEditCP(window);
@@ -194,32 +192,48 @@ void SortFirstWindow::serverRender( WindowPtr window,UInt32 id,
 
     beginEditCP(deco);
     // modify viewport size instead of window size
-    vp->setSize( 0,
-                 0, 
-                 ((Int32)(getRight ()[id] * getWidth ())) -
-                 ((Int32)(getLeft  ()[id] * getWidth ())),
-                 ((Int32)(getTop   ()[id] * getHeight())) -
-                 ((Int32)(getBottom()[id] * getHeight())));
-    deco->setSize( getLeft()[id],
-                   getBottom()[id],
-                   getRight()[id],
-                   getTop()[id] );
+    vp->setSize( getLeft()  [id],
+                 getBottom()[id],
+                 getRight() [id],
+                 getTop()   [id] );
+    cout << getLeft()  [id] << " ";
+    cout << getBottom()  [id] << " ";
+    cout << getRight()  [id] << " ";
+    cout << getTop()  [id] << endl;
+    deco->setSize( getLeft()  [id]/(float)getWidth(),
+                   getBottom()[id]/(float)getHeight(),
+                   getRight() [id]/(float)getWidth(),
+                   getTop()   [id]/(float)getHeight() );
     deco->setFullWidth ( getWidth() );
     deco->setFullHeight( getHeight() );
     endEditCP(deco);
 
     // compression type
-    if(getCompression().empty())
+    if(getCompose())
     {
-        _bufferHandler.setImgTransType(NULL);
+        if(getCompression().empty())
+        {
+            _bufferHandler.setImgTransType(NULL);
+        }
+        else
+        {
+            _bufferHandler.setImgTransType(getCompression().c_str());
+        }
+        if(getSubtileSize())
+        {
+            _bufferHandler.setSubtileSize(getSubtileSize());
+        }
     }
     else
     {
-        _bufferHandler.setImgTransType(getCompression().c_str());
-    }
-    if(getSubtileSize())
-    {
-        _bufferHandler.setSubtileSize(getSubtileSize());
+        glViewport(0,0,
+                   getWidth(),
+                   getHeight());
+        glScissor(0,0,
+                  getWidth(),
+                  getHeight());
+        glClearColor(0,0,0,0);
+        glClear(GL_COLOR_BUFFER_BIT);
     }
     Inherited::serverRender(window,id,action);
 }
@@ -230,18 +244,25 @@ void SortFirstWindow::serverRender( WindowPtr window,UInt32 id,
 void SortFirstWindow::serverSwap( WindowPtr window,
                                   UInt32 )
 {
-    ViewportPtr vp=window->getPort()[0];
-    TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
-    
-    // send image
-    _bufferHandler.send(
-        *_connection,
-        ViewBufferHandler::RGB,
-        deco->getLeft()   * deco->getFullWidth(),
-        deco->getBottom() * deco->getFullHeight());
-
-    // test only
-    //   window->swap();
+    if(getCompose())
+    {
+        ViewportPtr vp=window->getPort()[0];
+        TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
+        // send image
+        _bufferHandler.send(
+            *_connection,
+            ViewBufferHandler::RGB,
+            vp->getPixelLeft(),
+            vp->getPixelBottom(),
+            vp->getPixelRight(),
+            vp->getPixelTop(),
+            0,0);
+    }
+    else
+    {
+        _connection->wait();
+        window->swap();
+    }
 }
 
 /*----------------------------- client methods ----------------------------*/
@@ -276,8 +297,8 @@ void SortFirstWindow::clientInit( void )
     vp->setRoot      ( cvp->getRoot() );
     vp->setSize      ( 0,
                        0, 
-                       1.0 * getWidth () / getClientWindow()->getWidth (),
-                       1.0 * getHeight() / getClientWindow()->getHeight());
+                       1,
+                       1 );
     beginEditCP(getClientWindow());
     getClientWindow()->addPort(vp);
     endEditCP(getClientWindow());
@@ -290,26 +311,39 @@ void SortFirstWindow::clientInit( void )
 void SortFirstWindow::clientPreSync( void )
 {
     SortFirstWindowPtr ptr=SortFirstWindowPtr(this);
-    if(getClientWindow() == NullFC)
+    if(getCompose())
     {
-        SFATAL << "No client window given" << endl;
-        return;
-    }
-    
-    if(getWidth()  != getClientWindow()->getWidth() ||
-       getHeight() != getClientWindow()->getHeight())
-    {
-        beginEditCP(ptr,
-                    Window::WidthFieldMask|
-                    Window::HeightFieldMask);
+        if(getClientWindow() == NullFC)
         {
-            setSize(getClientWindow()->getWidth(),
-                    getClientWindow()->getHeight());
+            SFATAL << "No client window given" << endl;
+            return;
         }
-        endEditCP(ptr,
-                  Window::WidthFieldMask|
-                  Window::HeightFieldMask);
+        if(getWidth()  != getClientWindow()->getWidth() ||
+           getHeight() != getClientWindow()->getHeight())
+        {
+            beginEditCP(ptr,
+                        Window::WidthFieldMask|
+                        Window::HeightFieldMask);
+            {
+                setSize(getClientWindow()->getWidth(),
+                        getClientWindow()->getHeight());
+            }
+            endEditCP(ptr,
+                      Window::WidthFieldMask|
+                      Window::HeightFieldMask);
+        }
     }
+
+    if(_loadManager==NULL)
+    {
+        _loadManager=new GeoLoadManager();
+        _loadManager->add( getPort()[0]->getRoot() );
+    }
+    GeoLoadManager::ResultT region;
+    _loadManager->balance(getPort()[0],
+                          getServers().size(),
+                          false,
+                          region);
 
     // distribute work
     // replace with load balancing algorithm !!!!!
@@ -320,38 +354,22 @@ void SortFirstWindow::clientPreSync( void )
                 SortFirstWindow::RightFieldMask|
                 SortFirstWindow::TopFieldMask|
                 SortFirstWindow::BottomFieldMask);
-    getLeft()  .resize(num);
-    getRight() .resize(num);
-    getTop()   .resize(num);
-    getBottom().resize(num);
-    for(i=0;i<num;i++)
+    getLeft()  .resize(getServers().size());
+    getRight() .resize(getServers().size());
+    getTop()   .resize(getServers().size());
+    getBottom().resize(getServers().size());
+    for(i=0;i<getServers().size();i++)
     {
-        getTop()   [i]=1;
-        getBottom()[i]=0;
-        getLeft()  [i]=((double)i)    /num;
-        getRight() [i]=((double)(i+1))/num;
+        getLeft()   [i]=region[4*i + 0];
+        getBottom() [i]=region[4*i + 1];
+        getRight()  [i]=region[4*i + 2];
+        getTop()    [i]=region[4*i + 3];
     }
     endEditCP(ptr,
               SortFirstWindow::LeftFieldMask|
               SortFirstWindow::RightFieldMask|
               SortFirstWindow::TopFieldMask|
               SortFirstWindow::BottomFieldMask);
-
-    // client viewport
-    ViewportPtr vp=getClientWindow()->getPort()[0];
-    TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
-    vp->setSize( ((Int32)(getLeft  ()[num-1] * getWidth ())),
-                 ((Int32)(getBottom()[num-1] * getHeight())), 
-                 ((Int32)(getRight ()[num-1] * getWidth ())),
-                 ((Int32)(getTop   ()[num-1] * getHeight())));
-    deco->setSize( getLeft()  [num-1],
-                   getBottom()[num-1],
-                   getRight() [num-1],
-                   getTop()   [num-1] );
-    deco->setFullWidth ( getWidth() );
-    deco->setFullHeight( getHeight() );
-
-    distributeWork();
 }
 
 /*! client rendering
@@ -361,7 +379,7 @@ void SortFirstWindow::clientPreSync( void )
 
 void SortFirstWindow::clientRender( RenderAction *action )
 {
-    Inherited::clientRender(action);
+//    Inherited::clientRender(action);
 }
 
 /*! show data
@@ -369,52 +387,27 @@ void SortFirstWindow::clientRender( RenderAction *action )
 
 void SortFirstWindow::clientSwap( void )
 {
-    if(getClientWindow()!=NullFC)
+    if(getCompose())
     {
-        glViewport(0,0,
-                   getClientWindow()->getWidth(),
-                   getClientWindow()->getHeight());
-        glScissor(0,0,
-                  getClientWindow()->getWidth(),
-                  getClientWindow()->getHeight());
-        _bufferHandler.recv(*_connection);
-        Inherited::clientSwap();
+        if(getClientWindow()!=NullFC)
+        {
+            glViewport(0,0,
+                       getClientWindow()->getWidth(),
+                       getClientWindow()->getHeight());
+            glScissor(0,0,
+                      getClientWindow()->getWidth(),
+                      getClientWindow()->getHeight());
+            _bufferHandler.recv(*_connection);
+            Inherited::clientSwap();
+        }
     }
     else
     {
-        SFATAL << "Client window missing" << endl;
+        _connection->signal();
     }
 }
 
-void SortFirstWindow::distributeWork()
-{
-    NodePtr   root  =getPort()[0]->getRoot();
-    traverseGeometry(root,getPort()[0]);
-}
 
-void SortFirstWindow::traverseGeometry(NodePtr np,ViewportPtr port)
-{
-    MFNodePtr::iterator nodei;
-    NodeCorePtr core;
-    GeometryPtr geom;
-    Vec3f min,max;
 
-    core=np->getCore();
-    if(core!=NullFC)
-    {
-        geom=GeometryPtr::dcast(core);
-        if(geom!=NullFC)
-        {
-            GeoLoad load(np);
-            load.updateView(port);
-            load.dump();
-        }
-    }
-    for(nodei =np->getMFChildren()->begin();
-        nodei!=np->getMFChildren()->end();
-        nodei++)
-    {
-        traverseGeometry(*nodei,port);
-    }
-}
+
 

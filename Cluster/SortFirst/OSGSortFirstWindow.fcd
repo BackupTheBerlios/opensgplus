@@ -59,4 +59,14 @@ Cluster rendering configuration for sort first image composition
 		access="public"
 	>
 	</Field>
+	<Field
+		name="compose"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="true"
+		access="public"
+	>
+	Transmit rendered image to cleint
+	</Field>
 </FieldContainer>

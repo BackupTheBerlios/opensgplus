@@ -74,18 +74,22 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                  load calculation                            */
     /*! \{                                                                 */
 
-    void updateView        ( ViewportPtr vp               );
+    void updateView        ( Matrix &viewing,
+                             Matrix &projection,
+                             Real32 near,
+                             UInt32 width,
+                             UInt32 height                );
     void updateGeometry    (                              );
     Real32 getServerLoad   ( Int32 min[2],
                              Int32 max[2],
-                             bool clientRendering);
+                             bool clientRendering         );
     Real32 getClientLoad   ( Int32 min[2],
                              Int32 max[2],
-                             bool clientRendering);
+                             bool clientRendering         );
     bool checkRegion       ( Int32 min[2],
-                             Int32 max[2] );
+                             Int32 max[2]                 );
     Real32 getRenderingLoad( Int32 min[2],
-                             Int32 max[2] );
+                             Int32 max[2]                 );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -174,6 +178,6 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.4 2002/02/10 12:51:34 marcus Exp $"
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.5 2002/02/15 17:45:04 marcus Exp $"
 
 #endif /* _GEOLOAD_H_ */

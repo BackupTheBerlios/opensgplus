@@ -232,19 +232,19 @@ void ViewBufferHandler::recv(Connection &connection)
  *
  * \param connection   send to this connection
  * \param component    Component to transfer
- * \param x            left begin of rectangle to be transfered
- * \param y            bottom begin of rectangle to be transfered
- * \param width        width of rectangle
- * \param height       height of rectangle
+ * \param x1           left begin of rectangle to be transfered
+ * \param y1           bottom begin of rectangle to be transfered
+ * \param x2           right. The right pixel is included
+ * \param x2           top. The top pixel is included
  * \param toX          copy to this x position on destination buffer
  * \param toY          copy to this y position on destination buffer
  */
 void ViewBufferHandler::send(Connection &connection,
                              UInt32     component,
-                             UInt32     x,
-                             UInt32     y,
-                             UInt32     width,
-                             UInt32     height,
+                             UInt32     x1,
+                             UInt32     y1,
+                             UInt32     x2,
+                             UInt32     y2,
                              UInt32     toX,
                              UInt32     toY)
 {
@@ -277,19 +277,14 @@ void ViewBufferHandler::send(Connection &connection,
     // resize image buffer
     imageData.resize(_subTileSize*_subTileSize*componentCnt);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0,getBufferWidth(),
-               0,getBufferHeight());
     glPixelStorei(GL_PACK_ALIGNMENT,1); 
 
-    for(ty=x;ty<height;ty+=_subTileSize)
+    for(ty=y1;ty<=y2;ty+=_subTileSize)
     {
-        for(tx=y;tx<width;tx+=_subTileSize)
+        for(tx=x1;tx<=x2;tx+=_subTileSize)
         {
-            tw = osgMin(_subTileSize,width-tx);
-            th = osgMin(_subTileSize,height-ty);
+            tw = osgMin(_subTileSize,x2+1-tx);
+            th = osgMin(_subTileSize,y2+1-ty);
 
             connection.putUInt32(component);
             connection.putUInt32(tx+toX);
@@ -364,8 +359,6 @@ void ViewBufferHandler::send(Connection &connection,
     
     cout << "IMG size" << imgtranssize << endl;
 
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
 }
 
 /** \brief Send parts of a view buffer to a Connection

@@ -312,7 +312,7 @@ void init(vector<char *> &filenames)
     }
 	if ( filenames.size()==0 )
 	{
-		file = makeTorus( .5, 2, 32, 32 );
+		file = makeTorus( .5, 2, 16, 16 );
         beginEditCP(file->getCore());
         endEditCP(file->getCore());
         dlight->addChild(file);
@@ -485,6 +485,9 @@ int main(int argc,char **argv)
                 break;
             case 'C':
                 sortfirst=SortFirstWindow::create();
+                beginEditCP(sortfirst);
+//                sortfirst->setCompose(false);
+                endEditCP(sortfirst);
                 clusterWindow=sortfirst;
                 break;
             case 'S':

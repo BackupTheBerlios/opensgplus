@@ -56,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.5 2002/02/11 17:00:09 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.6 2002/02/15 17:45:04 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -144,89 +144,77 @@ void GeoLoad::clipLine(int from,
 /** Update the view dependend load parameters
  **/
 
-void GeoLoad::updateView(ViewportPtr port)
+void GeoLoad::updateView(Matrix &viewing,
+                         Matrix &projection,
+                         Real32 near,
+                         UInt32 width,
+                         UInt32 height)
 {
-    CameraPtr camera=port->getCamera();
-    Vec3f vol[2];
-    vector<Pnt3f> pnt(8);
-    vector<Pnt3f> clip;
-    int i;
+    Vec3f  vol[2];
+    Pnt3f  pnt;
     Real32 minx,miny;
     Real32 maxx,maxy;
-    Matrix v;
-    Matrix p;
-    Real32 rNear=-camera->getNear();
-    bool needClip=false;
-    DynamicVolume volume;
 
-    // get whole viewport transformation
-    camera->getViewing( v, port->getPixelWidth(), port->getPixelHeight() );
-    _node->getWorldVolume(volume);
-    volume.getBounds(vol[0], vol[1]);
-    // transform into view coordinate system
-    for(i=0;i<8;++i)
-    {
-        v.multFullMatrixPnt(Pnt3f( vol[ (i   )&1 ][0] ,
-                                   vol[ (i>>1)&1 ][1] ,
-                                   vol[ (i>>2)&1 ][2]) , pnt[i]);
-        // behind the front clipping plane ?
-        if(pnt[i][2]<rNear)
-            clip.push_back(pnt[i]);
-        else
-            needClip=true;
-    }
-    if(needClip)
-    {                               // binary indices
-        clipLine(0,rNear,pnt,clip);  // from 000  to 100 010 001
-        clipLine(3,rNear,pnt,clip);  // from 011  to 111 001 010
-        clipLine(5,rNear,pnt,clip);  // from 101  to 001 111 100
-        clipLine(6,rNear,pnt,clip);  // from 110  to 111 010 100
-    }
-    // all points behind the front clipping plane?
-    if(clip.size()==0)
+    // get whole transformation
+    Matrix m=_node->getToWorld();
+    m.multLeft(viewing);
+    // get transformed volume
+    _node->updateVolume();
+    DynamicVolume volume=_node->getVolume();
+    // bug in osg base
+    /*
+    if(volume.isEmpty())
     {
         _visible=false;
+        return;
+    }
+    */
+    volume.transform(m);
+    // get min,max
+    volume.getBounds(vol[0], vol[1]);
+    // min < near
+    if(vol[0][2] > -near)
+    {
+        _visible=false;
+        return;
+    }
+    if(vol[1][2] > -near)
+    {
+        vol[1][2] = -near;
+    }
+    // create corners of a bounding box
+    for(int i=0;i<8;++i)
+    {
+        projection.multFullMatrixPnt(Pnt3f( vol[ (i   )&1 ][0] ,
+                                            vol[ (i>>1)&1 ][1] ,
+                                            vol[ (i>>2)&1 ][2]) , pnt);
+
+        if(i>0)
+        {
+            if(minx > pnt[0]) minx = pnt[0];
+            if(miny > pnt[1]) miny = pnt[1];
+            if(maxx < pnt[0]) maxx = pnt[0];
+            if(maxy < pnt[1]) maxy = pnt[1];
+        }
+        else
+        {
+            maxx = minx = pnt[0];
+            maxy = miny = pnt[1];
+        }
+    }
+    // visible ?
+    if(maxx<-1 || maxy<-1 ||
+       minx> 1 || miny> 1)
+    {
+        _visible = false;
     }
     else
     {
-        camera->getProjection( p, port->getPixelWidth(), port->getPixelHeight() );
-        // project
-        for(i=0;i<clip.size();++i)
-        {
-            p.multFullMatrixPnt(clip[i]);
-            if(i>0)
-            {
-                if(minx > clip[i][0]) minx = clip[i][0];
-                if(miny > clip[i][1]) miny = clip[i][1];
-                if(maxx < clip[i][0]) maxx = clip[i][0];
-                if(maxy < clip[i][1]) maxy = clip[i][1];
-            }
-            else
-            {
-                maxx = minx = clip[i][0];
-                maxy = miny = clip[i][1];
-            }
-        }
-        // scale to 0..1
-        minx=minx/2+.5;
-        miny=miny/2+.5;
-        maxx=maxx/2+.5;
-        maxy=maxy/2+.5;
-        // visible ?
-        if(maxx<0 || maxy<0 ||
-           minx>1 || miny>1)
-        {
-            _visible = false;
-        }
-        else
-        {
-            // scale to framebuffer pixels
-            _min[0]=(Int32)(minx*port->getPixelWidth());
-            _min[1]=(Int32)(miny*port->getPixelHeight());
-            _max[0]=(Int32)(maxx*port->getPixelWidth());
-            _max[1]=(Int32)(maxy*port->getPixelHeight());
-            _visible = true;
-        }
+        _min[0]=(Int32)(width * ( minx + 1.0 ) / 2.0);
+        _max[0]=(Int32)(width * ( maxx + 1.0 ) / 2.0);
+        _min[1]=(Int32)(height * ( miny + 1.0 ) / 2.0);
+        _max[1]=(Int32)(height * ( maxy + 1.0 ) / 2.0);
+        _visible = true;
     }
 }
 
@@ -242,13 +230,11 @@ void GeoLoad::updateGeometry()
     geo=GeometryPtr::dcast(core);
     if(geo == NullFC)
         return;
-
     // count faces
     for(FaceIterator f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
     {
         ++_faces;
     }
-    SLOG << "Faces: " << _faces << endl;
 }
     
 /*-------------------------------------------------------------------------*/

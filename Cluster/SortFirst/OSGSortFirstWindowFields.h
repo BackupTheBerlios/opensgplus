@@ -60,6 +60,8 @@
 #include <OSGNodeCoreFieldDataType.h>
 #include <OSGClusterDef.h>
 
+#include <OSGClusterWindowFields.h>
+
 OSG_BEGIN_NAMESPACE
 
 class SortFirstWindow;

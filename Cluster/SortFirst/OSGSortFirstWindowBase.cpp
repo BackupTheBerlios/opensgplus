@@ -71,11 +71,11 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp       [] = "@(#)$Id: $";
-    static char cvsid_hpp       [] = OSGSORTFIRSTWINDOWBASE_HEADER_CVSID;
-    static char cvsid_inl       [] = OSGSORTFIRSTWINDOWBASE_INLINE_CVSID;
+    static Char8 cvsid_cpp       [] = "@(#)$Id: $";
+    static Char8 cvsid_hpp       [] = OSGSORTFIRSTWINDOWBASE_HEADER_CVSID;
+    static Char8 cvsid_inl       [] = OSGSORTFIRSTWINDOWBASE_INLINE_CVSID;
 
-    static char cvsid_fields_hpp[] = OSGSORTFIRSTWINDOWFIELDS_HEADER_CVSID;
+    static Char8 cvsid_fields_hpp[] = OSGSORTFIRSTWINDOWFIELDS_HEADER_CVSID;
 }
 
 #ifdef __sgi
@@ -100,6 +100,9 @@ const OSG::BitVector  SortFirstWindowBase::CompressionFieldMask =
 const OSG::BitVector  SortFirstWindowBase::SubtileSizeFieldMask = 
     (1 << SortFirstWindowBase::SubtileSizeFieldId);
 
+const OSG::BitVector  SortFirstWindowBase::ComposeFieldMask = 
+    (1 << SortFirstWindowBase::ComposeFieldId);
+
 
 
 // Field descriptions
@@ -121,6 +124,9 @@ const OSG::BitVector  SortFirstWindowBase::SubtileSizeFieldMask =
 */
 /*! \var UInt32          SortFirstWindowBase::_sfSubtileSize
     
+*/
+/*! \var bool            SortFirstWindowBase::_sfCompose
+    Transmit rendered image to cleint
 */
 //! SortFirstWindow description
 
@@ -155,7 +161,12 @@ FieldDescription *SortFirstWindowBase::_desc[] =
                      "subtileSize", 
                      SubtileSizeFieldId, SubtileSizeFieldMask,
                      false,
-                     (FieldAccessMethod) &SortFirstWindowBase::getSFSubtileSize)
+                     (FieldAccessMethod) &SortFirstWindowBase::getSFSubtileSize),
+    new FieldDescription(SFBool::getClassType(), 
+                     "compose", 
+                     ComposeFieldId, ComposeFieldMask,
+                     false,
+                     (FieldAccessMethod) &SortFirstWindowBase::getSFCompose)
 };
 
 //! SortFirstWindow type
@@ -220,6 +231,7 @@ SortFirstWindowBase::SortFirstWindowBase(void) :
     _mfTop                    (), 
     _sfCompression            (), 
     _sfSubtileSize            (UInt32(32)), 
+    _sfCompose                (bool(true)), 
     Inherited() 
 {
 }
@@ -237,6 +249,7 @@ SortFirstWindowBase::SortFirstWindowBase(const SortFirstWindowBase &source) :
     _mfTop                    (source._mfTop                    ), 
     _sfCompression            (source._sfCompression            ), 
     _sfSubtileSize            (source._sfSubtileSize            ), 
+    _sfCompose                (source._sfCompose                ), 
     Inherited                 (source)
 {
 }
@@ -285,6 +298,11 @@ UInt32 SortFirstWindowBase::getBinSize(const BitVector &whichField)
         returnValue += _sfSubtileSize.getBinSize();
     }
 
+    if(FieldBits::NoField != (ComposeFieldMask & whichField))
+    {
+        returnValue += _sfCompose.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -322,6 +340,11 @@ void SortFirstWindowBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (SubtileSizeFieldMask & whichField))
     {
         _sfSubtileSize.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ComposeFieldMask & whichField))
+    {
+        _sfCompose.copyToBin(pMem);
     }
 
 
@@ -362,6 +385,11 @@ void SortFirstWindowBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfSubtileSize.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (ComposeFieldMask & whichField))
+    {
+        _sfCompose.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -388,6 +416,9 @@ void SortFirstWindowBase::executeSyncImpl(      SortFirstWindowBase *pOther,
 
     if(FieldBits::NoField != (SubtileSizeFieldMask & whichField))
         _sfSubtileSize.syncWith(pOther->_sfSubtileSize);
+
+    if(FieldBits::NoField != (ComposeFieldMask & whichField))
+        _sfCompose.syncWith(pOther->_sfCompose);
 
 
 }

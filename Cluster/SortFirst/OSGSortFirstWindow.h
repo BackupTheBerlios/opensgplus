@@ -45,6 +45,7 @@
 #include <OSGConfig.h>
 #include <OSGViewBufferHandler.h>
 #include <OSGSortFirstWindowBase.h>
+#include <OSGGeoLoadManager.h>
 #include <OSGCamera.h>
 
 OSG_BEGIN_NAMESPACE
@@ -119,15 +120,13 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \name                utilities                                     */
     /*! \{                                                                 */
 
-    void distributeWork(void);
-    void traverseGeometry(NodePtr root,ViewportPtr port);
-
     /*! \}                                                                 */
     
     /*==========================  PRIVATE  ================================*/
   private:
 
     static ViewBufferHandler _bufferHandler;
+    GeoLoadManager           *_loadManager;
 
     friend class FieldContainer;
     friend class SortFirstWindowBase;

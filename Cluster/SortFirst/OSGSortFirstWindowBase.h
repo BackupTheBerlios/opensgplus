@@ -73,6 +73,7 @@
 #include <OSGReal32Fields.h> // Top type
 #include <OSGStringFields.h> // Compression type
 #include <OSGUInt32Fields.h> // SubtileSize type
+#include <OSGBoolFields.h> // Compose type
 
 #include <OSGSortFirstWindowFields.h>
 
@@ -100,7 +101,8 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
         TopFieldId         = BottomFieldId      + 1,
         CompressionFieldId = TopFieldId         + 1,
         SubtileSizeFieldId = CompressionFieldId + 1,
-        NextFieldId        = SubtileSizeFieldId + 1
+        ComposeFieldId     = SubtileSizeFieldId + 1,
+        NextFieldId        = ComposeFieldId     + 1
     };
 
     static const osg::BitVector LeftFieldMask;
@@ -109,6 +111,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
     static const osg::BitVector TopFieldMask;
     static const osg::BitVector CompressionFieldMask;
     static const osg::BitVector SubtileSizeFieldMask;
+    static const osg::BitVector ComposeFieldMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -138,11 +141,14 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
     inline       MFReal32            *getMFTop            (void);
     inline       SFString            *getSFCompression    (void);
     inline       SFUInt32            *getSFSubtileSize    (void);
+    inline       SFBool              *getSFCompose        (void);
 
     inline       string              &getCompression    (void);
     inline const string              &getCompression    (void) const;
     inline       UInt32              &getSubtileSize    (void);
     inline const UInt32              &getSubtileSize    (void) const;
+    inline       bool                &getCompose        (void);
+    inline const bool                &getCompose        (void) const;
     inline       Real32              &getLeft           (UInt32 index);
     inline       MFReal32            &getLeft           (void);
     inline const MFReal32            &getLeft           (void) const;
@@ -163,6 +169,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
 
     inline void setCompression    ( const string &value );
     inline void setSubtileSize    ( const UInt32 &value );
+    inline void setCompose        ( const bool &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -214,6 +221,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
     MFReal32            _mfTop;
     SFString            _sfCompression;
     SFUInt32            _sfSubtileSize;
+    SFBool              _sfCompose;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

@@ -72,7 +72,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.3 2002/02/11 17:00:09 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.4 2002/02/15 17:45:04 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGERHEADER_CVSID;
 }
 
@@ -153,10 +153,17 @@ void GeoLoadManager::add(NodePtr node)
     }
 }
 
-/*! assignment
- */
+/** load balance
+ * 
+ *  \param vp        current viewport
+ *  \param regions   number of resulting regions
+ *  \param shrink    shrink to max area of visible objects
+ *  \param result    resulting regions
+ *
+ **/
 void GeoLoadManager::balance(ViewportPtr    vp,
-                             UInt32         servers,
+                             UInt32         regions,
+                             bool           shrink,
                              ResultT       &result)
 {
     sort_t=0;
@@ -167,53 +174,80 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     bestcutB_t=0;
     balance_t-=getSystemTime();
 
-    int a;
-    int amin[2]={vp->getPixelWidth()-1, vp->getPixelHeight()-1};
-    int amax[2]={0,0};
-    Int32 vpMax[2]={vp->getPixelWidth()-1, vp->getPixelHeight()-1};
-    RegionLoadVecT visible;
+    Matrix                   projection,viewing;
+    RegionLoadVecT           visible;
     RegionLoadVecT::iterator vi;
+    Int32                    width =vp->getPixelWidth();
+    Int32                    height=vp->getPixelHeight();
+    Int32                    wmin[2]={width,height};
+    Int32                    wmax[2]={0    ,0     };
+    Real32                   near=vp->getCamera()->getNear();
 
     sortrow_t-=getSystemTime();
+
+    vp->getCamera()->getViewing   ( viewing   ,width,height );
+    vp->getCamera()->getProjection( projection,width,height );
     visible.reserve(_geoLoad.size());
     for(GeoLoadVecT::iterator l=_geoLoad.begin() ; l!=_geoLoad.end() ; ++l)
     {
         // update view dependent values
-        l->updateView(vp);
+        l->updateView(viewing,
+                      projection,
+                      near,
+                      width,
+                      height);
         // sort by min values
         if(l->isVisible())
         {
             // collect visible geometries
             visible.push_back(RegionLoad(&(*l)));
-            for(a=0;a<=1;++a)
+            if(shrink)
             {
-                // shrink min, max to visible geometries
-                if(l->getMin()[a] <   amin[a] &&
-                   l->getMax()[a] >= 0)
-                    if(l->getMin()[a]<0)
-                        amin[a]=0;
-                    else
-                        amin[a]=l->getMin()[a];
-                if(l->getMax()[a] >   amax[a] &&
-                   l->getMin()[a] <= vpMax[a])
-                    if(l->getMax()[a]>vpMax[a])
-                        amax[a]=vpMax[a];
-                    else
-                        amax[a]=l->getMax()[a];
+                if(l->getMin()[0] < wmin[0]) 
+                    wmin[0]=l->getMin()[0];
+                if(l->getMin()[1] < wmin[1]) 
+                    wmin[1]=l->getMin()[1];
+                if(l->getMax()[0] > wmax[0]) 
+                    wmax[0]=l->getMax()[0];
+                if(l->getMax()[1] > wmax[1]) 
+                    wmax[1]=l->getMax()[1];
             }
         }
     }
     sortrow_t+=getSystemTime();
-    if(amax[0]<amin[0] ||
-       amax[1]<amin[1])
-       amax[0]=amin[0]=amax[1]=amin[1]=0;
+    if(shrink)
+    {
+        // handle invisible area
+        if(wmax[0]<wmin[0] || 
+           wmax[1]<wmin[1] )
+            wmin[0]=wmax[0]=wmin[1]=wmax[1]=0;
+        // clamp to viewable area
+        if(wmin[0]<0) 
+            wmin[0]=0;
+        if(wmin[1]<0) 
+            wmin[1]=0;
+        if(wmax[0]>=width ) 
+            wmax[0]=width -1;
+        if(wmax[1]>=height) 
+            wmax[1]=height-1;
+    }
+    else
+    {
+        wmin[0]=wmin[1]=0;
+        wmax[0]=width-1;
+        wmax[1]=height-1;
+    }
     // calculate region cost
     for(vi=visible.begin();vi!=visible.end();vi++)
     {
-        vi->update(amin,amax);
+        vi->update(wmin,wmax);
     }
-    splitRegion(servers,visible,amin,amax,result);
-
+    if(regions>1)
+        splitRegion(regions,visible,wmin,wmax,result);
+    {
+        result.insert(result.end(),wmin,wmin+2);
+        result.insert(result.end(),wmax,wmax+2);
+    }
     balance_t+=getSystemTime();
     printf("Balance:   %10.8f\n",balance_t);
     printf("Sort:      %10.8f\n",sort_t);
@@ -226,7 +260,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
 
 /** Splitupt region
  **/
-void GeoLoadManager::splitRegion(UInt32          servers,
+void GeoLoadManager::splitRegion(UInt32          regions,
                                  RegionLoadVecT &visible,
                                  Int32           amin[2],
                                  Int32           amax[2],
@@ -235,7 +269,7 @@ void GeoLoadManager::splitRegion(UInt32          servers,
     Int32  axis,cut;
     Int32  maxA[2];
     Int32  minB[2];
-    Int32  serversA,serversB;
+    Int32  regionsA,regionsB;
     RegionLoadVecT visibleA;
     RegionLoadVecT visibleB;
     RegionLoadVecT::iterator vi;
@@ -250,11 +284,11 @@ void GeoLoadManager::splitRegion(UInt32          servers,
     minB[axis^1]=amin[axis^1];
     visibleA.reserve(visible.size());
     visibleB.reserve(visible.size());
-    // split servers
-    serversA=servers/2;
-    serversB=servers-serversA;
+    // split regions
+    regionsA=regions/2;
+    regionsB=regions-regionsA;
 
-    if(serversA>1 || serversB>1)
+    if(regionsA>1 || regionsB>1)
     {
         // split visible regions
         for(vi=visible.begin();vi!=visible.end();vi++)
@@ -273,25 +307,29 @@ void GeoLoadManager::splitRegion(UInt32          servers,
                 }
         }
     }
-    if(serversA>1)
-        splitRegion(serversA,visibleA,amin,maxA,result);
+    if(regionsA>1)
+        splitRegion(regionsA,visibleA,amin,maxA,result);
     else
     {
         result.insert(result.end(),amin,amin+2);
         result.insert(result.end(),maxA,maxA+2);
+/*
         cout << "Cut: " 
              << amin[0] << "," << amin[1] << " "
              << maxA[0] << "," << maxA[1] << " " << load << endl;
+*/
     }
-    if(serversB>1)
-        splitRegion(serversB,visibleB,minB,amax,result);
+    if(regionsB>1)
+        splitRegion(regionsB,visibleB,minB,amax,result);
     else
     {
         result.insert(result.end(),minB,minB+2);
         result.insert(result.end(),amax,amax+2);
+/*
         cout << "Cut: " 
              << minB[0] << "," << minB[1] << " "
              << amax[0] << "," << amax[1] << " " << load << endl;
+*/
     }
 }
 
@@ -360,7 +398,3 @@ Real32 GeoLoadManager::findBestCut (RegionLoadVecT &visible,
     return bestCost;
 }    
    
-
-
-
-

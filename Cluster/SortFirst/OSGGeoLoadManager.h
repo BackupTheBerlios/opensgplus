@@ -96,7 +96,8 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 
     void add         (NodePtr node);
     void balance     (ViewportPtr     vp,
-                      UInt32          servers,
+                      UInt32          regions,
+                      bool            shrink,
                       ResultT        &result);
 
     /*! \}                                                                 */
@@ -137,17 +138,18 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \{                                                                 */
 
     GeoLoadVecT           _geoLoad;
+    FrustumVolume         _frustum;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
-    void splitRegion (UInt32          servers,
-                      RegionLoadVecT &visible,
-                      Int32           amin[2],
-                      Int32           amax[2],
-                      ResultT        &result);
+    void splitRegion   (UInt32          regions,
+                        RegionLoadVecT &visible,
+                        Int32           amin[2],
+                        Int32           amax[2],
+                        ResultT        &result);
     Real32 findBestCut (RegionLoadVecT &visible,
                         Int32           amin[2],
                         Int32           amax[2],
@@ -163,7 +165,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.2 2002/02/11 17:00:09 marcus Exp $"
+#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.3 2002/02/15 17:45:04 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
 

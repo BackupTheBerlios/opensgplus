@@ -102,10 +102,10 @@ class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
 
     void send       (Connection &connection,
                      UInt32     component,
-                     UInt32     x,
-                     UInt32     y,
-                     UInt32     width,
-                     UInt32     height,
+                     UInt32     x1,
+                     UInt32     y1,
+                     UInt32     x2,
+                     UInt32     y2,
                      UInt32     toX,
                      UInt32     toY);
     void send       (Connection &connection,

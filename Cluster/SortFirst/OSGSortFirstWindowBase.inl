@@ -128,6 +128,12 @@ SFUInt32 *SortFirstWindowBase::getSFSubtileSize(void)
     return &_sfSubtileSize;
 }
 
+OSG_CLUSTERLIB_DLLMAPPING
+SFBool *SortFirstWindowBase::getSFCompose(void)
+{
+    return &_sfCompose;
+}
+
 
 OSG_CLUSTERLIB_DLLMAPPING
 string &SortFirstWindowBase::getCompression(void)
@@ -163,6 +169,24 @@ OSG_CLUSTERLIB_DLLMAPPING
 void SortFirstWindowBase::setSubtileSize(const UInt32 &value)
 {
     _sfSubtileSize.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+bool &SortFirstWindowBase::getCompose(void)
+{
+    return _sfCompose.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const bool &SortFirstWindowBase::getCompose(void) const
+{
+    return _sfCompose.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void SortFirstWindowBase::setCompose(const bool &value)
+{
+    _sfCompose.setValue(value);
 }
 
 
