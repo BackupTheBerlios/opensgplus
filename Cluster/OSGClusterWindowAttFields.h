@@ -54,10 +54,6 @@
 #pragma once
 #endif
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
-
 #include <OSGConfig.h>
 
 #include <OSGFieldContainerPtr.h>
@@ -67,11 +63,12 @@
 OSG_BEGIN_NAMESPACE
 
 class ClusterWindowAtt;
+
 //! ClusterWindowAttPtr
 
 typedef FCPtr<AttachmentPtr, ClusterWindowAtt> ClusterWindowAttPtr;
 
-/** \ingroup FieldLib ClusterWindowAtt
+/*! \ingroup FieldLib ClusterWindowAtt
  *  ClusterWindowAttPtr field traits 
  */
 

@@ -175,13 +175,11 @@ RemoteAspect::~RemoteAspect(void)
 
 void RemoteAspect::receiveSync(Connection &connection)
 {
-    static int ccc=0;
     Bool finish=false;
     UInt8  cmd;
     UInt32 remoteTypeId;
     UInt32 localTypeId;
     UInt32 remoteId;
-    UInt32 localId;
     std::string name;
     FieldContainerFactory *factory=FieldContainerFactory::the();
     FieldContainerType *fcType;
@@ -341,8 +339,6 @@ void RemoteAspect::sendSync(Connection &connection,
     FieldContainerFactory *fcFactory = FieldContainerFactory::the();
     FieldContainerPtr fcPtr;
     UInt32 typeId;
-    MemoryHandle res;
-    UInt32 id;
     BitVector mask;
 
     if(!changeList)
@@ -541,7 +537,7 @@ Bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
 
 
 Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
-                                           RemoteAspect * aspect)
+                                           RemoteAspect *)
 {
     FDEBUG (( "Created:%s %d\n",
               fcp->getType().getName().str(),
@@ -550,7 +546,7 @@ Bool RemoteAspect::_defaultCreatedFunction(FieldContainerPtr& fcp,
 }
 
 Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
-                                           RemoteAspect * aspect)
+                                           RemoteAspect *)
 {
     FDEBUG (( "Destroyed:%s %d\n\n",
               fcp->getType().getName().str(), 
@@ -559,7 +555,7 @@ Bool RemoteAspect::_defaultDestroyedFunction(FieldContainerPtr& fcp,
 }
 
 Bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
-                                           RemoteAspect * aspect)
+                                           RemoteAspect *)
 {
     FDEBUG (( "Changed:%s %d\n",
               fcp->getType().getName().str(), 

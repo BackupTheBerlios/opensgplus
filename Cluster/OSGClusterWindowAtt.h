@@ -104,7 +104,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAtt : public ClusterWindowAttBase
     /*------------------------------ dump -----------------------------------*/
 
     virtual void dump(      UInt32     uiIndent = 0, 
-                      const BitVector &bvFlags  = 0) const;
+                      const BitVector  bvFlags  = 0) const;
 
   protected:
 

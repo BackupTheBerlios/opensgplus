@@ -147,8 +147,8 @@ void ClusterWindowAtt::changed(BitVector, ChangeMode)
 /** \brief output the instance for debug purposes
  */
 
-void ClusterWindowAtt::dump(      UInt32     uiIndent, 
-                         const BitVector &bvFlags) const
+void ClusterWindowAtt::dump(      UInt32     , 
+                                  const BitVector ) const
 {
 	SLOG << "Dump ClusterWindowAtt NI" << endl;
 }

@@ -177,7 +177,7 @@ const FieldContainerType &ClusterWindowAttBase::getType(void) const
 {
     return _type;
 } 
-/*! \}                                                                 */
+
 
 FieldContainerPtr ClusterWindowAttBase::shallowCopy(void) const 
 { 

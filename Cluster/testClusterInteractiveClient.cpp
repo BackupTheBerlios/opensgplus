@@ -55,7 +55,7 @@ NodePtr		          root;
 NodePtr		          file;
 ViewportPtr           vp;
 TransformPtr          cam_trans;
-ComponentTransformPtr      trans;
+ComponentTransformPtr trans;
 PerspectiveCameraPtr  cam;
 Connection           *connection;
 int                   servers;
@@ -67,21 +67,20 @@ Bool                  composite=false;
 // GLUT variables
 // **************
 
-Trackball tball;
+Trackball                      tball;
+int                            mouseb = 0;
+int                            lastx=0, lasty=0;
+int                            winwidth=0, winheight=0;
 
-int mouseb = 0;
-int lastx=0, lasty=0;
-int winwidth=0, winheight=0;
-
-vector<WindowPtr>              windows;
-vector<TileCameraDecoratorPtr> decos;
-RenderAction * dummyract;
-DrawAction * ract;
-WindowPtr win;
-int winid;
-int nhserv;
-int nvserv=1;
-Bool interactive=true;
+vector<WindowPtr>              serverWindow;
+vector<TileCameraDecoratorPtr> serverDecorator;
+RenderAction                  *dummyract;
+DrawAction                    *ract;
+WindowPtr                      win;
+int                            winid;
+int                            nhserv;
+int                            nvserv=1;
+Bool                           interactive=true;
 
 // Program
 
@@ -91,8 +90,94 @@ void *font = 6;
 void *font = GLUT_BITMAP_TIMES_ROMAN_24;
 #endif
 
-void
-showText(int x, int y, char *string)
+/** Create Server Windows
+ *
+**/
+void createServerWindows(NodePtr       root   ,
+                         CameraPtr     cam    ,
+                         BackgroundPtr bkgnd  ,
+                         UInt32        nx     , UInt32 ny,
+                         UInt32        width  , UInt32 height,
+                         Bool          composite)
+{
+    UInt32 x,y;
+    GLUTWindowPtr window;
+    ClusterWindowAttPtr pWindowAtt;
+    TileCameraDecoratorPtr deco;
+
+    for(y=0;y<ny;y++)
+    {
+        for(x=0;x<nx;x++)
+        {
+            deco = TileCameraDecorator::create();
+            beginEditCP(deco);
+            deco->setCamera( cam );
+            deco->setSize( 1.0/nx * x,
+                           1.0/ny * y,
+                           1.0/nx * (x+1),
+                           1.0/ny * (y+1) );
+            deco->setFullWidth(width);
+            deco->setFullHeight(height);
+            endEditCP(deco);
+
+            vp = Viewport::create();
+            beginEditCP(vp);
+            vp->setCamera( deco );
+            vp->setBackground( bkgnd );
+            vp->setRoot( root );
+            vp->setSize( 0,0, 1,1 );
+            endEditCP(vp);
+
+            // Server information
+            pWindowAtt = ClusterWindowAtt::create();
+            beginEditCP(pWindowAtt);
+            {
+                pWindowAtt->setServerId(x+ny*y);
+                pWindowAtt->setComposite(composite);
+                pWindowAtt->setSubTileSize(32);
+            }
+            endEditCP(pWindowAtt);
+
+            window = GLUTWindow::create();
+            beginEditCP(window);
+            window->addAttachment(pWindowAtt);
+            window->addPort( vp );
+            window->setSize(width/nx,height/ny);
+            endEditCP(window);
+
+            serverDecorator.push_back(deco);
+            serverWindow.push_back(window);
+        }
+    }
+}
+
+/** Reshape server Windows
+ *
+**/
+void reshapeServerWindows(UInt32 width,UInt32 height)
+{
+    vector<TileCameraDecoratorPtr>::iterator t;
+    vector<WindowPtr>::iterator w;
+    for(t=serverDecorator.begin(), w=serverWindow.begin();
+        t!=serverDecorator.end()  ;
+        t++,w++)
+    {
+        beginEditCP( (*t) );
+        {
+            (*t)->setFullWidth(width);
+            (*t)->setFullHeight(height);
+        }
+        endEditCP( (*t) );
+        beginEditCP( (*w) );
+        {
+            (*w)->setSize(width  * ((*t)->getRight() - (*t)->getLeft()),
+                          height * ((*t)->getTop()   - (*t)->getBottom()));
+        }
+        endEditCP( (*w) );
+    }
+}
+
+void showText(int x, int y, char *string)
 {
   int len, i;
 
@@ -115,19 +200,6 @@ showText(int x, int y, char *string)
   glPopMatrix();
   glEnable(GL_DEPTH_TEST);  
   glDisable(GL_COLOR_MATERIAL);
-}
-
-Action::ResultE calcVNormal( CNodePtr &, Action * action )
-{
-	NodePtr node = action->getActNode();
-	GeometryPtr g = GeometryPtr::dcast( node->getCore() );
-
-	if ( g->getNormals() == NullFC )
-	{
-		calcVertexNormals( g );
-	}	
-	
-	return Action::Continue;
 }
 
 void createSceneGraph(int argc,char **argv)
@@ -257,49 +329,14 @@ void createSceneGraph(int argc,char **argv)
 	bkgnd->setColor( bkgndcolor );
 	endEditCP(bkgnd);
 
-    // Viewport
-
-    // one window for each server
-    for(i=0;i<(int)servers;i++)
-    {
-        deco = TileCameraDecorator::create();
-        beginEditCP(deco);
-        deco->setCamera( cam );
-        deco->setSize( 1.0/nhserv * (i % nhserv),
-                       1.0/nvserv * int(i / nhserv),
-                       1.0/nhserv * ( (i % nhserv) + 1),
-                       1.0/nvserv * ( int(i / nhserv) + 1) );
-        deco->setFullWidth(width);
-        deco->setFullHeight(height);
-        endEditCP(deco);
-        decos.push_back(deco);
-
-        vp = Viewport::create();
-        beginEditCP(vp);
-        vp->setCamera( deco );
-        vp->setBackground( bkgnd );
-        vp->setRoot( root );
-        vp->setSize( 0,0, 1,1 );
-        endEditCP(vp);
-
-        // Server information
-        pWindowAtt = ClusterWindowAtt::create();
-        beginEditCP(pWindowAtt);
-        {
-            pWindowAtt->setServerId(i);
-            pWindowAtt->setComposite(composite);
-            pWindowAtt->setSubTileSize(32);
-        }
-        endEditCP(pWindowAtt);
-
-        window = GLUTWindow::create();
-        beginEditCP(window);
-        window->addAttachment(pWindowAtt);
-        window->addPort( vp );
-        window->setSize(width/nhserv,height/nvserv);
-        endEditCP(window);
-        windows.push_back(window);
-    }
+    // server windows
+    createServerWindows(root,
+                        cam,
+                        bkgnd,
+                        nhserv,nvserv,
+                        width,
+                        height,
+                        composite);
 
     // move geometry in to viewfrustum
 	Vec3f pos( 0, 0, max[2] + ( max[2] - min[2] ) * 2 );
@@ -385,7 +422,7 @@ display(void)
         // send syncronisation
         aspect.sendSync(*connection,Thread::getCurrentChangeList());
         Thread::getCurrentChangeList()->clearAll();
-
+        cout << "draw" << endl;
         if(composite)
         {
             win->frameInit();	            // frame-cleanup
@@ -424,27 +461,10 @@ display(void)
 
 void reshape( int width, int height )
 {
-	cerr << "Reshape: " << width << "," << height << endl;
 	win->resize( width, height );
-
     if(composite)
     {
-        vector<TileCameraDecoratorPtr>::iterator t;
-        vector<WindowPtr>::iterator w;
-        for(t=decos.begin();t!=decos.end();t++)
-        {
-            beginEditCP( (*t) );
-            (*t)->setFullWidth(width);
-            (*t)->setFullHeight(height);
-            endEditCP( (*t) );
-        }
-        for(w=windows.begin();w!=windows.end();w++)
-        {
-            beginEditCP( (*w) );
-            (*w)->setSize(width/nhserv,height/nvserv);
-            endEditCP( (*w) );
-        }
-
+        reshapeServerWindows(width,height);
     }
 	glutPostRedisplay();
 }
@@ -515,7 +535,7 @@ mouse(int button, int state, int x, int y)
 }
 
 
-void key(unsigned char key, int x, int y)
+void key(unsigned char key, int /*x*/, int /*y*/)
 {
     ClusterWindowAttPtr att;
     vector<WindowPtr>::iterator w;
@@ -542,7 +562,7 @@ void key(unsigned char key, int x, int y)
         case 'M':
         case 'N':
         case 'R':
-            for(w=windows.begin();w!=windows.end();w++)
+            for(w=serverWindow.begin();w!=serverWindow.end();w++)
             {
                 att=ClusterWindowAttPtr::dcast(
                     (*w)->findAttachment(ClusterWindowAtt::getClassType()
@@ -565,7 +585,7 @@ void key(unsigned char key, int x, int y)
         case '3':
         case '4':
         case '5':
-            for(w=windows.begin();w!=windows.end();w++)
+            for(w=serverWindow.begin();w!=serverWindow.end();w++)
             {
                 att=ClusterWindowAttPtr::dcast(
                     (*w)->findAttachment(ClusterWindowAtt::getClassType()
@@ -612,7 +632,7 @@ Action::ResultE wireDraw( CNodePtr &, Action * action )
 	return Action::Continue;
 }
 
-Action::ResultE ignore( CNodePtr &, Action * action )
+Action::ResultE ignore( CNodePtr &, Action * /* action */)
 {	
 	return Action::Continue;
 }

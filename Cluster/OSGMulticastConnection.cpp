@@ -121,7 +121,7 @@ namespace
 /** \brief Constructor
  */
 
-MulticastConnection::MulticastConnection(int port) :
+MulticastConnection::MulticastConnection(int ) :
 	Inherited(0),
     _receivers(),
     _seqNumber(1),
@@ -148,7 +148,7 @@ MulticastConnection::MulticastConnection(int port) :
     }
     _udpReadBuffers[i].resize(3000);
 
-    // create read buffers
+    // create write buffers
     _udpWriteBuffers.resize( 32 );
     for(i=0;i<(_udpWriteBuffers.size()-1);i++)
     {
@@ -328,7 +328,6 @@ Bool MulticastConnection::selectChannel()
             _socket.recv(&header,sizeof(header));
         }
     }
-    return false;
 }
 
 void MulticastConnection::printStatistics(void)
@@ -419,17 +418,21 @@ void MulticastConnection::readBuffer()
             responseAck.header.type      = ACK;
             responseAck.header.seqNumber = header->seqNumber;
             responseAck.nack.size        = 0;
-            for(pos = 0 , buffer=readBufBegin();
-                pos < (header->seqNumber - _seqNumber);
-                pos++   , buffer++)
+            if(header->seqNumber > _seqNumber)
             {
-                if(buffer->getDataSize()==0)
+                for(pos = 0 , buffer=readBufBegin();
+                    pos < (header->seqNumber - _seqNumber);
+                    pos++   , buffer++)
                 {
+                    if(buffer->getDataSize()==0)
+                    {
 #   ifdef MULTICAST_STATISTICS
-                    _statPckDrop++;
+                        _statPckDrop++;
 #   endif
-                    cout << "missing" << pos << " " << pos+_seqNumber << endl;
-                    responseAck.nack.missing[responseAck.nack.size++]=pos;
+                        cout << "missing" << pos << " " << _seqNumber << " "
+                             << header->seqNumber << endl;
+                        responseAck.nack.missing[responseAck.nack.size++]=pos;
+                    }
                 }
             }
             // send ack

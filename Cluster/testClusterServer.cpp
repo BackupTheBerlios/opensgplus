@@ -53,7 +53,7 @@ ViewBufferHandler   bufferHandler;
 ClusterWindowAttPtr windowAtt;
 
 Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
-                             RemoteAspect * aspect)
+                             RemoteAspect * /*aspect*/)
 {
     GLUTWindowPtr window=GLUTWindowPtr::dcast(fcp);
     ClusterWindowAttPtr att;
@@ -76,7 +76,7 @@ Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
 }
 
 Bool WindowChangedFunction(FieldContainerPtr& fcp,
-                           RemoteAspect * aspect)
+                           RemoteAspect * /*aspect*/)
 {
     GLUTWindowPtr window=GLUTWindowPtr::dcast(fcp);
     ClusterWindowAttPtr att;
@@ -170,7 +170,7 @@ void display()
 
 
 Bool NodeC(FieldContainerPtr& fcp,
-           RemoteAspect * aspect)
+           RemoteAspect * /*aspect*/)
 {
     NodePtr node=NodePtr::dcast(fcp);
     node->getSFVolume()->getValue().dump();

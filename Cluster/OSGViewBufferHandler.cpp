@@ -114,7 +114,6 @@ void ViewBufferHandler::recv(Connection &connection)
     UInt32             dataSize;
     UInt32             component;
     GLenum             glformat;
-    Image::PixelFormat imgformat;
     int                componentCnt;
 
     glPushMatrix();
@@ -177,12 +176,10 @@ void ViewBufferHandler::recv(Connection &connection)
             {
                 case RGB: 
                     glformat     = GL_RGB; 
-                    imgformat    = Image::OSG_RGB_PF;
                     componentCnt = 3;
                     break;
                 case RGBA:
                     glformat     = GL_RGBA;
-                    imgformat    = Image::OSG_RGBA_PF; 
                     componentCnt = 4;
                     break;
                 default:
@@ -349,7 +346,7 @@ void ViewBufferHandler::send(Connection &connection,
     send(connection,component,0,0,getBufferWidth(),getBufferHeight(),toX,toY);
 }
 
-void ViewBufferHandler::setImgTransType(const char *mimeType=NULL)
+void ViewBufferHandler::setImgTransType(const char *mimeType)
 {
     if(mimeType==NULL)
     {
