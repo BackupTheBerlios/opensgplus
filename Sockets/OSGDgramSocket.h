@@ -112,6 +112,8 @@ class OSG_SOCKET_DLLMAPPING DgramSocket:public Socket
     void         leave            (const Address &group,
                                    const Address &interf=AnyAddress());
     void         setTTL           (unsigned char ttl);
+    int          sendTo           (SocketMessage &msg,const Address &to);
+    int          recvFrom         (SocketMessage &msg,Address &from);
 
     /*------------------------- assignment ----------------------------------*/
 

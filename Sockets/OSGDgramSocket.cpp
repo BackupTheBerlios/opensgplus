@@ -62,6 +62,7 @@
 #include <OSGSocketConfig.h>
 #include <OSGAddress.h>
 #include <OSGDgramSocket.h>
+#include <OSGSocketMessage.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -262,6 +263,21 @@ void DgramSocket::setTTL(unsigned char ttl)
     {
         throw SocketError("setsockopt(IPPROTO_IP,IP_MULTICAST_TTL)");
     }
+}
+
+int DgramSocket::sendTo(SocketMessage &msg,const Address &to)
+{
+    SocketMessage::Header &hdr=msg.getHeader();
+    hdr.size=htonl(msg.getSize());
+    return sendTo(msg.getBuffer(),msg.getSize(),to);
+}
+
+int DgramSocket::recvFrom(SocketMessage &msg,Address &from)
+{
+    SocketMessage::Header hdr;
+    peek(&hdr,sizeof(hdr));
+    msg.setSize(ntohl(hdr.size));
+    return recvFrom(msg.getBuffer(),msg.getSize(),from);
 }
 
 /*-------------------------- assignment -----------------------------------*/
