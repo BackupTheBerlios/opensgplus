@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/19 21:46:39 $
+//   $Revision: 1.2 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -62,28 +62,29 @@ public:
        the previous call of operator() returned true. */
    /** \{                                                                 */   
    /** Current voxel indices in voxel space. */
-   inline const VectorClass3i& getIndexDim () const;
+   inline const VectorClass3u& getIndexDim () const;
    /** px() + p.y()*vs.nx() + pz()*vs.nx()*vs.ny() */
-   inline i64                  getIndex () const;
+   inline u64                  getIndex () const;
    /** \}                                                                 */
    /*---------------------------------------------------------------------*/
    inline RegularGridBase&     getGrid () const;
 
 private:
    RegularGridBase* m_grid;
-   VectorClass3i m_coord;
-   i64           m_index;
+   VectorClass3u m_coord;
+   u64           m_index;
    i32 m_d;
    i32 m_dmax;
+   VectorClass3i m_start;
    VectorClass3i m_diff;
    bool m_first;
 };
 
-inline const VectorClass3i& RegularGridPointIter::getIndexDim () const 
+inline const VectorClass3u& RegularGridPointIter::getIndexDim () const 
 { 
    return m_coord; 
 }
-inline i64 RegularGridPointIter::getIndex () const 
+inline u64 RegularGridPointIter::getIndex () const 
 { 
    return m_index; 
 }

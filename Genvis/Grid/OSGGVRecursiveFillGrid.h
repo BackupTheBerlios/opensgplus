@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -38,10 +38,22 @@
 
 BEGIN_GENVIS_NAMESPACE
 
+/*! \brief Default functor for computing the bounding volume. Calls the method
+    void const BoundingVolume<Real>& getBoundingVolume() const;
+ */
+template <class ADAPTER>
+struct ComputeBoundingVolume
+{
+   inline const BoundingVolume<Real>& operator() (const ADAPTER* adapter) const {
+      return adapter->getBoundingVolume();
+   }
+};
+
 /*! \brief Recursively assigning primitives to grid subregions by testing the primitives 
     bounding volumes.
  */
 template <class ADAPTER,
+          class FUNCTOR   = ComputeBoundingVolume<ADAPTER>,
           class CONTAINER = std::vector<ADAPTER*> >
 class RecursiveFillGrid
 {
@@ -51,6 +63,7 @@ public:
    /*! \{                                                                 */   
    typedef RecursiveFillGrid<ADAPTER,CONTAINER> Self;
    typedef RegularGrid<ADAPTER,CONTAINER>       GridType;
+   typedef FUNCTOR                              FunctorType;
    typedef typename GridType::AdapterType       AdapterType;
    typedef typename GridType::PointerType       PointerType;
    typedef typename GridType::ContainerType     ContainerType;
@@ -63,7 +76,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline GridType&       getGrid () const;
+   inline GridType&  getGrid () const;
    inline u32        getNumNonEmptyVoxels () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -85,7 +98,8 @@ private:
 			u32 from_z, u32 to_z);
 
    u32  m_numNonEmpty;
-   GridType* m_grid;
+   GridType*   m_grid;
+   FunctorType m_functor;
 };
 typedef RecursiveFillGrid<BVolAdapterBase> OSGRecursiveFillGrid;
 

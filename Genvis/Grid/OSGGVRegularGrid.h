@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.4 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.5 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -63,15 +63,28 @@ public:
    /*! Default constructor. */
    inline RegularGrid ();
    /*! Constructor. Constructs a regular grid with the given bounding box.
-       @param box(in)          Bounding box.
-       @param voxels(in)       Number of voxels requested in the specified mode.
-       @param mode(in)         Mode for voxel creation. 
+       \see init.
    */
    inline RegularGrid (const AABox& box, Real voxels, InitMode mode);
+   /*! Constructor. Constructs a regular grid with the given bounding box and
+       the given resolution. \see init.
+   */
+   inline RegularGrid (const AABox& box, u32 dimx, u32 dimy, u32 dimz); 
    /*! Destructor. */
    virtual inline ~RegularGrid ();
-   /*! Initialization. */
+   /*! Initialization. Constructs a regular grid with the given bounding box. mode is
+       MaxVoxelsPerDim then voxels gives the number of voxels along maximum axis.
+       MinVoxelsPerDim then voxels gives the number of voxels along minimum axis;
+                            the number of voxels along maximum axis is computed from that.
+       VoxelsPerUnit   then voxels gives the number of voxels per unit of space;
+                            the number of voxels along maximum axis is computed from that.
+       MaxVoxels       then voxels gives the total number of voxels.
+   */
    inline void init (const AABox& box, Real voxels, InitMode mode); 
+   /*! Lowlevel Initialization. Constructs a regular grid with the given bounding box and
+       the given resolution. 
+   */
+   inline void init (const AABox& box, u32 dimx, u32 dimy, u32 dimz); 
    /*! Clear voxel array. Keep defined bounding box. */
    inline void clear (); 
    /*! \}                                                                 */
@@ -79,7 +92,7 @@ public:
    /*! \name Members.                                                     */
    /*! \{                                                                 */
    /*! Returns object array of voxel with given index. */
-   inline ContainerType& primitives (const i64& index);
+   inline ContainerType& primitives (const u64& index);
    /*! Returns object array of voxel which corresponds to the iterator state. */
    inline ContainerType& primitives (const RegularGridIter& iter);
    /*! Returns object array of voxel which contains point p. */
@@ -87,13 +100,13 @@ public:
    /*! Read object array of voxel with index (x, y, z). */
    inline ContainerType& primitives (u32 x, u32 y, u32 z);
    /*! Read object array of voxel with index (x, y, z). */
-   inline ContainerType& primitives (const VectorClass3i& index);
+   inline ContainerType& primitives (const VectorClass3u& index);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Lowlevel access.                                             */
    /*! \{                                                                 */
-   /*! Get voxel array. */
-   inline std::vector<ContainerType>& getVoxel ();
+   /*! Get internal data store. */
+   inline std::vector<ContainerType>& getStore ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Ray Intersection.                                            */
@@ -125,10 +138,10 @@ protected:
    /*! \{                                                                 */
    /*! Compute number of voxel in x, y and z direction based on a given maximum maxVoxels. */
    inline void computeExtends (Real hlx, Real hly, Real hlz,
-			       int& dx, int& dy, int& dz, 
-			       i64 maxVoxels,
-			       i64 maxVoxelsInDim_from, 
-			       i64 maxVoxelsInDim_to);
+			       u32& dx, u32& dy, u32& dz, 
+			       u64 maxVoxels,
+			       u64 maxVoxelsInDim_from, 
+			       u64 maxVoxelsInDim_to);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 

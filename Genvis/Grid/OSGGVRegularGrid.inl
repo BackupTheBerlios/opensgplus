@@ -6,24 +6,15 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
 
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
-						    Real     voxels, 
-						    InitMode mode)
-  : RegularGridBase()
-{
-   init(box, voxels, mode);
-}
-
-template <class ADAPTER,class CONTAINER>
 inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType& 
-RegularGrid<ADAPTER,CONTAINER>::primitives (const i64& index)
+RegularGrid<ADAPTER,CONTAINER>::primitives (const u64& index)
 {
    return m_voxel[index];
 }
@@ -44,7 +35,7 @@ RegularGrid<ADAPTER,CONTAINER>::primitives (u32 x, u32 y, u32 z)
 }
 template <class ADAPTER,class CONTAINER>
 inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType&
-RegularGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3i& index)
+RegularGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3u& index)
 {
    assert(index[0] < getNumVoxelsDim()[0]);
    assert(index[1] < getNumVoxelsDim()[1]);
@@ -61,23 +52,11 @@ RegularGrid<ADAPTER,CONTAINER>::primitives (PointClass p)
 
 template <class ADAPTER,class CONTAINER>
 inline std::vector<typename RegularGrid<ADAPTER,CONTAINER>::ContainerType>& 
-RegularGrid<ADAPTER,CONTAINER>::getVoxel ()
+RegularGrid<ADAPTER,CONTAINER>::getStore ()
 {
    return m_voxel;
 }
 
-
-
-template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid()
-  : RegularGridBase(), m_voxel(NULL)
-{
-}
-
-template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::~RegularGrid()
-{
-}
 
 #if 0
 template <class ADAPTER,class CONTAINER>
@@ -93,7 +72,7 @@ inline void RegularGrid<ADAPTER,CONTAINER>::scaleUp   ()
    m_inv_vlength *= 2.0;
    m_vcen = PointClass(minVector()[0], minVector()[1], minVector()[2]) + m_vh;
 
-   i64 i;
+   u64 i;
    // insert entry after each existing entry in all rows and all slices
    for (i=0; i<getNumVoxels(); i+=2) {
       m_voxel.insert(m_voxel.begin()+i, m_voxel[i]);     
@@ -114,7 +93,7 @@ template <class ADAPTER,class CONTAINER>
 inline void RegularGrid<ADAPTER,CONTAINER>::scaleDown ()
 {
    // resort
-   i32 x, y, z;
+   u32 x, y, z;
    for (z=0; z<getNumVoxelsDim()[2]; z+=2) {
       for (y=0; y<getNumVoxelsDim()[1]; y+=2) {
 	 for (x=0; x<getNumVoxelsDim()[0]; x+=2) {
@@ -152,11 +131,7 @@ inline void RegularGrid<ADAPTER,CONTAINER>::scaleDown ()
 template <class ADAPTER,class CONTAINER>
 inline void RegularGrid<ADAPTER,CONTAINER>::init (const K6Dop& box, Real voxels, InitMode mode)
 {
-   // clear old voxel-array
-   i32 i;
-   for (i=0; i<getNumVoxels(); ++i) {
-      m_voxel[i].clear();
-   }
+   clear();
 
    static FloatingComparator<Real> comp;
 
@@ -170,36 +145,54 @@ inline void RegularGrid<ADAPTER,CONTAINER>::init (const K6Dop& box, Real voxels,
    Real shy = stdMax(comp.getPrecision(), 0.5f*box.difference(1));
    Real shz = stdMax(comp.getPrecision(), 0.5f*box.difference(2));
 
-   i32 num_x, num_y, num_z;
+   u32 num_x, num_y, num_z;
    switch (mode) {
       case MaxVoxelsPerDim: {
          Real shmax = stdMax(shx, stdMax(shy, shz));
          Real edge = stdMax(comp.getPrecision(), shmax/voxels);
-         num_x = (shmax == shx) ? i32(voxels) : i32(ceil(shx/edge));
-         num_y = (shmax == shy) ? i32(voxels) : i32(ceil(shy/edge));
-         num_z = (shmax == shz) ? i32(voxels) : i32(ceil(shz/edge));
+         num_x = (shmax == shx) ? u32(voxels) : u32(ceil(shx/edge));
+         num_y = (shmax == shy) ? u32(voxels) : u32(ceil(shy/edge));
+         num_z = (shmax == shz) ? u32(voxels) : u32(ceil(shz/edge));
          }
          break;
       case MinVoxelsPerDim: {
          Real shmin = stdMin(shx, stdMin(shy, shz));
          Real edge = stdMax(comp.getPrecision(), shmin/voxels);
-         num_x = (shmin == shx) ? i32(voxels) : i32(ceil(shx/edge));
-         num_y = (shmin == shy) ? i32(voxels) : i32(ceil(shy/edge));
-         num_z = (shmin == shz) ? i32(voxels) : i32(ceil(shz/edge));
+         num_x = (shmin == shx) ? u32(voxels) : u32(ceil(shx/edge));
+         num_y = (shmin == shy) ? u32(voxels) : u32(ceil(shy/edge));
+         num_z = (shmin == shz) ? u32(voxels) : u32(ceil(shz/edge));
          }
          break;
       case VoxelsPerUnit: {
-         num_x = i32(ceil(shx*voxels));
-         num_y = i32(ceil(shy*voxels));
-         num_z = i32(ceil(shz*voxels));
+         num_x = u32(ceil(shx*voxels));
+         num_y = u32(ceil(shy*voxels));
+         num_z = u32(ceil(shz*voxels));
          }
  	 break;
       case MaxVoxels:
       default:
-         computeExtends(shx,shy,shz, num_x,num_y,num_z, (i64)voxels, 1,(i64)voxels);
+         computeExtends(shx,shy,shz, num_x,num_y,num_z, (u64)voxels, 1,(u64)voxels);
          break;
    }
-   RegularGridBase::init(box.getCenter(), shx,shy,shz, num_x,num_y,num_z);
+   Inherited::init(box.getCenter(), shx,shy,shz, num_x,num_y,num_z);
+
+   // resize voxel-array
+   m_voxel.resize(getNumVoxels());
+}
+template <class ADAPTER,class CONTAINER>
+inline void RegularGrid<ADAPTER,CONTAINER>::init (const K6Dop& box, u32 dimx, u32 dimy, u32 dimz)
+{
+   clear();
+
+   // correct a dim = 0
+   dimx = stdMax(dimx, 1);
+   dimy = stdMax(dimy, 1);
+   dimz = stdMax(dimz, 1);
+   // calc side length
+   Real shx = 0.5f*box.difference(0)/dimx;
+   Real shy = 0.5f*box.difference(1)/dimx;
+   Real shz = 0.5f*box.difference(2)/dimx;
+   Inherited::init(box.getCenter(), shx,shy,shz, num_x,num_y,num_z);
 
    // resize voxel-array
    m_voxel.resize(getNumVoxels());
@@ -209,22 +202,22 @@ template <class ADAPTER,class CONTAINER>
 inline void RegularGrid<ADAPTER,CONTAINER>::clear ()
 {
    // clear voxel-array
-   for(int i=0; i<getNumVoxels(); i++) {
+   for (u64 i=0; i<getNumVoxels(); ++i) {
       m_voxel[i].clear();
    }
 }
 
 template <class ADAPTER,class CONTAINER>
 inline void RegularGrid<ADAPTER,CONTAINER>::computeExtends(Real hlx, Real hly, Real hlz,
-							   int& dx, int& dy, int& dz, 
-							   i64 maxVoxels,
-							   i64 maxVoxelsInDim_from, 
-							   i64 maxVoxelsInDim_to)
+							   u32& dx, u32& dy, u32& dz, 
+							   u64 maxVoxels,
+							   u64 maxVoxelsInDim_from, 
+							   u64 maxVoxelsInDim_to)
 {
    static FloatingComparator<Real> comp;
 
    Real smax = stdMax(hlx, stdMax(hly, hlz));
-   i64 maxVoxelsInDim = (maxVoxelsInDim_from + maxVoxelsInDim_to)/2;
+   u64 maxVoxelsInDim = (maxVoxelsInDim_from + maxVoxelsInDim_to)/2;
    Real voxelEdge = stdMax(comp.getPrecision(), smax/Real(maxVoxelsInDim));
 
    dx = (smax == hlx) ? (int)maxVoxelsInDim : (int)ceil(hlx/voxelEdge);
@@ -261,7 +254,7 @@ inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::calcInt
    bool  result = false;
    while (iter()) {
       const std::vector<AdapterType*>& list = m_voxel[iter.getIndex()];
-      for (unsigned i=0; i<list.size(); ++i) {
+      for (u32 i=0; i<list.size(); ++i) {
 	 result = list[i]->calcIntersect(in) || result;
       }
       if (result && comp.leq(in.getDist(), iter.getOutDist())) {
@@ -278,7 +271,7 @@ inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::checkIn
    RegularGridIter iter(*this, in.getRay());
    while (iter()) {
       const std::vector<AdapterType*>& list = m_voxel[iter.getIndex()];
-      for (unsigned i=0; i<list.size(); ++i) {
+      for (u32 i=0; i<list.size(); ++i) {
 	 if (list[i]->checkIntersect(in)) {// ray did hit an item
 	    return true;
 	 }
@@ -332,4 +325,32 @@ inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const PointClass& p1
 							    const PointClass& p3) const
 {
    return Inherited::checkIntersect(p1, p2, p3);
+}
+
+
+template <class ADAPTER,class CONTAINER>
+inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid()
+  : Inherited(), m_voxel(NULL)
+{
+}
+template <class ADAPTER,class CONTAINER>
+inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
+						    Real     voxels, 
+						    InitMode mode)
+  : Inherited()
+{
+   init(box, voxels, mode);
+}
+template <class ADAPTER,class CONTAINER>
+inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
+						    u32 dimx, u32 dimy, u32 dimz)
+  : Inherited()
+{
+   init(box, dimx, dimy, dimz);
+}
+
+template <class ADAPTER,class CONTAINER>
+inline RegularGrid<ADAPTER,CONTAINER>::~RegularGrid()
+{
+   clear();
 }

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2004/03/12 13:20:42 $
+//   $Revision: 1.2 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -21,10 +21,10 @@
 #define GV_TRAVERSE(cell,nextLevel,xLocCode,yLocCode,zLocCode)                    \
 {                                                                                 \
     while ((cell)->children[0] != NULL) {                                         \
-        u32 childBranchBit = 1 << (nextLevel);                                    \
-        u32 childIndex = ((((xLocCode) & childBranchBit) >> (nextLevel))          \
-        + (((yLocCode) & childBranchBit) >> ((nextLevel)-1))                      \
-	+ (((zLocCode) & childBranchBit) >> ((nextLevel)-2)) );                   \
+        u32 childBranchBit = 1 << ((nextLevel)+2);                                \
+        u32 childIndex = ((((xLocCode) & childBranchBit) >> ((nextLevel)+2))      \
+        + (((yLocCode) & childBranchBit) >> ((nextLevel)+1))                      \
+        + (((zLocCode) & childBranchBit) >> ((nextLevel))));                      \
         --nextLevel;                                                              \
         (cell) = ((cell)->children)[childIndex];                                  \
     }                                                                             \
@@ -43,10 +43,10 @@
 {                                                                                 \
     i32 n = (nextLevel) - (level) + 1;                                            \
     while (n--) {                                                                 \
-        u32 childBranchBit = 1 << (nextLevel);                                    \
-        u32 childIndex = ((((xLocCode) & childBranchBit) >> (nextLevel))          \
-        + (((yLocCode) & childBranchBit) >> ((nextLevel)-1))                      \
-        + (((zLocCode) & childBranchBit) >> ((nextLevel)-2)));                    \
+        u32 childBranchBit = 1 << ((nextLevel)+2);                                \
+        u32 childIndex = ((((xLocCode) & childBranchBit) >> ((nextLevel)+2))      \
+        + (((yLocCode) & childBranchBit) >> ((nextLevel)+1))                      \
+        + (((zLocCode) & childBranchBit) >> ((nextLevel))));                      \
         --nextLevel;                                                              \
         (cell) = ((cell)->children)[childIndex];                                  \
         if ((cell)->children[0]==NULL) break;                                     \
@@ -69,14 +69,6 @@
     }                                                                             \
 }
 
-
-template <class ADAPTER,class CONTAINER>
-inline AdaptiveGrid<ADAPTER,CONTAINER>::AdaptiveGrid 
-(const AABox& box, Real voxels, InitMode mode)
-  : Inherited(), m_root(NULL)
-{
-   init(box, voxels, mode);
-}
 
 template <class ADAPTER,class CONTAINER>
 inline typename AdaptiveGrid<ADAPTER,CONTAINER>::CellType*
@@ -111,12 +103,15 @@ AdaptiveGrid<ADAPTER,CONTAINER>::getLeafCell (u32 x, u32 y, u32 z)
    //----to locate the leaf cell containing p
    CellType* cell = getRoot();
    i32  nextLevel = getDepth()-1;
+   xLocCode <<= 2;
+   yLocCode <<= 2;
+   zLocCode <<= 2;
    GV_TRAVERSE(cell,nextLevel,xLocCode,yLocCode,zLocCode);
    return cell;
 }
 template <class ADAPTER,class CONTAINER>
 inline typename AdaptiveGrid<ADAPTER,CONTAINER>::CellType*
-AdaptiveGrid<ADAPTER,CONTAINER>::getLeafCell (const VectorClass3i& index)
+AdaptiveGrid<ADAPTER,CONTAINER>::getLeafCell (const VectorClass3u& index)
 {
    return getLeafCell(index[0], index[1], index[2]);
 }
@@ -136,6 +131,9 @@ AdaptiveGrid<ADAPTER,CONTAINER>::getLeafCell (PointClass p)
    //----to locate the leaf cell containing p
    CellType* cell = getRoot();
    i32  nextLevel = getDepth()-1;
+   xLocCode <<= 2;
+   yLocCode <<= 2;
+   zLocCode <<= 2;
    GV_TRAVERSE(cell,nextLevel,xLocCode,yLocCode,zLocCode);
    return cell;
 }
@@ -171,8 +169,11 @@ AdaptiveGrid<ADAPTER,CONTAINER>::getLeafCell (const BoundingVolume<Real>& r)
 
     //----Follow the branching patterns of the locational codes of v0 from the 
     //----root cell to the smallest cell entirely containing the region
-    level = getDepth()-1;
-    GV_TRAVERSE_TO_LEVEL(cell,level,x0LocCode,y0LocCode,z0LocCode,zlevel);
+    i32 nextlevel = getDepth()-1;
+    x0LocCode <<= 2;
+    y0LocCode <<= 2;
+    z0LocCode <<= 2;
+    GV_TRAVERSE_TO_LEVEL(cell,nextlevel,x0LocCode,y0LocCode,z0LocCode,zlevel);
     return cell;
 }
 
@@ -184,7 +185,7 @@ AdaptiveGrid<ADAPTER,CONTAINER>::primitives (u32 x, u32 y, u32 z)
 }
 template <class ADAPTER,class CONTAINER>
 inline typename AdaptiveGrid<ADAPTER,CONTAINER>::ContainerType&
-AdaptiveGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3i& index)
+AdaptiveGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3u& index)
 {
    return getLeafCell(index)->voxel;
 }
@@ -203,32 +204,50 @@ AdaptiveGrid<ADAPTER,CONTAINER>::primitives (const BoundingVolume<Real>& r)
 
 template <class ADAPTER,class CONTAINER>
 inline typename AdaptiveGrid<ADAPTER,CONTAINER>::CellType*
-AdaptiveGrid<ADAPTER,CONTAINER>::getCell (u32 xCode, u32 yCode, u32 zCode)
+AdaptiveGrid<ADAPTER,CONTAINER>::getCell (u32 xCode, u32 yCode, u32 zCode, u32 level)
 {
    //----Follow the branching patterns of the locational codes from the root cell
    CellType* cell = getRoot();
    i32  nextLevel = getDepth()-1;
+   xCode <<= 2;
+   yCode <<= 2;
+   zCode <<= 2;
    GV_TRAVERSE(cell, nextLevel, xCode, yCode, zCode);
    return (cell);
-}
-
-template <class ADAPTER,class CONTAINER>
-inline AdaptiveGrid<ADAPTER,CONTAINER>::AdaptiveGrid()
-  : Inherited(), m_root(NULL), m_depth(0), m_maxValue(0)
-{
 }
 
 template <class ADAPTER,class CONTAINER>
 inline void AdaptiveGrid<ADAPTER,CONTAINER>::clear ()
 {
    if (getRoot() != NULL) {
-      getRoot()->clearComplete();
+      getRoot()->clearSubtree();
+      m_root = NULL;	
    }
 }
+
 template <class ADAPTER,class CONTAINER>
-inline AdaptiveGrid<ADAPTER,CONTAINER>::~AdaptiveGrid()
+inline void AdaptiveGrid<ADAPTER,CONTAINER>::init 
+(const K6Dop& box, u32 maxDepth)
 {
    clear();
+
+   m_depth = maxDepth;
+   u32 num_x, num_y, num_z;
+   num_x = num_y = num_z = (1 << m_depth);
+   // compute grid extents
+   Real shx = stdMax(comp.getPrecision(), 0.5f*box.difference(0));
+   Real shy = stdMax(comp.getPrecision(), 0.5f*box.difference(1));
+   Real shz = stdMax(comp.getPrecision(), 0.5f*box.difference(2));
+   Inherited::init(box.getCenter(), shx,shy,shz, num_x,num_y,num_z);
+
+   // for locational codes m_depth has to be smaller than 30
+   SNOTICE << num_x << "*" << num_y << "*" << num_z << ", depth=" << m_depth << std::endl;
+   assert(0 < m_depth && m_depth < 30);
+   m_maxValue = (1 << m_depth);
+   SNOTICE << "maxValue=" << m_maxValue << std::endl;
+   // create root node only
+   m_root = FactoryType::the().newObject();
+   m_root->level = m_depth;
 }
 
 template <class ADAPTER,class CONTAINER>
@@ -244,6 +263,7 @@ inline void AdaptiveGrid<ADAPTER,CONTAINER>::init
    Real shy = stdMax(comp.getPrecision(), 0.5f*box.difference(1));
    Real shz = stdMax(comp.getPrecision(), 0.5f*box.difference(2));
 
+   // CF this block is not fully tested
    u32 num_x, num_y, num_z;
    switch (mode) {
       case MaxVoxelsPerDim: {
@@ -272,15 +292,43 @@ inline void AdaptiveGrid<ADAPTER,CONTAINER>::init
       }	
    }
    Inherited::init(box.getCenter(), shx,shy,shz, num_x,num_y,num_z);
-   // for locational codes m_depth has to be smaller than 32
-   SLOG << num_x << "*" << num_y << "*" << num_z << ", depth=" << m_depth << std::endl;
-   assert(0 < m_depth && m_depth < 32);
+
+   // for locational codes m_depth has to be smaller than 30
+   SNOTICE << num_x << "*" << num_y << "*" << num_z << ", depth=" << m_depth << std::endl;
+   assert(0 < m_depth && m_depth < 30);
    m_maxValue = (1 << m_depth);
-   SLOG << "maxValue=" << m_maxValue << std::endl;
+   SNOTICE << "maxValue=" << m_maxValue << std::endl;
    // create root 
    m_root = FactoryType::the().newObject();
    m_root->level = m_depth;
+   // create complete octree of depth m_depth
    m_root->subdivide();
 }
+
+
+template <class ADAPTER,class CONTAINER>
+inline AdaptiveGrid<ADAPTER,CONTAINER>::AdaptiveGrid 
+(const AABox& box, Real voxels, InitMode mode)
+  : Inherited(), m_root(NULL)
+{
+   init(box, voxels, mode);
+}
+template <class ADAPTER,class CONTAINER>
+inline AdaptiveGrid<ADAPTER,CONTAINER>::AdaptiveGrid()
+  : Inherited(), m_root(NULL), m_depth(0), m_maxValue(0)
+{
+}
+
+template <class ADAPTER,class CONTAINER>
+inline AdaptiveGrid<ADAPTER,CONTAINER>::~AdaptiveGrid()
+{
+   clear();
+}
+
+
+
+
+
+
 
 

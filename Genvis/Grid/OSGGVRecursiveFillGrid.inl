@@ -6,32 +6,32 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.3 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
 
-template <class ADAPTER, class CONTAINER>
-inline RecursiveFillGrid<ADAPTER,CONTAINER>::RecursiveFillGrid (GridType& grid)
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::RecursiveFillGrid (GridType& grid)
   : m_grid(&grid)
 {
 }
-template <class ADAPTER, class CONTAINER>
-inline u32        RecursiveFillGrid<ADAPTER,CONTAINER>::getNumNonEmptyVoxels () const
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline u32        RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::getNumNonEmptyVoxels () const
 {
    return m_numNonEmpty;
 }
-template <class ADAPTER, class CONTAINER>
-inline typename RecursiveFillGrid<ADAPTER,CONTAINER>::GridType& 
-RecursiveFillGrid<ADAPTER,CONTAINER>::getGrid () const
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline typename RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::GridType& 
+RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::getGrid () const
 {
    assert(m_grid != NULL);
    return *m_grid;
 }
 
-template <class ADAPTER, class CONTAINER>
-inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline void     RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::fillVoxels 
 (const std::vector<Adapter*>& primitives,
  u32 from_x, u32 to_x, 
  u32 from_y, u32 to_y, 
@@ -63,7 +63,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
        ++m_numNonEmpty;
        for (i64 i=0; i<primitives.size(); ++i) {
 	  BVolAdapterBase* prim = static_cast<BVolAdapterBase*>(primitives[i]);
-	  if (prim->getBoundingVolume().checkIntersect(voxelBox)) {
+	  if (m_functor(prim).checkIntersect(voxelBox)) {
 	     getGrid().primitives(from_x,from_y,from_z).push_back(prim);
 	  }
        }
@@ -72,7 +72,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       std::vector<Adapter*> inVoxelPrimitives;
       for (i64 i=0; i<primitives.size(); ++i) {
 	 BVolAdapterBase* prim = static_cast<BVolAdapterBase*>(primitives[i]);
-	 if (prim->getBoundingVolume().checkIntersect(voxelBox)) {
+	 if (m_functor(prim).checkIntersect(voxelBox)) {
 	    inVoxelPrimitives.push_back(prim);
 	 }
       }
@@ -107,8 +107,8 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       fillVoxels(inVoxelPrimitives, f2x,to_x, f2y,to_y, f2z,to_z);
    }
 }
-template <class ADAPTER, class CONTAINER>
-inline u32 RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline u32 RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::fillVoxels 
 (const std::vector<Adapter*>& primitives)
 {
    m_numNonEmpty = 0;
@@ -121,8 +121,8 @@ inline u32 RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
 }
 
 
-template <class ADAPTER, class CONTAINER>
-inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline void     RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::fillVoxels 
 (const std::vector<PointerType>& primitives,
  u32 from_x, u32 to_x, 
  u32 from_y, u32 to_y, 
@@ -153,7 +153,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
        //!(dx|dy|dz)) {
        ++m_numNonEmpty;
        for (i64 i=0; i<primitives.size(); ++i) {
-	  if (primitives[i]->getBoundingVolume().checkIntersect(voxelBox)) {
+	  if (m_functor(primitives[i]).checkIntersect(voxelBox)) {
 	     getGrid().primitives(from_x,from_y,from_z).push_back(primitives[i]);
 	  }
        }
@@ -161,7 +161,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       // filter primitives into inVoxelPrimitives
       std::vector<PointerType> inVoxelPrimitives;
       for (i64 i=0; i<primitives.size(); ++i) {
-	 if (primitives[i]->getBoundingVolume().checkIntersect(voxelBox)) {
+	 if (m_functor(primitives[i]).checkIntersect(voxelBox)) {
 	    inVoxelPrimitives.push_back(primitives[i]);
 	 }
       }
@@ -196,8 +196,8 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       fillVoxels(inVoxelPrimitives, f2x,to_x, f2y,to_y, f2z,to_z);
    }
 }
-template <class ADAPTER, class CONTAINER>
-inline u32 RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+template <class ADAPTER, class FUNCTOR, class CONTAINER>
+inline u32 RecursiveFillGrid<ADAPTER,FUNCTOR,CONTAINER>::fillVoxels 
 (const std::vector<PointerType>& primitives)
 {
    m_numNonEmpty = 0;

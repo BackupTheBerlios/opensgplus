@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.3 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -46,9 +46,10 @@ public:
    /*! Number of voxel created during setup depends on
        \begin{itemize}
        \item VoxelsPerUnit   Number of voxels per model unit.
-       \item MaxVoxels       Maximum number of voxels allowed.
-       \item MaxVoxelsPerDim Maximum number of voxels per dimension.
-       \item MinVoxelsPerDim Minimum number of voxels per dimension. 
+       \item MaxVoxels       Total number of voxels; internal algorithm chooses 
+                             number of voxels per dimension.
+       \item MaxVoxelsPerDim Number of voxels per maximum extent dimension.
+       \item MinVoxelsPerDim Number of voxels per minimum extent dimension. 
        \end{itemize} 
    */
    enum InitMode { 
@@ -70,37 +71,37 @@ public:
        @param vnz(in) Number of voxels in z. */
    inline RegularGridBase (const PointClass& cen, 
 		      Real hlx, Real hly, Real hlz,
-		      int vnx, int vny, int vnz);
+		      u32 vnx, u32 vny, u32 vnz);
    /*! Destructor. */
    virtual ~RegularGridBase ();
    /*! Initialization. */
    void init (const PointClass& center, 
 	      Real hlx, Real hly, Real hlz,
-              i32 vnx, i32 vny, i32 vnz);
+              u32 vnx, u32 vny, u32 vnz);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Member.                                                      */
    /*! \{                                                                 */   
    /*! Number of voxels in each dimension. */
-   inline const VectorClass3i& getNumVoxelsDim () const;
+   inline const VectorClass3u& getNumVoxelsDim () const;
    /*! Total number of voxels. */ 
-   inline i64           getNumVoxels   () const;
+   inline u64           getNumVoxels   () const;
    /*! Number of voxels in a z-slice. */
-   inline i32           getNumVoxelsXY () const;
+   inline u32           getNumVoxelsXY () const;
    /*! Strides for addressing neighbour voxels. */
-   inline const VectorClass3i& getStrides () const;
+   inline const VectorClass3u& getStrides () const;
    /*! Lengths of voxel edges parallel to the axes. */
    inline const VectorClass& getLength() const;
    /*! Inverse lengths of voxel edges parallel to the axes. */
    inline const VectorClass& getInvLength() const;
-   /*! Halflength of voxel edge parallel to the x axis. */
+   /*! Halflength of voxel edges parallel to the axes. */
    inline const VectorClass& getHalfLength() const;
    /*! Center of reference voxel (0, 0, 0). */
    inline const PointClass&  getRefCenter() const;
    /*! Center of voxel (x, y, z). */
-   inline PointClass         getRefCenter (i32 x, i32 y, i32 z) const;
+   inline PointClass         getRefCenter (u32 x, u32 y, u32 z) const;
    /*! Bounding box of voxel (x, y, z). */
-   inline void               getVoxel (K6Dop& box, i32 x, i32 y, i32 z) const;
+   inline void               getVoxel (K6Dop& box, u32 x, u32 y, u32 z) const;
    /*! Transform euclidean coordinates to voxel coordinates. */
    inline void               toVoxel     (PointClass& p) const;
    /*! Transform voxel coordinates to euclidean coordinates. */
@@ -110,11 +111,11 @@ public:
 
 protected:
    /*! Number of voxels in each dimension. */
-   VectorClass3i m_num;
+   VectorClass3u m_num;
    /*! Total number of voxels. */
-   i64    m_numVoxels;
+   u64    m_numVoxels;
    /*! Stride values. */
-   VectorClass3i m_strides;
+   VectorClass3u m_strides;
    // some frequently used constants:
    VectorClass m_vlength;
    VectorClass m_inv_vlength;
@@ -124,26 +125,26 @@ protected:
 
 inline RegularGridBase::RegularGridBase (const PointClass& cen, 
 			       Real hlx, Real hly, Real hlz,
-			       int vnx, int vny, int vnz)
+			       u32 vnx, u32 vny, u32 vnz)
   : K6Dop()
 {
    init(cen, hlx,hly,hlz, vnx,vny,vnz);
 }
 
-inline const VectorClass3i& RegularGridBase::getNumVoxelsDim () const 
+inline const VectorClass3u& RegularGridBase::getNumVoxelsDim () const 
 { 
    return m_num; 
 }  
 
-inline i64 RegularGridBase::getNumVoxels () const 
+inline u64 RegularGridBase::getNumVoxels () const 
 { 
    return m_numVoxels; 
 }
-inline i32 RegularGridBase::getNumVoxelsXY () const 
+inline u32 RegularGridBase::getNumVoxelsXY () const 
 { 
    return m_strides[2]; 
 }
-inline const VectorClass3i& RegularGridBase::getStrides () const
+inline const VectorClass3u& RegularGridBase::getStrides () const
 {
    return m_strides;
 }
@@ -163,7 +164,7 @@ inline const PointClass& RegularGridBase::getRefCenter() const
 { 
    return m_vcen; 
 }
-inline PointClass RegularGridBase::getRefCenter (i32 x, i32 y, i32 z) const 
+inline PointClass RegularGridBase::getRefCenter (u32 x, u32 y, u32 z) const 
 { 
    VectorClass translate(x*getLength()[0], 
 			 y*getLength()[1], 
@@ -171,7 +172,7 @@ inline PointClass RegularGridBase::getRefCenter (i32 x, i32 y, i32 z) const
    return getRefCenter()+translate;
 }
 
-inline void RegularGridBase::getVoxel (K6Dop& box, i32 x, i32 y, i32 z) const
+inline void RegularGridBase::getVoxel (K6Dop& box, u32 x, u32 y, u32 z) const
 {
    box.init(getRefCenter(x, y, z), 
 	    getHalfLength()[0], getHalfLength()[1], getHalfLength()[2]);

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -66,9 +66,9 @@ public:
        the previous call of operator() returned true. */
    /** \{                                                                 */   
    /** Current voxel indices in voxel space. */
-   inline const VectorClass3i& getIndexDim () const;
+   inline const VectorClass3u& getIndexDim () const;
    /** px() + p.y()*vs.nx() + pz()*vs.nx()*vs.ny() */
-   inline i64          getIndex () const;
+   inline u64          getIndex () const;
    /** Distance from point to first intersection
        of ray and current voxel in direction dir.
        If point is inside the voxel then the returned value is 0. */
@@ -81,9 +81,9 @@ public:
 
 private:
    /** Current voxel coordinates */
-   VectorClass3i m_v;
+   VectorClass3u m_v;
    /** */
-   i64 m_arrayPos;
+   u64 m_arrayPos;
    /** values to intersection plane */
    VectorClass m_ta;
    /** delta values of parallel voxel-planes */
@@ -102,11 +102,11 @@ private:
    bool m_finished;
 };
 
-inline const VectorClass3i& RegularGridIter::getIndexDim () const 
+inline const VectorClass3u& RegularGridIter::getIndexDim () const 
 { 
    return m_v; 
 }
-inline i64 RegularGridIter::getIndex () const 
+inline u64 RegularGridIter::getIndex () const 
 { 
    return m_arrayPos; 
 }

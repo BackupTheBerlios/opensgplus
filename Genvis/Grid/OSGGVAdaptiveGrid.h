@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2004/03/12 13:20:42 $
+//   $Revision: 1.2 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -48,20 +48,28 @@ template <class ADAPTER,
 class AdaptiveGrid : public RegularGridBase
 {
 public:
-   //-------------------------------------------------------------------------------
-   //  Generic octree cell. Note that the locational codes and the cell level are 
-   //  only used in neighbor searching; they are not necessary for point or region 
-   //  location.
-   //-------------------------------------------------------------------------------
+   /*------------------------------------------------------------------------*/
+   /*! \name Types.                                                          */
+   /*! \{                                                                    */   
+   /*! Octree cell type. Note that the locational codes and the cell level are 
+       only used in neighbor searching; they are not necessary for point or region location.
+    */
    template <class CELLCONTAINER>
    class OSG_GENVISLIB_DLLMAPPING OTCell 
    {
       friend class AdaptiveGrid<CELLCONTAINER>;
    public:
+      /*---------------------------------------------------------------------*/
+      /*! \name Types.                                                       */
+      /*! \{                                                                 */   
       typedef OTCell<CELLCONTAINER>     Self;
       typedef CELLCONTAINER             ContainerType;
       typedef FactoryHeap<Self>     FactoryType;
-
+      /*! \}                                                                 */
+      /*---------------------------------------------------------------------*/
+      /*! \name Constructor.                                                 */
+      /*! \{                                                                 */
+      /*! Default constructor. */
       inline OTCell () {
          parent = NULL;
 	 xLocCode = yLocCode = zLocCode = 0;
@@ -74,10 +82,15 @@ public:
 	 children[6] = NULL;
 	 children[7] = NULL;
       }
+      /*! \}                                                                 */
+      /*---------------------------------------------------------------------*/
+      /*! \name Build.                                                       */
+      /*! \{                                                                 */
+      /*! Create complete octree of depth level. */
       inline void subdivide () {
 	 if (level > 0) {
 	   u32 newLevel = level-1;
-	   u32 newValue = (1 << newLevel);
+	   u32 newValue = (1 << (newLevel+2));
 	   children[0] = FactoryType::the().newObject();
 	   children[0]->parent = this;
 	   children[0]->level  = newLevel;
@@ -136,6 +149,7 @@ public:
 	   children[7]->subdivide();
 	 }
       }
+      /*! Delete existing children nodes. */
       inline void clear () {
  	 if (children[0]!=NULL) { 
 	    children[0]->clear(); FactoryType::the().deleteObject(children[0]); 
@@ -170,7 +184,8 @@ public:
 	    children[7] = NULL;
 	 }
       }
-      inline void clearComplete () {
+      /*! Delete the subtree rooted by this node. */
+      inline void clearSubtree () {
 	 clear();
 	 if (parent!=NULL) {
  	    if (parent->children[0]==this) parent->children[0] = NULL;
@@ -184,6 +199,10 @@ public:
 	 }
 	 FactoryType::the().deleteObject(this);
       }
+      /*! \}                                                                 */
+      /*---------------------------------------------------------------------*/
+      /*! \name Members.                                                     */
+      /*! \{                                                                 */
       inline Self* getParent () const {
          return parent;
       }
@@ -206,7 +225,8 @@ public:
       inline u32 getCodeZ () {
 	 return zLocCode;
       }
-
+      /*! \}                                                                 */
+      /*---------------------------------------------------------------------*/
       u32           xLocCode;     // X locational code
       u32           yLocCode;     // Y locational code
       u32           zLocCode;     // Z locational code
@@ -215,9 +235,7 @@ public:
       Self*         children[8];  // Pointer to first of 8 contiguous child cells
       ContainerType voxel;
    };
-   /*---------------------------------------------------------------------*/
-   /*! \name Types.                                                       */
-   /*! \{                                                                 */   
+
    typedef AdaptiveGrid<ADAPTER,CONTAINER> Self;
    typedef RegularGridBase                 Inherited;
    typedef ADAPTER                         AdapterType;
@@ -231,34 +249,57 @@ public:
    /*! \{                                                                 */
    /*! Default constructor. */
    inline AdaptiveGrid ();
-   /*! Constructor. Constructs a regular grid with the given bounding box.
-       @param box(in)          Bounding box.
-       @param voxels(in)       Number of voxels requested in the specified mode.
-       @param mode(in)         Mode for voxel creation. 
+   /*! Constructor. Constructs a complete octree with the given bounding box.
+       mode is
+       MaxVoxelsPerDim then voxels gives the number of voxels along maximum axis.
+       MinVoxelsPerDim then voxels gives the number of voxels along minimum axis;
+                            the number of voxels along maximum axis is computed from that.
+       VoxelsPerUnit   then voxels gives the number of voxels per unit of space;
+                            the number of voxels along maximum axis is computed from that.
+       MaxVoxels       then voxels, 1<=voxels<32 gives the octree depth directly.
    */
    inline AdaptiveGrid (const AABox& box, Real voxels, InitMode mode);
+   /*! Constructor. Constructs an octree with the given bounding box and given 
+       maximum depth. Octree contains just the root node afterwards. 
+   */
+   inline AdaptiveGrid (const AABox& box, u32 maxDepth);
    /*! Destructor. */
    virtual inline ~AdaptiveGrid ();
-   /*! Initialization. */
+   /*! Init octree with given bounding box and given maximum depth. Octree contains 
+       just the root node afterwards. */
+   inline void init (const AABox& box, u32 maxDepth);
+   /*! Init complete octree with the given bounding box. mode is
+       MaxVoxelsPerDim then voxels gives the number of voxels along maximum axis.
+       MinVoxelsPerDim then voxels gives the number of voxels along minimum axis;
+                            the number of voxels along maximum axis is computed from that.
+       VoxelsPerUnit   then voxels gives the number of voxels per unit of space;
+                            the number of voxels along maximum axis is computed from that.
+       MaxVoxels       then voxels, 1<=voxels<32 gives the octree depth directly.
+    */
    inline void init (const AABox& box, Real voxels, InitMode mode); 
    /*! Clear octree datastructure. Keep defined bounding box. */
    inline void clear (); 
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Members.                                                     */
+   /*! \{                                                                 */
    /*! Depth of octree datastructure. */
    inline u32  getDepth () const;
    /*! Maximum of locational codes. */
    inline u32  getMaxCode () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Members.                                                     */
+   /*! \name Access.                                                      */
    /*! \{                                                                 */
-   /*! Returns object array of cell which corresponds to the iterator state. */
-   //inline ContainerType& primitives (const AdaptiveGridIter& iter);
+   /* Returns object array of cell which corresponds to the iterator state.
+   inline ContainerType& primitives (const AdaptiveGridIter& iter);
+    */
    /*! Returns object array of cell which contains point p. */
    inline ContainerType& primitives (PointClass p);
    /*! Read object array of cell with index (x, y, z). */
    inline ContainerType& primitives (u32 x, u32 y, u32 z);
    /*! Read object array of cell with index (x, y, z). */
-   inline ContainerType& primitives (const VectorClass3i& index);
+   inline ContainerType& primitives (const VectorClass3u& index);
    /*! Read object array of smallest cell which contains region. */
    inline ContainerType& primitives (const BoundingVolume<Real>& region);
    /*! \}                                                                 */
@@ -267,20 +308,21 @@ public:
    /*! \{                                                                 */
    /*! Get root cell. */
    inline CellType* getRoot ();
-   /*! Returns cell with given location codes (xCode, yCode, zCode). */
-   inline CellType* getCell (u32 xCode, u32 yCode, u32 zCode);
+   /*! Returns cell with given location codes (xCode, yCode, zCode) at specified level. */
+   inline CellType* getCell (u32 xCode, u32 yCode, u32 zCode, u32 level=0);
    /*! Returns cell which contains point p. */
    inline CellType* getLeafCell (PointClass p);
    /*! Read cell with index (x, y, z). */
    inline CellType* getLeafCell (u32 x, u32 y, u32 z);
    /*! Read cell with index (index). */
-   inline CellType* getLeafCell (const VectorClass3i& index);
+   inline CellType* getLeafCell (const VectorClass3u& index);
    /*! Read smallest cell which contains region. */
    inline CellType* getLeafCell (const BoundingVolume<Real>& region);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Ray Intersection.                                            */
    /*! \{                                                                 */
+   // NOT IMPLEMENTED YET
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 

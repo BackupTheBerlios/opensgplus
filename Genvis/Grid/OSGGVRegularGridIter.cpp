@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.3 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
@@ -40,9 +40,9 @@ RegularGridIter::RegularGridIter (RegularGridBase& vs, const Ray& ray)
    static FloatingComparator<Real> comp;
    static const Real maxFloat = 1.0f/comp.getPrecision();
 
-   for (unsigned c=0; c<3; ++c) {
+   for (u32 c=0; c<3; ++c) {
       m_v[c] = stdMin(vs.getNumVoxelsDim()[c]-1,
-	       stdMax(0, int((point[c]-vs.minVector()[c]) * vs.getInvLength()[c])));
+	       u32(stdMax(0, i32((point[c]-vs.minVector()[c]) * vs.getInvLength()[c]))));
       if (!comp.zero(ray.getDirection()[c])) {
          Real id = 1.0f/ray.getDirection()[c];
          Real vc = vs.getRefCenter()[c] + m_v[c] * vs.getLength()[c];
@@ -78,7 +78,7 @@ bool RegularGridIter::operator() ()
       return true;
    }
 
-   int t = 2;
+   u32 t = 2;
    if (m_ta[0] < m_ta[1]) {
       if (m_ta[0] < m_ta[2]) t = 0;
    } else {

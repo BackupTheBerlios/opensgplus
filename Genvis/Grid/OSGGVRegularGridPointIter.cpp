@@ -6,25 +6,13 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2004/03/12 13:21:21 $
+//   $Revision: 1.3 $
+//   $Date: 2004/12/20 15:55:46 $
 //                                                                            
 //=============================================================================
 
 #include "OSGGVRegularGridPointIter.h"
 USING_GENVIS_NAMESPACE
-
-template <class TYPE, class TYPE2>
-inline TYPE2 stdClamp (const TYPE& l, const TYPE2& value, const TYPE& h)
-{
-   if (value < l) {
-      return TYPE2(l);
-   }
-   if (h < value) {
-      return TYPE2(h);
-   }
-   return value;
-}
 
 RegularGridPointIter::RegularGridPointIter (RegularGridBase& grid, PointClass point)
   : m_grid(&grid)
@@ -40,17 +28,18 @@ RegularGridPointIter::RegularGridPointIter (RegularGridBase& grid, PointClass po
    m_dmax = stdMax(stdMax(getGrid().getNumVoxelsDim()[0], getGrid().getNumVoxelsDim()[1]), getGrid().getNumVoxelsDim()[2]);
    // first point in voxelsystem
    if (!getGrid().checkIntersect(point)) { // point not inside voxelsystem
-      // CF to be checked
       getGrid().toVoxel(point);
-      m_coord.setValues(i32(stdClamp(0, point[0], getGrid().getNumVoxelsDim()[0]-1)), 
-			i32(stdClamp(0, point[1], getGrid().getNumVoxelsDim()[1]-1)), 
-			i32(stdClamp(0, point[2], getGrid().getNumVoxelsDim()[2]-1)));
+      m_start.setValues(u32(stdClamp(0u, point[0], getGrid().getNumVoxelsDim()[0]-1)), 
+			u32(stdClamp(0u, point[1], getGrid().getNumVoxelsDim()[1]-1)), 
+			u32(stdClamp(0u, point[2], getGrid().getNumVoxelsDim()[2]-1)));
+      m_coord.setValue(m_start);
       m_index = m_coord.dot(getGrid().getStrides());
    } else { // point inside voxelsystem
       getGrid().toVoxel(point);
-      m_coord.setValues(i32(point[0]), 
-			i32(point[1]), 
-			i32(point[2]));
+      m_start.setValues(u32(point[0]), 
+			u32(point[1]), 
+			u32(point[2]));
+      m_coord.setValue(m_start);
       m_index = m_coord.dot(getGrid().getStrides());
    }
 }
@@ -89,12 +78,13 @@ i32 RegularGridPointIter::operator() ()
 	 }
        }
      }
-     coord.setValue(m_coord); coord += m_diff;
+     coord.setValue(m_start); coord += m_diff;
      //SLOG << m_d << ": " << m_diff[0] << ", " << m_diff[1] << ", " << m_diff[2] << "=" << coord << std::endl;
-   } while (   coord[0] < 0 || getGrid().getNumVoxelsDim()[0] <= coord[0]
-	    || coord[1] < 0 || getGrid().getNumVoxelsDim()[1] <= coord[1]
-	    || coord[2] < 0 || getGrid().getNumVoxelsDim()[2] <= coord[2]);
+   } while (   coord[0] < 0 || getGrid().getNumVoxelsDim()[0] <= u32(coord[0])
+	    || coord[1] < 0 || getGrid().getNumVoxelsDim()[1] <= u32(coord[1])
+	    || coord[2] < 0 || getGrid().getNumVoxelsDim()[2] <= u32(coord[2]));
 
-   m_index = coord.dot(getGrid().getStrides());
+   m_coord.setValue(coord);
+   m_index = m_coord.dot(getGrid().getStrides());
    return m_dmax-m_d;
 }
