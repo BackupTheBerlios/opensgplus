@@ -307,6 +307,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLPBase : public MaterialGro
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.6 2004/06/28 17:59:29 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.h,v 1.7 2004/07/09 08:57:03 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLPBASE_H_ */

@@ -218,11 +218,11 @@ Action::ResultE DynamicSubdivisionCC<MESH>::drawEnter(Action *action)
 template <class MESH>
 void DynamicSubdivisionCC<MESH>::prepareFrame (const ViewportPtr& port)
 {
-   prepareFrame(port.getCPtr());
+   prepareFrame(port.getCPtr(),NULL);
 }
 
 template <class MESH>
-void DynamicSubdivisionCC<MESH>::prepareFrame (const Viewport* port)
+void DynamicSubdivisionCC<MESH>::prepareFrame (const Viewport* port, Action * action)
 {  
    SINFO << getName() << ": prepareFrame" << std::endl;
    // is getTesselator valid?
@@ -255,13 +255,23 @@ void DynamicSubdivisionCC<MESH>::prepareFrame (const Viewport* port)
       //}
       // frame setup for parent
       Vec3f eye;
-      for (UInt32 i=0; i<getParents().size(); ++i) {
+      if (action != NULL) {      
          // get camera position
-         transMatrix = getParents()[i]->getToWorld();
+         transMatrix = action->getActNode()->getToWorld();
          transMatrix.invert();
          transMatrix.mult(camMatrix);
-         eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]); 
-         getTesselator()->perFrameSetup(getParents()[i], eye);
+         eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]);          
+         getTesselator()->perFrameSetup(action->getActNode(), eye);         
+      } else {
+         // for manual calls we don't have an action pointer
+         for (UInt32 i=0; i<getParents().size(); ++i) {
+            // get camera position
+            transMatrix = getParents()[i]->getToWorld();
+            transMatrix.invert();
+            transMatrix.mult(camMatrix);
+            eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]);          
+            getTesselator()->perFrameSetup(getParents()[i], eye);         
+         }
       }
    }
 }
@@ -269,7 +279,7 @@ void DynamicSubdivisionCC<MESH>::prepareFrame (const Viewport* port)
 template <class MESH>
 Action::ResultE DynamicSubdivisionCC<MESH>::renderEnter(Action * action)
 {  
-   //SINFO << getName() << ": renderEnter" << std::endl;
+   SINFO << getName() << ": renderEnter" << std::endl;
    RenderAction *da = dynamic_cast<RenderAction *>(action);
    if (da != NULL) {
       // is getTesselator valid?
@@ -280,16 +290,15 @@ Action::ResultE DynamicSubdivisionCC<MESH>::renderEnter(Action * action)
             if (getParents().size()>0) {
                NodePtr parent = getParents()[0];
                if (parent->getNChildren()>0) {
-                  SLOG << "searching children" << std::endl;
+                  SINFO << "searching children" << std::endl;
                   for (UInt32 i=0; i<parent->getNChildren(); i++) {                     
                      NodePtr child = parent->getChild(i);
                      char* child1001=(char*)OSG::getName(child);
-                     SLOG << "Child " << i << " is called " << child1001 << std::endl;
                      if (strcmp(child1001,"DynSubdivNode") == 0) {
-                        SLOG << "Geometry found for recycling!" << std::endl;
+                        SINFO << "Geometry found for recycling!" << std::endl;
                         geop = GeometryPtr::dcast(child->getCore());
                      }
-                     // Speicher?
+                     // TODO: release memory?
                   }
                }
             }
@@ -313,7 +322,7 @@ Action::ResultE DynamicSubdivisionCC<MESH>::renderEnter(Action * action)
 
          // if AutoUpdate is true, prepareFrame is called every frame
          if (getAutoUpdate()) {            
-            this->prepareFrame(da->getViewport());
+            this->prepareFrame(da->getViewport(),action);
          }
 
       }
@@ -350,7 +359,7 @@ void DynamicSubdivisionCC<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.7 2004/06/28 17:59:28 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.8 2004/07/09 08:57:03 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONCC_INLINE_CVSID;
 }

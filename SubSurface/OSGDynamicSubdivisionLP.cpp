@@ -159,7 +159,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
    // * do tesselator preprocessing  
    if (whichField & MeshFieldMask
       || whichField & MaxDepthFieldMask ) {    // mesh has been altered or maxdepth
-         SLOG << "change erkannt für Mesh!" << std::endl;
+      SINFO << "Mesh changed" << std::endl;
       if (getTesselator() != NULL) {
          delete getTesselator();
       }
@@ -174,14 +174,8 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
          getTesselator()->VertexClassifier = getVertexClassifier();
          getTesselator()->NormalConeAperture = getNormalConeAperture();
          getTesselator()->isSetBFCull = getBackfaceCulling();
-         
-         // preprocess         
-         /*if (!haveGeometry) {
-            getTesselator()->initPatches(NullFC);              
-         }*/
-         //update_parents = true;            // explicit update of the instances
       } else {
-         SLOG << "getMesh was NULL" << std::endl;
+         SWARNING << "Mesh is NULL" << std::endl;
       }
    }
    // changed ParentsField: 
@@ -223,11 +217,11 @@ Action::ResultE DynamicSubdivisionLP<MESH>::drawEnter(Action *action)
 template <class MESH>
 void DynamicSubdivisionLP<MESH>::prepareFrame (const ViewportPtr& port)
 {     
-   prepareFrame(port.getCPtr());
+   prepareFrame(port.getCPtr(),NULL);
 }
 
 template <class MESH>
-void DynamicSubdivisionLP<MESH>::prepareFrame (const Viewport* port)
+void DynamicSubdivisionLP<MESH>::prepareFrame (const Viewport* port, Action* action)
 {     
    SINFO << getName() << ": prepareFrame" << std::endl;
    // is getTesselator valid?
@@ -261,13 +255,23 @@ void DynamicSubdivisionLP<MESH>::prepareFrame (const Viewport* port)
       //}         
       // frame setup for parent
       Vec3f eye;
-      for (UInt32 i=0; i<getParents().size(); ++i) {
+      if (action != NULL) {      
          // get camera position
-         transMatrix = getParents()[i]->getToWorld();
+         transMatrix = action->getActNode()->getToWorld();
          transMatrix.invert();
          transMatrix.mult(camMatrix);
          eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]); 
-         getTesselator()->perFrameSetup(getParents()[i], eye);
+         getTesselator()->perFrameSetup(action->getActNode(), eye);
+      } else {
+         // for manual calls we don't have an action pointer
+         for (UInt32 i=0; i<getParents().size(); ++i) {
+            // get camera position
+            transMatrix = getParents()[i]->getToWorld();
+            transMatrix.invert();
+            transMatrix.mult(camMatrix);
+            eye.setValues(transMatrix[3][0], transMatrix[3][1], transMatrix[3][2]);          
+            getTesselator()->perFrameSetup(getParents()[i], eye);         
+         }
       }
    }
 }
@@ -287,19 +291,18 @@ Action::ResultE DynamicSubdivisionLP<MESH>::renderEnter (Action* action)
             OSG::GeometryPtr geop = NullFC;
 
             if (getParents().size()>0) {
-               SLOG << "searching in parent 0 for children!" << std::endl;
+               SINFO << "searching in parent 0 for children!" << std::endl;
                NodePtr parent = getParents()[0];
                if (parent->getNChildren()>0) {
-                  SLOG << "searching " << parent->getNChildren() << " children!" << std::endl;
+                  SINFO << "searching " << parent->getNChildren() << " children!" << std::endl;
                   for (UInt32 i=0; i<parent->getNChildren(); i++) {                     
                      NodePtr child = parent->getChild(i);
                      char* child1001=(char*)OSG::getName(child);
-                     SLOG << "Child " << i << " is called " << child1001 << std::endl;
                      if (strcmp(child1001,"DynSubdivNode") == 0) {
-                        SLOG << "geop found!" << std::endl;
+                        SINFO << "Geometry found for recycling!" << std::endl;
                         geop = GeometryPtr::dcast(child->getCore());
                      }
-                     // TODO: speicher freigeben?
+                     // TODO: release memory?
                   }
                }
             }
@@ -325,7 +328,7 @@ Action::ResultE DynamicSubdivisionLP<MESH>::renderEnter (Action* action)
 
          // if AutoUpdate is true, prepareFrame is called every frame
          if (getAutoUpdate()) {
-            this->prepareFrame(da->getViewport());
+            this->prepareFrame(da->getViewport(),action);
          }
 
 
@@ -396,7 +399,7 @@ void DynamicSubdivisionLP<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.6 2004/06/28 17:59:28 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.7 2004/07/09 08:57:03 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONLP_INLINE_CVSID;
 }

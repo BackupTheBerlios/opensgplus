@@ -86,7 +86,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLP : public DynamicSubdivis
     /*! \{                                                                 */
 
     void  prepareFrame (const ViewportPtr& port);
-    void  prepareFrame (const Viewport* port);
+    void  prepareFrame (const Viewport* port, Action * action);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
@@ -143,6 +143,6 @@ OSG_END_NAMESPACE
 #include "OSGDynamicSubdivisionLPBase.inl"
 #include "OSGDynamicSubdivisionLP.inl"
 
-#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.6 2004/06/28 17:59:28 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionLP.h,v 1.7 2004/07/09 08:57:03 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONLP_H_ */

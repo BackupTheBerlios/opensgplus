@@ -96,7 +96,7 @@ void WSDsubdiv<OSG::Vec3f, TRIANGLE>::edgepoint
          break;
       default:
          v= (v1 + v2)*0.375 + (w1 + w2)*0.125;
-         SLOG << "undefined crease type: " << crease << std::endl;
+         SWARNING << "undefined crease type: " << crease << std::endl;
    }   
 }
 
@@ -473,7 +473,7 @@ OSG::Int32 WSDsubdiv<OSG::Vec3f, TRIANGLE>::getCreaseType
 {
    OSG::Int32 CREASE_TYPE = 0;
    if (ppatch->crease[crease]>1) {
-      SLOG << "not needed call of getCreaseType!" << std::endl;
+      SWARNING << "unnecessary call of getCreaseType!" << std::endl;
       return ppatch->crease[crease];
    }
    if (ppatch->crease[crease]>0) {
@@ -922,7 +922,7 @@ void WSDsubdiv<OSG::Vec3f, TRIANGLE>::creaseinnervertexrow
       if (ri == ppatch->tabsize-2) {
          CREASE_TYPE = getCreaseType(8,1,2,i);     // last line crease
       } else {
-         SLOG << "creaseinnervertexrow is not in 1 or tabsize-2" << std::endl;
+         SWARNING << "creaseinnervertexrow is not in [1:tabsize-2]" << std::endl;
       }
    }
    edgepoint(tabB[wi*bB+j], 

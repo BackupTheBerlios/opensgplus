@@ -401,8 +401,8 @@ void DynamicSubdivisionCCBase<MESH>::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
        // write openmesh
-        //_sfMesh.copyToBin(pMem);
-       SLOG << "writeOpenMesh call" << std::endl;
+       //_sfMesh.copyToBin(pMem);
+       SINFO << "write Mesh" << std::endl;
        OSGMeshIO<MESH> myMeshIO(*getMesh());
        myMeshIO.writeOpenMesh(pMem);
        // fill limit points and normals to maxdepth
@@ -471,7 +471,7 @@ void DynamicSubdivisionCCBase<MESH>::copyFromBin(      BinaryDataHandler &pMem,
        ::OpenMesh::EPropHandleT<Int32> isCrease;
        newmesh->add_property(isCrease,"isCrease");
        //_sfMesh.copyFromBin(pMem,getMesh());       
-       SLOG << "readOpenMesh call" << std::endl;
+       SINFO << "read Mesh" << std::endl;
        OSGMeshIO<MESH> myMeshIO(*newmesh);
        myMeshIO.readOpenMesh(pMem);
        setMesh(newmesh);       
@@ -567,7 +567,7 @@ OSG_END_NAMESPACE
 #if 0
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionCCBase.cpp,v 1.7 2004/06/28 17:59:28 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionCCBase.cpp,v 1.8 2004/07/09 08:57:03 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID;
 

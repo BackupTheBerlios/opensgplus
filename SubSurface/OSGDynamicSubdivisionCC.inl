@@ -44,5 +44,5 @@ OSG_BEGIN_NAMESPACE
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCC_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.inl,v 1.7 2004/06/28 17:59:28 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCC_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.inl,v 1.8 2004/07/09 08:57:03 fuenfzig Exp $"
 

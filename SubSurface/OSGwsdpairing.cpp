@@ -36,7 +36,7 @@ template<class WSDVector, class Mesh>
 void 
 WSDpairing<WSDVector, Mesh>::buildPairs( void )
 {
-   SLOG << "Entering pairing algorithm" << std::endl;
+   SINFO << "pairing" << std::endl;
    // clear the pairing list
    prepairs.clear();
    // init priority lists
@@ -139,13 +139,13 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
          if (toDel != s[prepairs[workindex].prio].end()) {
             s[prepairs[workindex].prio].erase(toDel);
          } else {
-            SLOG << "end()" << std::endl;
+	    //SLOG << "end()" << std::endl;
          }
          toDel = getIterator(s[prepairs[newpartner].prio],newpartner);
          if (toDel != s[prepairs[newpartner].prio].end()) {
             s[prepairs[newpartner].prio].erase(toDel);
          } else {
-            SLOG << "end() np=" << newpartner << std::endl;
+	    //SLOG << "end() np=" << newpartner << std::endl;
          }
          prepairs[workindex].prio = 5;
          prepairs[newpartner].prio = 5;
@@ -187,7 +187,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
                }
                s[si].push_back(ni);
             } else {
-               SLOG << ni << " in S" << si << " not found!" << std::endl;
+	       //SLOG << ni << " in S" << si << " not found!" << std::endl;
             }
          }
          if (neighborFound) {
