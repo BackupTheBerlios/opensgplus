@@ -83,7 +83,6 @@ class OSG_CLUSTERLIB_DLLMAPPING MultiDisplayWindow : public MultiDisplayWindowBa
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
-    virtual void serverInit              ( WindowPtr window,UInt32 id  );
     virtual void serverRender            ( WindowPtr window,UInt32 id,
                                            RenderAction *action        );
     virtual void serverSwap              ( WindowPtr window,UInt32 id  );

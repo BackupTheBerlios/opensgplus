@@ -120,17 +120,11 @@ void MultiDisplayWindow::dump(      UInt32    ,
 
 /*----------------------------- server methods ----------------------------*/
 
-/*! initialize server window
- */
-
-void MultiDisplayWindow::serverInit( WindowPtr window,
-                                     UInt32 id )
-{
-}
-
 /*! render server window
  *  
- *  default action is to render all viewports with the given action
+ *  update all viewport parameters and render local viewports
+ *  Width and height of the whole window are calculated by 
+ *  multiplieing the local window size by hServers and vServers.
  *  
  *  !param window     server render window
  *  !param id         server id
@@ -146,40 +140,44 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
     ViewportPtr clientPort;
     UInt32 sv,cv;
     Int32 l,r,t,b;
+    Int32 cleft,cright,ctop,cbottom;
 
     UInt32 row   =id/getHServers();
     UInt32 column=id%getHServers();
-    UInt32 width  = getWidth()  / getHServers();
-    UInt32 height = getHeight() / getVServers();
+    // calculate width and height from local width and height
+    UInt32 width  = serverWindow->getWidth() ;
+    UInt32 height = serverWindow->getHeight();
     Int32 left   = column * width;
     Int32 bottom = row    * height;
     Int32 right  = left   + width  - 1;
     Int32 top    = bottom + height - 1;
 
-    cout << width << " " << height << endl;
+    Real32 scaleCWidth  = (width  * getHServers()) / (double)getWidth();
+    Real32 scaleCHeight = (height * getVServers()) / (double)getHeight();
 
     // duplicate viewports
     for(cv=0,sv=0;cv<getPort().size();cv++)
     {
         clientPort = getPort()[cv];
-        if(clientPort->getPixelRight()  < left   ||
-           clientPort->getPixelLeft()   > right  ||
-           clientPort->getPixelTop()    < bottom ||
-           clientPort->getPixelBottom() > top      )
+        cleft   = (Int32)(clientPort->getPixelLeft()   * scaleCWidth);
+        cbottom = (Int32)(clientPort->getPixelBottom() * scaleCHeight);
+        cright  = (Int32)(clientPort->getPixelRight()  * scaleCWidth);
+        ctop    = (Int32)(clientPort->getPixelTop()    * scaleCHeight);
+        if(cright  < left   ||
+           cleft   > right  ||
+           ctop    < bottom ||
+           cbottom > top      )
         {
             // invisible on this server screen
-            cout << "invisible" << endl;
             continue;
         }
         // calculate overlapping viewport
-        l = osgMax(clientPort->getPixelLeft()  ,left  ) - left;
-        b = osgMax(clientPort->getPixelBottom(),bottom) - bottom;
-        r = osgMin(clientPort->getPixelRight() ,right ) - left;
-        t = osgMin(clientPort->getPixelTop()   ,top   ) - bottom;
-        cout << l << " " << r << " " << b << " " << t << endl;
+        l = osgMax(cleft  ,left  ) - left;
+        b = osgMax(cbottom,bottom) - bottom;
+        r = osgMin(cright ,right ) - left;
+        t = osgMin(ctop   ,top   ) - bottom;
         if(serverWindow->getPort().size() <= sv)
         {
-            cout << "create port" << endl;
             serverPort = StereoBufferViewport::create();
             deco=TileCameraDecorator::create();
             beginEditCP(serverWindow);
@@ -189,7 +187,6 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
         }
         else
         {
-            cout << "change port" << endl;
             serverPort = serverWindow->getPort()[sv];
             deco=TileCameraDecoratorPtr::dcast(serverPort->getCamera());
         }
@@ -202,8 +199,8 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
         endEditCP(serverPort);
         // calculate tile parameters
         beginEditCP(deco);
-        deco->setFullWidth ( getWidth () );
-        deco->setFullHeight( getHeight() );
+        deco->setFullWidth ( width  * getHServers() );
+        deco->setFullHeight( height * getVServers() );
         deco->setSize( 1.0/getHServers() * column,
                        1.0/getVServers() * row,
                        1.0/getHServers() * (column+1),
@@ -215,7 +212,6 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
     // remove unused ports
     while(serverWindow->getPort().size()>sv)
     {
-        cout << "remove port" << endl;
         serverWindow->subPort(sv);
     }
     Inherited::serverRender(serverWindow,id,action);
