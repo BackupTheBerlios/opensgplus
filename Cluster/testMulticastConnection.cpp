@@ -2,6 +2,9 @@
 #include <OSGBaseFunctions.h>
 #include <OSGMulticastConnection.h>
 
+//#define COUNT 10000000
+#define COUNT 1000000
+
 using namespace OSG;
 
 int main(int argc,char **argv)
@@ -18,24 +21,38 @@ int main(int argc,char **argv)
             for(i=2;(int)i<argc;i+=1)
             {
                 string addr=argv[i];
-                addr+=":5555";
                 cout << addr << endl;
                 con.connect( addr );
             }
-            for(i=0;i<10000000;i++)
+            for(i=0;i<COUNT;i++)
             {
 //                cout << i << endl;
                 con.putUInt32(i);
             }
             con.flush();
-            con.printStatistics();
+            for(i=2;(int)i<argc;i+=1)
+            {
+                string who;
+                while(!con.selectChannel())
+                {
+                    cout << "no channe" << endl;
+                }
+                con.getString(who);
+                cout << "response:" << who << endl;
+            }
+//            con.printStatistics();
         }
         if(argc>1 && (strcmp(argv[1],"-r")==0))
         {
             MulticastConnection con;
-            con.accept("5555");
+            string addr="224.0.0.50:5555";
+            if(argc>2)
+                addr=argv[2];
+            addr = con.bind(addr);
+            cout << "bound addr " << addr << endl;
+            con.accept();
             while(!con.selectChannel());
-            for(i=0;i<10000000;i++)
+            for(i=0;i<COUNT;i++)
             {
                 con.getUInt32(j);
 //                cout << j << endl;
@@ -44,7 +61,9 @@ int main(int argc,char **argv)
                     cout << "Error: Unexpected data!! " << j << endl;
                 }
             }
-            con.printStatistics();
+            con.putString(addr);
+            con.flush();
+//            con.printStatistics();
         }
     }
     catch(exception &e)

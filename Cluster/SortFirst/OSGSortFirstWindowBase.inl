@@ -43,7 +43,7 @@
  **           regenerated, which can become necessary at any time.          **
  **                                                                         **
  **     Do not change this file, changes should be done in the derived      **
- **     class ClusterWindowAtt!
+ **     class SortFirstWindow!
  **                                                                         **
  *****************************************************************************
 \*****************************************************************************/
@@ -54,25 +54,25 @@ OSG_BEGIN_NAMESPACE
 
 
 //! access the type of the class
-inline OSG::FieldContainerType &ClusterWindowAttBase::getClassType(void)
+inline OSG::FieldContainerType &SortFirstWindowBase::getClassType(void)
 {
     return _type; 
 } 
 
 //! access the numerical type of the class
-inline OSG::UInt32 ClusterWindowAttBase::getClassTypeId(void) 
+inline OSG::UInt32 SortFirstWindowBase::getClassTypeId(void) 
 {
     return _type.getId(); 
 } 
 
 //! create a new instance of the class
-inline ClusterWindowAttPtr ClusterWindowAttBase::create(void) 
+inline SortFirstWindowPtr SortFirstWindowBase::create(void) 
 {
-    ClusterWindowAttPtr fc; 
+    SortFirstWindowPtr fc; 
 
     if(getClassType().getPrototype() != osg::NullFC) 
     {
-        fc = ClusterWindowAttPtr::dcast(
+        fc = SortFirstWindowPtr::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
     }
     
@@ -80,9 +80,9 @@ inline ClusterWindowAttPtr ClusterWindowAttBase::create(void)
 }
 
 //! create an empty new instance of the class, do not copy the prototype
-inline ClusterWindowAttPtr ClusterWindowAttBase::createEmpty(void) 
+inline SortFirstWindowPtr SortFirstWindowBase::createEmpty(void) 
 { 
-    ClusterWindowAttPtr returnValue; 
+    SortFirstWindowPtr returnValue; 
     
     newPtr(returnValue); 
 
@@ -93,105 +93,145 @@ inline ClusterWindowAttPtr ClusterWindowAttBase::createEmpty(void)
 /*------------------------------ get -----------------------------------*/
 
 OSG_CLUSTERLIB_DLLMAPPING
-SFUInt32 *ClusterWindowAttBase::getSFServerId(void)
+MFReal32 *SortFirstWindowBase::getMFLeft(void)
 {
-    return &_sfServerId;
+    return &_mfLeft;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-SFBool *ClusterWindowAttBase::getSFComposite(void)
+MFReal32 *SortFirstWindowBase::getMFRight(void)
 {
-    return &_sfComposite;
+    return &_mfRight;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-SFString *ClusterWindowAttBase::getSFImageTransType(void)
+MFReal32 *SortFirstWindowBase::getMFBottom(void)
 {
-    return &_sfImageTransType;
+    return &_mfBottom;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-SFUInt32 *ClusterWindowAttBase::getSFSubTileSize(void)
+MFReal32 *SortFirstWindowBase::getMFTop(void)
 {
-    return &_sfSubTileSize;
+    return &_mfTop;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFString *SortFirstWindowBase::getSFCompression(void)
+{
+    return &_sfCompression;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFUInt32 *SortFirstWindowBase::getSFSubtileSize(void)
+{
+    return &_sfSubtileSize;
 }
 
 
 OSG_CLUSTERLIB_DLLMAPPING
-UInt32 &ClusterWindowAttBase::getServerId(void)
+string &SortFirstWindowBase::getCompression(void)
 {
-    return _sfServerId.getValue();
+    return _sfCompression.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-const UInt32 &ClusterWindowAttBase::getServerId(void) const
+const string &SortFirstWindowBase::getCompression(void) const
 {
-    return _sfServerId.getValue();
+    return _sfCompression.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setServerId(const UInt32 &value)
+void SortFirstWindowBase::setCompression(const string &value)
 {
-    _sfServerId.setValue(value);
+    _sfCompression.setValue(value);
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-Bool &ClusterWindowAttBase::getComposite(void)
+UInt32 &SortFirstWindowBase::getSubtileSize(void)
 {
-    return _sfComposite.getValue();
+    return _sfSubtileSize.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-const Bool &ClusterWindowAttBase::getComposite(void) const
+const UInt32 &SortFirstWindowBase::getSubtileSize(void) const
 {
-    return _sfComposite.getValue();
+    return _sfSubtileSize.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setComposite(const Bool &value)
+void SortFirstWindowBase::setSubtileSize(const UInt32 &value)
 {
-    _sfComposite.setValue(value);
+    _sfSubtileSize.setValue(value);
+}
+
+
+OSG_CLUSTERLIB_DLLMAPPING
+Real32 &SortFirstWindowBase::getLeft(UInt32 index)
+{
+    return _mfLeft.getValue( index );
+}
+
+MFReal32 &SortFirstWindowBase::getLeft(void)
+{
+    return _mfLeft;
+}
+
+const MFReal32 &SortFirstWindowBase::getLeft(void) const
+{
+    return _mfLeft;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-string &ClusterWindowAttBase::getImageTransType(void)
+Real32 &SortFirstWindowBase::getRight(UInt32 index)
 {
-    return _sfImageTransType.getValue();
+    return _mfRight.getValue( index );
+}
+
+MFReal32 &SortFirstWindowBase::getRight(void)
+{
+    return _mfRight;
+}
+
+const MFReal32 &SortFirstWindowBase::getRight(void) const
+{
+    return _mfRight;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-const string &ClusterWindowAttBase::getImageTransType(void) const
+Real32 &SortFirstWindowBase::getBottom(UInt32 index)
 {
-    return _sfImageTransType.getValue();
+    return _mfBottom.getValue( index );
+}
+
+MFReal32 &SortFirstWindowBase::getBottom(void)
+{
+    return _mfBottom;
+}
+
+const MFReal32 &SortFirstWindowBase::getBottom(void) const
+{
+    return _mfBottom;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setImageTransType(const string &value)
+Real32 &SortFirstWindowBase::getTop(UInt32 index)
 {
-    _sfImageTransType.setValue(value);
+    return _mfTop.getValue( index );
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
-UInt32 &ClusterWindowAttBase::getSubTileSize(void)
+MFReal32 &SortFirstWindowBase::getTop(void)
 {
-    return _sfSubTileSize.getValue();
+    return _mfTop;
 }
 
-OSG_CLUSTERLIB_DLLMAPPING
-const UInt32 &ClusterWindowAttBase::getSubTileSize(void) const
+const MFReal32 &SortFirstWindowBase::getTop(void) const
 {
-    return _sfSubTileSize.getValue();
+    return _mfTop;
 }
-
-OSG_CLUSTERLIB_DLLMAPPING
-void ClusterWindowAttBase::setSubTileSize(const UInt32 &value)
-{
-    _sfSubTileSize.setValue(value);
-}
-
 
 
 OSG_END_NAMESPACE
 
-#define OSGCLUSTERWINDOWATTBASE_INLINE_CVSID "@(#)$Id: $"
+#define OSGSORTFIRSTWINDOWBASE_INLINE_CVSID "@(#)$Id: $"
 

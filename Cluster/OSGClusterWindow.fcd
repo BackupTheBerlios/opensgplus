@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="ClusterWindow"
+	parent="Window"
+	library="Cluster"
+	pointerfieldtypes="both"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+>
+The base class for all windows.
+	<Field
+		name="servers"
+		type="string"
+		cardinality="multi"
+		visibility="external"
+		access="public"
+	>
+	List of all symbolic server names
+	</Field>
+</FieldContainer>

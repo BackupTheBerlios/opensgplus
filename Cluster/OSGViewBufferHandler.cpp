@@ -232,6 +232,7 @@ void ViewBufferHandler::send(Connection &connection,
     GLenum             glformat;
     Image::PixelFormat imgformat;
     int                componentCnt;
+    int                imgtranssize=0;
 
     switch(component&RGBA)
     {
@@ -309,12 +310,14 @@ void ViewBufferHandler::send(Connection &connection,
                     glReadPixels(tx,ty,tw,th,
                                  glformat,GL_UNSIGNED_BYTE,
                                  image.getData());
-                    data.resize(_imgTransType->maxBufferSize(image));
+                    // bug maxsize is not big enugh
+                    data.resize(_imgTransType->maxBufferSize(image)+1000);
                     dataSize=_imgTransType->store(image,
                                                   (UChar8*)&data[0],
                                                   data.size());
                     connection.putUInt32(dataSize);
                     connection.put(&data[0],dataSize);
+                    imgtranssize+=dataSize;
                 }
                 else
                 {
@@ -325,6 +328,7 @@ void ViewBufferHandler::send(Connection &connection,
                                  &data[0]);
                     connection.putUInt32(0);
                     connection.put(&data[0],tw*th*componentCnt);
+                    imgtranssize+=tw*th*componentCnt;
                 }
             }
 
@@ -333,6 +337,8 @@ void ViewBufferHandler::send(Connection &connection,
     }
     connection.putUInt32(0);
     connection.flush();
+    
+    cout << "IMG size" << imgtranssize << endl;
 
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -356,6 +362,11 @@ void ViewBufferHandler::setImgTransType(const char *mimeType)
     {
         _imgTransType=ImageFileHandler::the().getFileType(mimeType);
     }
+}
+
+void ViewBufferHandler::setSubtileSize(UInt32 size)
+{
+    _subTileSize=size;
 }
 
 UInt32 ViewBufferHandler::getBufferWidth()

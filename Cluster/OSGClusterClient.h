@@ -36,146 +36,113 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _VIEWBUFFERHANDLER_H_
-#define _VIEWBUFFERHANDLER_H_
+#ifndef _CLUSTERCLIENT_H_
+#define _CLUSTERCLIENT_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <vector>
-#include <OSGClusterDef.h>
+#include <map>
 #include <OSGBaseTypes.h>
+#include "OSGClusterDef.h"
+#include "OSGClusterWindow.h"
+#include "OSGRemoteAspect.h"
 
 OSG_BEGIN_NAMESPACE
 
-class ImageFileType;
-class Connection;
+class RenderAction;
 
-/*! \ingroup clusterlib
- *  \brief Brief
- */
+//! Brief
+//! \ingroup baselib
 
-class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
+class OSG_CLUSTERLIB_DLLMAPPING ClusterClient
 {
     /*==========================  PUBLIC  =================================*/
   public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Types                                      */
-    /*! \{                                                                 */
 
-    enum {
-        RED      =1,
-        GREEN    =2,
-        BLUE     =4,
-        ALPHA    =8,
-        STENCIL  =16,
-        DEPTH    =32,
-        RGB      =RED|GREEN|BLUE,
-        RGBA     =RED|GREEN|BLUE|ALPHA
-    } Component;
-    typedef std::vector<Int8> BufferT;
+    typedef std::map<UInt32,ClusterClient*> ClusterClientMap;
 
-    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    ViewBufferHandler(void);
+    ClusterClient(ClusterWindowPtr clusterWindow,
+                  WindowPtr        clientWindow=NullFC,
+                  const string &connectionType="StreamSock",
+                  UInt32 servicePort=8437);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~ViewBufferHandler(void);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Get                                     */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Set                                     */
-    /*! \{                                                                 */
+    virtual ~ClusterClient(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void recv       (Connection &connection);
+    void start     (void);
+    void stop      (void);
 
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     x,
-                     UInt32     y,
-                     UInt32     width,
-                     UInt32     height,
-                     UInt32     toX,
-                     UInt32     toY);
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     toX,
-                     UInt32     toY);
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   get                                        */
+    /*! \{                                                                 */
 
-    void   setImgTransType(const char *mime=NULL);
-    void   setSubtileSize(UInt32 size);
+    Connection   *getConnection  (void);
+    WindowPtr     getClientWindow(void);
+    RemoteAspect *getRemoteAspect(void);
+    
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name               static functions                               */
+    /*! \{                                                                 */
 
-    UInt32 getBufferWidth();
-    UInt32 getBufferHeight();
+    static ClusterClient * find(ClusterWindowPtr window);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Fields                                  */
+    /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    ImageFileType              *_imgTransType;
-    UInt32                      _subTileSize;
+    void connect         ( const string &server );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Changed                                 */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   MT Destruction                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                       Sync                                   */
-    /*! \{                                                                 */
+    ClusterWindowPtr _clusterWindow;
+    WindowPtr        _clientWindow;
+    UInt32           _servicePort;
+    Connection      *_connection;
+    RemoteAspect     _remoteAspect;
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /* prohibit default function (move to 'public' if needed) */
-    ViewBufferHandler(const ViewBufferHandler &source);
-    /* prohibit default function (move to 'public' if needed) */
-    void operator =(const ViewBufferHandler &source);
+    /*---------------------------------------------------------------------*/
+    /*! \name               class variables                                */
+    /*! \{                                                                 */
+
+    static ClusterClientMap        _client;
+
+    /*! \}                                                                 */
+
+    /*!\brief prohibit default function (move to 'public' if needed) */
+    ClusterClient(const ClusterClient &source);
+    /*!\brief prohibit default function (move to 'public' if needed) */
+    void operator =(const ClusterClient &source);
 };
-
-//---------------------------------------------------------------------------
-//   Exported Types
-//---------------------------------------------------------------------------
-
-// class pointer
-
-typedef ViewBufferHandler *ViewBufferHandlerP;
 
 OSG_END_NAMESPACE
 
-#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
+#define OSG_CLUSTERCLIENTHEADER_CVSID "@(#)$Id:$"
 
-#endif /* _VIEWBUFFERHANDLER_H_ */
+#endif /* _CLUSTERCLIENT_H_ */

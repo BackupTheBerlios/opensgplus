@@ -45,14 +45,14 @@
  **           regenerated, which can become necessary at any time.          **
  **                                                                         **
  **     Do not change this file, changes should be done in the derived      **
- **     class ClusterWindowAtt
+ **     class SortFirstWindow
  **                                                                         **
  *****************************************************************************
 \*****************************************************************************/
 
 
-#ifndef _OSGCLUSTERWINDOWATTBASE_H_
-#define _OSGCLUSTERWINDOWATTBASE_H_
+#ifndef _OSGSORTFIRSTWINDOWBASE_H_
+#define _OSGSORTFIRSTWINDOWBASE_H_
 #ifdef __sgi
 #pragma once
 #endif
@@ -65,44 +65,50 @@
 #include <OSGFieldDescription.h>
 #include <OSGFieldContainer.h>
 
-#include <OSGAttachment.h> // Parent
+#include <OSGClusterWindow.h> // Parent
 
-#include <OSGUInt32Fields.h> // ServerId type
-#include <OSGBoolFields.h> // Composite type
-#include <OSGSFBaseTypes.h> // ImageTransType type
-#include <OSGUInt32Fields.h> // SubTileSize type
+#include <OSGReal32Fields.h> // Left type
+#include <OSGReal32Fields.h> // Right type
+#include <OSGReal32Fields.h> // Bottom type
+#include <OSGReal32Fields.h> // Top type
+#include <OSGStringFields.h> // Compression type
+#include <OSGUInt32Fields.h> // SubtileSize type
 
-#include <OSGClusterWindowAttFields.h>
+#include <OSGSortFirstWindowFields.h>
 
 OSG_BEGIN_NAMESPACE
 
-class ClusterWindowAtt;
+class SortFirstWindow;
 class BinaryDataHandler;
 
-//! \brief ClusterWindowAtt Base Class.
+//! \brief SortFirstWindow Base Class.
 
-class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
+class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindowBase : public ClusterWindow
 {
   private:
 
-    typedef Attachment Inherited;
+    typedef ClusterWindow Inherited;
 
     /*==========================  PUBLIC  =================================*/
   public:
 
     enum
     {
-        ServerIdFieldId       = Inherited::NextFieldId,
-        CompositeFieldId      = ServerIdFieldId       + 1,
-        ImageTransTypeFieldId = CompositeFieldId      + 1,
-        SubTileSizeFieldId    = ImageTransTypeFieldId + 1,
-        NextFieldId           = SubTileSizeFieldId    + 1
+        LeftFieldId        = Inherited::NextFieldId,
+        RightFieldId       = LeftFieldId        + 1,
+        BottomFieldId      = RightFieldId       + 1,
+        TopFieldId         = BottomFieldId      + 1,
+        CompressionFieldId = TopFieldId         + 1,
+        SubtileSizeFieldId = CompressionFieldId + 1,
+        NextFieldId        = SubtileSizeFieldId + 1
     };
 
-    static const osg::BitVector ServerIdFieldMask;
-    static const osg::BitVector CompositeFieldMask;
-    static const osg::BitVector ImageTransTypeFieldMask;
-    static const osg::BitVector SubTileSizeFieldMask;
+    static const osg::BitVector LeftFieldMask;
+    static const osg::BitVector RightFieldMask;
+    static const osg::BitVector BottomFieldMask;
+    static const osg::BitVector TopFieldMask;
+    static const osg::BitVector CompressionFieldMask;
+    static const osg::BitVector SubtileSizeFieldMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -126,29 +132,37 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-    inline       SFUInt32            *getSFServerId       (void);
-    inline       SFBool              *getSFComposite      (void);
-    inline       SFString            *getSFImageTransType (void);
-    inline       SFUInt32            *getSFSubTileSize    (void);
+    inline       MFReal32            *getMFLeft           (void);
+    inline       MFReal32            *getMFRight          (void);
+    inline       MFReal32            *getMFBottom         (void);
+    inline       MFReal32            *getMFTop            (void);
+    inline       SFString            *getSFCompression    (void);
+    inline       SFUInt32            *getSFSubtileSize    (void);
 
-    inline       UInt32              &getServerId       (void);
-    inline const UInt32              &getServerId       (void) const;
-    inline       Bool                &getComposite      (void);
-    inline const Bool                &getComposite      (void) const;
-    inline       string              &getImageTransType (void);
-    inline const string              &getImageTransType (void) const;
-    inline       UInt32              &getSubTileSize    (void);
-    inline const UInt32              &getSubTileSize    (void) const;
+    inline       string              &getCompression    (void);
+    inline const string              &getCompression    (void) const;
+    inline       UInt32              &getSubtileSize    (void);
+    inline const UInt32              &getSubtileSize    (void) const;
+    inline       Real32              &getLeft           (UInt32 index);
+    inline       MFReal32            &getLeft           (void);
+    inline const MFReal32            &getLeft           (void) const;
+    inline       Real32              &getRight          (UInt32 index);
+    inline       MFReal32            &getRight          (void);
+    inline const MFReal32            &getRight          (void) const;
+    inline       Real32              &getBottom         (UInt32 index);
+    inline       MFReal32            &getBottom         (void);
+    inline const MFReal32            &getBottom         (void) const;
+    inline       Real32              &getTop            (UInt32 index);
+    inline       MFReal32            &getTop            (void);
+    inline const MFReal32            &getTop            (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-    inline void setServerId       ( const UInt32 &value );
-    inline void setComposite      ( const Bool &value );
-    inline void setImageTransType ( const string &value );
-    inline void setSubTileSize    ( const UInt32 &value );
+    inline void setCompression    ( const string &value );
+    inline void setSubtileSize    ( const UInt32 &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -175,8 +189,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \name                   Construction                               */
     /*! \{                                                                 */
 
-    static  ClusterWindowAttPtr      create          (void); 
-    static  ClusterWindowAttPtr      createEmpty     (void); 
+    static  SortFirstWindowPtr      create          (void); 
+    static  SortFirstWindowPtr      createEmpty     (void); 
 
     /*! \}                                                                 */
 
@@ -194,32 +208,34 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    SFUInt32            _sfServerId;
-    SFBool              _sfComposite;
-    SFString            _sfImageTransType;
-    SFUInt32            _sfSubTileSize;
+    MFReal32            _mfLeft;
+    MFReal32            _mfRight;
+    MFReal32            _mfBottom;
+    MFReal32            _mfTop;
+    SFString            _sfCompression;
+    SFUInt32            _sfSubtileSize;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    ClusterWindowAttBase(void);
-    ClusterWindowAttBase(const ClusterWindowAttBase &source);
+    SortFirstWindowBase(void);
+    SortFirstWindowBase(const SortFirstWindowBase &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructors                                */
     /*! \{                                                                 */
 
-    virtual ~ClusterWindowAttBase(void); 
+    virtual ~SortFirstWindowBase(void); 
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                       Sync                                   */
     /*! \{                                                                 */
 
-    void executeSyncImpl(      ClusterWindowAttBase *pOther,
+    void executeSyncImpl(      SortFirstWindowBase *pOther,
                          const BitVector         &whichField);
 
     /*! \}                                                                 */
@@ -233,7 +249,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
 
     // prohibit default functions (move to 'public' if you need one)
-    void operator =(const ClusterWindowAttBase &source);
+    void operator =(const SortFirstWindowBase &source);
 };
 
 //---------------------------------------------------------------------------
@@ -241,10 +257,10 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 //---------------------------------------------------------------------------
 
 
-typedef ClusterWindowAttBase *ClusterWindowAttBaseP;
+typedef SortFirstWindowBase *SortFirstWindowBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGCLUSTERWINDOWATTBASE_HEADER_CVSID "@(#)$Id: $"
+#define OSGSORTFIRSTWINDOWBASE_HEADER_CVSID "@(#)$Id: $"
 
-#endif /* _OSGCLUSTERWINDOWATTBASE_H_ */
+#endif /* _OSGSORTFIRSTWINDOWBASE_H_ */

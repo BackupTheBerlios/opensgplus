@@ -41,7 +41,9 @@
 //---------------------------------------------------------------------------
 #include <stdlib.h>
 #include <stdio.h>
-
+#ifndef WIN32
+#include <unistd.h>
+#endif
 #include <algorithm>
 
 #include <OSGConfig.h>
@@ -76,6 +78,8 @@ OSG_USING_NAMESPACE
 \***************************************************************************/
 
 char StreamSockConnection::cvsid[] = "@(#)$Id:$";
+ConnectionType StreamSockConnection::_type(&StreamSockConnection::create,
+                                           "StreamSock");
 
 /***************************************************************************\
  *                           Class methods                                 *
@@ -124,6 +128,7 @@ StreamSockConnection::StreamSockConnection():
 
 StreamSockConnection::~StreamSockConnection(void)
 {
+    // TODO close all sockets
 }
 
 /*------------------------------ access -----------------------------------*/
@@ -214,26 +219,43 @@ void StreamSockConnection::writeBuffer(void)
     }
 }
 
-/** Wait for incommint connections on the given address
+/** Bind connection to the givven address
  *
  * @param address    Port number
  *
  **/
-void StreamSockConnection::accept( const string &address )
+string StreamSockConnection::bind( const string &address )
 {
+    char localhost[256];
+    char boundAddress[270];
     string host;
-    UInt32 port;
-    StreamSocket socket,from;
+    UInt32 port=0;
 
-    interpreteAddress(address,host,port);
-    socket.open();
-    socket.setReusePort(true);
-    socket.bind(AnyAddress(port));
-    socket.listen();
-    from=socket.accept();
+    if(!address.empty())
+    {
+        interpreteAddress(address,host,port);
+    }
+    _acceptSocket.open();
+    _acceptSocket.setReusePort(true);
+    _acceptSocket.bind(AnyAddress(port));
+    _acceptSocket.listen();
+    gethostname(localhost,255);
+    sprintf(boundAddress,"%s:%5d",
+            localhost,
+            _acceptSocket.getAddress().getPort());
+    return boundAddress;
+}
+
+/** Wait for incommint connections on the bound port
+ *
+ **/
+void StreamSockConnection::accept( void )
+{
+    StreamSocket from;
+
+    from=_acceptSocket.accept();
     from.setDelay(false);
     _sockets.push_back(from);
-    socket.close();
 }
 
 /** connect a connection at the given address
@@ -365,21 +387,15 @@ Bool StreamSockConnection::selectChannel(void)
     return true;
 }
 
-/*-------------------------- assignment -----------------------------------*/
+/*-------------------------- create ---------------------------------------*/
 
-/** \brief assignment
+/** \brief create conneciton
  */
 
-/*-------------------------- comparison -----------------------------------*/
-
-/** \brief assignment
- */
-
-/** \brief equal
- */
-
-/** \brief unequal
- */
+Connection *StreamSockConnection::create(void)
+{
+    return new StreamSockConnection();
+}
 
 /*-------------------------------------------------------------------------*\
  -  protected                                                              -

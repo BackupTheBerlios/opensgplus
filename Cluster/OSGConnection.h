@@ -102,7 +102,8 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
 
     /*------------------------- your_category -------------------------------*/
 
-    virtual void   accept          ( const std::string &address )=0;
+    virtual string bind            ( const std::string &address )=0;
+    virtual void   accept          ( void )=0;
     virtual void   connect         ( const std::string &address )=0;
     virtual void   wait            ( void )=0;
     virtual void   signal          ( void )=0;

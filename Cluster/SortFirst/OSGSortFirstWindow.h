@@ -36,146 +36,116 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _VIEWBUFFERHANDLER_H_
-#define _VIEWBUFFERHANDLER_H_
+#ifndef _OSGSORTFIRSTWINDOW_H_
+#define _OSGSORTFIRSTWINDOW_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <vector>
-#include <OSGClusterDef.h>
-#include <OSGBaseTypes.h>
+#include <OSGConfig.h>
+#include <OSGViewBufferHandler.h>
+#include <OSGSortFirstWindowBase.h>
 
 OSG_BEGIN_NAMESPACE
 
-class ImageFileType;
-class Connection;
-
-/*! \ingroup clusterlib
- *  \brief Brief
+/*! \brief *put brief class description here* 
  */
 
-class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
+class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
 {
+  private:
+
+    typedef SortFirstWindowBase Inherited;
+
     /*==========================  PUBLIC  =================================*/
   public:
+
     /*---------------------------------------------------------------------*/
-    /*! \name                   Types                                      */
+    /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    enum {
-        RED      =1,
-        GREEN    =2,
-        BLUE     =4,
-        ALPHA    =8,
-        STENCIL  =16,
-        DEPTH    =32,
-        RGB      =RED|GREEN|BLUE,
-        RGBA     =RED|GREEN|BLUE|ALPHA
-    } Component;
-    typedef std::vector<Int8> BufferT;
+    virtual void changed(BitVector  whichField, 
+                         ChangeMode from);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
+    /*! \name                     Output                                   */
     /*! \{                                                                 */
 
-    ViewBufferHandler(void);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Destructor                                 */
-    /*! \{                                                                 */
-
-    virtual ~ViewBufferHandler(void);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Get                                     */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Set                                     */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   your_category                              */
-    /*! \{                                                                 */
-
-    void recv       (Connection &connection);
-
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     x,
-                     UInt32     y,
-                     UInt32     width,
-                     UInt32     height,
-                     UInt32     toX,
-                     UInt32     toY);
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     toX,
-                     UInt32     toY);
-
-    void   setImgTransType(const char *mime=NULL);
-    void   setSubtileSize(UInt32 size);
-
-    UInt32 getBufferWidth();
-    UInt32 getBufferHeight();
+    virtual void dump(      UInt32     uiIndent = 0, 
+                      const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Fields                                  */
+    /*! \name      client window funcitons                                 */
     /*! \{                                                                 */
 
-    ImageFileType              *_imgTransType;
-    UInt32                      _subTileSize;
+    virtual void clientInit              ( WindowPtr window,
+                                           Connection *connection          );
+    virtual void clientFrameInit         ( WindowPtr window,
+                                           Connection *connection,
+                                           RemoteAspect *aspect            );
+    virtual void clientRenderAllViewports( WindowPtr window,
+                                           Connection *connection,
+                                           RenderAction *action            );
+    virtual void clientSwap              ( WindowPtr window,
+                                           Connection *connection          );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Member                                  */
+    /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
+
+    virtual void serverInit              ( WindowPtr window,UInt32 id,
+                                           Connection *connection          );
+    virtual void serverFrameInit         ( WindowPtr window,UInt32 id,
+                                           Connection *connection,
+                                           RemoteAspect *aspect            );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id,
+                                           Connection *connection          );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Changed                                 */
+    /*! \name                  Constructors                                */
     /*! \{                                                                 */
+
+    SortFirstWindow(void);
+    SortFirstWindow(const SortFirstWindow &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   MT Destruction                             */
+    /*! \name                   Destructors                                */
     /*! \{                                                                 */
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                       Sync                                   */
-    /*! \{                                                                 */
+    virtual ~SortFirstWindow(void); 
 
     /*! \}                                                                 */
+    
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /* prohibit default function (move to 'public' if needed) */
-    ViewBufferHandler(const ViewBufferHandler &source);
-    /* prohibit default function (move to 'public' if needed) */
-    void operator =(const ViewBufferHandler &source);
+    static ViewBufferHandler _bufferHandler;
+
+    friend class FieldContainer;
+    friend class SortFirstWindowBase;
+
+    static void initMethod(void);
+
+    // prohibit default functions (move to 'public' if you need one)
+
+    void operator =(const SortFirstWindow &source);
 };
 
-//---------------------------------------------------------------------------
-//   Exported Types
-//---------------------------------------------------------------------------
-
-// class pointer
-
-typedef ViewBufferHandler *ViewBufferHandlerP;
+typedef SortFirstWindow *SortFirstWindowP;
 
 OSG_END_NAMESPACE
 
-#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
+#include <OSGSortFirstWindow.inl>
+#include <OSGSortFirstWindowBase.inl>
 
-#endif /* _VIEWBUFFERHANDLER_H_ */
+#define OSGSORTFIRSTWINDOW_HEADER_CVSID "@(#)$Id: $"
+
+#endif /* _OSGSORTFIRSTWINDOW_H_ */

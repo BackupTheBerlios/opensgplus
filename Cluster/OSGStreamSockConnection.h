@@ -51,6 +51,7 @@
 #include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGConnection.h>
+#include <OSGConnectionType.h>
 #include <OSGStreamSocket.h>
 
 OSG_BEGIN_NAMESPACE
@@ -110,12 +111,20 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \name                   Communication                              */
     /*! \{                                                                 */
 
-    void   accept          ( const string &address );
-    void   connect         ( const string &address );
-    void   wait            ( void );
-    void   signal          ( void );
-    UInt32 getChannelCount ( void );
-    Bool   selectChannel   ( void );
+    virtual string bind            ( const string &address );
+    virtual void   accept          ( void );
+    virtual void   connect         ( const string &address );
+    virtual void   wait            ( void );
+    virtual void   signal          ( void );
+    virtual UInt32 getChannelCount ( void );
+    virtual Bool   selectChannel   ( void );
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   create                                     */
+    /*! \{                                                                 */
+
+    static Connection *create(void);
 
     /*! \}                                                                 */
 
@@ -140,6 +149,7 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \name                Instance Variables                            */
     /*! \{                                                                 */
 
+    StreamSocket         _acceptSocket;
     StreamSocket         _readSocket;
     SocketsT             _sockets;
     std::vector<UInt8>   _socketReadBuffer;
@@ -154,6 +164,7 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \{                                                                 */
 
 	static char cvsid[];
+    static ConnectionType _type;
 
     /*! \}                                                                 */
 

@@ -36,146 +36,149 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _VIEWBUFFERHANDLER_H_
-#define _VIEWBUFFERHANDLER_H_
+#ifndef _OSGCLUSTERWINDOW_H_
+#define _OSGCLUSTERWINDOW_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <vector>
-#include <OSGClusterDef.h>
-#include <OSGBaseTypes.h>
+#include <OSGConfig.h>
+
+#include <OSGClusterWindowBase.h>
 
 OSG_BEGIN_NAMESPACE
 
-class ImageFileType;
 class Connection;
+class ClusterServer;
+class RemoteAspect;
 
-/*! \ingroup clusterlib
- *  \brief Brief
+/*! \brief *put brief class description here* 
  */
 
-class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
+class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
 {
+  private:
+
+    typedef ClusterWindowBase Inherited;
+
     /*==========================  PUBLIC  =================================*/
   public:
+
     /*---------------------------------------------------------------------*/
-    /*! \name                   Types                                      */
+    /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    enum {
-        RED      =1,
-        GREEN    =2,
-        BLUE     =4,
-        ALPHA    =8,
-        STENCIL  =16,
-        DEPTH    =32,
-        RGB      =RED|GREEN|BLUE,
-        RGBA     =RED|GREEN|BLUE|ALPHA
-    } Component;
-    typedef std::vector<Int8> BufferT;
+    virtual void changed(BitVector  whichField, 
+                         ChangeMode from);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
+    /*! \name                     Output                                   */
     /*! \{                                                                 */
 
-    ViewBufferHandler(void);
+    virtual void dump(      UInt32     uiIndent = 0, 
+                      const BitVector  bvFlags  = 0) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Destructor                                 */
+    /*! \name            GL implementation functions                       */
     /*! \{                                                                 */
 
-    virtual ~ViewBufferHandler(void);
+    virtual void    (*getFunctionByName ( const Char8 *s ))();
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Get                                     */
+    /*! \name      Window system implementation functions                  */
     /*! \{                                                                 */
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Set                                     */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   your_category                              */
-    /*! \{                                                                 */
-
-    void recv       (Connection &connection);
-
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     x,
-                     UInt32     y,
-                     UInt32     width,
-                     UInt32     height,
-                     UInt32     toX,
-                     UInt32     toY);
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     toX,
-                     UInt32     toY);
-
-    void   setImgTransType(const char *mime=NULL);
-    void   setSubtileSize(UInt32 size);
-
-    UInt32 getBufferWidth();
-    UInt32 getBufferHeight();
+    virtual void    activate          ( void );
+    virtual void    deactivate        ( void );
+    virtual void    swap              ( void );
+    virtual void    init              ( void );
+    virtual void    render            ( RenderAction *action = NULL );
+    virtual void    renderAllViewports( RenderAction *action = NULL );
+    virtual void    frameInit        (void);
+    virtual void    frameExit        (void);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Fields                                  */
+    /*! \name      client window funcitons                                 */
     /*! \{                                                                 */
 
-    ImageFileType              *_imgTransType;
-    UInt32                      _subTileSize;
+    virtual void clientInit              ( WindowPtr window,
+                                           Connection *connection          );
+    virtual void clientFrameInit         ( WindowPtr window,
+                                           Connection *connection,
+                                           RemoteAspect *aspect            );
+    virtual void clientRenderAllViewports( WindowPtr window,
+                                           Connection *connection,
+                                           RenderAction *action            );
+    virtual void clientSwap              ( WindowPtr window,
+                                           Connection *connection          );
+    virtual void clientFrameExit         ( WindowPtr window,
+                                           Connection *connection          );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Member                                  */
+    /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
+
+    virtual void serverInit              ( WindowPtr window,UInt32 id,
+                                           Connection *connection          );
+    virtual void serverFrameInit         ( WindowPtr window,UInt32 id,
+                                           Connection *connection,
+                                           RemoteAspect *aspect            );
+    virtual void serverRenderAllViewports( WindowPtr window,UInt32 id,
+                                           Connection *connection,
+                                           RenderAction *action            );
+    virtual void serverSwap              ( WindowPtr window,UInt32 id,
+                                           Connection *connection          );
+    virtual void serverFrameExit         ( WindowPtr window,UInt32 id,
+                                           Connection *connection          );
+
+    /*! \}                                                                 */
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                  Constructors                                */
+    /*! \{                                                                 */
+
+    ClusterWindow(void);
+    ClusterWindow(const ClusterWindow &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                      Changed                                 */
+    /*! \name                   Destructors                                */
     /*! \{                                                                 */
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   MT Destruction                             */
-    /*! \{                                                                 */
+    virtual ~ClusterWindow(void); 
 
     /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                       Sync                                   */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
+    
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /* prohibit default function (move to 'public' if needed) */
-    ViewBufferHandler(const ViewBufferHandler &source);
-    /* prohibit default function (move to 'public' if needed) */
-    void operator =(const ViewBufferHandler &source);
+    friend class FieldContainer;
+    friend class ClusterWindowBase;
+    friend class ClusterServer;
+    friend class ClusterClient;
+
+    static void initMethod(void);
+
+    // prohibit default functions (move to 'public' if you need one)
+
+    void operator =(const ClusterWindow &source);
 };
 
-//---------------------------------------------------------------------------
-//   Exported Types
-//---------------------------------------------------------------------------
-
-// class pointer
-
-typedef ViewBufferHandler *ViewBufferHandlerP;
+typedef ClusterWindow *ClusterWindowP;
 
 OSG_END_NAMESPACE
 
-#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
+#include <OSGClusterWindow.inl>
+#include <OSGClusterWindowBase.inl>
 
-#endif /* _VIEWBUFFERHANDLER_H_ */
+#define OSGCLUSTERWINDOW_HEADER_CVSID "@(#)$Id: $"
+
+#endif /* _OSGCLUSTERWINDOW_H_ */

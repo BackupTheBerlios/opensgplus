@@ -36,146 +36,125 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _VIEWBUFFERHANDLER_H_
-#define _VIEWBUFFERHANDLER_H_
+#ifndef _CLUSTERSERVER_H_
+#define _CLUSTERSERVER_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <vector>
-#include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
+#include <OSGThread.h>
+#include <OSGClusterDef.h>
+#include <OSGFieldContainerPtr.h>
+#include <OSGRemoteAspect.h>
+#include <OSGClusterWindow.h>
+#include <OSGWindow.h>
 
 OSG_BEGIN_NAMESPACE
 
-class ImageFileType;
 class Connection;
+class ClusterWindow;
+class RemoteAspect;
+class Thread;
+class RenderAction;
 
-/*! \ingroup clusterlib
- *  \brief Brief
- */
+//! Brief
+//! \ingroup baselib
 
-class OSG_CLUSTERLIB_DLLMAPPING ViewBufferHandler
+class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
 {
     /*==========================  PUBLIC  =================================*/
   public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Types                                      */
-    /*! \{                                                                 */
 
-    enum {
-        RED      =1,
-        GREEN    =2,
-        BLUE     =4,
-        ALPHA    =8,
-        STENCIL  =16,
-        DEPTH    =32,
-        RGB      =RED|GREEN|BLUE,
-        RGBA     =RED|GREEN|BLUE|ALPHA
-    } Component;
-    typedef std::vector<Int8> BufferT;
-
-    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    ViewBufferHandler(void);
+    ClusterServer(WindowPtr     window,
+                  const string &serviceName,
+                  const string &connectionType="StreamSock",
+                  const string &address="",
+                  UInt32 servicePort=8437);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~ViewBufferHandler(void);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Get                                     */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Set                                     */
-    /*! \{                                                                 */
+    virtual ~ClusterServer(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void recv       (Connection &connection);
+    void start             (void);
+    void render            (RenderAction *action);
 
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     x,
-                     UInt32     y,
-                     UInt32     width,
-                     UInt32     height,
-                     UInt32     toX,
-                     UInt32     toY);
-    void send       (Connection &connection,
-                     UInt32     component,
-                     UInt32     toX,
-                     UInt32     toY);
+    void frameInit         (void);
+    void renderAllViewports(RenderAction *action);
+    void swap              (void);
+    void frameExit         (void);
 
-    void   setImgTransType(const char *mime=NULL);
-    void   setSubtileSize(UInt32 size);
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                 Container Access                             */
+    /*! \{                                                                 */
 
-    UInt32 getBufferWidth();
-    UInt32 getBufferHeight();
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Assignment                                */
+    /*! \{                                                                 */
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Fields                                  */
+    /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    ImageFileType              *_imgTransType;
-    UInt32                      _subTileSize;
+    void accept       (void);
+    Bool configChanged(FieldContainerPtr& fcp,
+                       RemoteAspect *);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Changed                                 */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                   MT Destruction                             */
-    /*! \{                                                                 */
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                       Sync                                   */
-    /*! \{                                                                 */
+    WindowPtr        _window;
+    Connection      *_connection;
+    string           _address;
+    ClusterWindowPtr _clusterWindow;
+    RemoteAspect     _aspect;
+    string           _serviceName;
+    UInt32           _servicePort;
+    Thread          *_serviceThread;
+    Bool             _needUpdate;
+    UInt32           _serverId;
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /* prohibit default function (move to 'public' if needed) */
-    ViewBufferHandler(const ViewBufferHandler &source);
-    /* prohibit default function (move to 'public' if needed) */
-    void operator =(const ViewBufferHandler &source);
+    /*---------------------------------------------------------------------*/
+    /*! \name                     Thread                                   */
+    /*! \{                                                                 */
+
+    static void *serviceProc(void *arg);
+
+    /*! \}                                                                 */
+
+    /*!\brief prohibit default function (move to 'public' if needed) */
+    ClusterServer(const ClusterServer &source);
+    /*!\brief prohibit default function (move to 'public' if needed) */
+    void operator =(const ClusterServer &source);
 };
-
-//---------------------------------------------------------------------------
-//   Exported Types
-//---------------------------------------------------------------------------
-
-// class pointer
-
-typedef ViewBufferHandler *ViewBufferHandlerP;
 
 OSG_END_NAMESPACE
 
-#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
+#define OSG_CLUSTERSERVERHEADER_CVSID "@(#)$Id:$"
 
-#endif /* _VIEWBUFFERHANDLER_H_ */
+#endif /* _CLUSTERSERVER_H_ */
+

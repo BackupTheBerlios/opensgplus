@@ -48,8 +48,8 @@
 \*****************************************************************************/
 
 
-#ifndef _OSGCLUSTERWINDOWATTFIELDS_H_
-#define _OSGCLUSTERWINDOWATTFIELDS_H_
+#ifndef _OSGMULTIDISPLAYWINDOWFIELDS_H_
+#define _OSGMULTIDISPLAYWINDOWFIELDS_H_
 #ifdef __sgi
 #pragma once
 #endif
@@ -62,65 +62,15 @@
 
 OSG_BEGIN_NAMESPACE
 
-class ClusterWindowAtt;
+class MultiDisplayWindow;
 
-//! ClusterWindowAttPtr
+//! MultiDisplayWindowPtr
 
-typedef FCPtr<AttachmentPtr, ClusterWindowAtt> ClusterWindowAttPtr;
+typedef FCPtr<ClusterWindowPtr, MultiDisplayWindow> MultiDisplayWindowPtr;
 
-/*! \ingroup FieldLib ClusterWindowAtt
- *  ClusterWindowAttPtr field traits 
- */
-
-template <>
-struct FieldDataTraits<ClusterWindowAttPtr> : 
-    public FieldTraitsRecurseMapper<ClusterWindowAttPtr>
-{
-    static DataType             _type;                       
-
-    enum                        { StringConvertable = 0x00 };
-    enum                        { bHasParent        = 0x01 };
-
-    static DataType &getType (void) { return _type;        }
-
-    static char     *getSName(void) { return "SFClusterWindowAttPtr"; }
-    static char     *getMName(void) { return "MFClusterWindowAttPtr"; }
-};
-
-//! SFClusterWindowAttPtr
-
-typedef SField<ClusterWindowAttPtr> SFClusterWindowAttPtr;
-
-#ifndef OSG_COMPILECLUSTERWINDOWATTINST
-#if defined(__sgi)
-
-#pragma do_not_instantiate SField<ClusterWindowAttPtr>::_fieldType
-
-#else
-
-OSG_DLLEXPORT_DECL1(SField, ClusterWindowAttPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
-
-#endif
-#endif
-
-//! MFClusterWindowAttPtr
-
-typedef MField<ClusterWindowAttPtr> MFClusterWindowAttPtr;
-
-#ifndef OSG_COMPILECLUSTERWINDOWATTINST
-#if defined(__sgi)
-
-#pragma do_not_instantiate MField<ClusterWindowAttPtr>::_fieldType
-
-#else
-
-OSG_DLLEXPORT_DECL1(MField, ClusterWindowAttPtr, OSG_CLUSTERLIB_DLLTMPLMAPPING)
-
-#endif
-#endif
 
 OSG_END_NAMESPACE
 
-#define OSGCLUSTERWINDOWATTFIELDS_HEADER_CVSID "@(#)$Id: $"
+#define OSGMULTIDISPLAYWINDOWFIELDS_HEADER_CVSID "@(#)$Id: $"
 
-#endif /* _OSGCLUSTERWINDOWATTFIELDS_H_ */
+#endif /* _OSGMULTIDISPLAYWINDOWFIELDS_H_ */

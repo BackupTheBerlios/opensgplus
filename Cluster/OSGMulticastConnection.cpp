@@ -88,6 +88,10 @@ namespace
  *                           Class variables                               *
 \***************************************************************************/
 
+char MulticastConnection::cvsid[] = "@(#)$Id:$";
+ConnectionType MulticastConnection::_type(&MulticastConnection::create,
+                                          "Multicast");
+
 /***************************************************************************\
  *                           Class methods                                 *
 \***************************************************************************/
@@ -123,7 +127,6 @@ namespace
 
 MulticastConnection::MulticastConnection(int ) :
 	Inherited(0),
-    _receivers(),
     _seqNumber(1),
     _udpReadBuffers(32),
     _udpWriteBuffers(32),
@@ -131,34 +134,35 @@ MulticastConnection::MulticastConnection(int ) :
     _waitForAck(0.04),
     _maxWaitForSync(0.5),
     _socket(),
-    _address("224.0.0.50",6546),
-//    _address("198.111.111.111",6546),
     _aliveThread(NULL),
     _stopAliveThread(false)
 {
     UInt32 i;
 
     // create read buffers
-    _udpReadBuffers.resize( 32 );
+    _udpReadBuffers.resize( MULTICAST_BUFFER_COUNT );
     for(i=0;i<(_udpReadBuffers.size()-1);i++)
     {
-        _udpReadBuffers[i].resize(3000);
+        _udpReadBuffers[i].resize(MULTICAST_BUFFER_SIZE);
         readBufAdd(&_udpReadBuffers[i][sizeof(UDPHeader)],
                    _udpReadBuffers[i].size()-sizeof(UDPHeader));
     }
-    _udpReadBuffers[i].resize(3000);
+    _udpReadBuffers[i].resize(MULTICAST_BUFFER_SIZE);
 
     // create write buffers
-    _udpWriteBuffers.resize( 32 );
+    _udpWriteBuffers.resize( MULTICAST_BUFFER_COUNT );
     for(i=0;i<(_udpWriteBuffers.size()-1);i++)
     {
-        _udpWriteBuffers[i].resize(3000);
+        _udpWriteBuffers[i].resize(MULTICAST_BUFFER_SIZE);
         writeBufAdd(&_udpWriteBuffers[i][sizeof(UDPHeader)],
                      _udpWriteBuffers[i].size()-sizeof(UDPHeader));
     }
-    _udpWriteBuffers[i].resize(3000);
+    _udpWriteBuffers[i].resize(MULTICAST_BUFFER_SIZE);
 
     _socket.open();
+    _groupSocket.open();
+    startAliveThread();
+
 #   ifdef MULTICAST_STATISTICS
     clearStatistics();
 #   endif
@@ -171,6 +175,10 @@ MulticastConnection::~MulticastConnection(void)
 {
     stopAliveThread();
     _socket.close();
+    _groupSocket.close();
+#   ifdef MULTICAST_STATISTICS
+    printStatistics();
+#   endif
 }
 
 /*------------------------------ access -----------------------------------*/
@@ -179,40 +187,69 @@ MulticastConnection::~MulticastConnection(void)
 
 /*-------------------------- your_category---------------------------------*/
 
-/** Wait for incommint connections on the given address
+/** \brief create conneciton
+ */
+
+Connection *MulticastConnection::create(void)
+{
+    return new MulticastConnection();
+}
+
+/** Bind connection to the givven address
  *
  * @param address    Port number
  *
  **/
-void MulticastConnection::accept( const string &address )
+string MulticastConnection::bind( const string &address )
 {
-    string host;
+    char bound[256];
+    string group;
     UInt32 port;
-    StreamSocket socket,client;
-    char ip[100];
-    UInt32 multicastport;
-
-    interpreteAddress(address,host,port);
-
-    // connection is done with the use of stream sockets. 
-    socket.open();
-    socket.setReusePort(true);
-    socket.bind(AnyAddress(port));
-    socket.listen();
-    client=socket.accept();
-    cout << "client connected" << endl;
-    client.recv(ip,100);
-    client.recv(&multicastport,sizeof(UInt32));
+    UInt32 member;
     
-    cout << "Multicast group:" << ip << " " << multicastport << endl;
+    interpreteAddress(address,group,port,member);
+    if(group.empty())
+        group     ="224.0.0.50";
+    if(port==0)
+        port =6546;
 
-    // prepare multicast socket
-    _socket.setReusePort(true);
-    _socket.bind(AnyAddress(multicastport));
-    _socket.join(ip);
+    // prepare socket
+    _groupSocket.setReusePort(true);
+    _groupSocket.bind(AnyAddress(port));
+    _groupSocket.join(Address(group.c_str()));
+    _inSocket=_groupSocket;
+    _socket.bind(AnyAddress(0));
 
-    client.close();
-    socket.close();
+    if(member==0)
+    {
+        member=(UInt32)(getSystemTime()*(1<<30));
+        member&=0x7fff0000;
+        member|=_socket.getAddress().getPort();
+    }
+    _member=member;
+    sprintf(bound,"%.120s:%d:%d",group.c_str(),port,member);
+    SINFO << "Multicast bound to " << bound << endl;
+    return bound;
+}
+
+/** Wait for incommint connections on the given address
+ *
+ **/
+void MulticastConnection::accept( void )
+{
+    UDPBuffer alive;
+    Address destination;
+
+    do
+    {
+        _inSocket.recvFrom(&alive,sizeof(alive),destination);
+    }
+    while(alive.header.type != ALIVE);
+    _destination=destination;
+    _channelAddress.push_back(destination);
+    _channelSeqNumber.push_back(1);
+    SINFO << "Connection accepted from " << destination.getHost()
+          << ":" << destination.getPort() << endl;
 }
 
 /** connect a connection at the given address
@@ -222,27 +259,36 @@ void MulticastConnection::accept( const string &address )
  **/
 void MulticastConnection::connect( const string &address )
 {
-    string host;
+    Address from;
+    UDPBuffer alive;
+    string group;
     UInt32 port;
-    StreamSocket socket;
-    char ip[100];
-    UInt32 multicastport;
+    UInt32 member;
 
-    interpreteAddress(address,host,port);
-    socket.open();
-    socket.connect(Address(host.c_str(),port));
-
-    strcpy(ip,_address.getHost().c_str());
-    multicastport=_address.getPort();
-
-    socket.send(ip,100);
-    socket.send(&multicastport,sizeof(UInt32));
-
-    _receivers.push_back(Address(host.c_str(),multicastport));
-
-    cout << "Connected to " << ip << " " << multicastport << endl;
-    if(!_aliveThread)
-        startAliveThread();
+    interpreteAddress(address,group,port,member);
+    _destination=Address(group.c_str(),port);
+    if(member==0)
+    {
+        SFATAL << "Connect to member and no member is given" << endl;
+        return;
+    }
+    if(group.empty())
+    {
+        SFATAL << "No group given to connect" << endl;
+        return;
+    }
+    // wait for alive signal
+    do
+    {
+        _socket.recvFrom(&alive,sizeof(alive),from);
+    }
+    while(alive.header.type != ALIVE ||
+          alive.member != member);
+    _channelAddress.push_back(from);
+    _channelSeqNumber.push_back(1);
+    _inSocket=_socket;
+    SINFO << "Connected to " << from.getHost() 
+          << ":" << from.getPort();
 }
 
 /** wait for sync
@@ -261,7 +307,7 @@ void MulticastConnection::wait(void)
     selection.setRead(_socket);
     if(selection.select(_maxWaitForSync)<=0)
     {
-        cout << "no sync... who cares!!" << endl;
+        SINFO << "Sync timeout" << endl;
         return;
     }
     _socket.recv(&sync,sizeof(sync));
@@ -283,7 +329,7 @@ void MulticastConnection::signal(void)
     sync.type     =SYNC;
 
     // send
-    _socket.sendTo(&sync,sizeof(sync),_address);
+    _socket.sendTo(&sync,sizeof(sync),_destination);
 }
 
 /** get number of links
@@ -291,7 +337,7 @@ void MulticastConnection::signal(void)
  **/
 UInt32 MulticastConnection::getChannelCount(void)
 {
-    return _receivers.size();
+    return _channelAddress.size();
 }
 
 /** select channel for read
@@ -309,24 +355,27 @@ Bool MulticastConnection::selectChannel()
 
     for(;;)
     {
-        selection.setRead(_socket);
-        if(selection.select(2)<=0)
+        if(!_inSocket.waitReadable(4))
         {
             return false;
         }
-        size=_socket.peekFrom(&header,sizeof(header),from);
+        size=_inSocket.peekFrom(&header,sizeof(header),from);
         // wait for data or ack request of unread data
-        if(size>=sizeof(header) &&
-           ( header.type == DATA ||
-             (header.type == ACK_REQUEST && header.seqNumber > _seqNumber)))
+        if(size>=sizeof(header))
         {
-            _readAddress=from;
-            return true;
+            for(UInt32 i=0;i<_channelAddress.size();i++)
+            {
+                if(_channelAddress[i]==from &&
+                   ( header.type == DATA ||
+                     (header.type == ACK_REQUEST && 
+                      header.seqNumber > _channelSeqNumber[i])))
+                {
+                    _channel=i;
+                    return true;
+                }
+            }
         }
-        else
-        {
-            _socket.recv(&header,sizeof(header));
-        }
+        _inSocket.recv(&header,sizeof(header));
     }
 }
 
@@ -337,10 +386,10 @@ void MulticastConnection::printStatistics(void)
     printf("Bytes write ..............%12d\n",_statBytesWrite);
     if(_statTimeWrite>0)
         printf("Write kbytes/s ...........%12.2f\n",
-               (_statBytesWrite/_statTimeWrite)/1000.0);
+               (_statBytesWrite/_statTimeWrite)/1024.0);
     if(_statTimeRead>0)
         printf("Read kbytes/s ............%12.2f\n",
-               (_statBytesRead/_statTimeRead)/1000.0);
+               (_statBytesRead/_statTimeRead)/1024.0);
     printf("Package loss .............%12d\n",_statPckDrop);
     printf("Ack losss ................%12d\n",_statAckRetransmit);
 #else
@@ -402,15 +451,15 @@ void MulticastConnection::readBuffer()
 
     for(;;)
     {
-        selection.setRead(_socket);
+        selection.setRead(_inSocket);
         if(selection.select(2)<=0)
         {
             throw ReadError("Timeout");
         }
-        dataSize = _socket.recvFrom(&(*currentBuffer)[0],
-                                    currentBuffer->size(),
-                                    from);
-        if(from != _readAddress)
+        dataSize = _inSocket.recvFrom(&(*currentBuffer)[0],
+                                      currentBuffer->size(),
+                                      from);
+        if(from != _channelAddress[_channel])
             continue;
         header   = (UDPHeader*)&(*currentBuffer)[0];
         if(header->type == ACK_REQUEST)
@@ -418,10 +467,10 @@ void MulticastConnection::readBuffer()
             responseAck.header.type      = ACK;
             responseAck.header.seqNumber = header->seqNumber;
             responseAck.nack.size        = 0;
-            if(header->seqNumber > _seqNumber)
+            if(header->seqNumber > _channelSeqNumber[_channel])
             {
                 for(pos = 0 , buffer=readBufBegin();
-                    pos < (header->seqNumber - _seqNumber);
+                    pos < (header->seqNumber - _channelSeqNumber[_channel]);
                     pos++   , buffer++)
                 {
                     if(buffer->getDataSize()==0)
@@ -429,40 +478,43 @@ void MulticastConnection::readBuffer()
 #   ifdef MULTICAST_STATISTICS
                         _statPckDrop++;
 #   endif
-                        cout << "missing" << pos << " " << _seqNumber << " "
-                             << header->seqNumber << endl;
+                        SINFO << "missing" << pos << " " 
+                              << _channelSeqNumber[_channel] << " "
+                              << header->seqNumber << endl;
                         responseAck.nack.missing[responseAck.nack.size++]=pos;
                     }
                 }
             }
             // send ack
             _socket.sendTo(&responseAck,
-                           (MemoryHandle)(&responseAck.nack.missing
-                                         [responseAck.nack.size])-
-                           (MemoryHandle)(&responseAck),
-                           from);
-            if(responseAck.nack.size==0 && _seqNumber < header->seqNumber)
+                             (MemoryHandle)(&responseAck.nack.missing
+                                            [responseAck.nack.size])-
+                             (MemoryHandle)(&responseAck),
+                             from);
+            if(responseAck.nack.size==0 && 
+               _channelSeqNumber[_channel] < header->seqNumber)
             {
                 // ok we got all packages
-                _seqNumber = header->seqNumber+1;
+                _channelSeqNumber[_channel] = header->seqNumber+1;
                 break;
             }
         }
         if(header->type == DATA)
         {
             // ignore old packages
-            if(header->seqNumber < _seqNumber)
+            if(header->seqNumber < _channelSeqNumber[_channel])
             {
                 continue;
             }
-            buffer=readBufBegin() + (header->seqNumber - _seqNumber);
+            buffer=readBufBegin() + (header->seqNumber -
+                                     _channelSeqNumber[_channel]);
             // ignore retransmitted packages
             if(buffer->getDataSize()>0)
             {
                 continue;
             }
 #   ifdef MULTICAST_STATISTICS
-            _statBytesRead+=dataSize;
+            _statBytesRead+=dataSize - sizeof(UDPHeader);
 #   endif
             buffer->setMem ( (MemoryHandle)&(*currentBuffer)[sizeof(UDPHeader)] );
             buffer->setDataSize ( dataSize - sizeof(UDPHeader) );
@@ -485,7 +537,8 @@ void MulticastConnection::writeBuffer(void)
     vector<int>::iterator  sendI;
     BuffersT::iterator     bufferI;
     UDPHeader              ackRequest;
-    set<Address>           receivers(_receivers.begin(),_receivers.end());
+    set<Address>           receivers(_channelAddress.begin(),
+                                     _channelAddress.end());
     set<Address>           missingAcks;
     Selection              selection;
     UDPBuffer              responseAck;
@@ -526,7 +579,7 @@ void MulticastConnection::writeBuffer(void)
             {
                 _socket.sendTo(bufferI->getMem()      - sizeof(UDPHeader),
                                bufferI->getDataSize() + sizeof(UDPHeader),
-                               _address);
+                               _destination);
                 *sendI=false;
             }
         }
@@ -543,7 +596,7 @@ void MulticastConnection::writeBuffer(void)
             _statAckRetransmit++;
 #   endif
             // send acknolage request
-            _socket.sendTo(&ackRequest,sizeof(UDPHeader),_address);
+            _socket.sendTo(&ackRequest,sizeof(UDPHeader),_destination);
             // wait for acknolages. Max _waitForAck seconds.
             for(waitTime=_waitForAck,t1=OSG::getSystemTime();
                 waitTime>0.001 && (!missingAcks.empty());
@@ -630,35 +683,65 @@ void MulticastConnection::stopAliveThread()
 void *MulticastConnection::aliveProc(void *arg) 
 { 
     MulticastConnection *connection=static_cast<MulticastConnection *>(arg);
-    UDPBuffer ackRequest;
+    UDPBuffer alive;
 
     while(!connection->_stopAliveThread)
     {
-        // send acknolage request for old package
-        // clients should ignore this
-        ackRequest.header.seqNumber       = 0;
-        ackRequest.header.type            = ALIVE;
-        connection->_socket.sendTo(&ackRequest.header,
-                                   sizeof(UDPHeader),connection->_address);
+        if(connection->_destination.getPort()!=0)
+        {
+            // send ALIVE package
+            // receivers should ignore this
+            alive.header.seqNumber = 0;
+            alive.header.type      = ALIVE;
+            alive.member           = connection->_member;
+            connection->_socket.sendTo(
+                &alive,
+                sizeof(UDPHeader)+sizeof(alive.member),
+                connection->_destination);
+        }
 #if defined WIN32
-        Sleep(1000);
+        Sleep(2000);
 #else
-        sleep(1);
+        sleep(2);
 #endif
     }
     return NULL;
 }
 
+/** nterprete address
+ *
+ *   multicastgroup:port:client
+ *
+ **/
+
 void MulticastConnection::interpreteAddress(const string &address,
-                                            std::string  &host,
-                                            UInt32       &port)
+                                                  string &group,
+                                                  UInt32 &port,
+                                                  UInt32 &member)
 {
-    UInt32 pos=address.find(':',0);
+    Int32 pos1=address.find(':',0);
+    Int32 pos2;
     
-    if(pos>0)
+    group.erase();
+    port=0;
+    member=0;
+    if(address.empty())
     {
-        host = address.substr(0,pos);
-        port = atoi(address.substr(pos+1).c_str());
+        return;
+    }
+    if(pos1>0)
+    {
+        group = address.substr(0,pos1);
+        pos2=address.find(':',pos1+1);
+        if(pos2>0)
+        {
+            port = atoi(address.substr(pos1+1,pos2).c_str());
+            member = atoi(address.substr(pos2+1).c_str());
+        }
+        else
+        {
+            port = atoi(address.substr(pos1+1).c_str());
+        }
     }
     else
     {
@@ -668,12 +751,11 @@ void MulticastConnection::interpreteAddress(const string &address,
             i++);
         if(i==address.end())
         {
-            host="";
             port=atoi(address.c_str());
         }
         else
         {
-            host=address;
+            group=address;
             port=0;
         }
     }
