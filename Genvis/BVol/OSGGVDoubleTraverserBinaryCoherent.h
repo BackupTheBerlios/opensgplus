@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:37:55 $
 //                                                                            
 //=============================================================================
 
@@ -350,7 +350,7 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseInn
 #endif
    if (last0.size() <= 1 || last1.size() <= 1) {
       traverseInnerInner(b0, b1);
-      const DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
+      const typename DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
       if (result.size() > 0) {
 	 last0.push_back(static_cast<AdapterType*>(result[0].getFirst()));
 	 last1.push_back(static_cast<AdapterType*>(result[0].getSecond()));
@@ -362,7 +362,7 @@ inline void DoubleTraverserBinaryCoherent<BasicTraits,DoubleTraits>::traverseInn
       traverseInnerInner(b0, b1);
       
       // update OSG cache
-      const DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
+      const typename DoubleTraits::ObjectT::CollisionContainer& result = getData().getContacts();
       if (result.size() > 0) {
          last0[1] = static_cast<AdapterType*>(result[0].getFirst());
 	 last1[1] = static_cast<AdapterType*>(result[0].getSecond());
