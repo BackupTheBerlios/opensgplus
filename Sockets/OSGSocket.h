@@ -55,6 +55,7 @@ OSG_BEGIN_NAMESPACE
 //---------------------------------------------------------------------------
 //  Forward References
 //---------------------------------------------------------------------------
+class SocketMessage;
 
 //---------------------------------------------------------------------------
 //   Types
@@ -140,6 +141,8 @@ class OSG_SOCKET_DLLMAPPING Socket
     int          getAvailable      (void);
     Bool         waitReadable      (double duration);
     Bool         waitWritable      (double duration);
+    int          send              (SocketMessage &msg);
+    int          recv              (SocketMessage &msg);
 
     /*------------------------- your_operators ------------------------------*/
 

@@ -64,6 +64,7 @@
 #include <OSGAddress.h>
 #include <OSGSocket.h>
 #include <OSGSelection.h>
+#include <OSGSocketMessage.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -334,6 +335,21 @@ int Socket::send(const void *buf,int size)
         pos+=writeSize;
     }
     return pos;
+}
+
+int Socket::send(SocketMessage &msg)
+{
+    SocketMessage::Header &hdr=msg.getHeader();
+    hdr.size=htonl(msg.getSize());
+    return send(msg.getBuffer(),msg.getSize());
+}
+
+int Socket::recv(SocketMessage &msg)
+{
+    SocketMessage::Header hdr;
+    peek(&hdr,sizeof(hdr));
+    msg.setSize(ntohl(hdr.size));
+    return recv(msg.getBuffer(),msg.getSize());
 }
 
 void Socket::bind(const Address &address)
