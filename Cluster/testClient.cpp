@@ -464,7 +464,6 @@ int main(int argc,char **argv)
         glutDisplayFunc(display);       
         glutMouseFunc(mouse);   
         glutMotionFunc(motion); 
-
         ract1 = RenderAction::create();
         ract2 = RenderAction::create();
         // just draw the group's volumes as wireframe, ignore geometries

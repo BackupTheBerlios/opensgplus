@@ -82,6 +82,8 @@ int main(int argc,char **argv)
         glutIdleFunc(display);       
         glutReshapeFunc(reshape);       
         glutSetWindowTitle(name);
+        // switch off cursor
+        glutSetCursor(GLUT_CURSOR_NONE);
         glEnable( GL_LIGHTING );
         glEnable( GL_LIGHT0 );
         glEnable( GL_DEPTH_TEST );
