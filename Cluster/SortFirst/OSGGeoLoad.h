@@ -126,7 +126,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                     utilities                                */
     /*! \{                                                                 */
 
-    void GeoLoad::clipLine(int from,
+    void clipLine(         int from,
                            Real32 near,
                            vector<Pnt3f> &pnt,
                            vector<Pnt3f> &clip);
@@ -163,6 +163,6 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.1 2002/01/11 18:00:01 marcus Exp $"
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.2 2002/01/12 16:56:32 dirk Exp $"
 
 #endif /* _GEOLOAD_H_ */
