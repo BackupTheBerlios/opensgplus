@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:52:15 $
 //                                                                            
 //=============================================================================
 
@@ -42,9 +42,6 @@ OSG_USING_NAMESPACE
 // OSGGVDoubleTraverser.h/.cpp:
 // case dispatch by dynamic_cast instead of virtual function
 #undef  GV_DISPATCHBYCAST
-// OSGGVDoubleTraverserFixed.h/.cpp:
-// do depth counting at compile-time
-#define GV_GENERIC_DEPTHCOUNT
 // storing of bvol in adapter classes 
 // instead of lazy generation
 #undef  GV_STOREDBVOL_FACE
@@ -74,7 +71,7 @@ OSG_USING_NAMESPACE
 #undef  GV_DEBUG
 // OSGGVRAPID*.h/.cpp:
 // activate code for collision detection with RAPID
-#define GV_WITH_RAPID
+#undef  GV_WITH_RAPID
 
 #ifdef WIN32
 // remark #383: value copied to temporary, reference to temporary used
