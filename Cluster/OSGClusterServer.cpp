@@ -153,7 +153,7 @@ void ClusterServer::init()
     // start service proc
     _serviceAvailable=true;
     serviceThread=dynamic_cast<Thread*>(ThreadManager::the()->getThread(NULL));
-    serviceThread->run( serviceProc, 0, (void *) (this) );
+    serviceThread->runFunction( serviceProc, 0, (void *) (this) );
 
     // register interrest for all changed cluster windows
     for(UInt32 i=0;i<OSG::TypeFactory::the()->getNumTypes();++i)

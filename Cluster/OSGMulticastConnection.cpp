@@ -743,7 +743,7 @@ void MulticastConnection::startAliveThread()
     stopAliveThread();
     _stopAliveThread=false;
     _aliveThread=dynamic_cast<Thread*>(ThreadManager::the()->getThread(NULL));
-    _aliveThread->run( aliveProc, 0, (void *) (this) );
+    _aliveThread->runFunction( aliveProc, 0, (void *) (this) );
 }
 
 /** \brief Stop alive thread
