@@ -157,13 +157,18 @@ int DgramSocket::recvFrom(void *buf,int size,Address &from)
                  0,
                  from.getSockAddr(),
                  &addrLen);
-    if(len==-1)
+    if(len<0)
     {
 #if defined WIN32
         if(getError()==WSAECONNRESET)
         {
             throw SocketConnReset("recvfrom");
         }
+        if(getError()==WSAEMSGSIZE)
+        {
+            len=size;
+        }
+        else
 #endif
         throw SocketError("recvfrom()");
     }
@@ -188,6 +193,11 @@ int DgramSocket::peekFrom(void *buf,int size,Address &from)
         {
             throw SocketConnReset("recvfrom");
         }
+        if(getError()==WSAEMSGSIZE)
+        {
+            len=size;
+        }
+        else
 #endif
         throw SocketError("recvfrom()");
     }

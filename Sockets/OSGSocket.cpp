@@ -116,7 +116,7 @@ string Socket::getErrorStr()
 #ifdef WIN32
     switch(getError())
     {
-        case WSAEINTR: err= "WSAEINTR"; break;
+    case WSAEINTR: err= "WSAEINTR"; break;
         case WSAEBADF: err= "WSAEBADF"; break;
         case WSAEFAULT: err= "WSAEFAULT"; break; 
         case WSAEINVAL: err= "WSAEINVAL"; break; 
@@ -276,6 +276,11 @@ int Socket::recv(void *buf,int size)
             {
                 throw SocketConnReset("recv");
             }
+            if(getError()==WSAEMSGSIZE)
+            {
+                readSize=size;
+            }
+            else
 #endif
             throw SocketError("recv()");
         }
@@ -306,11 +311,9 @@ int Socket::peek(void *buf,int size)
             }
             if(getError()==WSAEMSGSIZE)
             {
-                // there is more data than we whanted to peek
-                // I think this is not an error.
                 readSize=size;
-                break;
             }
+            else
 #endif
             throw SocketError("peek");
         }
