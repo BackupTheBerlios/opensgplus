@@ -55,25 +55,25 @@ OSG_BEGIN_NAMESPACE
 inline void BinSocketMessage::putUInt32(const UInt32  value)
 {
     Int32 net=htonl(value);
-    _buffer.insert(_buffer.end(),(char*)(&net),((char*)(&net))+sizeof(net));
+    _buffer.insert(_buffer.end(),(UInt8*)(&net),((UInt8*)(&net))+sizeof(net));
 }
 
 inline void BinSocketMessage::putInt32 (const Int32  value)
 {
     Int32 net=htonl(value);
-    _buffer.insert(_buffer.end(),(char*)(&net),((char*)(&net))+sizeof(net));
+    _buffer.insert(_buffer.end(),(UInt8*)(&net),((UInt8*)(&net))+sizeof(net));
 }
 
 inline void BinSocketMessage::putUInt16(const UInt16  value)
 {
     Int16 net=htons(value);
-    _buffer.insert(_buffer.end(),(char*)(&net),((char*)(&net))+sizeof(net));
+    _buffer.insert(_buffer.end(),(UInt8*)(&net),((UInt8*)(&net))+sizeof(net));
 }
 
 inline void BinSocketMessage::putInt16 (const Int16  value)
 {
     Int16 net=htons(value);
-    _buffer.insert(_buffer.end(),(char*)(&net),((char*)(&net))+sizeof(net));
+    _buffer.insert(_buffer.end(),(UInt8*)(&net),((UInt8*)(&net))+sizeof(net));
 }
 
 inline void BinSocketMessage::putUInt8 (const UInt8   value)
@@ -83,13 +83,19 @@ inline void BinSocketMessage::putUInt8 (const UInt8   value)
 
 inline void BinSocketMessage::putInt8  (const Int8   value)
 {
-    _buffer.push_back(value);
+    UInt8 v=static_cast<UInt8>(value);
+    _buffer.push_back(v);
 }
 
 inline void BinSocketMessage::putString(const string &value)
 {
     putUInt32(value.size());
-    _buffer.insert(_buffer.end(),value.begin(),value.end());
+    if(value.size())
+    {
+        const UInt8 *s=(const UInt8*)(value.c_str());
+        const UInt8 *e=s+value.size();
+        _buffer.insert(_buffer.end(),s,e);
+    }
 }
 
 inline void BinSocketMessage::putReal32(const Real32  value)
@@ -146,10 +152,13 @@ inline void BinSocketMessage::getString(string &value)
     getUInt32(size);
     if(!value.empty())
         value.erase();
-    value.insert(value.begin(),
-                 &_buffer[_pos],
-                 &_buffer[_pos+size]);
-    _pos+=size;
+    if(size)
+    {
+        value.insert(value.begin(),
+                     (char*)&_buffer[_pos],
+                     (char*)&_buffer[_pos+size]);
+        _pos+=size;
+    }
 }
 
 inline void BinSocketMessage::getReal32(Real32  &value)

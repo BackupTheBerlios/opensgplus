@@ -140,6 +140,15 @@ class OSG_SOCKET_DLLMAPPING BinSocketMessage : public SocketMessage
   protected:
 
     /*---------------------------------------------------------------------*/
+    /*! \name                    protected mothods                         */
+    /*! \{                                                                 */
+/*
+    void put(void *src,UInt32 size);
+    void get(void *src,UInt32 size);
+*/
+    /*! \}                                                                 */
+
+    /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
