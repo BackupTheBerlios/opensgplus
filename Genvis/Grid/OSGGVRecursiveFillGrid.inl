@@ -7,31 +7,31 @@
 //-----------------------------------------------------------------------------
 //                                                                            
 //   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Date: 2003/09/16 16:26:40 $
 //                                                                            
 //=============================================================================
 
-#include "OSGGVRecursiveFillGrid.h"
-#include "OSGGVBVolFunctions.h"
-USING_GENVIS_NAMESPACE
-
-// explicit template instantiations
-template class OSG_GENVISLIB_DLLMAPPING RecursiveFillGrid<BVolAdapterBase>;
 
 template <class ADAPTER, class CONTAINER>
-unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
-(const std::vector<Adapter*>& primitives)
+inline RecursiveFillGrid<ADAPTER,CONTAINER>::RecursiveFillGrid (GridType& grid)
+  : m_grid(&grid)
 {
-   m_numNonEmpty = 0;
-   // fill voxel-array
-   fillVoxels(primitives,
-	      0, getGrid().getNumVoxelsDim()[0]-1, 
-	      0, getGrid().getNumVoxelsDim()[1]-1, 
-	      0, getGrid().getNumVoxelsDim()[2]-1);
+}
+template <class ADAPTER, class CONTAINER>
+inline unsigned        RecursiveFillGrid<ADAPTER,CONTAINER>::getNumNonEmptyVoxels () const
+{
    return m_numNonEmpty;
 }
 template <class ADAPTER, class CONTAINER>
-void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+inline RecursiveFillGrid<ADAPTER,CONTAINER>::GridType& 
+RecursiveFillGrid<ADAPTER,CONTAINER>::getGrid () const
+{
+   assert(m_grid != NULL);
+   return *m_grid;
+}
+
+template <class ADAPTER, class CONTAINER>
+inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<Adapter*>& primitives,
  unsigned from_x, unsigned to_x, 
  unsigned from_y, unsigned to_y, 
@@ -108,10 +108,9 @@ void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       fillVoxels(inVoxelPrimitives, f2x,to_x, f2y,to_y, f2z,to_z);
    }
 }
-
 template <class ADAPTER, class CONTAINER>
-unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
-(const std::vector<PointerType>& primitives)
+inline unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+(const std::vector<Adapter*>& primitives)
 {
    m_numNonEmpty = 0;
    // fill voxel-array
@@ -121,8 +120,10 @@ unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
 	      0, getGrid().getNumVoxelsDim()[2]-1);
    return m_numNonEmpty;
 }
+
+
 template <class ADAPTER, class CONTAINER>
-void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<PointerType>& primitives,
  unsigned from_x, unsigned to_x, 
  unsigned from_y, unsigned to_y, 
@@ -197,4 +198,15 @@ void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       fillVoxels(inVoxelPrimitives, f2x,to_x, f2y,to_y, f2z,to_z);
    }
 }
-
+template <class ADAPTER, class CONTAINER>
+inline unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+(const std::vector<PointerType>& primitives)
+{
+   m_numNonEmpty = 0;
+   // fill voxel-array
+   fillVoxels(primitives,
+	      0, getGrid().getNumVoxelsDim()[0]-1, 
+	      0, getGrid().getNumVoxelsDim()[1]-1, 
+	      0, getGrid().getNumVoxelsDim()[2]-1);
+   return m_numNonEmpty;
+}

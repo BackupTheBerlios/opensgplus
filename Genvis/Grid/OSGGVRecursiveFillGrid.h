@@ -23,15 +23,17 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/16 16:27:08 $
 //                                                                            
 //=============================================================================
 
 #ifndef OSGGVRECURSIVEFILLGRID_H
 #define OSGGVRECURSIVEFILLGRID_H
 
+#include <assert.h>
 #include "OSGGVBase.h"
+#include "OSGGVReal.h"
 #include "OSGGVRegularGrid.h"
 
 BEGIN_GENVIS_NAMESPACE
@@ -88,23 +90,7 @@ private:
 typedef RecursiveFillGrid<BVolAdapterBase> OSGRecursiveFillGrid;
 
 
-template <class ADAPTER, class CONTAINER>
-inline RecursiveFillGrid<ADAPTER,CONTAINER>::RecursiveFillGrid (GridType& grid)
-  : m_grid(&grid)
-{
-}
-template <class ADAPTER, class CONTAINER>
-inline unsigned        RecursiveFillGrid<ADAPTER,CONTAINER>::getNumNonEmptyVoxels () const
-{
-   return m_numNonEmpty;
-}
-template <class ADAPTER, class CONTAINER>
-inline RecursiveFillGrid<ADAPTER,CONTAINER>::GridType& 
-RecursiveFillGrid<ADAPTER,CONTAINER>::getGrid () const
-{
-   assert(m_grid != NULL);
-   return *m_grid;
-}
+#include "OSGGVRecursiveFillGrid.inl"
 
 END_GENVIS_NAMESPACE
 
