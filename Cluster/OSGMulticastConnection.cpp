@@ -296,13 +296,14 @@ void MulticastConnection::connect( const string &address )
  **/
 void MulticastConnection::wait(void)
 {
-    Selection selection;
-    UDPHeader sync;
     UInt32 tag;
 
     // read sync tag;
     selectChannel();
     getUInt32(tag);
+/*
+    Selection selection;
+    UDPHeader sync;
 
     selection.setRead(_socket);
     if(selection.select(_maxWaitForSync)<=0)
@@ -310,7 +311,9 @@ void MulticastConnection::wait(void)
         SINFO << "Sync timeout" << endl;
         return;
     }
+    cout << "d" << endl;
     _socket.recv(&sync,sizeof(sync));
+*/
 }
 
 /** send sync
@@ -318,18 +321,20 @@ void MulticastConnection::wait(void)
  **/
 void MulticastConnection::signal(void)
 {
-    UDPHeader sync;
-
     // write sync tag
     putUInt32(0);
     flush();
+/*
+    UDPHeader sync;
 
     // write some sync packages
     sync.seqNumber=0;
     sync.type     =SYNC;
 
-    // send
+    // send sync tag
     _socket.sendTo(&sync,sizeof(sync),_destination);
+    cout << "send sznc" << endl;
+*/
 }
 
 /** get number of links
@@ -355,7 +360,7 @@ Bool MulticastConnection::selectChannel()
 
     for(;;)
     {
-        if(!_inSocket.waitReadable(4))
+        if(!_inSocket.waitReadable(2))
         {
             return false;
         }
@@ -700,9 +705,9 @@ void *MulticastConnection::aliveProc(void *arg)
                 connection->_destination);
         }
 #if defined WIN32
-        Sleep(2000);
+        Sleep(1000);
 #else
-        sleep(2);
+        sleep(1);
 #endif
     }
     return NULL;
