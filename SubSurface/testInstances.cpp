@@ -1,5 +1,6 @@
 // Dynamic tesselation of Catmull-Clark subdivision surfaces
 // (with creases)
+// multiple instances with different material
 
 // Headers
 #include <OSGMyMesh.h>
@@ -10,10 +11,13 @@
 #include <OSGConfig.h>
 #include <OSGSimpleGeometry.h>
 #include <OSGMaterialGroup.h>
+#include <OSGTransform.h>
 #include <OSGGLUTWindow.h>
 #include <OSGSimpleMaterial.h>
 #include <OSGSimpleSceneManager.h>
 #include <OSGAction.h>
+
+#define MAXINST 10
 
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
@@ -26,6 +30,9 @@ MyDynamicSubdivisionCCPtr subdivCore;
 MyPolyMesh* omesh = NULL;
 
 OpenMesh::EPropHandleT<Int32> isCrease;
+
+// different materials
+SimpleMaterialPtr materialCollection[3];
 
 int unidepth = 3;
 
@@ -57,6 +64,40 @@ int main(int argc, char **argv)
    gwin->setId(winid);
    gwin->init();
 
+
+   // prepare Materials
+   materialCollection[0] = OSG::SimpleMaterial::create();    // red   
+   OSG::beginEditCP(materialCollection[0]);
+      materialCollection[0]->setAmbient      (OSG::Color3f(0.15,0.15,0.15));
+      materialCollection[0]->setDiffuse      (OSG::Color3f(1.0,0.0,0.0));
+      materialCollection[0]->setEmission     (OSG::Color3f(0.0,0.0,0.0));
+      materialCollection[0]->setSpecular     (OSG::Color3f(0.9,0.9,0.9));
+      materialCollection[0]->setShininess    (50);                
+      materialCollection[0]->setTransparency (0);                
+      materialCollection[0]->setColorMaterial(GL_NONE);              
+   OSG::endEditCP  (materialCollection[0]);
+   materialCollection[1] = OSG::SimpleMaterial::create();    // green   
+   OSG::beginEditCP(materialCollection[1]);
+      materialCollection[1]->setAmbient      (OSG::Color3f(0.15,0.15,0.15));
+      materialCollection[1]->setDiffuse      (OSG::Color3f(0.0,1.0,0.0));
+      materialCollection[1]->setEmission     (OSG::Color3f(0.0,0.0,0.0));
+      materialCollection[1]->setSpecular     (OSG::Color3f(0.9,0.9,0.9));
+      materialCollection[1]->setShininess    (50);                
+      materialCollection[1]->setTransparency (0);                
+      materialCollection[1]->setColorMaterial(GL_NONE);              
+   OSG::endEditCP  (materialCollection[1]);
+   materialCollection[2] = OSG::SimpleMaterial::create();    // blue   
+   OSG::beginEditCP(materialCollection[2]);
+      materialCollection[2]->setAmbient      (OSG::Color3f(0.15,0.15,0.15));
+      materialCollection[2]->setDiffuse      (OSG::Color3f(0.0,0.0,1.0));
+      materialCollection[2]->setEmission     (OSG::Color3f(0.0,0.0,0.0));
+      materialCollection[2]->setSpecular     (OSG::Color3f(0.9,0.9,0.9));
+      materialCollection[2]->setShininess    (50);                
+      materialCollection[2]->setTransparency (0);                
+      materialCollection[2]->setColorMaterial(GL_NONE);           
+   OSG::endEditCP  (materialCollection[2]);
+
+
    // create OpenMesh object
    omesh = new MyPolyMesh();
    // new version: property
@@ -83,31 +124,62 @@ int main(int argc, char **argv)
 
    // create DynamicSubdivisionCC node core
    subdivCore = MyDynamicSubdivisionCC::create();
-
   
    beginEditCP(subdivCore);
    subdivCore->setMaxDepth(maxdepth);
-   subdivCore->setMesh(omesh);  
-   subdivCore->setMaterial(getDefaultMaterial());
+   subdivCore->setMesh(omesh);     
    //subdivCore->setAutoUpdate(true); // default 
    endEditCP(subdivCore);
-    
+
+   
    NodePtr scene = Node::create();
+   GroupPtr sceneCore = Group::create();
    beginEditCP(scene);
-   scene->setCore(subdivCore);
+   scene->setCore(sceneCore);   
    endEditCP(scene);
 
-   /*MaterialGroupPtr matGroupCore = MaterialGroup::create();
-   beginEditCP(matGroupCore);
-   matGroupCore->setMaterial(getDefaultMaterial());
-   endEditCP(matGroupCore);
 
+   // create multiple instances
+   NodePtr Instance[MAXINST];
+   MaterialGroupPtr matGroupCore[MAXINST];
+   NodePtr matGroupNode[MAXINST];
+   TransformPtr transCore[MAXINST];
+   NodePtr transNode[MAXINST];
+   for (Int32 i=0; i<MAXINST; i++) {
+      Instance[i] = Node::create();
+      beginEditCP(Instance[i]);
+      Instance[i]->setCore(subdivCore);
+      endEditCP(Instance[i]);
 
-   NodePtr matGroupNode = Node::create();
-   beginEditCP(matGroupNode);
-   matGroupNode->setCore(matGroupCore);
-   matGroupNode->addChild(scene);
-   endEditCP(matGroupNode);*/
+      Instance[i]->updateVolume();                                   // get the volume to transform correctly
+      Vec3f min,max;   
+      Instance[i]->getVolume().getBounds( min ,max );
+      Real32 maxX=max[0]-min[0];
+
+      matGroupCore[i] = MaterialGroup::create();                     // material group core defines the material
+      beginEditCP(matGroupCore[i]);
+      matGroupCore[i]->setMaterial(materialCollection[i%3]);
+      endEditCP(matGroupCore[i]);
+
+      matGroupNode[i] = Node::create();
+      beginEditCP(matGroupNode[i]);
+      matGroupNode[i]->setCore(matGroupCore[i]);
+      matGroupNode[i]->addChild(Instance[i]);
+      endEditCP(matGroupNode[i]);
+
+      transCore[i] = Transform::create();                            // transform node to separate the instances
+      Matrix& mat = transCore[i]->getMatrix();    	      
+      mat.setTranslate(mat[3][0]+(maxX*(Real32)i), mat[3][1], mat[3][2]);
+      transNode[i] = Node::create();
+      beginEditCP(transNode[i]);
+      transNode[i]->setCore(transCore[i]);
+      transNode[i]->addChild(matGroupNode[i]);
+      endEditCP(transNode[i]);
+
+      beginEditCP(scene);                                            // scene is our root node
+      scene->addChild(transNode[i]);                                 // add all instances as child
+      endEditCP(scene);
+   }
 
    // create the SimpleSceneManager helper
    mgr = new SimpleSceneManager;

@@ -60,7 +60,7 @@
 #include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
 #include "OSGBaseTypes.h"
-#include "OSGGroup.h"                     // Parent
+#include "OSGMaterialGroup.h"                     // Parent
 #include "OSGUInt16Fields.h"              // MinDepth type
 #include "OSGReal32Fields.h"              // MinProjSize type
 #include "OSGBoolFields.h"                // BackfaceCulling type
@@ -77,10 +77,10 @@ class BinaryDataHandler;
 //! \brief DynamicSubdivisionCC Base Class.
 
 template <class MESH>
-class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
+class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public MaterialGroup
 {
   private:
-    typedef Group Inherited;
+    typedef MaterialGroup Inherited;
 
   public:
     //enum                                    { MType = MESH2MTYPE<MESH>::MType };
@@ -308,6 +308,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.7 2004/06/28 17:59:28 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCBASE_H_ */

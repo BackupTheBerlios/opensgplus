@@ -403,5 +403,5 @@ void DynamicSubdivisionLPBase<MESH>::setAutoUpdate(const bool &value)
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.inl,v 1.5 2004/06/24 15:13:41 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.inl,v 1.6 2004/06/28 17:59:29 fuenfzig Exp $"
 
