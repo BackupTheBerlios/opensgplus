@@ -1,0 +1,181 @@
+// ---------------------------------------------------------------
+// File:    $Id: OSGGVFaceSpatialize.h.org,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $
+// Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
+// ---------------------------------------------------------------
+// face restructuring according to hierarchy
+
+#ifndef OSGGVFACESPATIALIZE_H
+#define OSGGVFACESPATIALIZE_H
+
+#include "OSGGVBase.h"
+#include "OSGGVInput.h"
+#include "OSGGVSingleTraverser.h"
+#include "OSGGVGroup.h"
+
+#include "OSGGeometry.h"
+#include "OSGGeoPropPtrs.h"
+
+BEGIN_GENVIS_NAMESPACE
+
+class OSG_GENVISLIB_DLLMAPPING CategoryRaw
+{
+   friend class Category;
+public:
+   CategoryRaw  (OSG::NodePtr root,
+		 const FaceIterator& face);
+   ~CategoryRaw ();
+
+   void    ccwDirection (bool flag=true);
+
+   void    begin   (const FaceIterator& face);
+   void    end     ();
+   void    addData (OpenSGFaceBase<OpenSGTraits>* node,
+		    const FaceIterator& face);
+
+   bool    isThisCategory (const FaceIterator& face) const;
+
+   std::ostream&   print (std::ostream& os) const;
+
+   static  bool    hasColorAttributes (const FaceIterator& face);
+   static  bool    hasTexAttributes   (const FaceIterator& face);
+   static  bool    hasNormalAttributes(const FaceIterator& face);
+
+   static  bool    isRawCategory (const FaceIterator& face);
+   static  bool    isColorCategory (const FaceIterator& face);
+   static  bool    isTexCategory (const FaceIterator& face);
+   static  bool    isColorTexCategory (const FaceIterator& face);
+
+protected:
+   bool                    m_ccw;
+   bool                    m_hasNormal;
+   unsigned                m_faceLength;
+   // OSG mesh data
+   OSG::NodePtr            m_node;
+   OSG::MaterialPtr        m_material;
+   OSG::GeoPositions3fPtr  m_coord; 
+   OSG::GeoNormals3fPtr    m_normal;
+   OSG::GeoIndicesUI32Ptr  m_index;
+   OSG::GeoPLengthsUI32Ptr m_len;
+   OSG::GeoPTypesUI8Ptr	   m_type;
+   OSG::GeoColors3fPtr     m_color; 
+   OSG::GeoTexCoords2fPtr  m_texCoord;  
+};
+class OSG_GENVISLIB_DLLMAPPING CategoryColor : public CategoryRaw
+{
+public:
+   CategoryColor (OSG::NodePtr root,
+		  const FaceIterator& face);
+   ~CategoryColor ();
+
+   void    begin   (const FaceIterator& face);
+   void    end     ();
+   void    addData (OpenSGFaceBase<OpenSGTraits>* node,
+		    const FaceIterator& face);
+
+protected:
+   bool m_hasColor;
+};
+class OSG_GENVISLIB_DLLMAPPING CategoryGeneral : public CategoryColor
+{
+public:
+   CategoryGeneral  (OSG::NodePtr root,
+		     const FaceIterator& face);
+   ~CategoryGeneral ();
+
+   void    begin   (const FaceIterator& face);
+   void    end     ();
+   void    addData (OpenSGFaceBase<OpenSGTraits>* node,
+		    const FaceIterator& face);
+
+protected:
+   bool m_hasTex;
+};
+
+class OSG_GENVISLIB_DLLMAPPING Category
+{
+public:
+   Category  (OSG::NodePtr root);
+   ~Category ();
+
+   void    addData (OpenSGFaceBase<OpenSGTraits>* arg);
+
+private:
+   typedef std::vector<CategoryGeneral*> CategoryList; 
+#if 0
+   class MaterialPtrCmp
+   {
+   public:
+      bool operator() (const OSG::MaterialPtr& a, const OSG::MaterialPtr& b) const {
+         return int(a.getCPtr()) < int(b.getCPtr());
+      }
+   };
+   typedef std::map<OSG::MaterialPtr, CategoryList, MaterialPtrCmp> SearchStructure;
+#endif
+
+   unsigned        m_numGeom;
+   unsigned        m_totalFaces;
+   CategoryList    m_all;
+   OSG::NodePtr    m_root;
+};
+
+template <class BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING FaceSpatialize
+{
+public:
+   typedef BoundingVolume<float>                        BVOL;
+   typedef SingleTraverserBase<BasicTraits>::ResultType ResultT;
+   typedef OpenSGFaceBase<BasicTraits>                  AdapterType;
+   typedef BVolGroupBase                                GroupType;
+   typedef BVolAdapterBase                              GeneralType; 
+
+   FaceSpatialize ();
+   ~FaceSpatialize ();
+
+   OSG::NodePtr getRoot () const;
+   void         setLevel (unsigned level);
+   unsigned     getLevel () const;
+
+   bool     InitEnter  ();
+   bool     InitLeave  ();
+   ResultT  InnerEnter (GroupType*   g0);
+   ResultT  InnerLeave (GroupType*   g0);
+   ResultT  LeafEnter  (AdapterType* p0);
+
+private:
+   OSG::NodePtr m_root;
+   OSG::NodePtr m_rootLevel;
+   unsigned     m_level;
+   unsigned     m_current;
+   Category*    m_ifs;  
+   std::vector<Category*> m_ifsLevel;  
+};
+
+template class OSG_GENVISLIB_DLLMAPPING FaceSpatialize<OpenSGTraits>;
+
+template <class BasicTraits>
+class OSG_GENVISLIB_DLLMAPPING FaceSpatializeTraits
+{
+public:
+   typedef typename FaceSpatialize<BasicTraits>::BVOL        BVOL;
+   typedef typename FaceSpatialize<BasicTraits>::ResultT     ResultT;
+   typedef FaceSpatialize<BasicTraits>                       ObjectT;
+   typedef typename FaceSpatialize<BasicTraits>::GeneralType GeneralType;
+   typedef typename FaceSpatialize<BasicTraits>::AdapterType AdapterType;
+   typedef typename FaceSpatialize<BasicTraits>::GroupType   GroupType;
+
+   typedef InitSingleFunctor<bool,ObjectT>            InitFunctorT;
+   typedef SingleFunctor<ResultT,GroupType,ObjectT>   InnerFunctorT;
+   typedef SingleFunctor<ResultT,AdapterType,ObjectT> LeafFunctorT;
+
+   static  InitFunctorT  createInitEnterFunctor  (void* obj);
+   static  InitFunctorT  createInitLeaveFunctor  (void* obj);
+   static  InnerFunctorT createInnerEnterFunctor (void* obj);
+   static  InnerFunctorT createInnerLeaveFunctor (void* obj);
+   static  LeafFunctorT  createLeafEnterFunctor  (void* obj);
+};
+
+template class OSG_GENVISLIB_DLLMAPPING FaceSpatializeTraits<OpenSGTraits>;
+
+END_GENVIS_NAMESPACE
+#endif
+

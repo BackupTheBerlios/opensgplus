@@ -1,0 +1,31 @@
+Datastructures for Spatialization and Collision Detection
+=========================================================
+
+Contact: Christoph Fünfzig, c.fuenfzig@tu-bs.de
+
+Usage:
+
+This package contains additional datastructures (k-DOP hierarchies
+and regular grid) on the scenegraphs Geometry nodes 
+for several applications
+* spatialization (using k-DOP hierarchies)
+* point location (using k-DOP hierarchies)
+* ray intersection (using k-DOP hierarchies or regular grid)
+* vertex clustering (using regular grid), currently ALPHA
+See the test programs...
+
+
+Compilation:
+
+For the sources in RapidCollision/ you need the package RAPID, Version 2.01
+You can get it for non-commercial use at 
+http://www.cs.unc.edu/~geom/OBB/OBBT.html
+
+For this configure OpenSG with the following options added
+(You have to change the paths according to your system!)
+--with-add-incdir=/cygdrive/e/extern/RAPID/include
+--with-add-libdir=/cygdrive/e/extern/RAPID/lib 
+--with-add-lib=RAPID
+
+There is also a define GV_USE_RAPID in OSGGVBase.h to use the library
+RAPID or not.

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="GenvisCache"
+	parent="Attachment"
+	library="Genvis"
+	pointerfieldtypes="both"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+	decoratable="false"
+>
+	<Field
+		name="AdapterMatrix"
+		type="Matrix"
+		cardinality="multi"
+		visibility="external"
+		access="public"
+	>
+	matrices for adapter construction
+	</Field>
+	<Field
+		name="BVolAdapter"
+		type="BVolAdapterBaseP"
+		cardinality="multi"
+		visibility="external"
+		header="OSGGVBVolAdapterBasePFields.h"
+		access="public"
+	>
+	bvol adapters constructed in the current scenegraph
+	</Field>
+	<Field
+		name="CollisionCache"
+		type="BVolAdapterBaseP"
+		cardinality="multi"
+		visibility="external"
+		header="OSGGVBVolAdapterBasePFields.h"
+		access="public"
+	>
+	generalized front cache for hierarchy traversal
+	</Field>
+</FieldContainer>
