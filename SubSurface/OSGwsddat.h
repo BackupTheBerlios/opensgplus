@@ -54,13 +54,26 @@
 #include <stdio.h>
 // always include first
 #include "OSGMyMesh.h"
+#include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
 #include "OSGVector.h"
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
 #include "OSGSimpleMaterial.h"
+#include "OSGMeshType.h"
 
 OSG_BEGIN_NAMESPACE
+
+// Crease Types:
+#define CREASE_HALF             -2  // oder doch -20??
+#define CREASE_REG_REG           5
+#define CREASE_IRREG_REG        10
+#define CREASE_REG_IRREG        15
+#define CREASE_IRREG_REG_ONCE   20    // has to be handled as  5 after first subdiv!
+#define CREASE_HALF_REG_ONCE    25    // has to be handled as  5 after first subdiv!
+#define CREASE_HALF_IRREG_ONCE  30    // has to be handled as 15 after first subdiv!
+
+
 
 //! shared data for all instances
 struct OSG_SUBSURFACELIB_DLLMAPPING sharedFields
@@ -68,7 +81,9 @@ struct OSG_SUBSURFACELIB_DLLMAPPING sharedFields
    OSG::GeoPositions3fPtr limitpointsptr;
    OSG::GeoNormals3fPtr   limitnormalsptr;	
    OSG::GeoPositions3f::StoredFieldType* limitpoints;       //!< limit points
-   OSG::GeoNormals3f::StoredFieldType*   limitnormals;      //!< limit normals
+   OSG::GeoNormals3f::StoredFieldType*   limitnormals;      //!< limit normals   
+   OSG::GeoTexCoords2fPtr texcoordsptr;                     //!< Texture Coordinates
+   OSG::GeoTexCoords2f::StoredFieldType* texcoords;  
 };
 
 //! data for each instance
@@ -91,20 +106,12 @@ struct OSG_SUBSURFACELIB_DLLMAPPING perInstanceData
 
 const Int32 zweihoch[] = {1,2,4,8,16,32,64,128,256,512}; // pow(2,x)
 
-const Int32 wsddepthindexarray[] = {2, 3, 5, 9, 17, 33, 65, 129};
-const Int32 wsdinnerindexwidth[] = {0, 0, 3, 7, 15, 31, 63, 127};
-
-const Int32 wsdmaxdepth = 5;            //!< maximum subdivision depth possible
-const Int32 wsdmaxindex = 33;		// = wsddepthindexarray[wsdmaxdepth]
-const Int32 wsdmaxvarray = wsdmaxindex*wsdmaxindex; //maximum size of vertexarray
+const Int32 wsddepthindexarray[] = {2, 3, 5, 9, 17, 33, 65, 129, 257, 513, 1025, 2049};
+const Int32 wsdinnerindexwidth[] = {0, 0, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047};
 
 //! maximum valence
 const Int32 wsdmaxvalenz = 30;
 
-//! curvature epsilon
-const Real32 wsdkruemmungseps = 0.01;
-
-enum MeshType   { TRIANGLE, QUAD }; 
 //! facing types
 enum FacingType { BACK = 0, FRONT = 1, SILUETTE = 5 };
 
@@ -115,11 +122,10 @@ enum FacingType { BACK = 0, FRONT = 1, SILUETTE = 5 };
 */
 template<class WSDVector, int mtype> 
 class OSG_SUBSURFACELIB_DLLMAPPING WSDdat 
-{   
-   typedef WSDVector WSDVectorVS[4][wsdmaxvalenz];
-   //typedef WSDVector WSDVector2[wsdmaxindex][wsdmaxindex];
-   //typedef WSDVector WSDVector1[wsdmaxindex];
-   //typedef UInt32    WSDlimitindex[wsdmaxindex*wsdmaxindex]; //eigentlich -2, da nur innen!
+{ 
+   enum               { MType = mtype };
+   typedef WSDVector    VectorType;  
+   typedef WSDVector    VectorCAType[4][wsdmaxvalenz];
 
    /*==========================  PUBLIC  =================================*/
 public:
@@ -129,10 +135,16 @@ public:
    //! Destructor
    ~WSDdat();
 
+
+   //! maximum tesselation depth
+   Int32 wsdmaxdepth;
    // to switch between the two tables
    void rotateptabs(Int32 i);
-   // initialize tables 
+   // initialize slates 
    void initptabs(void);
+
+   // initialize slates for texture data
+   void initptex(void);
 
    /*! helper for getting a neighbor patch
        \param from the source patch index
@@ -141,11 +153,13 @@ public:
    */
    Int32 getneighbor(Int32 from, Int32 ad);
 
-
    //! openmesh to wsddat cache (1-neighborhood)
-   WSDVector tableO[4][4];			   
+   VectorType slateO[4][4];			   
    //! for corners of valence greater than 4
-   WSDVectorVS  cornerO;			   
+   VectorCAType  cornerO;
+   
+   //! texture coordinates of the four corners
+   VectorType TexCoords[4][4];	
 
    //! curvature dependent depth
    Int32 maxdepth;					  
@@ -165,20 +179,28 @@ public:
    Int32 valenz[4];			
    //! sum of the adjacent sharp edges
    Int32 iscorner[4];
+   //! only for loop: is the corner-vert. a regular corner (for creases)
+   Int32 isregular[4];
 
+   /*
    //		0 ----- 3
    //		|       |
    //		|       |
    //		|       |
    //		1 ----- 2
+   */
    //! index to neighbor-patches
-   Int32 neighbors[4];		
+   Int32 neighbors[4];
+   //! flag to find borders
+   Int32 borders[4];
 
+   /*
    //      3
    //		-----
    //	 0	|   |	2
    //		-----
    //		  1
+   */
    //! neighbors of neighbor
    Int32 neighbor0in1, neighbor1in0, neighbor2in1, neighbor1in2,		
       neighbor3in2, neighbor2in3, neighbor0in3, neighbor3in0;
@@ -186,19 +208,39 @@ public:
    //! crease data for regular inner edges
    Int32 crease[12];			 
 
+   /*
    //   -----   -----   -----
    //  |      |       |       |
    //  |      0       1       |
    //  |      |       |       |
-   //   --2--   --3--   --4--
+   //   --2-- + --3-- + --4--
    //  |      |       |       |
    //  |      5       6       |
    //  |      |       |       |
-   //   --7--   --8--   --9--
+   //   --7-- + --8-- + --9--
    //  |      |       |       |
    //  |      10     11       |
    //  |      |       |       |
    //   -----   -----   -----
+   */
+
+   //! crease data for triangles
+   Int32 tricrease[9];
+   
+   /*
+   //   \     | \     | \      
+   //     0   |   1   |   2    
+   //       \ |     \ |     \  
+   //   ----- + ----- + -----
+   //   \     | \     | \      
+   //     3   |   4   |   5    
+   //       \ |     \ |     \  
+   //   ----- + ----- + -----
+   //   \     | \     | \      
+   //     6   |   7   |   8    
+   //       \ |     \ |     \  
+   */
+   
    //! crease data for corners with valence > 4
    Int32 corcrease[4][wsdmaxvalenz];	
    //! indices to the inner-first two crease edges
@@ -210,7 +252,7 @@ public:
    FacingType isFacing;
 
    //! average of the four corner vertices
-   WSDVector faceloc;			
+   VectorType faceloc;			
       
    //! \name some helpers
    //! \{
@@ -219,6 +261,10 @@ public:
 
    //! helper for the gap prevention
    bool c0_o, c0_l, c1_l, c1_u, c2_r, c2_u, c3_r, c3_o;
+
+   //! for Loop: Single
+   bool isSingleTriangle;
+
    //! \}
 
    //! the offset within the vertexarray
@@ -232,26 +278,26 @@ public:
 
 
    //! instance shared data
-   sharedFields	    *mySharedFields;
+   sharedFields*	      mySharedFields;
 
    //! slate A
-   static WSDVector    tableA[wsdmaxindex][wsdmaxindex];
+   static VectorType*   slateA;
    //! slate B
-   static WSDVector    tableB[wsdmaxindex][wsdmaxindex];
+   static VectorType*   slateB;
    //! slate pointer A
-   static WSDVector*   ptabA;
+   static VectorType*   ptabA;
    //! slate pointer B
-   static WSDVector*   ptabB;
+   static VectorType*   ptabB;
    //! width of slate A
-   static Int32			breiteA;   
+   static Int32		  breiteA;   
    //! corners greater valence 4 in slate A
-   static WSDVectorVS  cornerA;	
+   static VectorCAType  cornerA;	
    //! corners greater valence 4 in slate B
-   static WSDVectorVS  cornerB;	
+   static VectorCAType  cornerB;	
    //! pointer corners A
-   static WSDVectorVS* pcorA;
+   static VectorCAType* pcorA;
    //! pointer corners B
-   static WSDVectorVS* pcorB;
+   static VectorCAType* pcorB;
 
    /*==========================  PRIVATE  =================================*/      
 private:
@@ -295,6 +341,19 @@ private:
 		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
 		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
 		  UInt32 &indisIn);  
+  
+   void setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add);
+   void setupHalfStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add, Int32 width);
+   void setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4);
    /*! \}                                                             */
 };
 

@@ -7,26 +7,34 @@
 \*---------------------------------------------------------------------------*/
 
 #include "OSGwsddat.h"
+#include "OSGLog.h"
+
 OSG_USING_NAMESPACE
 
+// explicit template instantiations
+template class OSG_SUBSURFACELIB_DLLMAPPING WSDdat<OSG::Vec3f, QUAD>;
+template class OSG_SUBSURFACELIB_DLLMAPPING WSDdat<OSG::Vec4f, QUAD>;
+template class OSG_SUBSURFACELIB_DLLMAPPING WSDdat<OSG::Vec3f, TRIANGLE>;
+
 // static data init
-template<class WSDVector, int mtype> WSDVector
-WSDdat<WSDVector, mtype>::tableA[wsdmaxindex][wsdmaxindex];
-template<class WSDVector, int mtype> WSDVector
-WSDdat<WSDVector, mtype>::tableB[wsdmaxindex][wsdmaxindex]; 
-template<class WSDVector, int mtype> WSDVector*
-WSDdat<WSDVector, mtype>::ptabA;
-template<class WSDVector, int mtype> WSDVector*
-WSDdat<WSDVector, mtype>::ptabB;
-template<class WSDVector, int mtype> Int32 WSDdat<WSDVector, mtype>::breiteA;
-template<class WSDVector, int mtype> WSDdat<WSDVector, mtype>::WSDVectorVS
-WSDdat<WSDVector, mtype>::cornerA;
-template<class WSDVector, int mtype> WSDdat<WSDVector, mtype>::WSDVectorVS
-WSDdat<WSDVector, mtype>::cornerB;
-template<class WSDVector, int mtype> WSDdat<WSDVector, mtype>::WSDVectorVS*
-WSDdat<WSDVector, mtype>::pcorA;
-template<class WSDVector, int mtype> WSDdat<WSDVector, mtype>::WSDVectorVS*
-WSDdat<WSDVector, mtype>::pcorB;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorType*   WSDdat<WSDVector, mtype>::slateA;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorType*   WSDdat<WSDVector, mtype>::slateB;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorType*   WSDdat<WSDVector, mtype>::ptabA;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorType*   WSDdat<WSDVector, mtype>::ptabB;
+template<class WSDVector, int mtype> 
+Int32    WSDdat<WSDVector, mtype>::breiteA;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorCAType  WSDdat<WSDVector, mtype>::cornerA;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorCAType  WSDdat<WSDVector, mtype>::cornerB;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorCAType* WSDdat<WSDVector, mtype>::pcorA;
+template<class WSDVector, int mtype> 
+typename WSDdat<WSDVector, mtype>::VectorCAType* WSDdat<WSDVector, mtype>::pcorB;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -37,11 +45,10 @@ WSDdat<WSDVector, mtype>::pcorB;
 template<class WSDVector, int mtype>
 WSDdat<WSDVector, mtype>::WSDdat()
 : tabsize(0)
-{	
-   ptabA = &tableA[0][0];
-   ptabB = &tableB[0][0];
+{  
+   ptabA = slateA;//&tableA[0][0];
+   ptabB = slateB;//&tableB[0][0];
    cvindex = 0;
-
 }
 
 template<class WSDVector, int mtype>
@@ -52,74 +59,94 @@ WSDdat<WSDVector, mtype>::~WSDdat()
 template<class WSDVector, int mtype>
 void WSDdat<WSDVector, mtype>::initptabs(void)
 {   
-   ptabA=&tableO[0][0]; breiteA=4;
-   ptabB=&tableA[0][0]; 
+   ptabA=&slateO[0][0]; breiteA=4;
+   ptabB=slateA;
    pcorA=&cornerO;
    pcorB=&cornerA;
-   tabsize = 4;
+   tabsize = 4;   
+}
+
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::initptex(void)
+{   
+   ptabA=&TexCoords[0][0]; breiteA=4;     // set the texcoords as starting slate
+   ptabB=slateA;
+   pcorA=&cornerO;
+   pcorB=&cornerA;   
+   tabsize = 4;   
 }
 
 template<class WSDVector, int mtype>
 void WSDdat<WSDVector, mtype>::rotateptabs(Int32 i)
 {
-	if (i == 0) { // on first toggle switch from tableO to tableA
-		ptabA=&tableA[0][0];
-		ptabB=&tableB[0][0];   
+	if (i == 0) { // on first toggle switch from slateO to slateA
+		ptabA=slateA;//[0][0];
+		ptabB=slateB;//[0][0];   
 		pcorA=&cornerA;
 		pcorB=&cornerB;
 	} else { // later on just switch between A and B
-	   WSDVector* ptabh=ptabA;
+	   VectorType* ptabh=ptabA;
 	   ptabA=ptabB;
 	   ptabB=ptabh;
-	   WSDVectorVS* pcorh=pcorA;
+	   VectorCAType* pcorh=pcorA;
 	   pcorA=pcorB;
 	   pcorB=pcorh;
 	}
-	breiteA=wsdmaxindex;	
+	breiteA=wsddepthindexarray[wsdmaxdepth]+2;
 }
 
 // helper for getting neighbours
 template<class WSDVector, int mtype>
-Int32 WSDdat<WSDVector, mtype>::getneighbor(Int32 from, Int32 ad)
+Int32 WSDdat<WSDVector, mtype>::getneighbor (Int32 from, Int32 ad)
 // from: index of source patch
 // ad: 1 or -1; dependant on the position ni_from+1 or ni_from-1 is the neighbor we want
 {
-	Int32 ni_from=0;
-	while (this->neighbors[ni_from] != from && ni_from<4) ni_from++;
-	if (ni_from >=4) {printf("Kritischer Fehler bei Eck-Nachbarschaft!\n"); return 0;}
+   if (this->isSingleTriangle) {
+     return 0;
+   }
+   Int32 ni_from=0;
+   while (this->neighbors[ni_from] != from && ni_from<4) ni_from++;
+   if (ni_from >= 4) {
+      SFATAL << "Kritischer Fehler bei Eck-Nachbarschaft!" << std::endl; 
+      return 0;
+   }
 
-	ni_from+=4;
-	Int32 r_i = ni_from+ad;
-
-	return this->neighbors[r_i%4];
+   ni_from+=4;
+   Int32 r_i = ni_from+ad;
+	
+   return this->neighbors[r_i%4];
 }
 
 // setup indexarray for the inner patch area
 template<class WSDVector, int mtype>
-void WSDdat<WSDVector, mtype>::setInnerGeoP(perInstanceData &insta,
-					    UInt32 &indisIn)
-{	
+void WSDdat<WSDVector, mtype>::setInnerGeoP
+(perInstanceData &insta, UInt32 &indisIn)
+{		
    Int32 breite = wsddepthindexarray[wsdmaxdepth];
-	Int32 tempexpo = (wsdmaxdepth - solltiefe);
-	if (tempexpo < 0) tempexpo = 0;
-	Int32 step = zweihoch[tempexpo];
+   Int32 tempexpo = (wsdmaxdepth - solltiefe);
+   if (tempexpo < 0) tempexpo = 0;
+   Int32 step = zweihoch[tempexpo];
 
-	Int32 s,s2,s0;
-	s0=varrayOffset+step+(step*breite);
-	// zeilenweise quadstrips
-	for (Int32 y=0; y<(wsdinnerindexwidth[solltiefe]-1); y++)	{
-		insta.oneTypes->addValue(GL_QUAD_STRIP);		
-		s=s0;
-		s2=s+(step*breite);
-		for (Int32 x=0; x<wsdinnerindexwidth[solltiefe]; x++)	{
-			insta.oneIndis->setValue(s,indisIn++);
-			insta.oneIndis->setValue(s2,indisIn++);
-			s+=step;
-			s2+=step;
-		}
-		insta.oneLengths->addValue(wsdinnerindexwidth[solltiefe]*2);      
-		s0+=(step*breite);
-	}
+   Int32 s;
+   Int32 s0=varrayOffset+step+(step*breite);
+   if (this->isSingleTriangle) {      
+      Int32 w=1;
+      // zeilenweise quad/triangle strips (nur ein Dreieck!)
+      for (Int32 y=0; y<(wsdinnerindexwidth[solltiefe]-1); y++)	{		
+	 s=s0;		
+         setupHalfStrip(insta.oneLengths, insta.oneTypes, insta.oneIndis,
+		        indisIn, s, (s+(step*breite)), step,w);			
+	 s0+=(step*breite);
+         w++;
+      }
+   } else { // zeilenweise quad/triangle strips
+      for (Int32 y=0; y<(wsdinnerindexwidth[solltiefe]-1); y++)	{		
+	 s=s0;		
+         setupStrip(insta.oneLengths, insta.oneTypes, insta.oneIndis,
+		     indisIn, s, (s+(step*breite)), step);			
+	 s0+=(step*breite);
+      }
+   }   
 }
 
 // setup indexarray for the outer patch area
@@ -128,41 +155,46 @@ void WSDdat<WSDVector, mtype>::setOuterGeoP(perInstanceData &insta,
 					    Int32 finer_l, Int32 finer_r, 
 					    Int32 finer_o, Int32 finer_u,
 					    UInt32 &indisIn)
-{		
+{   	
    if (solltiefe == 0) {
      setTiefe0(insta.oneLengths,
 	       insta.oneTypes,
 	       insta.oneIndis, indisIn);
    } else {
 		// Kanten
-		if (solltiefe > 1) {
-			setOuterRightLine(insta.oneLengths,
-				insta.oneTypes,
-				insta.oneIndis,finer_r,indisIn);
+		if (solltiefe > 1) {         
 			setOuterLeftLine(insta.oneLengths,
 				insta.oneTypes,
-				insta.oneIndis,finer_l,indisIn);
-			setOuterFirstLine(insta.oneLengths,
-				insta.oneTypes,
-				insta.oneIndis,finer_o,indisIn);
+				insta.oneIndis,finer_l,indisIn);			
 			setOuterLastLine(insta.oneLengths,
 				insta.oneTypes,
 				insta.oneIndis,finer_u,indisIn);
+         if (!this->isSingleTriangle) {
+         setOuterFirstLine(insta.oneLengths,
+				insta.oneTypes,
+				insta.oneIndis,finer_o,indisIn);
+			setOuterRightLine(insta.oneLengths,
+				insta.oneTypes,
+				insta.oneIndis,finer_r,indisIn);
+         }
 		}
+	
 		// Ecken
 			setOuterC0(insta.oneLengths,
 				insta.oneTypes,
 				insta.oneIndis,finer_o, finer_l,indisIn);
-			setOuterC1(insta.oneLengths,
+	    	setOuterC1(insta.oneLengths,
 				insta.oneTypes,
 				insta.oneIndis,finer_u, finer_l,indisIn);
 			setOuterC2(insta.oneLengths,
 				insta.oneTypes,
 				insta.oneIndis,finer_u, finer_r,indisIn);
+         if (!this->isSingleTriangle) {
 			setOuterC3(insta.oneLengths,
 				insta.oneTypes,
 				insta.oneIndis,finer_o, finer_r,indisIn);
-	}	
+         }
+	}   
 }
 
 
@@ -180,24 +212,16 @@ if (tempexpo < 0) tempexpo = 0;
 Int32 step = zweihoch[tempexpo];
 
 	if (finer_o == 0) {
-		// not finer, -> quadstrip
-		newtypes->addValue(GL_QUAD_STRIP);
-		Int32 s=step+varrayOffset;
-		Int32 s2=s+(step*breite);
-		for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
-		{
-			newindis->setValue(s,indisIn++);
-			newindis->setValue(s2,indisIn++);
-			s+=step;
-			s2+=step;
-		}
-		newlengths->addValue(wsdinnerindexwidth[solltiefe]*2);		      
+		// not finer, -> trianglestrip
+      Int32 s=step+varrayOffset;
+      setupStrip(newlengths, newtypes, newindis,
+		  indisIn, s, (s+(step*breite)), step);		
 	}
 	else {	// -> finer_o = 1	
 		Int32 halfstep = (step/2);
 		Int32 s = step+varrayOffset;
 		for (Int32 r=0; r<wsddepthindexarray[solltiefe]-3; r++, s=s+step) {
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite;
 			Int32 u;
@@ -211,7 +235,7 @@ Int32 step = zweihoch[tempexpo];
 			newindis->setValue(a-halfstep,indisIn++);in++;
 			newindis->setValue(b,indisIn++);in++;
 			newindis->setValue(b+step,indisIn++);in++;
-			newlengths->addValue(in);         
+			newlengths->push_back(in);  
 		}
 	}
 
@@ -229,23 +253,15 @@ void WSDdat<WSDVector, mtype>::setOuterLastLine(OSG::GeoPLengthsUI32::StoredFiel
 	Int32 step = zweihoch[tempexpo];
 
 	if (finer_u == 0) {
-		newtypes->addValue(GL_QUAD_STRIP);
-		Int32 s=(breite*(breite-1-step)) + step + varrayOffset;
-		Int32 s2=s+(step*breite);
-		for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
-		{
-			newindis->setValue(s,indisIn++);
-			newindis->setValue(s2,indisIn++);
-			s+=step;
-			s2+=step;
-		}
-		newlengths->addValue(wsdinnerindexwidth[solltiefe]*2);		      
+      Int32 s=((breite*(breite-1-step)) + step + varrayOffset);
+      setupStrip(newlengths, newtypes, newindis,
+		  indisIn, s, (s+(step*breite)), step);		
 	}
 	else {	// -> finer_u = 1	
 		Int32 halfstep = (step/2);
 		Int32 s = (breite*(breite-1-step)) + step + varrayOffset;
 		for (Int32 r=0; r<wsddepthindexarray[solltiefe]-3; r++, s=s+step) {
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite;
 			Int32 u;
@@ -259,7 +275,7 @@ void WSDdat<WSDVector, mtype>::setOuterLastLine(OSG::GeoPLengthsUI32::StoredFiel
 			newindis->setValue(a+halfstep,indisIn++); in++;
 			newindis->setValue(s+step,indisIn++); in++;
 			newindis->setValue(s,indisIn++); in++;
-			newlengths->addValue(in);         
+			newlengths->push_back(in); 
 		}
 	}
 
@@ -277,23 +293,15 @@ if (tempexpo < 0) tempexpo = 0;
 Int32 step = zweihoch[tempexpo];
 
 	if (finer_r == 0) {
-		newtypes->addValue(GL_QUAD_STRIP);
-		Int32 s = (breite - 1 - step) + (step*breite) + varrayOffset;	
-		Int32 s2=s+step;
-		for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
-		{
-			newindis->setValue(s,indisIn++);
-			newindis->setValue(s2,indisIn++);
-			s+=(step*breite);
-			s2+=(step*breite);
-		}
-		newlengths->addValue(wsdinnerindexwidth[solltiefe]*2);		      
+      Int32 s = ((breite - 1 - step) + (step*breite) + varrayOffset);	
+      setupStrip(newlengths, newtypes, newindis,
+		  indisIn, s, (s+step), (step*breite));		
 	}
 	else {	// -> finer_r = 1	
 		Int32 halfstep = (step /2);
 		Int32 s = (breite - 1 - step) + (step*breite) + varrayOffset;		
 		for (Int32 r=0; r<wsddepthindexarray[solltiefe]-3; r++, s+=(step*breite)){		
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			
 			Int32 a = s + halfstep + (halfstep * breite);
 			Int32 b = s + (step*breite);
@@ -307,7 +315,7 @@ Int32 step = zweihoch[tempexpo];
 				newindis->setValue(u,indisIn++); in++;}
 			newindis->setValue(s+halfstep,indisIn++); in++;
 			newindis->setValue(s,indisIn++); in++;			
-			newlengths->addValue(in);         
+			newlengths->push_back(in);  
 		}
 	}
 }
@@ -324,22 +332,15 @@ void WSDdat<WSDVector, mtype>::setOuterLeftLine(OSG::GeoPLengthsUI32::StoredFiel
 	Int32 step = zweihoch[tempexpo];
 
 	if (finer_l == 0) {
-		newtypes->addValue(GL_QUAD_STRIP);
-		Int32 s = (breite*step)+varrayOffset;
-		Int32 s2=s+step;
-		for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++) {
-			newindis->setValue(s,indisIn++);
-			newindis->setValue(s2,indisIn++);
-			s+=(step*breite);
-			s2+=(step*breite);
-		}		
-		newlengths->addValue(wsdinnerindexwidth[solltiefe]*2);		      
+      Int32 s = ((breite*step)+varrayOffset);
+      setupStrip(newlengths, newtypes, newindis,
+		  indisIn, s, (s+step), (step*breite));			      
 	}
 	else {	// -> finer_l = 1	
 		Int32 halfstep = (step /2);
 		Int32 s = (breite*step)+varrayOffset;		
 		for (Int32 r=0; r<wsddepthindexarray[solltiefe]-3; r++, s+=(step*breite)){		
-			newtypes->addValue(GL_TRIANGLE_FAN);			
+			newtypes->push_back(GL_TRIANGLE_FAN);			
 			Int32 a = s + halfstep + (halfstep * breite);
 			Int32 b = s + (step*breite);			
 			Int32 in = 0;
@@ -352,7 +353,7 @@ void WSDdat<WSDVector, mtype>::setOuterLeftLine(OSG::GeoPLengthsUI32::StoredFiel
 			newindis->setValue(b+halfstep,indisIn++);in++;
 			newindis->setValue(b+step,indisIn++); in++;
 			newindis->setValue(s+step,indisIn++); in++;			
-			newlengths->addValue(in);         
+			newlengths->push_back(in); 
 		}
 	}
 }
@@ -376,15 +377,11 @@ void WSDdat<WSDVector, mtype>::setOuterC0(OSG::GeoPLengthsUI32::StoredFieldType*
 	Int32 lc = 0;		// counter for fan length
 	if (finer_l == 0) {
 		if (finer_o == 0) {
-			newtypes->addValue(GL_QUADS);
-			newindis->setValue(s,indisIn++); 
-			newindis->setValue(s+step*breite,indisIn++);
-			newindis->setValue(s+(step*breite)+step,indisIn++); 
-			newindis->setValue(s+step,indisIn++);
-			newlengths->addValue(4);			         
+         setQuadOrTriangle(newlengths, newtypes, newindis, indisIn, s,
+             (s+(step*breite)), (s+(step*breite)+step), (s+step));			
 		}
 		else {		// -> finer_o = 1 + finer_l = 0		
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite + step;
 			Int32 u;
@@ -397,12 +394,12 @@ void WSDdat<WSDVector, mtype>::setOuterC0(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(b,indisIn++); in++;
 			newindis->setValue(a+halfstep,indisIn++); in++;
 			newindis->setValue(s+step,indisIn++); in++;
-			newlengths->addValue(in); 			         
+			newlengths->push_back(in); 
 		}
 	}
 	else {	// -> finer_l = 1	
 		if (finer_o == 0) {			
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 b = s + step*breite;
 			Int32 a = b + halfstep - (halfstep * breite);			
 			Int32 u;
@@ -416,10 +413,10 @@ void WSDdat<WSDVector, mtype>::setOuterC0(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(u+halfstep,indisIn++); in++; 
 			newindis->setValue(u+step,indisIn++); in++; 
 			newindis->setValue(s+step,indisIn++); in++; 
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}
 		else {		// -> finer_o = 1		
-			newtypes->addValue(GL_TRIANGLE_FAN);			
+			newtypes->push_back(GL_TRIANGLE_FAN);			
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite + step;
 			Int32 u;
@@ -433,7 +430,7 @@ void WSDdat<WSDVector, mtype>::setOuterC0(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(b,indisIn++); in++;
 			newindis->setValue(a+halfstep,indisIn++); in++;
 			newindis->setValue(s+step,indisIn++); in++;
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}
 	}
 }
@@ -455,15 +452,11 @@ void WSDdat<WSDVector, mtype>::setOuterC1(OSG::GeoPLengthsUI32::StoredFieldType*
 	Int32 lc = 0;		// counter for fan length
 	if (finer_l == 0) {
 		if (finer_u == 0) {
-			newtypes->addValue(GL_QUADS);
-			newindis->setValue(start,indisIn++); 
-			newindis->setValue(start+(step*breite),indisIn++);
-			newindis->setValue(start+(step*breite)+step,indisIn++); 
-			newindis->setValue(start+step,indisIn++);
-			newlengths->addValue(4);			         
+         setQuadOrTriangle(newlengths, newtypes, newindis, indisIn, start,
+             (start+(step*breite)), (start+(step*breite)+step), (start+step));			
 		}
 		else {		// -> finer_u = 1 + finer_l = 0		
-			newtypes->addValue(GL_TRIANGLE_FAN);			
+			newtypes->push_back(GL_TRIANGLE_FAN);			
 			Int32 a=start + halfstep + halfstep*breite;
 			Int32 b=start + step*breite;
 			Int32 u;
@@ -477,12 +470,12 @@ void WSDdat<WSDVector, mtype>::setOuterC1(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(a+halfstep,indisIn++); in++;
 			newindis->setValue(start+step,indisIn++); in++;
 			newindis->setValue(start,indisIn++); in++;
-			newlengths->addValue(in);					         
+			newlengths->push_back(in);	
 		}		
 	}
 	else {	// -> finer_l = 1	
 		if (finer_u == 0) {			
-			newtypes->addValue(GL_TRIANGLE_FAN);			
+			newtypes->push_back(GL_TRIANGLE_FAN);			
 			Int32 b = start + halfstep;
 			Int32 a = b + (halfstep * breite);
 			Int32 c = b - halfstep;
@@ -497,10 +490,10 @@ void WSDdat<WSDVector, mtype>::setOuterC1(OSG::GeoPLengthsUI32::StoredFieldType*
 			if (c1_u){newindis->setValue(u+halfstep,indisIn++); in++;}
 			newindis->setValue(u + step,indisIn++); in++;
 			newindis->setValue(start + step,indisIn++); in++;
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}
 		else {		// -> finer_u = 1 + finer_l = 1					
-			newtypes->addValue(GL_TRIANGLE_FAN);			
+			newtypes->push_back(GL_TRIANGLE_FAN);			
 			Int32 a=start + halfstep + halfstep*breite;
 			Int32 b=start + step*breite;
 			Int32 u;
@@ -515,7 +508,7 @@ void WSDdat<WSDVector, mtype>::setOuterC1(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(start+step,indisIn++); in++;
 			newindis->setValue(start+halfstep,indisIn++); in++;
 			newindis->setValue(start,indisIn++); in++;
-			newlengths->addValue(in);						         
+			newlengths->push_back(in);	
 		}
 	}
 }
@@ -537,15 +530,11 @@ void WSDdat<WSDVector, mtype>::setOuterC2(OSG::GeoPLengthsUI32::StoredFieldType*
 	Int32 lc = 0;		// counter for fan length
 	if (finer_r == 0) {
 		if (finer_u == 0) {
-			newtypes->addValue(GL_QUADS);
-			newindis->setValue(start,indisIn++); 
-			newindis->setValue(start+(step*breite),indisIn++);
-			newindis->setValue(start+(step*breite)+step,indisIn++); 
-			newindis->setValue(start+step,indisIn++);
-			newlengths->addValue(4);			         
+         setQuadOrTriangle(newlengths, newtypes, newindis, indisIn, start,
+             (start+(step*breite)), (start+(step*breite)+step), (start+step));			
 		}
 		else {		// -> finer_u = 1		
-			newtypes->addValue(GL_TRIANGLE_FAN);						
+			newtypes->push_back(GL_TRIANGLE_FAN);						
 			Int32 a=start + halfstep + halfstep*breite;
 			Int32 b=start + step*breite + step;
 			Int32 u;
@@ -559,12 +548,12 @@ void WSDdat<WSDVector, mtype>::setOuterC2(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(start,indisIn++); in++;
 			newindis->setValue(a-halfstep,indisIn++); in++;
 			newindis->setValue(start+step*breite,indisIn++); in++;
-			newlengths->addValue(in);						         
+			newlengths->push_back(in);	
 		}		
 	}
 	else {	// -> finer_r = 1	
 		if (finer_u == 0) {
-			newtypes->addValue(GL_TRIANGLE_FAN);						
+			newtypes->push_back(GL_TRIANGLE_FAN);						
 			Int32 ende = start+(breite*step);
 		
 			Int32 b = start;
@@ -581,10 +570,10 @@ void WSDdat<WSDVector, mtype>::setOuterC2(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(b+halfstep,indisIn++); in++;
 			newindis->setValue(b,indisIn++); in++;
 			newindis->setValue(ende,indisIn++); in++;
-			newlengths->addValue(in);						         
+			newlengths->push_back(in);	
 		}
 		else {		// -> finer_u = 1					
-			newtypes->addValue(GL_TRIANGLE_FAN);						
+			newtypes->push_back(GL_TRIANGLE_FAN);						
 			Int32 a=start + halfstep + halfstep*breite;
 			Int32 b=start + step*breite + step;
 			Int32 u;
@@ -599,7 +588,7 @@ void WSDdat<WSDVector, mtype>::setOuterC2(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(start,indisIn++);in++;
 			newindis->setValue(a-halfstep,indisIn++);in++;
 			newindis->setValue(start+step*breite,indisIn++);in++;
-			newlengths->addValue(in);						         
+			newlengths->push_back(in);	
 		}
 	}
 }
@@ -621,15 +610,11 @@ void WSDdat<WSDVector, mtype>::setOuterC3(OSG::GeoPLengthsUI32::StoredFieldType*
 	Int32 lc = 0;		// counter for fan length
 	if (finer_r == 0) {
 		if (finer_o == 0) {
-			newtypes->addValue(GL_QUADS);
-			newindis->setValue(start,indisIn++); 
-			newindis->setValue(start+(step*breite),indisIn++);
-			newindis->setValue(start+(step*breite)+step,indisIn++); 
-			newindis->setValue(start+step,indisIn++);
-			newlengths->addValue(4);			         
+         setQuadOrTriangle(newlengths, newtypes, newindis, indisIn, start,
+             (start+(step*breite)), (start+(step*breite)+step), (start+step));			
 		}
 		else {		// -> finer_o = 1 + finer_r = 0		
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 s = start;//(breite-1-step);			
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite + step;
@@ -643,12 +628,12 @@ void WSDdat<WSDVector, mtype>::setOuterC3(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(a-halfstep,indisIn++); in++;
 			newindis->setValue(s+step*breite,indisIn++); in++;
 			newindis->setValue(b,indisIn++); in++;
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}		
 	}
 	else {	// -> finer_r = 1	
 		if (finer_o == 0) {
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 ende = start;//(breite-step-1);			
 			Int32 a = ende + halfstep + (halfstep * breite);
 			Int32 b = a + halfstep + (halfstep * breite);						
@@ -662,10 +647,10 @@ void WSDdat<WSDVector, mtype>::setOuterC3(OSG::GeoPLengthsUI32::StoredFieldType*
 				newindis->setValue(u,indisIn++); in++;}
 			if (c3_o) {newindis->setValue(ende+halfstep,indisIn++); in++;}
 			newindis->setValue(ende,indisIn++); in++;
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}
 		else {		// -> finer_o = 1 + finer_r = 1						
-			newtypes->addValue(GL_TRIANGLE_FAN);
+			newtypes->push_back(GL_TRIANGLE_FAN);
 			Int32 s = start;//(breite-1-step);			
 			Int32 a=s + halfstep + halfstep*breite;
 			Int32 b=s + step*breite + step;
@@ -680,7 +665,7 @@ void WSDdat<WSDVector, mtype>::setOuterC3(OSG::GeoPLengthsUI32::StoredFieldType*
 			newindis->setValue(s+step*breite,indisIn++); in++;
 			newindis->setValue(b-halfstep,indisIn++); in++;
 			newindis->setValue(b,indisIn++); in++;
-			newlengths->addValue(in);			         
+			newlengths->push_back(in);	
 		}
 	}
 }
@@ -691,29 +676,164 @@ void WSDdat<WSDVector, mtype>::setTiefe0(OSG::GeoPLengthsUI32::StoredFieldType* 
 						OSG::GeoIndicesUI32::StoredFieldType*  newindis,
 						UInt32 &indisIn)
 {
-	Int32 breite = wsddepthindexarray[wsdmaxdepth];
+   Int32 breite = wsddepthindexarray[wsdmaxdepth];
 	Int32 tempexpo = (wsdmaxdepth - solltiefe);
 	if (tempexpo < 0) tempexpo = 0;
 	Int32 step = zweihoch[tempexpo];
-
-	Int32 halfstep = (step/2);
-
-	newtypes->addValue(GL_TRIANGLE_FAN);
+	Int32 halfstep = (step/2);	   // is 0.5 for wsdmaxdepth=0!
 	Int32 s = varrayOffset;	
 	Int32 e = s + (step*breite) + step;
 	Int32 u,in=0;
 	Int32 a=s + halfstep + halfstep*breite;
 
-	newindis->setValue(a,indisIn++); in++;
-	for (u=s; u<s+(step*breite); u+=(interstep_l*breite)) {
-		newindis->setValue(u,indisIn++); in++;}
-	for (u=s+(step*breite); u<e; u+=interstep_u) {
-		newindis->setValue(u,indisIn++); in++;}
-	for (u=e; u>s+step; u-=(interstep_r*breite)) {
-		newindis->setValue(u,indisIn++); in++;}
-	for (u=s+step; u>=s; u-=interstep_o) {
-		newindis->setValue(u,indisIn++); in++;}	
-	newlengths->addValue(in);	   
+   if (wsdmaxdepth == 0) {       // use this instead:
+      setQuadOrTriangle(newlengths,newtypes,newindis,indisIn,s,s+2,s+3,s+1);
+   } else {	   
+      newtypes->push_back(GL_TRIANGLE_FAN);
+	   newindis->setValue(a,indisIn++); in++;
+	   for (u=s; u<s+(step*breite); u+=(interstep_l*breite)) {
+		   newindis->setValue(u,indisIn++); in++;}
+	   for (u=s+(step*breite); u<e; u+=interstep_u) {
+		   newindis->setValue(u,indisIn++); in++;}
+	   for (u=e; u>s+step; u-=(interstep_r*breite)) {
+		   newindis->setValue(u,indisIn++); in++;}
+	   for (u=s+step; u>=s; u-=interstep_o) {
+		   newindis->setValue(u,indisIn++); in++;}	
+	   newlengths->push_back(in);	   
+   }
 }
 
+
+template<>
+void WSDdat<OSG::Vec3f, TRIANGLE>::setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add)
+{
+   newtypes->push_back(GL_TRIANGLE_STRIP);	
+	for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
+	{
+		newindis->setValue(s2,indisIn++);
+		newindis->setValue(s1,indisIn++);      // triangle-edge from c0 to c2!
+		s1+=add;
+		s2+=add;
+	}
+	newlengths->push_back(wsdinnerindexwidth[solltiefe]*2);
+}
+
+template<>
+void WSDdat<OSG::Vec3f, QUAD>::setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add)
+{
+   newtypes->push_back(GL_QUAD_STRIP);	
+	for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
+	{		
+		newindis->setValue(s1,indisIn++);		
+		newindis->setValue(s2,indisIn++);		
+		s1+=add;
+		s2+=add;
+	}
+	newlengths->push_back(wsdinnerindexwidth[solltiefe]*2);
+}
+
+template<>
+void WSDdat<OSG::Vec4f, QUAD>::setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add)
+{
+   newtypes->push_back(GL_QUAD_STRIP);	
+	for (Int32 j=0;j<wsdinnerindexwidth[solltiefe];j++)
+	{
+		newindis->setValue(s1,indisIn++);
+		newindis->setValue(s2,indisIn++);
+		s1+=add;
+		s2+=add;
+	}
+	newlengths->push_back(wsdinnerindexwidth[solltiefe]*2);
+}
+
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::setupStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add)
+{
+}
+
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::setupHalfStrip(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 s1, Int32 s2, Int32 add, Int32 width)
+{
+   newtypes->push_back(GL_TRIANGLE_STRIP);	
+	for (Int32 j=0;j<width;j++)
+	{
+		newindis->setValue(s2,indisIn++);
+		newindis->setValue(s1,indisIn++);
+		s1+=add;
+		s2+=add;
+	}
+  	newindis->setValue(s2,indisIn++);	
+	newlengths->push_back((width*2)+1);
+}
+
+
+template<>
+void WSDdat<OSG::Vec3f, TRIANGLE>::setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4)
+{
+   newtypes->push_back(GL_TRIANGLES);
+	newindis->setValue(p1,indisIn++); 
+	newindis->setValue(p2,indisIn++);
+	newindis->setValue(p3,indisIn++); 
+	newindis->setValue(p3,indisIn++);
+   newindis->setValue(p4,indisIn++); 
+   newindis->setValue(p1,indisIn++); 
+	newlengths->push_back(6);
+}
+
+#if 0
+template<>
+void WSDdat<OSG::Vec3f, QUAD>::setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4)
+{
+   newtypes->push_back(GL_QUADS);
+	newindis->setValue(p1,indisIn++); 
+	newindis->setValue(p2,indisIn++);
+	newindis->setValue(p3,indisIn++); 
+	newindis->setValue(p4,indisIn++);   
+	newlengths->push_back(4);
+}
+
+template<>
+void WSDdat<OSG::Vec4f, QUAD>::setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4)
+{
+   
+}
+#endif
+
+template<class WSDVector, int mtype>
+void WSDdat<WSDVector, mtype>::setQuadOrTriangle(OSG::GeoPLengthsUI32::StoredFieldType* newlengths,
+		  OSG::GeoPTypesUI8::StoredFieldType*    newtypes,
+		  OSG::GeoIndicesUI32::StoredFieldType*  newindis,
+		  UInt32 &indisIn, Int32 p1, Int32 p2, Int32 p3, Int32 p4)
+{
+   newtypes->push_back(GL_QUADS);
+	newindis->setValue(p1,indisIn++); 
+	newindis->setValue(p2,indisIn++);
+	newindis->setValue(p3,indisIn++); 
+	newindis->setValue(p4,indisIn++);   
+	newlengths->push_back(4);
+}
 

@@ -49,10 +49,14 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <malloc.h>
 #include <vector>
 #include "OSGwsddat.h"
 #include "OSGwsdmesh2dat.h"
 #include "OSGwsdsubdiv.h"
+#include "OSGwsdpairing.h"
+#include "OSGConfig.h"
+#include "OSGSubSurfaceDef.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -60,19 +64,27 @@ OSG_BEGIN_NAMESPACE
 template<class WSDVector, class Mesh> 
 struct OSG_SUBSURFACELIB_DLLMAPPING SVertexData
 {
-	typename Mesh::VertexHandle vh;
-	FacingType					ft;			// back, siluette or front
-	WSDVector					limPo;
-	WSDVector					limNo;
-	Int32							maxdepth;
+   typedef Mesh                            MeshType;
+   typedef WSDVector                       VectorType;
+   typedef typename MeshType::VertexHandle VertexHandle;
+
+   VertexHandle             vh;
+   FacingType	            ft;	// back, siluette or front
+   VectorType               limPo;
+   VectorType               limNo;
+   Int32                    maxdepth;
 };
 //! struct for quick subdivision while approx. the curvature 
 template <class Mesh> 
 struct OSG_SUBSURFACELIB_DLLMAPPING workArray
 {
-	typename Mesh::Point		p;
-	typename Mesh::FaceHandle	fh;
-	Int32							isCrease;
+   typedef Mesh                          MeshType;
+   typedef typename MeshType::FaceHandle FaceHandle;
+   typedef typename MeshType::Point	 OMPoint;
+
+   OMPoint	p;
+   FaceHandle	fh;
+   Int32	isCrease;
 };
 
 /*! Tesselator class.
@@ -80,27 +92,35 @@ struct OSG_SUBSURFACELIB_DLLMAPPING workArray
 template<class WSDVector, class Mesh, int mtype>
 class OSG_SUBSURFACELIB_DLLMAPPING WSDmain  
 {
-   typedef workArray<Mesh>		 tWorkArray[wsdmaxvalenz*2];
-   typedef typename Mesh::FaceHandle	 FaceHandle;
-   typedef typename Mesh::HalfedgeHandle HalfedgeHandle;
-   typedef typename Mesh::VertexHandle	 VertexHandle;
-   typedef typename Mesh::Point		 OMPoint;
+   enum                                { MType = mtype };
+   typedef Mesh                          MeshType;
+   typedef WSDVector                     VectorType;
+   typedef workArray<MeshType>		 WorkType;
+   typedef WorkType                      WorkArrayType[wsdmaxvalenz*2];
+   typedef typename MeshType::FaceHandle	 FaceHandle;
+   typedef typename MeshType::HalfedgeHandle HalfedgeHandle;
+   typedef typename MeshType::VertexHandle	 VertexHandle;
+   typedef typename MeshType::Point		 OMPoint;
 
    typedef std::vector<perInstanceData>	 perInstanceDataContainer;
-   typedef WSDdat<WSDVector, mtype>	 PatchData;
+   typedef WSDdat<VectorType, MType>	 PatchData;
    typedef std::vector<PatchData>	 PatchDataContainer;
 
    /*==========================  PUBLIC  =================================*/
 public:
    /*! Constructor                                */
-   WSDmain(Mesh *m);
+   WSDmain(MeshType *m);
    
    /*! Destructors                                */   
    virtual ~WSDmain();
-   
-   sharedFields			mySharedFields;		//!< Limitpoints, -normals are being shared
+
+   //! method to set the maximum tesselation depth
+   void setMaxDepth(Int32 setdepth);
+
+   sharedFields			      mySharedFields;		//!< Limitpoints, -normals are being shared
    perInstanceDataContainer	myInstances;		   //!< "per parent one Instance"-data
 
+   void initOSGStuff(Int32 fsize);                 //!< init OpenSG geodata and shared data
    void initPatches();								      //!< init patches (preprocessing)
    void initInstance(Int32 n, OSG::NodePtr& parent);	//!< init instances
    void clearInstances(void);						      //!< completely remove instances
@@ -112,15 +132,23 @@ public:
    void OpenMeshBoundingBox(OSG::Pnt3f &boundingMin, OSG::Pnt3f &boundingMax);
 
    //! FaceIndies-list
-   FaceHandle *OmeshFaceListe;  
+   FaceHandle *OmeshFaceListe[2];  
    //! returns index into OmeshFaceListe for face handle
-   Int32 getFaceIndex(FaceHandle &fh);  
+   Int32 getFaceIndex (FaceHandle fh);  
 
    //! Vertexlist
-   std::vector<SVertexData<WSDVector, Mesh> > VertexListe;
+   std::vector<SVertexData<VectorType, MeshType> > VertexListe;
 
+   //! Flags
    bool patchesready;			//!< flag: are the patches ready?
    bool isSetViewPort;			//!< flag: are the viewport parameters set?
+   bool isSetBFCull;          //!< flag: perform backface culling?
+
+
+   //! just for the show room
+   bool useCurvature;
+   bool useProjSize;
+   bool useSilhouette;
 
    //! \name for the projected patch size
    //! \{
@@ -139,7 +167,8 @@ public:
 
    Real32 hmin,hmax,hminSil;	
    Real32 Pmin,Pmax,PminSil;   
-   Real32 silEpsi;				//!< silhouette epsilon
+   Real32 VertexClassifier;				//!< silhouette epsilon
+   Real32 NormalConeAperture;          //!< curvature epsilon
    //! \}
 
    //! \name for the curvature approximation:
@@ -148,37 +177,44 @@ public:
    //! \param pmesh pointer to base mesh
    //! \param v_h vertex for calculation
    //! for a given vertex return the optimal depth
-   void getOptiDepth(Mesh *pmesh, VertexHandle v_h);
+   void getOptiDepth(MeshType *pmesh, VertexHandle v_h);
    //! \}
 
  /*==========================  PRIVATE  =================================*/
  private:
-   Mesh *pmesh;			       //!< the mesh
+   MeshType *pmesh;			       //!< the mesh
    PatchDataContainer patches;	       //!< the patches
 
+   Int32 wsdmaxdepth;         //!< maximum tesselation depth (default is 4)
+
+   //! flag for texture usage
+   bool useTexture;
+
    //! class for reading the mesh data
-   WSDmesh2dat<WSDVector, Mesh, mtype>  mesh2wsd;	
+   WSDmesh2dat<VectorType, MeshType, MType> mesh2wsd;	
    //! class containing the subdivision algorithms
-   WSDsubdiv<WSDVector, mtype> subdivwsd;
+   WSDsubdiv<VectorType, MType>             subdivwsd;
 
    //! \name for the curvature calculation
    //! \{
-   OMPoint NormCCinner(tWorkArray* wara_, Int32 v);
-   OMPoint NormCCcrease(OMPoint alpha_, tWorkArray* wara_, Int32 v, Int32 g, Int32 h);
-   void simpleSubdiv(tWorkArray* wara_, tWorkArray* waB_, OMPoint &a, Int32 i);
-   void simpleCreaseSubdiv(tWorkArray* wara_, tWorkArray* waB_, OMPoint &a,
-							   Int32 g, Int32 h, Int32 i);
-   Int32 getLimOffset(WSDdat<WSDVector, mtype> *pp, OMPoint a);
-   Real32 getGreatestAngle(tWorkArray* wara_, OMPoint &a, OMPoint &n, Int32 s, Int32 num, Int32 i);
+   OMPoint NormInner     (WorkType* wara_, Int32 v);
+   OMPoint NormCrease    (OMPoint alpha_, WorkType* wara_, Int32 v, Int32 g, Int32 h);
+   void    simpleSubdiv       (WorkType* wara_, WorkType* waB_, OMPoint &a, Int32 i);
+   void    simpleCreaseSubdiv (WorkType* wara_, WorkType* waB_, OMPoint &a,
+			       Int32 g, Int32 h, Int32 i);
+   Int32   getLimOffset     (WSDdat<VectorType, MType> *pp, OMPoint a);
+   Real32  getGreatestAngle (WorkType* wara_, OMPoint &a, OMPoint &n, Int32 s, Int32 num, Int32 i);
 
    //! \}
 
    //! \name some helpers
    //! \{
 
-   void collectNeighbors(FaceHandle f_h,WSDdat<WSDVector, mtype> *pp);   
+   void collectNeighbors(FaceHandle f_h,WSDdat<VectorType, MType> *pp);   
 
    void initOneGeo(perInstanceData *instance);				//!< OpenSG - Geometry init (per Instance)
+
+   bool isQuad(FaceHandle f_h);                          //!< returns true if f_h is a quad
 
    Int32 getIndex(OSG::NodePtr &p);
    //! \}
