@@ -83,26 +83,35 @@ RenderNode *RenderNode::_prefefined[]=
 {
     // some nvidia cards 
 
-    new RenderNode(1.0/ 14595932,          // GF 256
-                   1.0/ 14597817,
-                   1.0/110599215,
+    new RenderNode(1.0/ 14598000,          // GF 256
+                   1.0/ 14597000,
+                   1.0/110599000,
                    1.0/ 18896143,
                    1.0/ 26220918,
                    "NVIDIA Corporation",
                    "GeForce 256/AGP"),
 
-    new RenderNode(1.0/ 44471738,          // GF 3
-                   1.0/ 44436880,
-                   1.0/635452995,
+    new RenderNode(1.0/ 44471000,          // GF 3
+                   1.0/ 44436000,
+                   1.0/635452000,
                    1.0/ 24905933,
                    1.0/ 45649003,
                    "NVIDIA Corporation",
                    "GeForce3/AGP/3DNOW!"),
 
+    new RenderNode(1.0/ 24931000,          // GF 2 MX
+                   1.0/ 24930000,
+                   1.0/112858311,
+                   1.0/ 24905933,
+                   1.0/ 45649003,
+                   "NVIDIA Corporation",
+                   "GeForce2 MX/AGP/3DNOW!"),
+
+
     // some sgi cards 
 
-    new RenderNode(1.0/   959594,          // O2
-                   1.0/   556724,
+    new RenderNode(1.0/   959500,          // O2
+                   1.0/   556700,
                    1.0/ 28915540,
                    1.0/  4047028,
                    1.0/  1101353,
