@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:45:59 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -16,25 +16,25 @@ template <class ADAPTER,class CONTAINER>
 inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
 						    Real     voxels, 
 						    InitMode mode)
-  : RegularGridBase(), m_voxel(NULL)
+  : RegularGridBase()
 {
    init(box, voxels, mode);
 }
 
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::ContainerType& 
+inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType& 
 RegularGrid<ADAPTER,CONTAINER>::primitives (const i64& index)
 {
    return m_voxel[index];
 }
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
+inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType&
 RegularGrid<ADAPTER,CONTAINER>::primitives (const RegularGridIter& iter)
 {
    return m_voxel[iter.getIndex()];
 }
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
+inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType&
 RegularGrid<ADAPTER,CONTAINER>::primitives (u32 x, u32 y, u32 z)
 {
    assert(x < getNumVoxelsDim()[0]);
@@ -43,7 +43,7 @@ RegularGrid<ADAPTER,CONTAINER>::primitives (u32 x, u32 y, u32 z)
    return m_voxel[x + y*getStrides()[1] + z*getStrides()[2]];
 }
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
+inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType&
 RegularGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3i& index)
 {
    assert(index[0] < getNumVoxelsDim()[0]);
@@ -52,7 +52,7 @@ RegularGrid<ADAPTER,CONTAINER>::primitives (const VectorClass3i& index)
    return m_voxel[index.dot(getStrides())];
 }
 template <class ADAPTER,class CONTAINER>
-inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
+inline typename RegularGrid<ADAPTER,CONTAINER>::ContainerType&
 RegularGrid<ADAPTER,CONTAINER>::primitives (PointClass p)
 {
    toVoxel(p);
@@ -60,7 +60,7 @@ RegularGrid<ADAPTER,CONTAINER>::primitives (PointClass p)
 }
 
 template <class ADAPTER,class CONTAINER>
-inline std::vector<RegularGrid<ADAPTER,CONTAINER>::ContainerType>& 
+inline std::vector<typename RegularGrid<ADAPTER,CONTAINER>::ContainerType>& 
 RegularGrid<ADAPTER,CONTAINER>::getVoxel ()
 {
    return m_voxel;
@@ -79,6 +79,7 @@ inline RegularGrid<ADAPTER,CONTAINER>::~RegularGrid()
 {
 }
 
+#if 0
 template <class ADAPTER,class CONTAINER>
 inline void RegularGrid<ADAPTER,CONTAINER>::scaleUp   ()
 {
@@ -146,11 +147,10 @@ inline void RegularGrid<ADAPTER,CONTAINER>::scaleDown ()
       m_voxel.erase(m_voxel.begin()+(getNumVoxelsXY()*z),     m_voxel.begin()+(getNumVoxelsXY()*(z+2)));     
    }
 }
+#endif
 
 template <class ADAPTER,class CONTAINER>
-inline void RegularGrid<ADAPTER,CONTAINER>::init (const K6Dop& box,
-						  Real voxels, 
-						  InitMode mode)
+inline void RegularGrid<ADAPTER,CONTAINER>::init (const K6Dop& box, Real voxels, InitMode mode)
 {
    // clear old voxel-array
    i32 i;
@@ -254,17 +254,17 @@ inline void RegularGrid<ADAPTER,CONTAINER>::computeExtends(Real hlx, Real hly, R
 /** Specialization for ADAPTER==BVolAdapterBase uses calcIntersect
     for each voxel entry.
  */
-inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::calcIntersect (Intersection& hit)
+inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::calcIntersect (Intersection& in)
 {
    static FloatingComparator<Real> comp;
-   RegularGridIter iter(*this, hit.getRay());
+   RegularGridIter iter(*this, in.getRay());
    bool  result = false;
    while (iter()) {
       const std::vector<AdapterType*>& list = m_voxel[iter.getIndex()];
       for (unsigned i=0; i<list.size(); ++i) {
-	 result = list[i]->calcIntersect(hit) || result;
+	 result = list[i]->calcIntersect(in) || result;
       }
-      if (result && comp.leq(hit.getDist(), iter.getOutDist())) {
+      if (result && comp.leq(in.getDist(), iter.getOutDist())) {
 	 return true;      // return true only if hit is inside voxel
       }
    }
@@ -273,13 +273,13 @@ inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::calcInt
 /** Specialization for ADAPTER==BVolAdapterBase uses checkIntersect
     for each voxel entry.
  */
-inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::checkIntersect (const Ray& ray)
+inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::checkIntersect (const Intersection& in)
 {
-   RegularGridIter iter(*this, ray);
+   RegularGridIter iter(*this, in.getRay());
    while (iter()) {
       const std::vector<AdapterType*>& list = m_voxel[iter.getIndex()];
       for (unsigned i=0; i<list.size(); ++i) {
-	 if (list[i]->checkIntersect(ray)) {// ray did hit an item
+	 if (list[i]->checkIntersect(in)) {// ray did hit an item
 	    return true;
 	 }
       }
@@ -290,14 +290,46 @@ inline bool RegularGrid<BVolAdapterBase,std::vector<BVolAdapterBase*> >::checkIn
 /** Default implementation for all template arguments does nothing.
  */
 template <class ADAPTER,class CONTAINER>
-inline bool RegularGrid<ADAPTER,CONTAINER>::calcIntersect (Intersection& hit)
+inline bool RegularGrid<ADAPTER,CONTAINER>::calcIntersect (Intersection& in)
 {
    return false;
 }
 /** Default implementation for all template arguments does nothing.
  */
 template <class ADAPTER,class CONTAINER>
-inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const Ray& ray)
+inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const Intersection& in)
 {
    return false;
+}
+
+template <class ADAPTER,class CONTAINER>
+inline bool RegularGrid<ADAPTER,CONTAINER>::calcIntersect (const PointClass&  origin, 
+							   const VectorClass& dir,
+							   Real& dist) const
+{
+   return Inherited::calcIntersect(origin, dir, dist);
+}
+template <class ADAPTER,class CONTAINER>
+inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const PointClass&  origin, 
+							    const VectorClass& dir,
+							    const Real& dist) const
+{
+   return Inherited::checkIntersect(origin, dir, dist);
+}
+template <class ADAPTER,class CONTAINER>
+inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const PointClass& point) const
+{
+   return Inherited::checkIntersect(point);
+}
+template <class ADAPTER,class CONTAINER>
+inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const BoundingVolume<Real>& bvol) const
+{
+   return Inherited::checkIntersect(bvol);
+}
+template <class ADAPTER,class CONTAINER>
+inline bool RegularGrid<ADAPTER,CONTAINER>::checkIntersect (const PointClass& p1,
+							    const PointClass& p2,
+							    const PointClass& p3) const
+{
+   return Inherited::checkIntersect(p1, p2, p3);
 }

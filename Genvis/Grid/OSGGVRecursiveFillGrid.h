@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/16 16:27:08 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -43,7 +43,7 @@ BEGIN_GENVIS_NAMESPACE
  */
 template <class ADAPTER,
           class CONTAINER = std::vector<ADAPTER*> >
-class OSG_GENVISLIB_DLLMAPPING RecursiveFillGrid
+class RecursiveFillGrid
 {
 public:
    /*---------------------------------------------------------------------*/
@@ -64,27 +64,27 @@ public:
    /*! \name Members.                                                     */
    /*! \{                                                                 */
    inline GridType&       getGrid () const;
-   inline unsigned        getNumNonEmptyVoxels () const;
+   inline u32        getNumNonEmptyVoxels () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Fill.                                                        */
    /*! \{                                                                 */
-   unsigned fillVoxels (const std::vector<Adapter*>&    primitives);
-   unsigned fillVoxels (const std::vector<PointerType>& primitives);
+   u32 fillVoxels (const std::vector<Adapter*>&    primitives);
+   u32 fillVoxels (const std::vector<PointerType>& primitives);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 private:
    void     fillVoxels (const std::vector<Adapter*>& primitives,
-			unsigned from_x, unsigned to_x, 
-			unsigned from_y, unsigned to_y, 
-			unsigned from_z, unsigned to_z);
+			u32 from_x, u32 to_x, 
+			u32 from_y, u32 to_y, 
+			u32 from_z, u32 to_z);
    void     fillVoxels (const std::vector<PointerType>& primitives,
-			unsigned from_x, unsigned to_x, 
-			unsigned from_y, unsigned to_y, 
-			unsigned from_z, unsigned to_z);
+			u32 from_x, u32 to_x, 
+			u32 from_y, u32 to_y, 
+			u32 from_z, u32 to_z);
 
-   unsigned  m_numNonEmpty;
+   u32  m_numNonEmpty;
    GridType* m_grid;
 };
 typedef RecursiveFillGrid<BVolAdapterBase> OSGRecursiveFillGrid;

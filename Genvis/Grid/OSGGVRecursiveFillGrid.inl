@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/16 16:26:40 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -18,12 +18,12 @@ inline RecursiveFillGrid<ADAPTER,CONTAINER>::RecursiveFillGrid (GridType& grid)
 {
 }
 template <class ADAPTER, class CONTAINER>
-inline unsigned        RecursiveFillGrid<ADAPTER,CONTAINER>::getNumNonEmptyVoxels () const
+inline u32        RecursiveFillGrid<ADAPTER,CONTAINER>::getNumNonEmptyVoxels () const
 {
    return m_numNonEmpty;
 }
 template <class ADAPTER, class CONTAINER>
-inline RecursiveFillGrid<ADAPTER,CONTAINER>::GridType& 
+inline typename RecursiveFillGrid<ADAPTER,CONTAINER>::GridType& 
 RecursiveFillGrid<ADAPTER,CONTAINER>::getGrid () const
 {
    assert(m_grid != NULL);
@@ -33,15 +33,15 @@ RecursiveFillGrid<ADAPTER,CONTAINER>::getGrid () const
 template <class ADAPTER, class CONTAINER>
 inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<Adapter*>& primitives,
- unsigned from_x, unsigned to_x, 
- unsigned from_y, unsigned to_y, 
- unsigned from_z, unsigned to_z)
+ u32 from_x, u32 to_x, 
+ u32 from_y, u32 to_y, 
+ u32 from_z, u32 to_z)
 {
    static FloatingComparator<Real> comp;
 
-   unsigned dx = to_x - from_x;   // voxel area extends
-   unsigned dy = to_y - from_y;
-   unsigned dz = to_z - from_z;
+   u32 dx = to_x - from_x;   // voxel area extends
+   u32 dy = to_y - from_y;
+   u32 dz = to_z - from_z;
 
    if (primitives.size() == 0) {
       return;
@@ -53,18 +53,17 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
 		      getGrid().getLength()[2] * ((Real)from_z + (Real)dz/2));
 
    // remove all objects outside current bounding box
-   //  (we need EPSILON because of intersect test in AABox)
    K6Dop voxelBox (getGrid().getRefCenter() + offset,
-		   (Real)getGrid().getHalfLength()[0]*(dx+1)+comp.getPrecision(),
-		   (Real)getGrid().getHalfLength()[1]*(dy+1)+comp.getPrecision(),
-		   (Real)getGrid().getHalfLength()[2]*(dz+1)+comp.getPrecision());
+		   (Real)getGrid().getHalfLength()[0]*(dx+1),
+		   (Real)getGrid().getHalfLength()[1]*(dy+1),
+		   (Real)getGrid().getHalfLength()[2]*(dz+1));
 
    if (dx == 0 && dy == 0 && dz == 0) { // voxel area is single voxel !
        //!(dx|dy|dz)) {
        ++m_numNonEmpty;
        for (i64 i=0; i<primitives.size(); ++i) {
 	  BVolAdapterBase* prim = static_cast<BVolAdapterBase*>(primitives[i]);
-	  if (prim->getBoundingVolume().testIntersect(voxelBox)) {
+	  if (prim->getBoundingVolume().checkIntersect(voxelBox)) {
 	     getGrid().primitives(from_x,from_y,from_z).push_back(prim);
 	  }
        }
@@ -73,13 +72,13 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       std::vector<Adapter*> inVoxelPrimitives;
       for (i64 i=0; i<primitives.size(); ++i) {
 	 BVolAdapterBase* prim = static_cast<BVolAdapterBase*>(primitives[i]);
-	 if (prim->getBoundingVolume().testIntersect(voxelBox)) {
+	 if (prim->getBoundingVolume().checkIntersect(voxelBox)) {
 	    inVoxelPrimitives.push_back(prim);
 	 }
       }
 
       // find largest extend
-      unsigned maxdir = 2;
+      u32 maxdir = 2;
       if (dx < dy) {
          if(dy > dz) maxdir = 1;
       } else {
@@ -87,8 +86,8 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       }
 
       // prepare voxel split along largest extends
-      unsigned t1x=to_x, t1y=to_y, t1z=to_z;
-      unsigned f2x=from_x, f2y=from_y, f2z=from_z;
+      u32 t1x=to_x, t1y=to_y, t1z=to_z;
+      u32 f2x=from_x, f2y=from_y, f2z=from_z;
       switch (maxdir) {
       case 0: 
 	t1x = from_x + dx/2;
@@ -109,7 +108,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
    }
 }
 template <class ADAPTER, class CONTAINER>
-inline unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+inline u32 RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<Adapter*>& primitives)
 {
    m_numNonEmpty = 0;
@@ -125,15 +124,15 @@ inline unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
 template <class ADAPTER, class CONTAINER>
 inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<PointerType>& primitives,
- unsigned from_x, unsigned to_x, 
- unsigned from_y, unsigned to_y, 
- unsigned from_z, unsigned to_z)
+ u32 from_x, u32 to_x, 
+ u32 from_y, u32 to_y, 
+ u32 from_z, u32 to_z)
 {
    static FloatingComparator<Real> comp;
 
-   unsigned dx = to_x - from_x;   // voxel area extends
-   unsigned dy = to_y - from_y;
-   unsigned dz = to_z - from_z;
+   u32 dx = to_x - from_x;   // voxel area extends
+   u32 dy = to_y - from_y;
+   u32 dz = to_z - from_z;
 
    if (primitives.size() == 0) {
       return;
@@ -145,17 +144,16 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
 		      getGrid().getLength()[2] * ((Real)from_z + (Real)dz/2));
 
    // remove all objects outside current bounding box
-   //  (we need EPSILON because of intersect test in AABox)
    K6Dop voxelBox (getGrid().getRefCenter() + offset,
-		   (Real)getGrid().getHalfLength()[0]*(dx+1)+comp.getPrecision(),
-		   (Real)getGrid().getHalfLength()[1]*(dy+1)+comp.getPrecision(),
-		   (Real)getGrid().getHalfLength()[2]*(dz+1)+comp.getPrecision());
+		   (Real)getGrid().getHalfLength()[0]*(dx+1),
+		   (Real)getGrid().getHalfLength()[1]*(dy+1),
+		   (Real)getGrid().getHalfLength()[2]*(dz+1));
 
    if (dx == 0 && dy == 0 && dz == 0) { // voxel area is single voxel !
        //!(dx|dy|dz)) {
        ++m_numNonEmpty;
        for (i64 i=0; i<primitives.size(); ++i) {
-	  if (primitives[i]->getBoundingVolume().testIntersect(voxelBox)) {
+	  if (primitives[i]->getBoundingVolume().checkIntersect(voxelBox)) {
 	     getGrid().primitives(from_x,from_y,from_z).push_back(primitives[i]);
 	  }
        }
@@ -163,13 +161,13 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       // filter primitives into inVoxelPrimitives
       std::vector<PointerType> inVoxelPrimitives;
       for (i64 i=0; i<primitives.size(); ++i) {
-	 if (primitives[i]->getBoundingVolume().testIntersect(voxelBox)) {
+	 if (primitives[i]->getBoundingVolume().checkIntersect(voxelBox)) {
 	    inVoxelPrimitives.push_back(primitives[i]);
 	 }
       }
 
       // find largest extend
-      unsigned maxdir = 2;
+      u32 maxdir = 2;
       if (dx < dy) {
          if(dy > dz) maxdir = 1;
       } else {
@@ -177,8 +175,8 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
       }
 
       // prepare voxel split along largest extends
-      unsigned t1x=to_x, t1y=to_y, t1z=to_z;
-      unsigned f2x=from_x, f2y=from_y, f2z=from_z;
+      u32 t1x=to_x, t1y=to_y, t1z=to_z;
+      u32 f2x=from_x, f2y=from_y, f2z=from_z;
       switch (maxdir) {
       case 0: 
 	t1x = from_x + dx/2;
@@ -199,7 +197,7 @@ inline void     RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels
    }
 }
 template <class ADAPTER, class CONTAINER>
-inline unsigned RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
+inline u32 RecursiveFillGrid<ADAPTER,CONTAINER>::fillVoxels 
 (const std::vector<PointerType>& primitives)
 {
    m_numNonEmpty = 0;

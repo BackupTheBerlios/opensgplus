@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/19 21:45:59 $
+//   $Revision: 1.4 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -45,7 +45,7 @@ BEGIN_GENVIS_NAMESPACE
  */
 template <class ADAPTER,
           class CONTAINER = std::vector<ADAPTER*> >
-class OSG_GENVISLIB_DLLMAPPING RegularGrid : public RegularGridBase
+class RegularGrid : public RegularGridBase
 {
 public:
    /*---------------------------------------------------------------------*/
@@ -74,10 +74,6 @@ public:
    inline void init (const AABox& box, Real voxels, InitMode mode); 
    /*! Clear voxel array. Keep defined bounding box. */
    inline void clear (); 
-   /*! Scale grid resolutions up by 2. */
-   inline void scaleUp   ();
-   /*! Scale grid resolutions down by 2. */
-   inline void scaleDown ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
@@ -104,10 +100,22 @@ public:
    /*! \{                                                                 */
    /*! Default implementation always returns false. Specialization for 
        ADAPTER==BVolAdapterBase uses checkIntersect for each voxel entry. */
-   virtual bool checkIntersect (const Ray& ray);
+   virtual bool checkIntersect (const Intersection& in);
    /*! Default implementation always returns false. Specialization for 
        ADAPTER==BVolAdapterBase uses calcIntersect for each voxel entry.  */
-   virtual bool calcIntersect  (Intersection& hit);
+   virtual bool calcIntersect  (Intersection& in);
+
+   virtual inline bool calcIntersect  (const PointClass&  origin, 
+				       const VectorClass& dir,
+				       Real& dist) const;
+   virtual inline bool checkIntersect (const PointClass&  origin, 
+				       const VectorClass& dir,
+				       const Real& dist) const;
+   virtual inline bool checkIntersect (const PointClass& point) const;
+   virtual inline bool checkIntersect (const BoundingVolume<Real>& box) const;
+   virtual inline bool checkIntersect (const PointClass& p1, 
+				       const PointClass& p2, 
+				       const PointClass& p3) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -25,9 +25,9 @@ RegularGridIter::RegularGridIter (RegularGridBase& vs, const Ray& ray)
    m_voxHitDist = -1;
    // first point in voxelsystem
    PointClass point(ray.getOrigin());    
-   if (!vs.testIntersect(point)) { // ray origin not inside voxelsystem
+   if (!vs.checkIntersect(point)) { // ray origin not inside voxelsystem
       // intersect ray with bounding box
-      if (!vs.testIntersect(ray.getOrigin(), ray.getDirection(), m_voxHitDist)) {
+      if (!vs.checkIntersect(ray.getOrigin(), ray.getDirection(), m_voxHitDist)) {
 	 m_voxHitDist = -1;
          return;
       }
@@ -44,7 +44,7 @@ RegularGridIter::RegularGridIter (RegularGridBase& vs, const Ray& ray)
       m_v[c] = stdMin(vs.getNumVoxelsDim()[c]-1,
 	       stdMax(0, int((point[c]-vs.minVector()[c]) * vs.getInvLength()[c])));
       if (!comp.zero(ray.getDirection()[c])) {
-         Real id = 1.0/ray.getDirection()[c];
+         Real id = 1.0f/ray.getDirection()[c];
          Real vc = vs.getRefCenter()[c] + m_v[c] * vs.getLength()[c];
          m_ta[c] = (vc+vs.getHalfLength()[c]*sign_pm(ray.getDirection()[c])-ray.getOrigin()[c]) * id;
          m_dt[c] = vs.getLength()[c] * stdAbs(id);

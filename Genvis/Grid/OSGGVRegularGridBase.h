@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -165,16 +165,16 @@ inline const PointClass& RegularGridBase::getRefCenter() const
 }
 inline PointClass RegularGridBase::getRefCenter (i32 x, i32 y, i32 z) const 
 { 
-   VectorClass translate(x, y, z);
-   translate[0] *= getLength()[0];
-   translate[1] *= getLength()[1];
-   translate[2] *= getLength()[2];
+   VectorClass translate(x*getLength()[0], 
+			 y*getLength()[1], 
+			 z*getLength()[2]);
    return getRefCenter()+translate;
 }
 
 inline void RegularGridBase::getVoxel (K6Dop& box, i32 x, i32 y, i32 z) const
 {
-   box.init(getRefCenter(x, y, z), getHalfLength()[0], getHalfLength()[1], getHalfLength()[2]);
+   box.init(getRefCenter(x, y, z), 
+	    getHalfLength()[0], getHalfLength()[1], getHalfLength()[2]);
 }
 
 inline void RegularGridBase::toVoxel (PointClass& p) const

@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/19 21:46:39 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:21:21 $
 //                                                                            
 //=============================================================================
 
@@ -39,16 +39,18 @@ RegularGridPointIter::RegularGridPointIter (RegularGridBase& grid, PointClass po
    m_d = m_diff[2] = m_diff[1] = m_diff[0] = 0;
    m_dmax = stdMax(stdMax(getGrid().getNumVoxelsDim()[0], getGrid().getNumVoxelsDim()[1]), getGrid().getNumVoxelsDim()[2]);
    // first point in voxelsystem
-   if (!getGrid().testIntersect(point)) { // point not inside voxelsystem
+   if (!getGrid().checkIntersect(point)) { // point not inside voxelsystem
       // CF to be checked
       getGrid().toVoxel(point);
-      m_coord.setValues(stdClamp(0, point[0], getGrid().getNumVoxelsDim()[0]-1), 
-			stdClamp(0, point[1], getGrid().getNumVoxelsDim()[1]-1), 
-			stdClamp(0, point[2], getGrid().getNumVoxelsDim()[2]-1));
+      m_coord.setValues(i32(stdClamp(0, point[0], getGrid().getNumVoxelsDim()[0]-1)), 
+			i32(stdClamp(0, point[1], getGrid().getNumVoxelsDim()[1]-1)), 
+			i32(stdClamp(0, point[2], getGrid().getNumVoxelsDim()[2]-1)));
       m_index = m_coord.dot(getGrid().getStrides());
    } else { // point inside voxelsystem
       getGrid().toVoxel(point);
-      m_coord.setValues(point[0], point[1], point[2]);
+      m_coord.setValues(i32(point[0]), 
+			i32(point[1]), 
+			i32(point[2]));
       m_index = m_coord.dot(getGrid().getStrides());
    }
 }
@@ -60,6 +62,8 @@ i32 RegularGridPointIter::operator() ()
       return m_dmax-m_d;
    }
 
+   // For d=m_d there are
+   // 2*sum_0^(d-1) 2^(i+1) + 2^(d+1) - 2 = d^(d+2) + 2^(d+1) - 6 cells to traverse
    VectorClass3i coord;
    do {
      if (m_diff[2] < 0) { // flip m_diff[2]
@@ -86,6 +90,7 @@ i32 RegularGridPointIter::operator() ()
        }
      }
      coord.setValue(m_coord); coord += m_diff;
+     //SLOG << m_d << ": " << m_diff[0] << ", " << m_diff[1] << ", " << m_diff[2] << "=" << coord << std::endl;
    } while (   coord[0] < 0 || getGrid().getNumVoxelsDim()[0] <= coord[0]
 	    || coord[1] < 0 || getGrid().getNumVoxelsDim()[1] <= coord[1]
 	    || coord[2] < 0 || getGrid().getNumVoxelsDim()[2] <= coord[2]);
