@@ -88,6 +88,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC : public DynamicSubdivis
     /*! \{                                                                 */
 
     void  prepareFrame (const ViewportPtr& port);
+    void  prepareFrame (const Viewport* port);
 
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
@@ -144,6 +145,6 @@ OSG_END_NAMESPACE
 #include "OSGDynamicSubdivisionCCBase.inl"
 #include "OSGDynamicSubdivisionCC.inl"
 
-#define OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.h,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCC.h,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCC_H_ */

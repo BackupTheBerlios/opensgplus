@@ -96,6 +96,6 @@ struct FieldDataTraits<FCPtr<GroupPtr, DynamicSubdivisionCC<MESH> > > :
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCFIELDS_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCFields.h,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCFIELDS_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCFields.h,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCFIELDS_H_ */

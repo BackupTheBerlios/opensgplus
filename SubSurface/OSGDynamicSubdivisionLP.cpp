@@ -111,7 +111,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
 {
    Inherited::changed(whichField, origin);    
    bool update_parents = false;
-
+  
    // changed MinProjSize:
    // * update in tesselator
    if (whichField & MinProjSizeFieldMask) {
@@ -146,7 +146,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
       if (getTesselator() != NULL) {
          getTesselator()->isSetBFCull = getBackfaceCulling();         
       }
-   }   
+   }      
    // changed MinDepth
    // * update in tesselator
    if (whichField & MinDepthFieldMask) {
@@ -159,6 +159,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
    // * do tesselator preprocessing  
    if (whichField & MeshFieldMask
       || whichField & MaxDepthFieldMask ) {    // mesh has been altered or maxdepth
+         SLOG << "change erkannt für Mesh!" << std::endl;
       if (getTesselator() != NULL) {
          delete getTesselator();
       }
@@ -173,9 +174,12 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
          getTesselator()->VertexClassifier = getVertexClassifier();
          getTesselator()->NormalConeAperture = getNormalConeAperture();
          getTesselator()->isSetBFCull = getBackfaceCulling();
+         
          // preprocess         
-         getTesselator()->initPatches();              
-         update_parents = true;            // explicit update of the instances
+         /*if (!haveGeometry) {
+            getTesselator()->initPatches(NullFC);              
+         }*/
+         //update_parents = true;            // explicit update of the instances
       } else {
          SLOG << "getMesh was NULL" << std::endl;
       }
@@ -186,6 +190,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
    if (update_parents || 
       ((getTesselator() != NULL) &&        
        (whichField & ParentsFieldMask))) {      // parentsfield changed
+
       getTesselator()->clearInstances();        // delete old instances list
       if (getParents().size()>0 && getTesselator()->patchesready) {        
       UInt32 i;
@@ -217,10 +222,18 @@ Action::ResultE DynamicSubdivisionLP<MESH>::drawEnter(Action *action)
 
 template <class MESH>
 void DynamicSubdivisionLP<MESH>::prepareFrame (const ViewportPtr& port)
-{  
+{     
+   prepareFrame(port.getCPtr());
+}
+
+template <class MESH>
+void DynamicSubdivisionLP<MESH>::prepareFrame (const Viewport* port)
+{     
    SINFO << getName() << ": prepareFrame" << std::endl;
    // is getTesselator valid?
    if (getTesselator() != NULL) { 
+      
+
       // get camera object
       Matrix  camMatrix, transMatrix;     
       CameraPtr cam = port->getCamera();
@@ -259,10 +272,67 @@ void DynamicSubdivisionLP<MESH>::prepareFrame (const ViewportPtr& port)
    }
 }
 
+
 template <class MESH>
 Action::ResultE DynamicSubdivisionLP<MESH>::renderEnter (Action* action)
 {  
    SINFO << getName() << ": renderEnter" << std::endl;
+   RenderAction *da = dynamic_cast<RenderAction *>(action);
+   if (da != NULL) {
+      // is getTesselator valid?
+      if (getTesselator() != NULL) { 
+         // first time call: patches not initialized
+         if ((!getTesselator()->patchesready) && (!getTesselator()->errorcase)) {
+
+            OSG::GeometryPtr geop = NullFC;
+
+            if (getParents().size()>0) {
+               SLOG << "searching in parent 0 for children!" << std::endl;
+               NodePtr parent = getParents()[0];
+               if (parent->getNChildren()>0) {
+                  SLOG << "searching " << parent->getNChildren() << " children!" << std::endl;
+                  for (UInt32 i=0; i<parent->getNChildren(); i++) {                     
+                     NodePtr child = parent->getChild(i);
+                     char* child1001=(char*)OSG::getName(child);
+                     SLOG << "Child " << i << " is called " << child1001 << std::endl;
+                     if (strcmp(child1001,"DynSubdivNode") == 0) {
+                        SLOG << "geop found!" << std::endl;
+                        geop = GeometryPtr::dcast(child->getCore());
+                     }
+                     // TODO: speicher freigeben?
+                  }
+               }
+            }
+
+            getTesselator()->initPatches(geop);
+            // now we need to init the instances:
+         
+           
+            getTesselator()->clearInstances();        // delete old instances list
+            if (getParents().size()>0 && getTesselator()->patchesready) {        
+               UInt32 i;
+               for (i=0; i<getParents().size(); ++i) {
+                  NodePtr parent = getParents()[i];
+                  getTesselator()->initInstance(i,parent);        // geoknoten erzeugen                  
+                  parent->invalidateVolume();         
+               }    
+            }
+
+            // ok, we do one uniformSetup now
+            getTesselator()->uniformSetup(); 
+            
+         }
+
+         // if AutoUpdate is true, prepareFrame is called every frame
+         if (getAutoUpdate()) {
+            this->prepareFrame(da->getViewport());
+         }
+
+
+      }
+   }
+
+
 #if 0
    RenderAction *da = dynamic_cast<RenderAction *>(action);
    if (da != NULL) {
@@ -295,6 +365,8 @@ Action::ResultE DynamicSubdivisionLP<MESH>::renderEnter (Action* action)
    return Group::renderEnter(action);
 }
 
+
+
 template <class MESH>
 void DynamicSubdivisionLP<MESH>::adjustVolume    (Volume &volume)
 {
@@ -324,7 +396,7 @@ void DynamicSubdivisionLP<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.4 2004/05/11 10:37:17 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.5 2004/06/24 15:13:41 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONLP_INLINE_CVSID;
 }

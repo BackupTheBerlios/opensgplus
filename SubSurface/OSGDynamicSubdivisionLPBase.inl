@@ -91,7 +91,7 @@ FCPtr<GroupPtr, DynamicSubdivisionLP<MESH> > DynamicSubdivisionLPBase<MESH>::cre
     {
         fc = FCPtr<GroupPtr, DynamicSubdivisionLP<MESH> >::dcast(
             getClassType().getPrototype()-> shallowCopy()); 
-    }
+    }    
     
     return fc; 
 }
@@ -175,6 +175,14 @@ DynamicSubdivisionLPBase<MESH>::getSFTesselator(void)
 {
     return &_sfTesselator;
 }
+
+template <class MESH>
+inline
+SFBool *DynamicSubdivisionLPBase<MESH>::getSFAutoUpdate(void)
+{
+    return &_sfAutoUpdate;
+}
+
 
 template <class MESH>
 inline
@@ -370,7 +378,30 @@ void DynamicSubdivisionLPBase<MESH>::setTesselator(const OpenMeshTesselatorP &va
 }
 
 
+template <class MESH>
+inline
+bool &DynamicSubdivisionLPBase<MESH>::getAutoUpdate(void)
+{
+    return _sfAutoUpdate.getValue();
+}
+
+template <class MESH>
+inline
+const bool &DynamicSubdivisionLPBase<MESH>::getAutoUpdate(void) const
+{
+    return _sfAutoUpdate.getValue();
+}
+
+
+template <class MESH>
+inline
+void DynamicSubdivisionLPBase<MESH>::setAutoUpdate(const bool &value)
+{
+    _sfAutoUpdate.setValue(value);
+}
+
+
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.inl,v 1.4 2004/05/11 10:37:18 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionLPBase.inl,v 1.5 2004/06/24 15:13:41 fuenfzig Exp $"
 

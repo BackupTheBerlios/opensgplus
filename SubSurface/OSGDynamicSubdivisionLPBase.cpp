@@ -55,9 +55,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <OpenMesh/Core/Utils/Property.hh>
 
 #include "OSGConfig.h"
-
 #include "OSGDynamicSubdivisionLPBase.h"
 #include "OSGDynamicSubdivisionLP.h"
 
@@ -99,6 +99,10 @@ const OSG::BitVector  DynamicSubdivisionLPBase<MESH>::MeshFieldMask =
 template <class MESH>
 const OSG::BitVector  DynamicSubdivisionLPBase<MESH>::TesselatorFieldMask = 
     (1 << DynamicSubdivisionLPBase<MESH>::TesselatorFieldId);
+
+template <class MESH>
+const OSG::BitVector  DynamicSubdivisionLPBase<MESH>::AutoUpdateFieldMask = 
+    (1 << DynamicSubdivisionLPBase<MESH>::AutoUpdateFieldId);
 
 
 
@@ -181,7 +185,12 @@ FieldDescription *DynamicSubdivisionLPBase<MESH>::_desc[] =
                      "Tesselator", 
                      TesselatorFieldId, TesselatorFieldMask,
                      true,
-                     (FieldAccessMethod) &DynamicSubdivisionLPBase::getSFTesselator)
+                     (FieldAccessMethod) &DynamicSubdivisionLPBase::getSFTesselator),
+    new FieldDescription(SFBool::getClassType(), 
+                     "AutoUpdate", 
+                     AutoUpdateFieldId, AutoUpdateFieldMask,
+                     false,
+                     (FieldAccessMethod) &DynamicSubdivisionLPBase::getSFAutoUpdate)
 };
 
 
@@ -252,9 +261,10 @@ DynamicSubdivisionLPBase<MESH>::DynamicSubdivisionLPBase(void) :
     _sfMaxDepth               (UInt16(4)), 
     _sfBackfaceCulling        (bool(false)), 
     _sfMesh                   (OpenMeshP(NULL)), 
-    _sfTesselator             (OpenMeshTesselatorP(NULL)), 
+    _sfTesselator             (OpenMeshTesselatorP(NULL)),     
+    _sfAutoUpdate             (bool(true)),     
     Inherited() 
-{
+{   
 }
 
 #ifdef OSG_WIN32_ICL
@@ -271,9 +281,10 @@ DynamicSubdivisionLPBase<MESH>::DynamicSubdivisionLPBase(const DynamicSubdivisio
     _sfMaxDepth               (source._sfMaxDepth               ), 
     _sfBackfaceCulling        (source._sfBackfaceCulling        ), 
     _sfMesh                   (source._sfMesh                   ), 
-    _sfTesselator             (source._sfTesselator             ), 
+    _sfTesselator             (source._sfTesselator             ),     
+    _sfAutoUpdate             (source._sfAutoUpdate             ),     
     Inherited                 (source)
-{
+{   
 }
 
 /*-------------------------- destructors ----------------------------------*/
@@ -324,7 +335,7 @@ UInt32 DynamicSubdivisionLPBase<MESH>::getBinSize(const BitVector &whichField)
     {
         returnValue += _sfBackfaceCulling.getBinSize();
     }
-
+    
 #if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
@@ -336,6 +347,11 @@ UInt32 DynamicSubdivisionLPBase<MESH>::getBinSize(const BitVector &whichField)
         returnValue += _sfTesselator.getBinSize();
     }
 #endif
+
+    if(FieldBits::NoField != (AutoUpdateFieldMask & whichField))
+    {
+        returnValue += _sfAutoUpdate.getBinSize();
+    }
 
     return returnValue;
 }
@@ -381,17 +397,29 @@ void DynamicSubdivisionLPBase<MESH>::copyToBin(      BinaryDataHandler &pMem,
         _sfBackfaceCulling.copyToBin(pMem);
     }
 
-#if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
-        _sfMesh.copyToBin(pMem);
+       // write openmesh
+        //_sfMesh.copyToBin(pMem,*getMesh());       
+       SLOG << "writeOpenMesh call" << std::endl;
+       OSGMeshIO<MESH> myMeshIO(*getMesh());
+       myMeshIO.writeOpenMesh(pMem);
+       // fill limit points and normals to maxdepth
+       getTesselator()->preprocessInstances();      
+       
     }
 
+#if 0
     if(FieldBits::NoField != (TesselatorFieldMask & whichField))
     {
         _sfTesselator.copyToBin(pMem);
     }
 #endif
+
+    if(FieldBits::NoField != (AutoUpdateFieldMask & whichField))
+    {
+        _sfAutoUpdate.copyToBin(pMem);
+    }
 
 }
 
@@ -436,17 +464,30 @@ void DynamicSubdivisionLPBase<MESH>::copyFromBin(      BinaryDataHandler &pMem,
         _sfBackfaceCulling.copyFromBin(pMem);
     }
 
-#if 0
     if(FieldBits::NoField != (MeshFieldMask & whichField))
     {
-        _sfMesh.copyFromBin(pMem);
+       // new OpenMesh object
+       MESH* newmesh = new MESH;
+       ::OpenMesh::EPropHandleT<Int32> isCrease;
+       newmesh->add_property(isCrease,"isCrease");
+       //_sfMesh.copyFromBin(pMem,getMesh());       
+       SLOG << "readOpenMesh call" << std::endl;
+       OSGMeshIO<MESH> myMeshIO(*newmesh);
+       myMeshIO.readOpenMesh(pMem);
+       setMesh(newmesh);
     }
 
+#if 0
     if(FieldBits::NoField != (TesselatorFieldMask & whichField))
     {
         _sfTesselator.copyFromBin(pMem);
     }
 #endif
+
+    if(FieldBits::NoField != (AutoUpdateFieldMask & whichField))
+    {
+        _sfAutoUpdate.copyFromBin(pMem);
+    }
 
 }
 
@@ -483,6 +524,9 @@ void DynamicSubdivisionLPBase<MESH>::executeSyncImpl(      DynamicSubdivisionLPB
 
     if(FieldBits::NoField != (TesselatorFieldMask & whichField))
         _sfTesselator.syncWith(pOther->_sfTesselator);
+
+    if(FieldBits::NoField != (AutoUpdateFieldMask & whichField))
+        _sfAutoUpdate.syncWith(pOther->_sfAutoUpdate);
 
 
 }
@@ -523,7 +567,7 @@ OSG_END_NAMESPACE
 #if 0
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionLPBase.cpp,v 1.4 2004/05/11 10:37:18 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGDynamicSubdivisionLPBase.cpp,v 1.5 2004/06/24 15:13:41 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGDYNAMICSUBDIVISIONLPBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGDYNAMICSUBDIVISIONLPBASE_INLINE_CVSID;
 

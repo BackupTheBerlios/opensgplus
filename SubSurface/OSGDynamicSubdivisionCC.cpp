@@ -174,9 +174,11 @@ void DynamicSubdivisionCC<MESH>::changed(BitVector whichField, UInt32 origin)
          getTesselator()->VertexClassifier = getVertexClassifier();
          getTesselator()->NormalConeAperture = getNormalConeAperture();
          getTesselator()->isSetBFCull = getBackfaceCulling();
-         // preprocess        
-         getTesselator()->initPatches();                       
-         update_parents = true;            // explicit update of the instances         
+         // preprocess     
+         /*if (!haveGeometry) {
+            getTesselator()->initPatches(NullFC);              
+         } */        
+         //update_parents = true;            // explicit update of the instances         
       }
    }
    // changed ParentsField: 
@@ -215,6 +217,12 @@ Action::ResultE DynamicSubdivisionCC<MESH>::drawEnter(Action *action)
 
 template <class MESH>
 void DynamicSubdivisionCC<MESH>::prepareFrame (const ViewportPtr& port)
+{
+   prepareFrame(port.getCPtr());
+}
+
+template <class MESH>
+void DynamicSubdivisionCC<MESH>::prepareFrame (const Viewport* port)
 {  
    SINFO << getName() << ": prepareFrame" << std::endl;
    // is getTesselator valid?
@@ -261,7 +269,55 @@ void DynamicSubdivisionCC<MESH>::prepareFrame (const ViewportPtr& port)
 template <class MESH>
 Action::ResultE DynamicSubdivisionCC<MESH>::renderEnter(Action * action)
 {  
-   SINFO << getName() << ": renderEnter" << std::endl;
+   //SINFO << getName() << ": renderEnter" << std::endl;
+   RenderAction *da = dynamic_cast<RenderAction *>(action);
+   if (da != NULL) {
+      // is getTesselator valid?
+      if (getTesselator() != NULL) { 
+         // special case: bin file loaded and patches not initialized
+         if (!getTesselator()->patchesready && !getTesselator()->errorcase) {
+            OSG::GeometryPtr geop = NullFC;
+            if (getParents().size()>0) {
+               NodePtr parent = getParents()[0];
+               if (parent->getNChildren()>0) {
+                  SLOG << "searching children" << std::endl;
+                  for (UInt32 i=0; i<parent->getNChildren(); i++) {                     
+                     NodePtr child = parent->getChild(i);
+                     char* child1001=(char*)OSG::getName(child);
+                     SLOG << "Child " << i << " is called " << child1001 << std::endl;
+                     if (strcmp(child1001,"DynSubdivNode") == 0) {
+                        SLOG << "Geometry found for recycling!" << std::endl;
+                        geop = GeometryPtr::dcast(child->getCore());
+                     }
+                     // Speicher?
+                  }
+               }
+            }
+            getTesselator()->initPatches(geop);
+
+            // now we need to init the instances:
+            getTesselator()->clearInstances();                    // delete old instances list
+            if (getParents().size()>0 && getTesselator()->patchesready) {        
+               UInt32 i;
+               for (i=0; i<getParents().size(); ++i) {
+                  NodePtr parent = getParents()[i];
+                  getTesselator()->initInstance(i,parent);        // create geometrynode                  
+                  parent->invalidateVolume();         
+               }    
+            }
+
+            // ok, we do one uniformSetup now
+            getTesselator()->uniformSetup();             
+         }
+
+
+         // if AutoUpdate is true, prepareFrame is called every frame
+         if (getAutoUpdate()) {            
+            this->prepareFrame(da->getViewport());
+         }
+
+      }
+   }
    return Group::renderEnter(action);
 }
 
@@ -294,7 +350,7 @@ void DynamicSubdivisionCC<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionCC.cpp,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONCC_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONCC_INLINE_CVSID;
 }

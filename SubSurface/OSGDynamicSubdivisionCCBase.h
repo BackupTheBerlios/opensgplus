@@ -67,6 +67,7 @@
 #include "OSGOpenMeshPFields.h"           // Mesh type
 #include "OSGOpenMeshTesselatorPFields.h" // Tesselator type
 #include "OSGDynamicSubdivisionCCFields.h"
+#include "OSGMeshIO.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -104,7 +105,8 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
         BackfaceCullingFieldId    = MaxDepthFieldId           + 1,
         MeshFieldId               = BackfaceCullingFieldId    + 1,
         TesselatorFieldId         = MeshFieldId               + 1,
-        NextFieldId               = TesselatorFieldId         + 1
+        AutoUpdateFieldId         = TesselatorFieldId         + 1,
+        NextFieldId               = AutoUpdateFieldId         + 1
     };
 
 #ifdef OSG_WIN32_ICL
@@ -117,6 +119,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector BackfaceCullingFieldMask;
     static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector MeshFieldMask;
     static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector TesselatorFieldMask;
+    static const OSG_SUBSURFACELIB_DLLMAPPING OSG::BitVector AutoUpdateFieldMask;
 #else
     static const OSG::BitVector MinProjSizeFieldMask;
     static const OSG::BitVector MaxProjSizeFieldMask;
@@ -127,6 +130,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     static const OSG::BitVector BackfaceCullingFieldMask;
     static const OSG::BitVector MeshFieldMask;
     static const OSG::BitVector TesselatorFieldMask;
+    static const OSG::BitVector AutoUpdateFieldMask;
 #endif
 
     /*---------------------------------------------------------------------*/
@@ -161,6 +165,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     inline SFBool                *getSFBackfaceCulling   (void);
     inline SFOpenMeshP           *getSFMesh              (void);
     inline SFOpenMeshTesselatorP *getSFTesselator        (void);
+    inline SFBool                *getSFAutoUpdate        (void);
            
     inline       Real32              &getMinProjSize         (void);
     inline const Real32              &getMinProjSize         (void) const;
@@ -180,6 +185,8 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     inline const OpenMeshP           &getMesh                (void) const;
     inline       OpenMeshTesselatorP &getTesselator          (void);
     inline const OpenMeshTesselatorP &getTesselator          (void) const;
+    inline       bool                &getAutoUpdate          (void);
+    inline const bool                &getAutoUpdate          (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -195,6 +202,7 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
      inline void setBackfaceCulling   ( const bool &value );
      inline void setMesh              ( const OpenMeshP &value );
      inline void setTesselator        ( const OpenMeshTesselatorP &value );
+     inline void setAutoUpdate        ( const bool &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -241,15 +249,17 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    SFReal32            _sfMinProjSize;
-    SFReal32            _sfMaxProjSize;
-    SFReal32            _sfVertexClassifier;
-    SFReal32            _sfNormalConeAperture;
-    SFUInt16            _sfMinDepth;
-    SFUInt16            _sfMaxDepth;
-    SFBool              _sfBackfaceCulling;
-    SFOpenMeshP         _sfMesh;
+    SFReal32                _sfMinProjSize;
+    SFReal32                _sfMaxProjSize;
+    SFReal32                _sfVertexClassifier;
+    SFReal32                _sfNormalConeAperture;
+    SFUInt16                _sfMinDepth;
+    SFUInt16                _sfMaxDepth;
+    SFBool                  _sfBackfaceCulling;
+    SFOpenMeshP             _sfMesh;
     SFOpenMeshTesselatorP   _sfTesselator;
+    SFBool                  _sfAutoUpdate;
+
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -298,6 +308,6 @@ class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase : public Group
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_HEADER_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.h,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $"
 
 #endif /* _OSGDYNAMICSUBDIVISIONCCBASE_H_ */

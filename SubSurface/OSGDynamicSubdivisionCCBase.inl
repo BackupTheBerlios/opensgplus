@@ -179,6 +179,15 @@ DynamicSubdivisionCCBase<MESH>::getSFTesselator(void)
 
 template <class MESH>
 inline
+SFBool *DynamicSubdivisionCCBase<MESH>::getSFAutoUpdate(void)
+{
+    return &_sfAutoUpdate;
+}
+
+
+
+template <class MESH>
+inline
 Real32 &DynamicSubdivisionCCBase<MESH>::getMinProjSize(void)
 {
     return _sfMinProjSize.getValue();
@@ -370,8 +379,28 @@ void DynamicSubdivisionCCBase<MESH>::setTesselator(const OpenMeshTesselatorP &va
     _sfTesselator.setValue(value);
 }
 
+template <class MESH>
+inline
+bool &DynamicSubdivisionCCBase<MESH>::getAutoUpdate(void)
+{
+    return _sfAutoUpdate.getValue();
+}
+
+template <class MESH>
+inline
+const bool &DynamicSubdivisionCCBase<MESH>::getAutoUpdate(void) const
+{
+    return _sfAutoUpdate.getValue();
+}
+
+template <class MESH>
+inline
+void DynamicSubdivisionCCBase<MESH>::setAutoUpdate(const bool &value)
+{
+    _sfAutoUpdate.setValue(value);
+}
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.5 2004/05/11 10:37:17 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.6 2004/06/24 15:13:41 fuenfzig Exp $"
 
