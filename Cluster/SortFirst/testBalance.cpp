@@ -9,6 +9,7 @@
 #include <OSGTransform.h>
 #include <OSGSceneFileHandler.h>
 #include <OSGRenderNode.h>
+#include <OSGSimpleMaterial.h>
 
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
@@ -18,6 +19,7 @@ GeoLoadManager *loadManager;
 char           *dumpImage="balance";
 int             dumpImageNr=0;
 bool            useFaceDistribution=false;
+bool            viewVolume=false;
 
 class MySceneManager:public SimpleSceneManager
 {
@@ -50,6 +52,9 @@ public:
         loadManager->update(_win->getPort()[0]->getRoot());
         loadManager->balance(_win->getPort()[0],false,region);
         _win->renderAllViewports( _action );
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        if(viewVolume)
+            loadManager->drawVolumes(_win);
         glPushMatrix();
         glLoadIdentity();
         glMatrixMode(GL_PROJECTION);
@@ -81,6 +86,7 @@ public:
         glPopMatrix();
         glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
+        glPopAttrib();
 
         if(doSave)
         {
@@ -145,22 +151,22 @@ void key(unsigned char key, int , int )
 {
     switch(key)
     {
-    case 27:    exit(1);
-    case 'm':   doSave=!doSave;
-                break;
-    case 'a':   mgr->setHighlight(scene);
-                break;
-    case 's':   mgr->setHighlight(NullFC);
-                break;
-    case 'l':   mgr->useOpenSGLogo();
-                break;
-    case 'f':   mgr->setNavigationMode(Navigator::FLY);
-                break;
-    case 't':   mgr->setNavigationMode(Navigator::TRACKBALL);
-                break;
-case  'c': glutSetCursor(GLUT_CURSOR_NONE); break;
-case  'C': glutSetCursor(GLUT_CURSOR_CYCLE); break;
-
+        case 27:    exit(1);
+        case 'm':   doSave=!doSave;
+            break;
+        case 'a':   mgr->setHighlight(scene);
+            break;
+        case 's':   mgr->setHighlight(NullFC);
+            break;
+        case 'l':   mgr->useOpenSGLogo();
+            break;
+        case 'f':   mgr->setNavigationMode(Navigator::FLY);
+            break;
+        case 't':   mgr->setNavigationMode(Navigator::TRACKBALL);
+            break;
+        case  'c': glutSetCursor(GLUT_CURSOR_NONE); break;
+        case  'C': glutSetCursor(GLUT_CURSOR_CYCLE); break;
+        case 'v': viewVolume=!viewVolume; break;
     }
     glutPostRedisplay();
 }
@@ -172,6 +178,7 @@ int main (int argc, char **argv)
     float ca=-1,cb=-1,cc=-1;
     // OSG init
     osgInit(argc,argv);
+    char *filename=NULL;
 
     // GLUT init
     glutInit(&argc, argv);
@@ -199,9 +206,18 @@ int main (int argc, char **argv)
 
     for(i=1;i<argc;++i)
     {
-        if(argv[i][0] =='-' &&
-           argv[i][1] =='d')
-            useFaceDistribution=true;
+        if(argv[i][0] =='-')
+        {
+            switch(argv[i][1])
+            {
+                case 'd':
+                    useFaceDistribution=true;
+                    break;
+                case 'v':
+                    viewVolume=true;
+                    break;
+            }
+        }
         else
         {
             if(argv[i][0] >='0' &&
@@ -218,51 +234,73 @@ int main (int argc, char **argv)
             }
             else
             {
-                file = OSG::SceneFileHandler::the().read(argv[1]);
-                beginEditCP(scene);
-                scene->addChild(file);
-                endEditCP(scene);
+                filename=argv[1];
             }
         }
     }
-    if(ca==-1)
-        ca=4;
-    if(cb==-1)
-        cb=ca;
-    if(cc==-1)
-        cc=cb;
-    if(file == NullFC)
+    if(ca == -1 && filename)
     {
-        GeometryPtr geo=makeBoxGeo(.6,.6,.6,5,5,5);
-
-        NodePtr node;
-        NodePtr geoNode;
-        TransformPtr trans;
-        for(x=-ca/2 ; x<ca/2 ; x++)
-            for(y=-cb/2 ; y<cb/2 ; y++)
-                for(z=-cc/2 ; z<cc/2 ; z++)
-                {
-                    trans=Transform::create();
-                    node=Node::create();
-                    geoNode=Node::create();
-
-                    beginEditCP(geoNode);
-                    beginEditCP(trans);
-                    beginEditCP(node);
-
-                    node->setCore(trans);
-                    trans->getMatrix().setTranslate(x,y,z);
-                    geoNode=Node::create();
-                    geoNode->setCore(geo);
-                    node->addChild( geoNode );
-                    beginEditCP(scene);
-                    scene->addChild(node);
-
-                    endEditCP(geoNode);
-                    endEditCP(scene);
-                    endEditCP(trans);
-                    endEditCP(node);
-                }
+        file = OSG::SceneFileHandler::the().read(filename);
+        beginEditCP(scene);
+        scene->addChild(file);
+        endEditCP(scene);
+    }
+    else
+    {
+        if(ca==-1)
+            ca=4;
+        if(cb==-1)
+            cb=ca;
+        if(cc==-1)
+            cc=cb;
+        if(file == NullFC)
+        {
+            GeometryPtr geo=makeBoxGeo(.6,.6,.6,5,5,5);
+            beginEditCP(geo);
+            SimpleMaterialPtr mat=SimpleMaterial::create();
+            beginEditCP(mat);
+            mat->setAmbient(Color3f(.4,.4,.4));
+            mat->setSpecular(Color3f(0,0,0));
+            mat->setDiffuse(Color3f(1,1,1));
+            endEditCP(mat);
+            geo->setMaterial(mat);
+            endEditCP(geo);
+            NodePtr node;
+            NodePtr geoNode;
+            TransformPtr trans;
+            for(x=-ca/2 ; x<ca/2 ; x++)
+                for(y=-cb/2 ; y<cb/2 ; y++)
+                    for(z=-cc/2 ; z<cc/2 ; z++)
+                    {
+                        trans=Transform::create();
+                        node=Node::create();
+                        geoNode=Node::create();
+                        
+                        beginEditCP(geoNode);
+                        beginEditCP(trans);
+                        beginEditCP(node);
+                        
+                        node->setCore(trans);
+                        trans->getMatrix().setTranslate(x,y,z);
+                        if(!filename)
+                        {
+                            geoNode=Node::create();
+                            geoNode->setCore(geo);
+                        }
+                        else
+                        {
+                            geoNode = OSG::SceneFileHandler::the().read(filename);
+                        }
+                        node->addChild( geoNode );
+                        beginEditCP(scene);
+                        scene->addChild(node);
+                        
+                        endEditCP(geoNode);
+                        endEditCP(scene);
+                        endEditCP(trans);
+                        endEditCP(node);
+                    }
+        }
     }
     // create the SimpleSceneManager helper
     mgr = new MySceneManager;

@@ -57,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.10 2002/04/30 16:37:12 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.11 2002/05/05 11:19:27 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -122,6 +122,7 @@ void GeoLoad::updateView(Matrix &viewing,
     Pnt3f  pnt;
     Real32 minx,miny;
     Real32 maxx,maxy;
+    Matrix *p;
 
     // get whole transformation
     Matrix m=_node->getToWorld();
@@ -148,15 +149,23 @@ void GeoLoad::updateView(Matrix &viewing,
     }
     if(vol[1][2] > -rNear)
     {
+        // volume lays on the fron clipping plane
         vol[1][2] = -rNear;
+        p=&projection;
+    }
+    else
+    {
+        // volume lays on the visible side of the clipping plane
+        _node->getVolume().getBounds(vol[0], vol[1]);
+        m.multLeft(projection);
+        p=&m;
     }
     // create corners of a bounding box
     for(int i=0;i<8;++i)
     {
-        projection.multFullMatrixPnt(Pnt3f( vol[ (i   )&1 ][0] ,
-                                            vol[ (i>>1)&1 ][1] ,
-                                            vol[ (i>>2)&1 ][2]) , pnt);
-
+        p->multFullMatrixPnt(Pnt3f( vol[ (i   )&1 ][0] ,
+                                    vol[ (i>>1)&1 ][1] ,
+                                    vol[ (i>>2)&1 ][2]) , pnt);
         if(i>0)
         {
             if(minx > pnt[0]) minx = pnt[0];
@@ -186,7 +195,6 @@ void GeoLoad::updateView(Matrix &viewing,
         if(_min[1]<0) _min[1]=0;
         if(_max[0]>=width ) _max[0]=width-1;
         if(_max[1]>=height) _max[1]=height-1;
-
         _visible = true;
     }
 }

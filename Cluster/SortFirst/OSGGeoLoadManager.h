@@ -104,6 +104,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
                              bool              shrink,
                              ResultT          &result );
     void addRenderNode      (const RenderNode &rn,UInt32 id);
+    void drawVolumes        (WindowPtr win);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -192,7 +193,7 @@ OSG_END_NAMESPACE
 
 #include "OSGGeoLoadManager.inl"
 
-#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.6 2002/05/03 15:48:00 marcus Exp $"
+#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.7 2002/05/05 11:19:27 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
 

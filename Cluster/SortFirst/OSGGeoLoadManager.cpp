@@ -70,7 +70,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.11 2002/05/03 15:48:00 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.12 2002/05/05 11:19:27 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
     static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
@@ -268,6 +268,35 @@ void GeoLoadManager::addRenderNode(const RenderNode &rn,UInt32 id)
     while(_renderNode.size()<=id)
         _renderNode.push_back(RenderNode());
     _renderNode[id]=rn;
+}
+
+void GeoLoadManager::drawVolumes(WindowPtr win)
+{
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glViewport(0,0,win->getWidth(),win->getHeight());
+    gluOrtho2D(0,win->getWidth(),
+               0,win->getHeight());
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_COLOR_MATERIAL);
+    for(GeoLoadLstT::iterator l=_geoLoad.begin() ; l!=_geoLoad.end() ; ++l)
+    {
+        glBegin(GL_LINE_LOOP);
+        glColor3f(0, 1, 0);
+        glVertex3f(l->getMin()[0],l->getMin()[1],0);
+        glVertex3f(l->getMax()[0],l->getMin()[1],0);
+        glVertex3f(l->getMax()[0],l->getMax()[1],0);
+        glVertex3f(l->getMin()[0],l->getMax()[1],0);
+        glEnd();
+    }
+    glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_DEPTH_TEST);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 }
 
 /** Add all geometry nodes in the given tree
