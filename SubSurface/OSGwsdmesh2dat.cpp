@@ -33,10 +33,16 @@ WSDmesh2dat<WSDVector, Mesh, mtype>::WSDmesh2dat(MeshType *m)
       SINFO << "counting creases" << std::endl;
       // property counting creases around a vertex
       mesh->add_property(creasecount);
-      for (Mesh::VertexIter v_it=mesh->vertices_begin(); v_it!=mesh->vertices_end(); ++v_it) {
+      for (typename Mesh::VertexIter v_it=mesh->vertices_begin(); 
+	   v_it!=mesh->vertices_end(); 
+	   ++v_it) {
          mesh->property(creasecount,v_it.handle()) = 0;
-         for (Mesh::VertexEdgeIter ve_it=mesh->ve_iter(v_it.handle()); ve_it; ++ve_it) {
-            if (mesh->property(isCrease,ve_it.handle()) != 0) mesh->property(creasecount,v_it.handle())++;
+         for (typename Mesh::VertexEdgeIter ve_it=mesh->ve_iter(v_it.handle());
+	      ve_it; 
+	      ++ve_it) {
+            if (mesh->property(isCrease,ve_it.handle()) != 0) {
+	       mesh->property(creasecount,v_it.handle())++;
+	    }
          }
       }
       //
