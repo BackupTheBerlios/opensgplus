@@ -124,6 +124,10 @@ void OcclusionTest<octest, ocstatistics>::frameExit(void)
 {
 	_octest.frameExit();
 	_stats.print();
+	if(_stats.statistics()){
+		if(_stats.visualize())
+			_octest.visualize();
+	}
 };
 
 /**

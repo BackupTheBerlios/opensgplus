@@ -156,6 +156,13 @@ void Occlusion::exit(void)
 {
 };
 			
+/**
+*/
+inline
+void Occlusion::visualize(void)
+{
+};
+			
 /*---------------------------- properties ---------------------------------*/
 
 /*-------------------------- your_category---------------------------------*/

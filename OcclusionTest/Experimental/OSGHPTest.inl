@@ -180,6 +180,13 @@ void HPTest::exit(void){
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 };
 
+/**
+*/
+inline
+void Occlusion::visualize(void)
+{
+};
+			
 /*---------------------------- properties ---------------------------------*/
 
 /*-------------------------- your_category---------------------------------*/
