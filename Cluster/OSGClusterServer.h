@@ -58,9 +58,6 @@ class RemoteAspect;
 class Thread;
 class RenderAction;
 
-//! Brief
-//! \ingroup baselib
-
 class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
 {
     /*==========================  PUBLIC  =================================*/

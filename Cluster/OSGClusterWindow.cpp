@@ -74,16 +74,23 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \defgroup ClusterLib Cluster library
+/** \defgroup ClusterLib Cluster library
+ * 
+ * The cluster library includes all objects concerning with clustering
+ * and remote rendering
+ **/
 
-The cluster library includes all objects concerning with clustering
-and remote rendering
-
-*/
-
-/*! \class osg::ClusterWindow
-Base class for cluster configurations
-*/
+/** \class osg::ClusterWindow
+ *  \ingroup ClusterLib
+ *  \brief Abstract base class for cluster configurations
+ *
+ * A ClusterWindow describes a clustering algorithm. A ClusterWindow
+ * inherits the ability to connect rendering servers and initiate
+ * remote rendering. By configuring the cluster algorithm with an
+ * OpenSG Window structure, it is possible to use cluster rendering
+ * in the same way as rendering in a GLUT or Qt window.
+ *
+ **/
 
 /*----------------------- constructors & destructors ----------------------*/
 
@@ -265,18 +272,23 @@ void ClusterWindow::frameExit(void)
 
 /*----------------------------- client methods ----------------------------*/
 
-/*! init client window
+/** init client window
  *  
- */
+ * In a derived cluster window this method is called before the first
+ * sync with the rendering servers. There is no default action.
+ *  
+ **/
 
 void ClusterWindow::clientInit( void )
 {
 }
 
-/*! client frame before sync
+/** client frame before sync
  *  
- *  default action activate client if client window is given
- */
+ * In a derived cluster window this method is called before 
+ * sync with the rendering servers. Default aciton is to activate
+ * and init the client window.
+ **/
 
 void ClusterWindow::clientPreSync( void )
 {
@@ -287,10 +299,12 @@ void ClusterWindow::clientPreSync( void )
     }
 }
 
-/*! initiate client rendering
+/** initiate client rendering
  *  
- *  default is to render all viewports with the given action
- */
+ * In a derived cluster window this method is called after the 
+ * sync with all rendering servers. Default aciton is to render all
+ * viewports of the client window.
+ **/
 
 void ClusterWindow::clientRender( RenderAction *action )
 {
@@ -300,10 +314,11 @@ void ClusterWindow::clientRender( RenderAction *action )
     }
 }
 
-/*! swap client window
+/** swap client window
  *  
- *  default is to swap the given window
- */
+ * In a derived cluster window this method is called after rendering
+ * Default aciton is to swap the local client window.
+ **/
 
 void ClusterWindow::clientSwap( void )
 {
@@ -316,25 +331,29 @@ void ClusterWindow::clientSwap( void )
 
 /*----------------------------- server methods ----------------------------*/
 
-/*! initialise the cluster window on the server side
+/** initialise the cluster window on the server side
  *  
- *  !param window     server render window
- *  !param id         server id
- */
+ * This method is called after the first sync.
+ *  
+ * \param window     server render window
+ * \param id         server id
+ **/
 
 void ClusterWindow::serverInit( WindowPtr ,
                                 UInt32 )
 {
 }
 
-/*! render server window
+/** render server window
  *  
- *  default action is to render all viewports with the given action
+ * This method is called after synchronisation of all changes with the
+ * rendering client. Default action is to render all viewports with the
+ * given action
  *  
- *  !param window     server render window
- *  !param id         server id
- *  !param action     action
- */
+ * !param window     server render window
+ * !param id         server id
+ * !param action     action
+ **/
 
 void ClusterWindow::serverRender( WindowPtr window,
                                   UInt32 ,
@@ -345,12 +364,15 @@ void ClusterWindow::serverRender( WindowPtr window,
     window->renderAllViewports( action );
 }
 
-/*! swap server window
+/** swap server window
  *  
- *  !param window     server render window
- *  !param id         server id
- *  !param connection connection to client
- */
+ * <code>serverSwap</code> is called after rendering. Default action is
+ * to swap the rendering window. 
+ *  
+ * !param window     server render window
+ * !param id         server id
+ * !param connection connection to client
+ **/
 
 void ClusterWindow::serverSwap        ( WindowPtr window,
                                         UInt32 )
@@ -358,4 +380,3 @@ void ClusterWindow::serverSwap        ( WindowPtr window,
     window->swap();
     window->frameExit();
 }
-

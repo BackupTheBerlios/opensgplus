@@ -53,6 +53,11 @@
 
 OSG_BEGIN_NAMESPACE
 
+/** \class ClusterException
+ *  \ingroup ClusterLib
+ *  \brief Indicate cluster exceptions
+ **/
+
 class OSG_CLUSTERLIB_DLLMAPPING ClusterException : public Exception 
 {
 public:
@@ -61,6 +66,11 @@ public:
         _what += "ClusterLib: ";
     }
 };
+
+/** \class ClusterException
+ *  \ingroup ClusterLib
+ *  \brief Indicate close of connecitons
+ **/
 
 class OSG_CLUSTERLIB_DLLMAPPING ConnectionClosed : public ClusterException
 {

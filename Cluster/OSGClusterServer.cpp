@@ -68,14 +68,37 @@ namespace
 #pragma reset woff 1174
 #endif
 
-/*! \class osg::ClusterServer
-    ClusterServer documentation,
- */
+/** \class osg::ClusterServer
+ *  \ingroup ClusterLib
+ *  \brief Cluster rendering server
+ *
+ * A ClusterServer is responsible for syncronizing all client changes.
+ * Each cluster renderer can offer it's service by a symbolic name.
+ * So it is possible to have a server called "left" or "right".
+ * The server uses a local Qt or GLUT window for rendering. 
+ * <pre>
+ * // create a server
+ * GLUTWindowPtr window=GLUTWindow::create();
+ * server = new ClusterServer(window,"server1","Multicast");
+ * // wait for clients to connect
+ * server->init();
+ * ...
+ * // render
+ * server->render(ract);
+ * </pre>
+ **/
 
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
-/*! Constructor documentation
+/*! Constructor 
+ *
+ * \param window          rendering window. e.g. a Qt or GLUT window 
+ * \param serviceName     wait for connections that request this name
+ * \param connectionType  network type. e.g. "Multicast"
+ * \param address         address to wait for connections
+ * \param servicePort     port to wait for connections
+ *
  */
 ClusterServer::ClusterServer(WindowPtr window,
                              const string &serviceName,
@@ -101,7 +124,9 @@ ClusterServer::ClusterServer(WindowPtr window,
 /*-------------------------------------------------------------------------*/
 /*                             Destructor                                  */
 
-/*! Destructor documentation
+/*! Destructor
+ *
+ * Disconnect from all connected rendering servers
  */
 ClusterServer::~ClusterServer(void)
 {
@@ -126,8 +151,10 @@ ClusterServer::~ClusterServer(void)
 
 
 /*! start server
+ *
+ * Start cluster server and wait for a client to connect. This method
+ * will return after a client connection or an error situation.
  */
-
 void ClusterServer::init()
 {
     OSG::FieldContainerType *fct;
@@ -156,8 +183,18 @@ void ClusterServer::init()
 }
 
 /*! render server window
+ *
+ * Synchronize all field containers with the client and call 
+ * <code>serverInit</code>, <code>serverRender</code> and
+ * <code>serverSwap</code> for the cluster window.
+ * The cluster server uses the first synced ClusterWindow that 
+ * contains the name of this server. <code>serverInit</code> is
+ * called after the first ClusterWindow sync. 
+ *
+ * \param action   RenderAction to use for rendering
+ *
+ * \todo Sync RenderAciton contents
  */
-
 void ClusterServer::render(RenderAction *action)
 {
     // do we have a cluster window?
@@ -191,6 +228,9 @@ void ClusterServer::render(RenderAction *action)
 }
 
 /*! configuration chagne callback
+ *
+ * this is a callback functor. It is called for each change of 
+ * a ClusterWindow.
  */
 
 Bool ClusterServer::configChanged(FieldContainerPtr& fcp,
@@ -210,7 +250,11 @@ Bool ClusterServer::configChanged(FieldContainerPtr& fcp,
     return true;
 }
 
-/*! tell address of server requested over multicast
+/*! tell address of server requested over broadcast
+ *
+ * serviceProc is a static class function that is processed in a
+ * seperate thread. It tells all requesting clients on which
+ * network address this server is waiting for connecitons.
  */
 
 void *ClusterServer::serviceProc(void *arg)
