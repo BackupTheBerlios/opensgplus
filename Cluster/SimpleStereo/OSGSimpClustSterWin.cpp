@@ -59,7 +59,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.2 2002/01/02 16:41:27 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGSimpClustSterWin.cpp,v 1.3 2002/01/02 17:34:06 marcus Exp $";
     static char cvsid_hpp[] = OSGSCLUSTSTERWIN_HEADER_CVSID;
     static char cvsid_inl[] = OSGSCLUSTSTERWIN_INLINE_CVSID;
 }
@@ -182,8 +182,13 @@ void SimpClustSterWin::serverRender(WindowPtr window,UInt32 id,
     serverCam->setWhicheye(id);
     endEditCP(serverCam);
 
+    beginEditCP(svp);
+    svp->setSize      ( 0,0, 1,1 );
+    endEditCP(svp);
+
     // server rendering
     Inherited::serverRender(window,id,action);
+
 }
 
 /*! initialize server window
