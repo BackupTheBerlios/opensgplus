@@ -116,7 +116,6 @@ const char *Socket::getErrorStr()
     {
         case WSAEINTR: return "WSAEINTR"; 
         case WSAEBADF: return "WSAEBADF"; 
-        case WSEACCES: return "WSEACCES"; 
         case WSAEFAULT: return "WSAEFAULT"; 
         case WSAEINVAL: return "WSAEINVAL"; 
         case WSAEMFILE: return "WSAEMFILE"; 
