@@ -39,25 +39,28 @@
 #include "OSGMyMesh.h"
 
 // explicit template instantiations
+#include "OSGOpenMeshPFields.cpp"
+#include "OSGDynamicSubdivisionLPBase.cpp"
+#include "OSGDynamicSubdivisionLP.cpp"
 #include "OSGDynamicSubdivisionCCBase.cpp"
 #include "OSGDynamicSubdivisionCC.cpp"
-#include "OSGOpenMeshPFields.cpp"
-#include "OSGOpenMeshTesselatorPFields.cpp"
 
-template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase<MyMesh>;
-template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC<MyMesh>;
-template class OSG_SUBSURFACELIB_DLLMAPPING FCPtr<GroupPtr, DynamicSubdivisionCC<MyMesh> >;
+typedef WSDmain<OSG::Vec3f, MyTriMesh,   TRIANGLE> MyTriTesselator;
+typedef WSDmain<OSG::Vec3f, MyPolyMesh,  QUAD>     MyPolyTesselator;
+typedef WSDmain<OSG::Vec4f, MyPolyMesh4, QUAD>     MyPolyTesselator4;
 
-// explicit template instantiations
-#include "OSGwsdmain.cpp"
-#include "OSGwsdsubdiv.cpp"
-#include "OSGwsdsubdivquad.cpp"
-#include "OSGwsddat.cpp"
-#include "OSGwsdmesh2dat.cpp"
-
-template class OSG_SUBSURFACELIB_DLLMAPPING WSDmain<Vec4f, MyMesh, QUAD>;
-template class OSG_SUBSURFACELIB_DLLMAPPING WSDsubdiv<Vec4f, QUAD>;
-template class OSG_SUBSURFACELIB_DLLMAPPING WSDdat<Vec4f, QUAD>;
-template class OSG_SUBSURFACELIB_DLLMAPPING WSDmesh2dat<Vec4f, MyMesh, QUAD>;
-
+//  SField
+OSG_DLLEXPORT_SFIELD_DEF1(MyTriTesselator*,   OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_SFIELD_DEF1(MyPolyTesselator*,  OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_SFIELD_DEF1(MyPolyTesselator4*, OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_SFIELD_DEF1(MyTriMesh*,         OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_SFIELD_DEF1(MyPolyMesh*,        OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+OSG_DLLEXPORT_SFIELD_DEF1(MyPolyMesh4*,       OSG_SUBSURFACELIB_DLLTMPLMAPPING);
+//  FieldContainer
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLP<MyTriMesh>;
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionLPBase<MyTriMesh>;
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC<MyPolyMesh>;
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase<MyPolyMesh>;
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCC<MyPolyMesh4>;
+template class OSG_SUBSURFACELIB_DLLMAPPING DynamicSubdivisionCCBase<MyPolyMesh4>;
 

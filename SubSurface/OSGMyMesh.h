@@ -43,20 +43,28 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#ifdef WIN32
-#pragma warning (disable : 698 47 373 383 171)
-#endif
-
-#include <iostream>
-#include <OpenMesh/Core/Mesh/Types/PolyMesh_ArrayKernelT.hh>
 #include <OpenMesh/Core/IO/MeshIO.hh>
+#include <OpenMesh/Core/Mesh/Types/PolyMesh_ArrayKernelT.hh>
+#include <OpenMesh/Core/Mesh/Types/TriMesh_ArrayKernelT.hh>
 #include "OSGSubSurfaceDef.h"
 #include "OSGDynamicSubdivisionCC.h"
+#include "OSGDynamicSubdivisionLP.h"
+
+namespace OpenMesh {
+
+   inline OpenMesh::Vec4f operator % (const OpenMesh::Vec4f& a, const OpenMesh::Vec4f& b) {
+      return OpenMesh::Vec4f(a[0]*b[1]-a[1]*b[0], 
+			     a[2]*b[0]-a[0]*b[2],
+			     a[1]*b[2]-a[2]*b[1],
+			     0);
+   }
+
+}
 
 OSG_BEGIN_NAMESPACE
 
 /*! OpenMesh Traits */
-struct MyTraits : public OpenMesh::DefaultTraits
+struct MyTraitsPoint3 : public OpenMesh::DefaultTraits
 {
   FaceAttributes     (OpenMesh::Attributes::Normal);	
   VertexAttributes   (OpenMesh::Attributes::Normal);	
@@ -67,10 +75,47 @@ struct MyTraits : public OpenMesh::DefaultTraits
      Int32 isCrease;
   };  
 };
+/*! OpenMesh Traits */
+struct MyTraitsPoint4 : public OpenMesh::DefaultTraits
+{
+  typedef OpenMesh::Vec4f Point;
 
-typedef OpenMesh::PolyMesh_ArrayKernelT<MyTraits> MyMesh;
-typedef DynamicSubdivisionCC<MyMesh>              MyDynamicSubdivision;
-typedef FCPtr<GroupPtr, MyDynamicSubdivision>     MyDynamicSubdivisionPtr;
+  FaceAttributes     (OpenMesh::Attributes::Normal);	
+  VertexAttributes   (OpenMesh::Attributes::Normal);	
+  HalfedgeAttributes (OpenMesh::Attributes::PrevHalfedge);
+
+  EdgeTraits
+  {
+     Int32 isCrease;
+  };  
+};
+
+template <>
+struct MESH2MTYPE<OpenMesh::PolyMesh_ArrayKernelT<MyTraitsPoint3> >
+{ 
+   enum { MType = QUAD };
+};
+template <>
+struct MESH2MTYPE<OpenMesh::PolyMesh_ArrayKernelT<MyTraitsPoint4> >
+{ 
+   enum { MType = QUAD };
+};
+template <>
+struct MESH2MTYPE<OpenMesh::TriMesh_ArrayKernelT<MyTraitsPoint3> >
+{ 
+   enum { MType = TRIANGLE };
+};
+
+typedef OpenMesh::PolyMesh_ArrayKernelT<MyTraitsPoint3> MyPolyMesh;
+typedef DynamicSubdivisionCC<MyPolyMesh>                MyDynamicSubdivisionCC;
+typedef FCPtr<GroupPtr, MyDynamicSubdivisionCC>         MyDynamicSubdivisionCCPtr;
+typedef OpenMesh::PolyMesh_ArrayKernelT<MyTraitsPoint4> MyPolyMesh4;
+typedef DynamicSubdivisionCC<MyPolyMesh4>               MyDynamicSubdivisionCC4;
+typedef FCPtr<GroupPtr, MyDynamicSubdivisionCC4>        MyDynamicSubdivisionCC4Ptr;
+
+typedef OpenMesh::TriMesh_ArrayKernelT<MyTraitsPoint3>  MyTriMesh;
+typedef DynamicSubdivisionLP<MyTriMesh>                 MyDynamicSubdivisionLP;
+typedef FCPtr<GroupPtr, MyDynamicSubdivisionLP>         MyDynamicSubdivisionLPPtr;
 
 OSG_END_NAMESPACE
 
