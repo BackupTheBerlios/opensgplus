@@ -127,13 +127,13 @@ public:
    perInstanceDataContainer  myInstances;       //!< "per parent one Instance"-data
 
    void initOSGStuff(Int32 fsize);                 //!< init OpenSG geodata and shared data
-   void initPatches(OSG::GeometryPtr geop);        //!< init patches (preprocessing)
-   void initInstance(Int32 n, OSG::NodePtr& parent);  //!< init instances
+   void initPatches(const OSG::GeometryPtr& geop);        //!< init patches (preprocessing)
+   void initInstance(Int32 n, const OSG::NodePtr& parent);  //!< init instances
    void clearInstances(void);                  //!< completely remove instances
    void preprocessInstances(void);                  //!< for osb-writing
 
    //! output method where the geometry is set up
-   void perFrameSetup(OSG::NodePtr& parent, OSG::Vec3f eyepoint);
+   void perFrameSetup(const OSG::NodePtr& parent, OSG::Vec3f eyepoint);
 
    //! set up a uniform tesselation (maxdepth/2)
    void uniformSetup(void);
@@ -247,7 +247,7 @@ public:
 
    void initOneGeo(perInstanceData *instance);        //!< OpenSG - Geometry init (per Instance)
    bool isQuad(FaceHandle f_h);                       //!< returns true if f_h is a quad
-   Int32 getIndex(OSG::NodePtr &p);
+   Int32 getIndex(const OSG::NodePtr &p);
 
    //! property within openmesh (patch index)
    OpenMesh::FPropHandleT<Int32> patchIndex;

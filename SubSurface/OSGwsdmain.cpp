@@ -857,7 +857,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
 
 // initPatches: mtype = TRIANGLE
 template<>
-void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geop)
+void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (const OSG::GeometryPtr& geop)
 {
    SINFO << "initPatches start" << std::endl;
    bool recycleGeop = (geop != NullFC);
@@ -1027,7 +1027,7 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geo
 }
 
 template<class WSDVector, class Mesh, int mtype>
-void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
+void WSDmain<WSDVector, Mesh, mtype>::initPatches (const OSG::GeometryPtr& geop)
 {     
    SINFO << "initPatches start" << std::endl;
    bool recycleGeop = (geop != NullFC);
@@ -1135,7 +1135,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
 
 // initInstance: called per Instance, creates geometry node for every instance
 template<class WSDVector, class Mesh, int mtype>
-void WSDmain<WSDVector, Mesh, mtype>::initInstance (Int32 n, NodePtr& parent)
+void WSDmain<WSDVector, Mesh, mtype>::initInstance (Int32 n, const NodePtr& parent)
 {
    // create new instance-element
    myInstances.push_back(perInstanceData());
@@ -1158,7 +1158,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initInstance (Int32 n, NodePtr& parent)
 // depth assignment and preparation for the geometry node
 template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup 
-(OSG::NodePtr& parent, OSG::Vec3f eyepoint)
+(const OSG::NodePtr& parent, OSG::Vec3f eyepoint)
 {  
    if ((!patchesready)) {
       SWARNING << "patches not initialized  - skipping perFrameSetup" << std::endl; 
@@ -1647,7 +1647,7 @@ void WSDmain<WSDVector, Mesh, mtype>::preprocessInstances (void)
 
 // helper to find the index in myInstances for parent p
 template<class WSDVector, class Mesh, int mtype>
-Int32 WSDmain<WSDVector, Mesh, mtype>::getIndex (OSG::NodePtr &p)
+Int32 WSDmain<WSDVector, Mesh, mtype>::getIndex (const OSG::NodePtr &p)
 {
    Int32 ret = 0;
    perInstanceDataContainer::iterator i = myInstances.begin();
