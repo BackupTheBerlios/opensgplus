@@ -51,6 +51,7 @@
 #include <OSGBaseFunctions.h>
 #include <OSGTime.h>
 #include <OSGLog.h>
+#include <OSGMatrix.h>
 
 #include "OSGRenderNode.h"
 
@@ -158,19 +159,19 @@ void RenderNode::determinePerformance( void )
     glNewList(dList1, GL_COMPILE);
     float step = .1;
     int count  = 500;
-    glBegin(GL_TRIANGLE_STRIP);
-    for(float y=0;y<1;y+=step)
+    for(float y=0;y<(1-step/2);y+=step)
     {        
+        glBegin(GL_TRIANGLE_STRIP);
         glVertex3f(0,y     ,-1);
         glVertex3f(0,y+step,-1);
-        for(float x=0;x<1;x+=step)
+        for(float x=0;x<(1+step/2);x+=step)
         {
             glVertex3f(x,y     ,-1);
             glVertex3f(x,y+step,-1);
             faces+=2;
         }
+        glEnd();
     }
-    glEnd();
     glEndList();
     glFinish();
     GLuint dList2 = glGenLists(1);
@@ -181,7 +182,7 @@ void RenderNode::determinePerformance( void )
     }        
     glEndList();
     glFlush();
-    double t=runFaceBench(dList2,128,1.0);
+    double t=runFaceBench(dList2,128*256,1.0);
     count=(int)(count/t);
     glNewList(dList2, GL_COMPILE);
     for(int c=0;c<count;++c)
@@ -193,98 +194,114 @@ void RenderNode::determinePerformance( void )
     glCallList(dList2);
     glFinish();
 
-    UInt32 aSize=256;
-    UInt32 bSize= 32;
-    UInt32 cSize=128;
-    Real32 aVisible=1.0;
-    Real32 bVisible=1.0;
-    Real32 cVisible= .2;
+    UInt32 aArea=256*256;
+    UInt32 bArea=256* 32;
+    UInt32 cArea=256*256;
+    Real32 aVisible= .9;
+    Real32 bVisible= .9;
+    Real32 cVisible= .5;
+
+//    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
 
     // do the face benchmarks
     do
     {
-        A=runFaceBench(dList2,aSize,aVisible)/count;
-        B=runFaceBench(dList2,bSize,bVisible)/count;
-        C=runFaceBench(dList2,cSize,cVisible)/count;
+        A=runFaceBench(dList2,aArea,aVisible)/count;
+        B=runFaceBench(dList2,bArea,bVisible)/count;
+        C=runFaceBench(dList2,cArea,cVisible)/count;
+
+        Matrix m( faces*(1-aVisible), faces*aVisible, aArea, 0,
+                  faces*(1-bVisible), faces*bVisible, bArea, 0,
+                  faces*(1-cVisible), faces*cVisible, cArea, 0,
+                  0                 , 0             , 0    , 1);
+        Vec3f  v(A,B,C);
+        m.invert();
+        m.mult(v);
+
+        _invisibleFaceCost=v[0];
+        _visibleFaceCost=v[1];
+        _drawPixelCost=v[2];
+#if 0
+
         // cost = faces(1-visible)*i + vaces*visible*j + size^2 * k;
         // i:  only if invisible
         // j:  only if visible, but not size dependent
         // k:  only size dependent
         
         _drawPixelCost     = 
-            (A-B) / 
-            (aSize*(double)aSize-bSize*(double)bSize );
+            (A-B) / (aArea-bArea);
         
-        _visibleFaceCost   = (A - _drawPixelCost*aSize*aSize)/(double)faces;
+        _visibleFaceCost   = (A - _drawPixelCost*aArea)/(double)faces;
         
         _invisibleFaceCost = 
             (C - 
              _visibleFaceCost * cVisible * faces - 
-             _drawPixelCost   * cSize*cSize)/((1-cVisible)*faces);
+             _drawPixelCost   * cArea)/((1-cVisible)*faces);
+#endif
     } while(_invisibleFaceCost<0  ||     // some logical tests
             _visibleFaceCost<0);
 
+    glViewport(0, 0, 256, 256);
     UInt32 width,height;
-    GLint view[4];
 
     // test write performance
     glPixelStorei(GL_PACK_ALIGNMENT,1); 
     glPixelStorei(GL_UNPACK_ALIGNMENT,1); 
     vector<UInt8> pixels;
-    glGetIntegerv(GL_VIEWPORT,view);
-    width =osgMin(256,view[2]);
-    height=osgMin(256,view[3]);
+    width =256;
+    height=256;
     pixels.resize(width*height*4);
+    glFlush();
     t=-getSystemTime();
-    for(c=0;c<2;++c)
+    for(c=0;c<10;++c)
         glReadPixels(0,0,width,height,GL_RGB,GL_UNSIGNED_BYTE,&pixels[0]);
     glFlush();
     t+=getSystemTime();
     _readPixelCost=t/(c*width*height);
 
     // test write performance
-    glGetIntegerv(GL_VIEWPORT,view);
-    width =view[2];
-    height=view[3];
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D(0,view[2],0,view[3]);
+    gluOrtho2D(0,width,0,height);
     glRasterPos2i(0,0);
+    glDisable(GL_DEPTH_TEST);
+    glFlush();
     t=-getSystemTime();
-    for(c=0;c<2;++c)
+    for(c=0;c<10;++c)
         glDrawPixels(width,height,GL_RGB,GL_UNSIGNED_BYTE,&pixels[0]);
     glFlush();
     t+=getSystemTime();
     _writePixelCost=t/(c*width*height);
+    glEnable(GL_DEPTH_TEST);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     SLOG << "End rendering benchmark" << endl;
     
-#if 0
+#if 1
     cout << A << endl;
     cout << 
-        faces*(1-aVisible) * invisibleFaceCost +
-        faces*aVisible * visibleFaceCost + 
-        aSize*aSize * pixelCost
+        faces*(1-aVisible) * _invisibleFaceCost +
+        faces*aVisible * _visibleFaceCost + 
+        aArea * _drawPixelCost
          << endl;
 
     cout << B << endl;
     cout << 
-        faces*(1-aVisible) * invisibleFaceCost +
-        faces*aVisible * visibleFaceCost + 
-        bSize*bSize * pixelCost
+        faces*(1-bVisible) * _invisibleFaceCost +
+        faces*bVisible * _visibleFaceCost + 
+        bArea * _drawPixelCost
          << endl;
 
     cout << C << endl;
     cout << 
-        faces*(1-cVisible) * invisibleFaceCost +
-        faces*cVisible * visibleFaceCost + 
-        cSize*cSize * pixelCost
+        faces*(1-cVisible) * _invisibleFaceCost +
+        faces*cVisible * _visibleFaceCost + 
+        cArea * _drawPixelCost
          << endl;
 #endif
 
@@ -393,17 +410,19 @@ void RenderNode::dump(void) const
  * \param visible   visible portion of the geometry
  *
  **/
-double RenderNode::runFaceBench(UInt32 dlist,UInt32 size,Real32 visible)
+double RenderNode::runFaceBench(UInt32 dlist,UInt32 area,Real32 visible)
 {
-    glViewport(0, 0, size, size);
+    UInt32 width = area/256;
+    UInt32 height  = 256;
+
+    glViewport(0, 0, width, height);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
     glScalef(1.0/visible,1.0,1.0);
-//    glTranslatef(1.0-visible,0,0);
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
     glPushMatrix();
+    glLoadIdentity();
     gluOrtho2D(0,1,0,1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glFinish();
@@ -417,6 +436,11 @@ double RenderNode::runFaceBench(UInt32 dlist,UInt32 size,Real32 visible)
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+#if 0
+    glutSwapBuffers();
+    int c;
+    cin >> c;
+#endif
     return t;
 }
 
