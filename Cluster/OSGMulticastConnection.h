@@ -164,8 +164,8 @@ class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
     /*! \name                  read/write                                  */
     /*! \{                                                                 */
 
-    virtual void               read  ( void );
-    virtual void               write ( void );
+    virtual void      readBuffer  ( void                        );
+    virtual void      writeBuffer ( void                        );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

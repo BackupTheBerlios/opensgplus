@@ -127,9 +127,9 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     /*! \{                                                                 */
 
     virtual void      read(MemoryHandle mem,UInt32 size);
-    virtual void      read();
+    virtual void      readBuffer();
     virtual void      write(MemoryHandle mem,UInt32 size);
-    virtual void      write();
+    virtual void      writeBuffer();
     void              interpreteAddress(const std::string  &address,
                                               std::string  &host,
                                               UInt32       &port);

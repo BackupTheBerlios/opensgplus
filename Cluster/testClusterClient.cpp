@@ -24,10 +24,9 @@
 #include <OSGSceneFileHandler.h>
 #include <OSGDirectionalLight.h>
 #include <OSGSimpleGeometry.h>
-#include <OSGVRMLTransform.h>
+#include <OSGComponentTransform.h>
 #include <OSGGeoFunctions.h>
 
-#include "OSGVRMLFile.h"
 #include "OSGGLUTWindow.h"
 #include "OSGViewport.h"
 #include "OSGCamera.h"
@@ -51,9 +50,8 @@ NodePtr		          root;
 NodePtr		          file;
 ViewportPtr           vp;
 TransformPtr          cam_trans;
-VRMLTransformPtr      trans;
+ComponentTransformPtr      trans;
 PerspectiveCameraPtr  cam;
-VRMLFile             *pLoader = NULL;
 Connection           *connection;
 int                   servers;
 RemoteAspect          aspect;
@@ -134,22 +132,7 @@ void createSceneGraph(int argc,char **argv)
            strncmp(argv[i],"-f",2) == 0)
         {
             filename=&argv[i][2];
-            if(strcmp(filename+strlen(filename)-4,".wrl")==0)
-            {
-                if(pLoader==NULL)
-                {
-                    pLoader = new OSG::VRMLFile();
-                    pLoader->scanStandardPrototypes("std.wrl", 0);
-                }
-                pLoader->scanFile(filename, 0);
-                Action *act = Action::create();
-                file = pLoader->getRoot();
-                act->registerEnterFunction( OSG::Geometry::getClassType(),
-                                            OSG::osgFunctionFunctor2( calcVNormal ) );
-                act->apply( file );
-            }
-            else
-                file = SceneFileHandler::the().read(filename,0);
+            file = SceneFileHandler::the().read(filename,0);
         }
     }
 	if ( file == NullFC )
@@ -167,7 +150,7 @@ void createSceneGraph(int argc,char **argv)
 	cout << "Volume: from " << min << " to " << max << endl;
 
     transNode = Node::create();
-    trans = VRMLTransform::create();
+    trans = ComponentTransform::create();
 	beginEditCP(transNode);
 	transNode->setCore( trans );
 	transNode->addChild( file );
@@ -254,7 +237,7 @@ void renderLoop()
         beginEditCP(trans);
         trans->getSFRotation()->setValue(rot);
         endEditCP(trans);
-        rot=Quaternion(0,1,.3,rad);
+        rot=Quaternion(Vec3f(0,1,.3),rad);
         rad+=.2;
         // send syncronisation
         aspect.sendSync(*connection,OSG::Thread::getCurrentChangeList());

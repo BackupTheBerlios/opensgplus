@@ -42,7 +42,7 @@
 #include <limits.h>
 
 /**
- *  if shere is a limits implementation in all stl libs, then this
+ *  if there is a limits implementation in all stl libs, then this
  *  can be removed
  **/
 template <class T> inline T maxValue()                 { return 0;         }

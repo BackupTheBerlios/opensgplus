@@ -101,9 +101,12 @@ Bool WindowChangedFunction(FieldContainerPtr& fcp,
         osgWin = window;
         windowAtt = att;
     }
-    cout << osgWin->getWidth() << " " << osgWin->getHeight() << endl;
-    osgWin->setSize(osgWin->getWidth(),osgWin->getHeight());
-    glutReshapeWindow(osgWin->getWidth(),osgWin->getHeight());
+    if(windowAtt->getComposite())
+    {
+        cout << osgWin->getWidth() << " " << osgWin->getHeight() << endl;
+        osgWin->setSize(osgWin->getWidth(),osgWin->getHeight());
+        glutReshapeWindow(osgWin->getWidth(),osgWin->getHeight());
+    }
     glutShowWindow();
     return true;
 }
@@ -132,16 +135,20 @@ void display()
                     {
                         composition.send(
                             *connection,
+                            windowAtt->getImageTransType(),
+                            windowAtt->getSubTileSize(),
                             tile->getLeft()   * tile->getFullWidth(),
                             tile->getBottom() * tile->getFullHeight(),
                             osgWin->getWidth(),
                             osgWin->getHeight());
+/*
                         cout << endl;
                         composition.printStatistics();
                         cout << endl;
+*/
                     }
                 }
-                osgWin->swap(); 
+//                osgWin->swap(); 
             }
             else
             {
@@ -161,6 +168,16 @@ void display()
         cout << "Unknown exception" << endl;
         exit(1);
     }
+}
+
+
+
+Bool NodeC(FieldContainerPtr& fcp,
+           RemoteAspect * aspect)
+{
+    NodePtr node=NodePtr::dcast(fcp);
+    node->getSFVolume()->getValue().dump();
+    return true;
 }
 
 int main( int argc, char **argv )
@@ -218,6 +235,9 @@ int main( int argc, char **argv )
     try
     {
         connection->accept(address);
+        aspect.registerChanged(Node::getClassType(),
+                               osgFunctionFunctor2(&NodeC));
+
         aspect.registerChanged(GLUTWindow::getClassType(),
                                osgFunctionFunctor2(&WindowChangedFunction));
         aspect.registerDestroyed(GLUTWindow::getClassType(),

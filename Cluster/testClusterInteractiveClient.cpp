@@ -26,12 +26,11 @@
 #include <OSGSceneFileHandler.h>
 #include <OSGDirectionalLight.h>
 #include <OSGSimpleGeometry.h>
-#include <OSGVRMLTransform.h>
+#include <OSGComponentTransform.h>
 #include <OSGGeoFunctions.h>
 #include <OSGVolumeDraw.h>
 #include <OSGGLUTWindow.h>
 
-#include "OSGVRMLFile.h"
 #include "OSGGLUTWindow.h"
 #include "OSGViewport.h"
 #include "OSGCamera.h"
@@ -56,9 +55,8 @@ NodePtr		          root;
 NodePtr		          file;
 ViewportPtr           vp;
 TransformPtr          cam_trans;
-VRMLTransformPtr      trans;
+ComponentTransformPtr      trans;
 PerspectiveCameraPtr  cam;
-VRMLFile             *pLoader = NULL;
 Connection           *connection;
 int                   servers;
 RemoteAspect          aspect;
@@ -83,8 +81,34 @@ WindowPtr win;
 int winid;
 int nhserv;
 int nvserv=1;
+Bool interactive=true;
 
 // Program
+
+void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+
+void
+showText(int x, int y, char *string)
+{
+  int len, i;
+
+  glEnable(GL_COLOR_MATERIAL);
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  gluOrtho2D(0,win->getWidth(),0,win->getHeight());
+  glDisable(GL_DEPTH_TEST);  
+  glColor3f(1.0, 1.0, 0.0);
+  glRasterPos2f(x, y);
+  len = (int) strlen(string);
+  for (i = 0; i < len; i++) {
+    glutBitmapCharacter(font, string[i]);
+  }
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glEnable(GL_DEPTH_TEST);  
+  glDisable(GL_COLOR_MATERIAL);
+}
 
 Action::ResultE calcVNormal( CNodePtr &, Action * action )
 {
@@ -181,22 +205,7 @@ void createSceneGraph(int argc,char **argv)
            strncmp(argv[i],"-f",2) == 0)
         {
             filename=&argv[i][2];
-            if(strcmp(filename+strlen(filename)-4,".wrl")==0)
-            {
-                if(pLoader==NULL)
-                {
-                    pLoader = new VRMLFile();
-                    pLoader->scanStandardPrototypes("std.wrl", 0);
-                }
-                pLoader->scanFile(filename, 0);
-                Action *act = Action::create();
-                file = pLoader->getRoot();
-                act->registerEnterFunction( Geometry::getClassType(),
-                                            osgFunctionFunctor2( calcVNormal ) );
-                act->apply( file );
-            }
-            else
-                file = SceneFileHandler::the().read(filename,0);
+            file = SceneFileHandler::the().read(filename,0);
         }
     }
 	if ( file == NullFC )
@@ -214,7 +223,7 @@ void createSceneGraph(int argc,char **argv)
 	cout << "Volume: from " << min << " to " << max << endl;
 
     transNode = Node::create();
-    trans = VRMLTransform::create();
+    trans = ComponentTransform::create();
 	beginEditCP(transNode);
 	transNode->setCore( trans );
 	transNode->addChild( file );
@@ -272,6 +281,7 @@ void createSceneGraph(int argc,char **argv)
         {
             pWindowAtt->setServerId(i);
             pWindowAtt->setComposite(composite);
+            pWindowAtt->setSubTileSize(32);
         }
         endEditCP(pWindowAtt);
 
@@ -344,6 +354,9 @@ void createSceneGraph(int argc,char **argv)
 void 
 display(void)
 {
+    Time startTime=getSystemTime();
+    Time endTime;
+    char text[256];
 	Matrix m1, m2, m3;
     Quaternion q1;
 
@@ -377,6 +390,11 @@ display(void)
                              win->getWidth(),
                              win->getHeight());
             composition.printStatistics();
+            endTime=getSystemTime();
+            sprintf(text,"Frametime: %6.3f",endTime-startTime);
+            showText(10,10,text);
+            sprintf(text,"Frames/s : %6.3f",1/(endTime-startTime));
+            showText(10,34,text);
             win->swap(); 
             win->frameExit();	            // frame-cleanup
         }
@@ -494,6 +512,8 @@ mouse(int button, int state, int x, int y)
 
 void key(unsigned char key, int x, int y)
 {
+    ClusterWindowAttPtr att;
+    vector<WindowPtr>::iterator w;
     MulticastConnection *mc;
 	switch ( key )
 	{
@@ -506,6 +526,59 @@ void key(unsigned char key, int x, int y)
                 fflush(stdout);
             }
             break;
+        case 'i':
+            interactive^=1;
+            if(interactive)
+                glutIdleFunc(NULL);       
+            else
+                glutIdleFunc(display);       
+
+        case 'J':
+        case 'M':
+        case 'N':
+        case 'R':
+            for(w=windows.begin();w!=windows.end();w++)
+            {
+                att=ClusterWindowAttPtr::dcast(
+                    (*w)->findAttachment(ClusterWindowAtt::getClassType()
+                                         .getGroupId()));
+                beginEditCP(att);
+                if(att != OSG::NullFC)
+                {
+                    if(key=='J') att->setImageTransType("JPEG");
+                    if(key=='M') att->setImageTransType("MTD");
+                    if(key=='R') att->setImageTransType("RLE");
+                    if(key=='N') att->setImageTransType("");
+                }
+                cout << "Image type:" << att->getImageTransType() << endl;
+                endEditCP(att);
+            }
+            break;
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+            for(w=windows.begin();w!=windows.end();w++)
+            {
+                att=ClusterWindowAttPtr::dcast(
+                    (*w)->findAttachment(ClusterWindowAtt::getClassType()
+                                         .getGroupId()));
+                beginEditCP(att);
+                if(att != OSG::NullFC)
+                {
+                    if(key=='1') att->setSubTileSize(16);
+                    if(key=='2') att->setSubTileSize(32);
+                    if(key=='3') att->setSubTileSize(64);
+                    if(key=='4') att->setSubTileSize(128);
+                    if(key=='4') att->setSubTileSize(512);
+                }
+                cout << "Subtile size:" << att->getSubTileSize() << endl;
+                endEditCP(att);
+            }
+            break;
+
         case 27:	// should kill the clients here
             osgExit(); 
             exit(0);

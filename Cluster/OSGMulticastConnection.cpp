@@ -305,13 +305,11 @@ UInt32 MulticastConnection::getChannelCount(void)
  **/
 Bool MulticastConnection::selectChannel()
 {
-    Time t0,t1;
     UDPHeader header;
     Address from;
     Selection selection;
     UInt32 size;
 
-    t0=getSystemTime();
     for(;;)
     {
         selection.setRead(_socket);
@@ -387,7 +385,7 @@ void MulticastConnection::clearStatistics()
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
-void MulticastConnection::read()
+void MulticastConnection::readBuffer()
 {
     UDPBuffersT::iterator currentBuffer=_udpReadBuffers.begin(); 
     BuffersT::iterator    buffer;
@@ -481,7 +479,7 @@ void MulticastConnection::read()
 /** Write buffer
  *
  **/
-void MulticastConnection::write(void)
+void MulticastConnection::writeBuffer(void)
 {
     vector<int>            send;
     vector<int>::iterator  sendI;
@@ -491,7 +489,7 @@ void MulticastConnection::write(void)
     set<Address>           missingAcks;
     Selection              selection;
     UDPBuffer              responseAck;
-    Time                   waitTime,maxWaitTime,t0,t1;
+    Time                   waitTime,t0,t1;
     Address                from;
     UDPHeader             *header;
 

@@ -28,5 +28,26 @@ The base class for all windows.
 	>
 	Should the server send the rendered image back to the client
 	</Field>
+	<Field
+		name="imageTransType"
+		type="string"
+		cardinality="single"
+		visibility="external"
+		access="public"
+        header="OSGSFBaseTypes.h"
+	>
+    Use this type for image transmission
+	</Field>
+	<Field
+		name="subTileSize"
+		type="UInt32"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+    Transfer images in subtiles of this size
+	</Field>
 </FieldContainer>
+
+
 

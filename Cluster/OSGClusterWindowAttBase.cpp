@@ -65,7 +65,7 @@
 
 OSG_BEGIN_NAMESPACE
 
-DataType FieldDataTraits<ClusterWindowAttPtr>::_type("ClusterWindowAttPtr", true);
+DataType FieldDataTraits<ClusterWindowAttPtr>::_type("ClusterWindowAttPtr", "AttachmentPtr", true);
 
 #if defined(__sgi)
 
@@ -100,11 +100,17 @@ namespace
 #pragma reset woff 1174
 #endif
 
-const OSG::BitVector	ClusterWindowAttBase::ServerIdFieldMask = 
+const OSG::BitVector  ClusterWindowAttBase::ServerIdFieldMask = 
     (1 << ClusterWindowAttBase::ServerIdFieldId);
 
-const OSG::BitVector	ClusterWindowAttBase::CompositeFieldMask = 
+const OSG::BitVector  ClusterWindowAttBase::CompositeFieldMask = 
     (1 << ClusterWindowAttBase::CompositeFieldId);
+
+const OSG::BitVector  ClusterWindowAttBase::ImageTransTypeFieldMask = 
+    (1 << ClusterWindowAttBase::ImageTransTypeFieldId);
+
+const OSG::BitVector  ClusterWindowAttBase::SubTileSizeFieldMask = 
+    (1 << ClusterWindowAttBase::SubTileSizeFieldId);
 
 
 
@@ -115,6 +121,12 @@ const OSG::BitVector	ClusterWindowAttBase::CompositeFieldMask =
 */
 /*! \var Bool            ClusterWindowAttBase::_sfComposite
     Should the server send the rendered image back to the client
+*/
+/*! \var string          ClusterWindowAttBase::_sfImageTransType
+    Use this type for image transmission
+*/
+/*! \var UInt32          ClusterWindowAttBase::_sfSubTileSize
+    Transfer images in subtiles of this size
 */
 //! ClusterWindowAtt description
 
@@ -129,7 +141,17 @@ FieldDescription *ClusterWindowAttBase::_desc[] =
                      "composite", 
                      CompositeFieldId, CompositeFieldMask,
                      false,
-                     (FieldAccessMethod) &ClusterWindowAttBase::getSFComposite)
+                     (FieldAccessMethod) &ClusterWindowAttBase::getSFComposite),
+    new FieldDescription(SFString::getClassType(), 
+                     "imageTransType", 
+                     ImageTransTypeFieldId, ImageTransTypeFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowAttBase::getSFImageTransType),
+    new FieldDescription(SFUInt32::getClassType(), 
+                     "subTileSize", 
+                     SubTileSizeFieldId, SubTileSizeFieldMask,
+                     false,
+                     (FieldAccessMethod) &ClusterWindowAttBase::getSFSubTileSize)
 };
 
 //! ClusterWindowAtt type
@@ -189,18 +211,22 @@ void ClusterWindowAttBase::executeSync(      FieldContainer &other,
 //! Constructor
 
 ClusterWindowAttBase::ClusterWindowAttBase(void) :
-	_sfServerId               (), 
-	_sfComposite              (), 
-	Inherited() 
+    _sfServerId               (), 
+    _sfComposite              (), 
+    _sfImageTransType         (), 
+    _sfSubTileSize            (), 
+    Inherited() 
 {
 }
 
 //! Copy Constructor
 
 ClusterWindowAttBase::ClusterWindowAttBase(const ClusterWindowAttBase &source) :
-	_sfServerId               (source._sfServerId               ), 
-	_sfComposite              (source._sfComposite              ), 
-	Inherited                 (source)
+    _sfServerId               (source._sfServerId               ), 
+    _sfComposite              (source._sfComposite              ), 
+    _sfImageTransType         (source._sfImageTransType         ), 
+    _sfSubTileSize            (source._sfSubTileSize            ), 
+    Inherited                 (source)
 {
 }
 
@@ -228,6 +254,16 @@ UInt32 ClusterWindowAttBase::getBinSize(const BitVector &whichField)
         returnValue += _sfComposite.getBinSize();
     }
 
+    if(FieldBits::NoField != (ImageTransTypeFieldMask & whichField))
+    {
+        returnValue += _sfImageTransType.getBinSize();
+    }
+
+    if(FieldBits::NoField != (SubTileSizeFieldMask & whichField))
+    {
+        returnValue += _sfSubTileSize.getBinSize();
+    }
+
 
     return returnValue;
 }
@@ -245,6 +281,16 @@ void ClusterWindowAttBase::copyToBin(      BinaryDataHandler &pMem,
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
     {
         _sfComposite.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (ImageTransTypeFieldMask & whichField))
+    {
+        _sfImageTransType.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (SubTileSizeFieldMask & whichField))
+    {
+        _sfSubTileSize.copyToBin(pMem);
     }
 
 
@@ -265,6 +311,16 @@ void ClusterWindowAttBase::copyFromBin(      BinaryDataHandler &pMem,
         _sfComposite.copyFromBin(pMem);
     }
 
+    if(FieldBits::NoField != (ImageTransTypeFieldMask & whichField))
+    {
+        _sfImageTransType.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (SubTileSizeFieldMask & whichField))
+    {
+        _sfSubTileSize.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -279,6 +335,12 @@ void ClusterWindowAttBase::executeSyncImpl(      ClusterWindowAttBase *pOther,
 
     if(FieldBits::NoField != (CompositeFieldMask & whichField))
         _sfComposite.syncWith(pOther->_sfComposite);
+
+    if(FieldBits::NoField != (ImageTransTypeFieldMask & whichField))
+        _sfImageTransType.syncWith(pOther->_sfImageTransType);
+
+    if(FieldBits::NoField != (SubTileSizeFieldMask & whichField))
+        _sfSubTileSize.syncWith(pOther->_sfSubTileSize);
 
 
 }

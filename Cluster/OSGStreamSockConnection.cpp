@@ -110,10 +110,10 @@ char StreamSockConnection::cvsid[] = "@(#)$Id:$";
  */
 
 StreamSockConnection::StreamSockConnection():
-    Inherited(200),
+    Inherited(16000),
     _sockets()
 {
-    _socketReadBuffer.resize(16000);
+    _socketReadBuffer.resize(64000);
     _socketWriteBuffer.resize( _socketReadBuffer.size() );
     // reserve first bytes for buffer size
     readBufAdd (&_socketReadBuffer [sizeof(SocketBufferHeader)],
@@ -150,6 +150,7 @@ void StreamSockConnection::read(MemoryHandle mem,UInt32 size)
     len=_readSocket.read(mem,size);
     if(len==0)
     {
+        cout << size << endl;
         throw ReadError("read got 0 bytes!");
     }
 }
@@ -161,7 +162,7 @@ void StreamSockConnection::read(MemoryHandle mem,UInt32 size)
  *
  */
 
-void StreamSockConnection::read()
+void StreamSockConnection::readBuffer()
 {
     BuffersT::iterator buffer;
     int size;
@@ -201,7 +202,7 @@ void StreamSockConnection::write(MemoryHandle mem,UInt32 size)
  * Write blocksize and data.
  *
  **/
-void StreamSockConnection::write(void)
+void StreamSockConnection::writeBuffer(void)
 {
     UInt32 size = writeBufBegin()->getDataSize();
     // write size to header
@@ -225,14 +226,16 @@ void StreamSockConnection::accept( const string &address )
 {
     string host;
     UInt32 port;
-    StreamSocket socket;
+    StreamSocket socket,from;
 
     interpreteAddress(address,host,port);
     socket.open();
     socket.setReusePort(true);
     socket.bind(AnyAddress(port));
     socket.listen();
-    _sockets.push_back(socket.accept());
+    from=socket.accept();
+    from.setDelay(false);
+    _sockets.push_back(from);
     socket.close();
 }
 
@@ -249,6 +252,7 @@ void StreamSockConnection::connect( const string &address )
 
     interpreteAddress(address,host,port);
     socket.open();
+    socket.setDelay(false);
     socket.connect(Address(host.c_str(),port));
     _sockets.push_back(socket);
 }
@@ -317,23 +321,49 @@ UInt32 StreamSockConnection::getChannelCount(void)
  **/
 Bool StreamSockConnection::selectChannel(void)
 {
+    Int32 maxnread=0,nread;
     SocketsT::iterator socket;
-    Selection selection;
+    Selection selection,result;
+    bool ready=false;
+
+    // only one socket?
+    if(_sockets.size()==1)
+    {
+        _readSocket=_sockets[0];
+        return true;
+    }
+
+    // select socket with most data
+    for(socket=_sockets.begin();
+        socket!=_sockets.end();
+        socket++)
+    {
+        nread=socket->getNReadBytes();
+        if(maxnread < nread)
+        {
+            maxnread = nread;
+            _readSocket=*socket;
+        }
+    }
+    if(maxnread)
+    {
+        return true;
+    }
 
     // wait for first socket to deliver data
     for(socket=_sockets.begin();
         socket!=_sockets.end();
         socket++)
         selection.setRead(*socket);
+
     // select ok ?
-    if(!selection.select(-1))
+    if(!selection.select(-1,result))
     {
-        return false;
+        throw ReadError("no socket readable");
     }
-    // get readable socket
-    for(socket=_sockets.begin();!selection.isSetRead(*socket);socket++)
-        if(socket==_sockets.end())
-            throw ReadError("no socket readable");
+
+    // find readable socket
+    for(socket=_sockets.begin();!result.isSetRead(*socket);socket++);
     _readSocket=*socket;
     return true;
 }

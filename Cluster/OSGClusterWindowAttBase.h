@@ -69,6 +69,8 @@
 
 #include <OSGUInt32Fields.h> // ServerId type
 #include <OSGBoolFields.h> // Composite type
+#include <OSGSFBaseTypes.h> // ImageTransType type
+#include <OSGUInt32Fields.h> // SubTileSize type
 
 #include <OSGClusterWindowAttFields.h>
 
@@ -90,13 +92,17 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
     enum
     {
-        ServerIdFieldId  = Inherited::NextFieldId,
-        CompositeFieldId = ServerIdFieldId  + 1,
-        NextFieldId      = CompositeFieldId + 1
+        ServerIdFieldId       = Inherited::NextFieldId,
+        CompositeFieldId      = ServerIdFieldId       + 1,
+        ImageTransTypeFieldId = CompositeFieldId      + 1,
+        SubTileSizeFieldId    = ImageTransTypeFieldId + 1,
+        NextFieldId           = SubTileSizeFieldId    + 1
     };
 
     static const osg::BitVector ServerIdFieldMask;
     static const osg::BitVector CompositeFieldMask;
+    static const osg::BitVector ImageTransTypeFieldMask;
+    static const osg::BitVector SubTileSizeFieldMask;
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -124,11 +130,17 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
     inline       SFUInt32            *getSFServerId       (void);
     inline       SFBool              *getSFComposite      (void);
+    inline       SFString            *getSFImageTransType (void);
+    inline       SFUInt32            *getSFSubTileSize    (void);
 
     inline       UInt32              &getServerId       (void);
     inline const UInt32              &getServerId       (void) const;
     inline       Bool                &getComposite      (void);
     inline const Bool                &getComposite      (void) const;
+    inline       string              &getImageTransType (void);
+    inline const string              &getImageTransType (void) const;
+    inline       UInt32              &getSubTileSize    (void);
+    inline const UInt32              &getSubTileSize    (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -137,6 +149,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
 
     inline void setServerId       ( const UInt32 &value );
     inline void setComposite      ( const Bool &value );
+    inline void setImageTransType ( const string &value );
+    inline void setSubTileSize    ( const UInt32 &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -182,8 +196,10 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAttBase : public Attachment
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    SFUInt32         	_sfServerId;
-    SFBool           	_sfComposite;
+    SFUInt32            _sfServerId;
+    SFBool              _sfComposite;
+    SFString            _sfImageTransType;
+    SFUInt32            _sfSubTileSize;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/

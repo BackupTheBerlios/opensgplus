@@ -95,50 +95,98 @@ inline ClusterWindowAttPtr ClusterWindowAttBase::createEmpty(void)
 OSG_CLUSTERLIB_DLLMAPPING
 SFUInt32 *ClusterWindowAttBase::getSFServerId(void)
 {
-	return &_sfServerId;
+    return &_sfServerId;
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 SFBool *ClusterWindowAttBase::getSFComposite(void)
 {
-	return &_sfComposite;
+    return &_sfComposite;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFString *ClusterWindowAttBase::getSFImageTransType(void)
+{
+    return &_sfImageTransType;
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+SFUInt32 *ClusterWindowAttBase::getSFSubTileSize(void)
+{
+    return &_sfSubTileSize;
 }
 
 
 OSG_CLUSTERLIB_DLLMAPPING
 UInt32 &ClusterWindowAttBase::getServerId(void)
 {
-	return _sfServerId.getValue();
+    return _sfServerId.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 const UInt32 &ClusterWindowAttBase::getServerId(void) const
 {
-	return _sfServerId.getValue();
+    return _sfServerId.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 void ClusterWindowAttBase::setServerId(const UInt32 &value)
 {
-	_sfServerId.setValue(value);
+    _sfServerId.setValue(value);
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 Bool &ClusterWindowAttBase::getComposite(void)
 {
-	return _sfComposite.getValue();
+    return _sfComposite.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 const Bool &ClusterWindowAttBase::getComposite(void) const
 {
-	return _sfComposite.getValue();
+    return _sfComposite.getValue();
 }
 
 OSG_CLUSTERLIB_DLLMAPPING
 void ClusterWindowAttBase::setComposite(const Bool &value)
 {
-	_sfComposite.setValue(value);
+    _sfComposite.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+string &ClusterWindowAttBase::getImageTransType(void)
+{
+    return _sfImageTransType.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const string &ClusterWindowAttBase::getImageTransType(void) const
+{
+    return _sfImageTransType.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowAttBase::setImageTransType(const string &value)
+{
+    _sfImageTransType.setValue(value);
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+UInt32 &ClusterWindowAttBase::getSubTileSize(void)
+{
+    return _sfSubTileSize.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+const UInt32 &ClusterWindowAttBase::getSubTileSize(void) const
+{
+    return _sfSubTileSize.getValue();
+}
+
+OSG_CLUSTERLIB_DLLMAPPING
+void ClusterWindowAttBase::setSubTileSize(const UInt32 &value)
+{
+    _sfSubTileSize.setValue(value);
 }
 
 
