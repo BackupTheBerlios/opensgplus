@@ -529,6 +529,9 @@ void Socket::connect(const Address &address)
 void Socket::setReusePort(bool value)
 {
     int v=(int)value;
+#ifdef SO_REUSEPORT
+    ::setsockopt(_sd,SOL_SOCKET,SO_REUSEPORT,(SocketOptT*)&v,sizeof(v));
+#endif
     ::setsockopt(_sd,SOL_SOCKET,SO_REUSEADDR,(SocketOptT*)&v,sizeof(v));
 }
 
