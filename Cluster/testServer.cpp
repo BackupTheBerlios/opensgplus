@@ -27,8 +27,14 @@ void display()
     catch(exception &e)
     {
         SLOG << e.what() << endl;
-        delete server;
-        osgExit(); 
+        try
+        {
+            delete server;
+            osgExit(); 
+        }
+        catch(...)
+        {
+        }
         exit(0);
     }
 }
