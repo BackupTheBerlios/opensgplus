@@ -1,5 +1,5 @@
 
-SUB_DIR     := Cluster/Sockets
+SUB_DIR     := Sockets
 PACKAGENAME := Sockets
 
 INCL_DIR    := $($(PROJ)POOL)/$(SUB_DIR)

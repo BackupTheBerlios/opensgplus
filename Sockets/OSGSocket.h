@@ -101,6 +101,11 @@ class OSG_SOCKET_DLLMAPPING Socket
     //   class functions                                                     
     //-----------------------------------------------------------------------
 
+    static int         getError();
+    static int         getHostError();
+    static const char *getErrorStr();
+    static const char *getHostErrorStr();
+
     //-----------------------------------------------------------------------
     //   instance functions                                                  
     //-----------------------------------------------------------------------
@@ -162,8 +167,6 @@ class OSG_SOCKET_DLLMAPPING Socket
     //-----------------------------------------------------------------------
     //   instance functions                                                  
     //-----------------------------------------------------------------------
-
-    static int   getLastError();
 
   private:
 

@@ -132,8 +132,7 @@ void DgramSocket::open()
     _sd = socket(AF_INET, SOCK_DGRAM, 0);
     if(_sd<0)
     {
-        throw SocketException("socket()",
-                              getLastError());
+        throw SocketError("socket()");
     }
     // all dgram sockets are allowed to send broadcast
     int on = 1;
@@ -141,8 +140,7 @@ void DgramSocket::open()
                     SOL_SOCKET, SO_BROADCAST, 
                     (SocketOptT*)&on, sizeof(on)) < 0)
     {
-        throw SocketException("setsockopt(,SOL_SOCKET,SO_BROADCAST)",
-                              getLastError());
+        throw SocketError("setsockopt(,SOL_SOCKET,SO_BROADCAST)");
     }
     // by default, multicast only in local network
     setTTL(1);
@@ -161,7 +159,7 @@ int DgramSocket::readFrom(void *buf,int size,const Address &from)
                  &addrLen);
     if(len==-1)
     {
-        throw SocketException("recvfrom()",getLastError());
+        throw SocketError("recvfrom()");
     }
     return len;
 }
@@ -179,7 +177,7 @@ int DgramSocket::peekFrom(void *buf,int size,const Address &from)
                  &addrLen);
     if(len==-1)
     {
-        throw SocketException("recvfrom()",getLastError());
+        throw SocketError("recvfrom()");
     }
     return len;
 }
@@ -196,7 +194,7 @@ int DgramSocket::writeTo(const void *buf,int size,const Address &to)
                to.getSockAddrSize());
     if(len == -1)
     {
-        throw SocketException("sendto()",getLastError());
+        throw SocketError("sendto()");
     }
     return len;
 }
@@ -219,8 +217,7 @@ void DgramSocket::join(const Address &group,const Address &interf)
                   sizeof(joinAddr));
     if(rc < 0)
     {
-        throw SocketException("setsockopt(IPPROTO_IP,IP_ADD_MEMBERSHIP)",
-                              getLastError());
+        throw SocketError("setsockopt(IPPROTO_IP,IP_ADD_MEMBERSHIP)");
     }
 }
 
@@ -242,7 +239,7 @@ void DgramSocket::leave(const Address &group,const Address &interf)
                   sizeof(joinAddr));
     if(rc < 0)
     {
-        throw SocketException("setsockopt(IPPROTO_IP,IP_DROP_MEMBERSHIP)");
+        throw SocketError("setsockopt(IPPROTO_IP,IP_DROP_MEMBERSHIP)");
     }
 }
 
@@ -252,7 +249,7 @@ void DgramSocket::setTTL(unsigned char ttl)
                       (SocketOptT*)&ttl,sizeof(ttl));
     if(rc<0)
     {
-        throw SocketException("setsockopt(IPPROTO_IP,IP_MULTICAST_TTL)");
+        throw SocketError("setsockopt(IPPROTO_IP,IP_MULTICAST_TTL)");
     }
 }
 

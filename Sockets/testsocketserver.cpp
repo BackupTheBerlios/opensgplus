@@ -106,10 +106,10 @@ int main(int argc,char **argv)
         broadcastServer();
         multicastServer();
     }
-    catch(SocketException &e)
+    catch(exception &e)
     {
         cerr << "Error" << endl;
-        cerr << e << endl;
+        cerr << e.what() << endl;
     }
 }
 

@@ -108,10 +108,10 @@ int main(int argc,char **argv)
         broadcastClient();
         multicastClient();
     }
-    catch(SocketException &e)
+    catch(exception &e)
     {
         cerr << "Error" << endl;
-        cerr << e << endl;
+        cerr << e.what() << endl;
     }
 	return 0;
 }

@@ -89,12 +89,35 @@ char Socket::cvsid[] = "@(#)$Id:$";
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
-int Socket::getLastError()
+int Socket::getError()
 {
 #ifdef WIN32
     return WSAGetLastError();
 #else
     return errno;
+#endif
+}
+
+int Socket::getHostError()
+{
+#ifdef WIN32
+    return WSAGetLastError();
+#else
+    return h_errno;
+#endif
+}
+
+const char *Socket::getErrorStr()
+{
+    return strerror(getError());
+}
+
+const char *Socket::getHostErrorStr()
+{
+#ifdef WIN32
+    return strerror(getHostError());
+#else
+    return hstrerror(getHostError());
 #endif
 }
 
@@ -161,7 +184,7 @@ int Socket::read(void *buf,int size)
     len=::recv(_sd,(char*)buf,size,0);
     if(len==-1)
     {
-        throw SocketException("recv()",getLastError());
+        throw SocketError("recv()");
     }
     return len;
 }
@@ -177,7 +200,7 @@ int Socket::peek(void *buf,int size)
              MSG_PEEK);
     if(len==-1)
     {
-        throw SocketException("recv()",getLastError());
+        throw SocketError("recv()");
     }
     return len;
 }
@@ -187,7 +210,7 @@ int Socket::write(const void *buf,int size)
     int len=::send(_sd,(char*)buf,size,0);
     if(len==-1)
     {
-        throw SocketException("send()",getLastError());
+        throw SocketError("send()");
     }
     return len;
 }
@@ -200,7 +223,7 @@ void Socket::bind(const Address &address)
                result.getSockAddr(),
                result.getSockAddrSize()) < 0)
     {
-        if(getLastError()==
+        if(getError()==
 #if defined WIN32
             WSAEADDRINUSE 
 #else
@@ -208,11 +231,11 @@ void Socket::bind(const Address &address)
 #endif
 		)
         {
-            throw SocketInUse("bind():",getLastError());
+            throw SocketInUse("bind()");
         }
         else
         {
-            throw SocketException("bind()",getLastError());
+            throw SocketError("bind()");
         }
     }
 }
@@ -221,7 +244,7 @@ void Socket::listen(int maxPending)
 {
     if(::listen(_sd,maxPending)<0)
     {
-        throw SocketException("listen()",getLastError());
+        throw SocketError("listen()");
     }
 }
 
@@ -231,7 +254,7 @@ void Socket::connect(const Address &address)
                   address.getSockAddr(),
                   address.getSockAddrSize()) )
     {
-        throw SocketException("connect()",getLastError());
+        throw SocketError("connect()");
     }
 }
 
@@ -250,7 +273,7 @@ void Socket::setBlocking(bool value)
         val=O_NDELAY;
     if (fcntl(_sd, F_GETFL, &val) < 0) 
     {
-        throw SocketException("fcntl()",getLastError());
+        throw SocketError("fcntl()");
     }    
     val|=O_NDELAY;
     if(value)
@@ -259,13 +282,13 @@ void Socket::setBlocking(bool value)
     }
     if (fcntl(_sd, F_SETFL, val) < 0) 
     {
-        throw SocketException("fcntl()",getLastError());
+        throw SocketError("fcntl()");
     }    
 #else
     u_long ulVal = !value;
     if( (ioctlsocket(_sd, FIONBIO, &ulVal)) != 0) 
     {
-        throw SocketException("ioctlsocket()",getLastError());
+        throw SocketError("ioctlsocket()");
     }    
 #endif
 }
@@ -278,7 +301,7 @@ Address Socket::getAddress()
     len=result.getSockAddrSize();
     if( ::getsockname(_sd,result.getSockAddr(),&len) < 0)
     {
-        throw SocketException("getsockname()",getLastError());
+        throw SocketError("getsockname()");
     }
     return result;
 }

@@ -132,7 +132,7 @@ void StreamSocket::open()
     _sd = ::socket(AF_INET, SOCK_STREAM, 0);
     if(_sd<0)
     {
-        throw SocketException("socket()");
+        throw SocketError("socket()");
     }
 }
 
@@ -147,7 +147,7 @@ StreamSocket StreamSocket::acceptFrom(Address &address)
                         &len);
     if(client._sd<0)
     {
-        throw SocketException("accept()");
+        throw SocketError("accept()");
     }
     return client;
 }
@@ -166,7 +166,7 @@ void StreamSocket::setDelay(bool value)
                   (SocketOptT*)&on, sizeof(on));
     if(rc<0)
     {
-        throw SocketException("setsockopt(,SOCK_STREAM,TCP_NODELAY)");
+        throw SocketError("setsockopt(,SOCK_STREAM,TCP_NODELAY)");
     }
 }
 

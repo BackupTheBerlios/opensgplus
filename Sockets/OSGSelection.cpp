@@ -183,7 +183,7 @@ int Selection::select(double duration)
                    tValP);
     if(count < 0)
     {
-        throw SocketException("select()");
+        throw SocketError("select()");
     }
     return count;
 }

@@ -160,7 +160,7 @@ void Address::setHost(const string &host)
         hent = gethostbyname(host.c_str());
         if(hent == NULL)
         {
-            throw SocketException("gethostbyname()");
+            throw SocketHostError("gethostbyname()");
         }
         // set address
         _sockaddr.sin_addr = *(struct in_addr *) hent->h_addr;
