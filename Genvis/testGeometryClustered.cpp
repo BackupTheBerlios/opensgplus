@@ -17,6 +17,7 @@
 #include "OSGSceneFileHandler.h"
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
+#include "OSGSFSysTypes.h"
 
 #include "OSGGeometryClustered.h"
 
@@ -28,6 +29,25 @@ USING_GENVIS_NAMESPACE
 static NodePtr scene;
 static SimpleSceneManager*   mgr;
 
+static Real32 numCells = 10;
+struct AssignGridParameter
+{
+   AssignGridParameter (const Real32& value) 
+     : m_value(value) 
+   {}
+   Action::ResultE enter (NodePtr& n) {
+     GeometryClusteredPtr core = GeometryClusteredPtr::dcast(n->getCore());
+     if (core != NullFC) {
+        core->setNumCells(m_value);
+     }
+     return Action::Continue;
+   }
+
+private:
+   Real32 m_value;
+};
+
+
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
 
@@ -37,15 +57,12 @@ int main(int argc, char **argv)
     // OSG init
     osgInit(argc,argv);
 
+#if 1
     // replace Geometry prototype by GeometryClustered prototype
     GeometryClusteredPtr 
       protoGeometryClustered = GeometryClustered::create();
-#if 0
-    beginEditCP(protoGeometryClustered);
-    protoGeometryClustered->setDlistCache(false);
-    endEditCP(protoGeometryClustered);
-#endif
     Geometry::getClassType().setPrototype(protoGeometryClustered);
+#endif
 
     // GLUT init
     int winid = setupGLUT(&argc, argv);
@@ -71,8 +88,8 @@ int main(int argc, char **argv)
         }
 
         scene = 
-	  //makeTorus(.5, 2, 16, 16);
-	  makeSphere(5, 1.0);
+	  makeTorus(.5, 2, 16, 16);
+	//makeSphere(5, 1.0);
 	SLOG << "torus generated" << std::endl;
     } else {
         /*
@@ -82,6 +99,16 @@ int main(int argc, char **argv)
 	SLOG << "scene '" << argv[1] << "' loaded" << std::endl;
     }
     addRefCP(scene);
+
+    // set grid parameters
+    {
+       AssignGridParameter actor(numCells);
+       traverse(scene, 
+		osgTypedMethodFunctor1ObjPtrCPtrRef<
+		Action::ResultE,
+		AssignGridParameter,
+		NodePtr        >(&actor, &AssignGridParameter::enter));    
+    }
 
     // create the SimpleSceneManager helper
     mgr = new SimpleSceneManager;
@@ -137,18 +164,45 @@ void motion(int x, int y)
 // react to keys
 void keyboard(unsigned char k, int x, int y)
 {
-    switch(k)
-    {
-    case 27:    
-      subRefCP(scene);
-      exit(1);
-    case '+':
-      GeometryClustered::cellSize += 1.f;
-      break;
-    case '-':
-      GeometryClustered::cellSize -= 1.f;
-      break;
-    }
+   switch(k) {
+   case 'w': // wireframe
+     glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+     break;
+   case 's': // solid
+     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+     break;
+   case 27:    
+     subRefCP(scene);
+     osgExit();
+     exit(1);
+   case '+':
+     numCells += 1;
+     // set grid parameters
+     {
+       AssignGridParameter actor(numCells);
+       traverse(scene, 
+		osgTypedMethodFunctor1ObjPtrCPtrRef<
+		Action::ResultE,
+		AssignGridParameter,
+		NodePtr        >(&actor, &AssignGridParameter::enter));    
+     }
+     SLOG << numCells << std::endl;
+     break;
+   case '-':
+     numCells -= 1;
+     // set grid parameters
+     {
+       AssignGridParameter actor(numCells);
+       traverse(scene, 
+		osgTypedMethodFunctor1ObjPtrCPtrRef<
+		Action::ResultE,
+		AssignGridParameter,
+		NodePtr        >(&actor, &AssignGridParameter::enter));    
+     }
+     SLOG << numCells << std::endl;
+     break;
+   }
+   glutPostRedisplay();
 }
 
 // setup the GLUT library which handles the windows for us
