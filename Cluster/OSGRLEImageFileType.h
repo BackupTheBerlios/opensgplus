@@ -48,7 +48,7 @@
 
 OSG_BEGIN_NAMESPACE
 
-class OSG_SYSTEMLIB_DLLMAPPING RLEImageFileType : public ImageFileType
+class OSG_CLUSTERLIB_DLLMAPPING RLEImageFileType : public ImageFileType
 {
     /*==========================  PUBLIC  =================================*/
   public:
