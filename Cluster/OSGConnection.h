@@ -47,7 +47,7 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#include <OSGCluster.h>
+#include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 
 OSG_BEGIN_NAMESPACE
@@ -70,7 +70,7 @@ OSG_BEGIN_NAMESPACE
  *  detailed
  */
 
-class OSG_CLUSTER_DLLMAPPING Connection
+class OSG_CLUSTERLIB_DLLMAPPING Connection
 {
   public:
 

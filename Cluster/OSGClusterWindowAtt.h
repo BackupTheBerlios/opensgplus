@@ -37,8 +37,8 @@
 \*---------------------------------------------------------------------------*/
 
 
-#ifndef _STREAMSOCKCONNECTION_H_
-#define _STREAMSOCKCONNECTION_H_
+#ifndef _OSGCLUSTERWINDOWATT_H_
+#define _OSGCLUSTERWINDOWATT_H_
 #ifdef __sgi
 #pragma once
 #endif
@@ -47,11 +47,9 @@
 //  Includes
 //---------------------------------------------------------------------------
 
-#include <vector>
-#include <OSGClusterDef.h>
-#include <OSGBaseTypes.h>
-#include <OSGConnection.h>
-#include <OSGStreamSocket.h>
+#include <OSGConfig.h>
+
+#include <OSGClusterWindowAttBase.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -67,20 +65,21 @@ OSG_BEGIN_NAMESPACE
 //  Class
 //---------------------------------------------------------------------------
 
-/*! \ingroup baselib
- *  \brief Brief
- *
- *  detailed
+/*! \brief *put brief class description here* 
  */
 
-class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
+class OSG_CLUSTERLIB_DLLMAPPING ClusterWindowAtt : public ClusterWindowAttBase
 {
+  private:
+
+    typedef ClusterWindowAttBase Inherited;
+
   public:
 
     //-----------------------------------------------------------------------
     //   constants                                                           
     //-----------------------------------------------------------------------
-
+    
     //-----------------------------------------------------------------------
     //   enums                                                               
     //-----------------------------------------------------------------------
@@ -89,38 +88,23 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     //   types                                                               
     //-----------------------------------------------------------------------
 
-    typedef UInt32 BlockLenT;
-    typedef std::vector<StreamSocket> SocketsT;
-
     //-----------------------------------------------------------------------
     //   class functions                                                     
     //-----------------------------------------------------------------------
+
+    static const char *getClassname(void) { return "ClusterWindowAtt"; };
 
     //-----------------------------------------------------------------------
     //   instance functions                                                  
     //-----------------------------------------------------------------------
 
-    StreamSockConnection();
-    virtual ~StreamSockConnection(void); 
+    virtual void changed(BitVector  whichField, 
+                         ChangeMode from);
+ 
+    /*------------------------------ dump -----------------------------------*/
 
-    /*------------------------- your_category -------------------------------*/
-
-    virtual MemoryHandle getBuffer();
-    virtual void resizeBuffer(int size);
-    virtual int getBufferSize();
-    virtual int getDataSize();
-    virtual void setDataSize(int size);
-    virtual void send();
-    virtual int receive();
-    virtual void flush();
-
-    void addSocket(StreamSocket &sock);
-
-    /*------------------------- your_operators ------------------------------*/
-
-    /*------------------------- assignment ----------------------------------*/
-
-    /*------------------------- comparison ----------------------------------*/
+    virtual void dump(      UInt32     uiIndent = 0, 
+                      const BitVector &bvFlags  = 0) const;
 
   protected:
 
@@ -144,15 +128,16 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     //   instance variables                                                  
     //-----------------------------------------------------------------------
 
-    int            _bufferSize;
-    int            _dataSize;
-    MemoryHandle   _buffer;
-    SocketsT       _sockets;
+    // They should all be in ClusterWindowAttBase.
 
     //-----------------------------------------------------------------------
     //   instance functions                                                  
     //-----------------------------------------------------------------------
 
+    ClusterWindowAtt(void);
+    ClusterWindowAtt(const ClusterWindowAtt &source);
+    virtual ~ClusterWindowAtt(void); 
+    
   private:
 
     //-----------------------------------------------------------------------
@@ -163,11 +148,12 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     //   types                                                               
     //-----------------------------------------------------------------------
 
-    typedef Connection Inherited;
-
     //-----------------------------------------------------------------------
     //   friend classes                                                      
     //-----------------------------------------------------------------------
+
+    friend class FieldContainer;
+    friend class ClusterWindowAttBase;
 
     //-----------------------------------------------------------------------
     //   friend functions                                                    
@@ -177,11 +163,13 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     //   class variables                                                     
     //-----------------------------------------------------------------------
 
-	static char cvsid[];
+    static char cvsid[];
 
     //-----------------------------------------------------------------------
     //   class functions                                                     
     //-----------------------------------------------------------------------
+
+    static void initMethod( void );
 
     //-----------------------------------------------------------------------
     //   instance variables                                                  
@@ -191,20 +179,23 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
     //   instance functions                                                  
     //-----------------------------------------------------------------------
 
-	// prohibit default functions (move to 'public' if you need one)
+    // prohibit default functions (move to 'public' if you need one)
 
-    StreamSockConnection(const StreamSockConnection &source);
-    StreamSockConnection& operator =(const StreamSockConnection &source);
+    void operator =(const ClusterWindowAtt &source);
 };
 
 //---------------------------------------------------------------------------
 //   Exported Types
 //---------------------------------------------------------------------------
 
-// class pointer
 
-typedef StreamSockConnection *StreamSockConnectionP;
+/** \brief class pointer
+ */
+typedef ClusterWindowAtt *ClusterWindowAttP;
 
 OSG_END_NAMESPACE
 
-#endif /* _STREAMSOCKCONNECTION_H_ */
+#include <OSGClusterWindowAtt.inl>
+#include <OSGClusterWindowAttBase.inl>
+
+#endif /* _OSGCLUSTERWINDOWATT_H_ */

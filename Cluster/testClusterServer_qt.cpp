@@ -48,6 +48,7 @@
 #include "OSGSelection.h"
 #include "OSGStreamSockConnection.h"
 #include "OSGVRMLWriteAction.h"
+#include "OSGClusterWindowAtt.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -143,9 +144,10 @@ void MyOSGQGLWidget::keyPressEvent ( QKeyEvent *ke )
 Bool WindowCreatedFunction(FieldContainerPtr& fcp,
                            RemoteAspect * aspect)
 {
+/*
     if(windowsCreated==serverNr)
     {
-        ract = RenderAction::create();
+        ract = DrawAction::create();
         glWidget = new MyOSGQGLWidget();
         app->setMainWidget( glWidget );
         glWidget->osgWin = QTWindowPtr::dcast( fcp );
@@ -155,6 +157,7 @@ Bool WindowCreatedFunction(FieldContainerPtr& fcp,
         glWidget->show();
     }
     windowsCreated++;
+*/
     return true;
 }
 
@@ -162,8 +165,25 @@ Bool WindowDestroyedFunction(FieldContainerPtr& fcp,
                              RemoteAspect * aspect)
 {
     WindowPtr window=WindowPtr::dcast(fcp);
+    ClusterWindowAttPtr att;
 
-    windowsCreated--;
+    // try to find the cluster attachment
+    att=ClusterWindowAttPtr::dcast(
+        window->findAttachment(ClusterWindowAtt::getClassType()
+                               .getGroupId())
+        );
+    if(att == OSG::NullFC)
+    {
+        return true;
+    }
+    cout << "destr att found" << endl;
+    // do i have to handle this window ?
+    if(att->getServerId() != serverNr)
+    {
+        return true;
+    }
+    cout << "destr this is for me" << endl;
+
     if(!glWidget)
         return true;
     if(glWidget->osgWin != window)
@@ -181,6 +201,38 @@ Bool WindowChangedFunction(FieldContainerPtr& fcp,
                            RemoteAspect * aspect)
 {
     QTWindowPtr window=QTWindowPtr::dcast(fcp);
+    ClusterWindowAttPtr att;
+
+    // try to find the cluster attachment
+    att=ClusterWindowAttPtr::dcast(
+        window->findAttachment(ClusterWindowAtt::getClassType()
+                               .getGroupId())
+        );
+    if(att == OSG::NullFC)
+    {
+        return true;
+    }
+    cout << "att found" << endl;
+    // do i have to handle this window ?
+    if(att->getServerId() != serverNr)
+    {
+        return true;
+    }
+    cout << "this is for me" << endl;
+
+    if(!glWidget)
+    {
+        // create widget
+        ract = RenderAction::create();
+        glWidget = new MyOSGQGLWidget();
+        app->setMainWidget( glWidget );
+        glWidget->osgWin = QTWindowPtr::dcast( fcp );
+        glWidget->osgWin->setGlWidget( glWidget );
+        glWidget->initializeGL( );
+        glWidget->setFixedSize(500,500);
+        glWidget->show();
+    }
+
     glWidget->setFixedSize(window->getSFWidth()->getValue(),
                            window->getSFHeight()->getValue());
     return true;

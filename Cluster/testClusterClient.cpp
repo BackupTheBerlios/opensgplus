@@ -41,6 +41,7 @@
 #include "OSGRemoteAspect.h"
 #include "OSGStreamSocket.h"
 #include "OSGStreamSockConnection.h"
+#include "OSGClusterWindowAtt.h"
 
 using namespace OSG;
 using namespace std;
@@ -76,6 +77,7 @@ void createSceneGraph(int argc,char **argv)
     int i;
     char *filename;
     QTWindowPtr window;
+    ClusterWindowAttPtr pWindowAtt;
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
     
@@ -215,8 +217,18 @@ void createSceneGraph(int argc,char **argv)
         vp->setSize( 0,0, 1,1 );
         endEditCP(vp);
 
+        // Server information
+        pWindowAtt = ClusterWindowAtt::create();
+        beginEditCP(pWindowAtt);
+        {
+            pWindowAtt->setServerId(i);
+            pWindowAtt->setComposite(false);
+        }
+        endEditCP(pWindowAtt);
+
         window = QTWindow::create();
         beginEditCP(window);
+        window->addAttachment(pWindowAtt);
         window->addPort( vp );
         window->setSize(width/servers.size(),height);
         endEditCP(window);
