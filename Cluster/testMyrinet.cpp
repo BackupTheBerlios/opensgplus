@@ -1,6 +1,8 @@
 #include <iostream>
 #include <stdlib.h>
 
+using namespace std;
+
 // do we have Myrinet configured in?
 #ifdef OSG_WITH_MYRINET
 #include "OSGMyrinetConnection.h"
@@ -48,7 +50,7 @@ int main(int argc,char **argv)
 {
 	if ( argc < 2 )
 	{
-		cerr << "Usage: testMyrinet -c or testMyrinet -s [node]+" << endl;
+		SFATAL << "Usage: testMyrinet -c or testMyrinet -s [node]+" << endl;
 		exit(1); 
 	}
 	
