@@ -1,7 +1,7 @@
 # add the Clusters library to the system
 
 ac_gdz_packages="${ac_gdz_packages} Cluster"
-ac_gdz_package_order="${ac_gdz_package_order} ClusterLib"
+ac_gdz_package_order="${ac_gdz_package_order} SocketsLib ClusterLib"
 ac_gdz_package_name_Cluster="Cluster" 
 ac_gdz_package_fact_init_Cluster="1" 
 ac_gdz_package_dirs_Cluster="Cluster@ Cluster/SimpleStereo@ Cluster/MultiDisplay@ Cluster/SortFirst@" 
