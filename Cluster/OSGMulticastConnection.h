@@ -36,139 +36,193 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-
-#ifndef _STREAMSOCKCONNECTION_H_
-#define _STREAMSOCKCONNECTION_H_
+#ifndef _MULTICASTCONNECTION_H_
+#define _MULTICASTCONNECTION_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-//---------------------------------------------------------------------------
-//  Includes
-//---------------------------------------------------------------------------
-
-#include <vector>
-#include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
+#include <OSGTime.h>
+#include <OSGClusterDef.h>
 #include <OSGConnection.h>
-#include <OSGStreamSocket.h>
+#include <OSGDgramSocket.h>
+#include <OSGAddress.h>
+
+#define MULTICAST_STATISTICS
 
 OSG_BEGIN_NAMESPACE
 
-//---------------------------------------------------------------------------
-//  Forward References
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//   Types
-//---------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------
-//  Class
-//---------------------------------------------------------------------------
+class Thread;
 
 /*! \ingroup baselib
  *  \brief Brief
- *
- *  detailed
  */
+#define MULTICASTCONNECTION_MAX_WINDOW_SIZE 64
 
-class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
+class OSG_CLUSTERLIB_DLLMAPPING MulticastConnection : public Connection
 {
     /*==========================  PUBLIC  =================================*/
   public:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                      Types                                   */
+    /*! \name                   Constructors                               */
     /*! \{                                                                 */
-
-    struct SocketBufferHeader {
-        UInt32 size;
-    };
-    typedef Connection Inherited;
-    typedef std::vector<StreamSocket> SocketsT;
-    typedef std::vector<UInt8>        SocketBufferT;
+ 
+    MulticastConnection(int port=0);
 
     /*! \}                                                                 */
-
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructor                                */
-    /*! \{                                                                 */
-
-    StreamSockConnection();
-
-    /*! \}                                                                 */
-
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~StreamSockConnection(void); 
+    virtual ~MulticastConnection(void); 
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Connection establishment                   */
+    /*! \name                      Get                                     */
     /*! \{                                                                 */
-
-    void accept         ( const string &address );
-    void connect        ( const string &address );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   Synchronisation                            */
+    /*! \name                      Set                                     */
     /*! \{                                                                 */
 
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   your_category                              */
+    /*! \{                                                                 */
+
+    void accept         ( const std::string &address );
+    void connect        ( const std::string &address );
     void wait           ();
     void signal         ();
 
-    /*! \}                                                                 */
+    void printStatistics(void);
+    void clearStatistics(void);
 
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   your_operators                             */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Assignment                                */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Comparison                                */
+    /*! \{                                                                 */
+
+    //OSGBool operator < (const MulticastConnection &other) const;
+    
+	//OSGBool operator == (const MulticastConnection &other) const;
+	//OSGBool operator != (const MulticastConnection &other) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                        Dump                                  */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
+    enum UDPHeaderType {
+        ACK,
+        DATA,
+        ALIVE,
+        SYNC
+    };
+
+    typedef std::vector<std::vector<UInt8> > UDPBuffersT;
+    struct UDPHeader
+    {
+        UInt32 seqNumber;
+        UInt8  type;
+    };
+    struct UDPBuffer
+    {
+        UDPHeader  header;
+        union 
+        {
+            UInt8 data[1];
+            struct 
+            {
+                UInt32 size;
+                UInt32 seqNumber[MULTICASTCONNECTION_MAX_WINDOW_SIZE];
+            } nack;
+        };
+    };
+    struct UDPBufferInfo
+    {
+        UInt32     size;
+        Bool       send;
+        UDPBuffer *buffer;
+    };
+
     /*---------------------------------------------------------------------*/
-    /*! \name                   IO Implementation                          */
+    /*! \name                  read/write                                  */
     /*! \{                                                                 */
 
-    virtual void               read(MemoryHandle mem,int size);
     virtual BuffersT::iterator read();
     virtual void               write(BuffersT::iterator writeEnd);
-    virtual void               write(MemoryHandle mem,int size);
-    void                       interpreteAddress(const string &address,
-                                                 std::string  &host,
-                                                 UInt32       &port);
 
     /*! \}                                                                 */
-
     /*---------------------------------------------------------------------*/
-    /*! \name                Instance Variables                            */
+    /*! \name                  address handling                            */
+    /*! \{                                                                 */
+    void interpreteAddress(const string &address,
+                           std::string  &host,
+                           UInt32       &port);
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Member                                  */
     /*! \{                                                                 */
 
-    SocketsT             _sockets;
-    std::vector<UInt8>   _socketBuffer;
-    SocketBufferHeader  *_socketBufferHeader;
+    std::vector<Address>              _receivers;
+    UInt32                            _seqNumber;
+    UDPBuffersT                       _udpBuffers;
+    Time                              _maxWaitForAck;
+    Time                              _waitForAck;
+    Time                              _maxWaitForSync;
+    DgramSocket                       _socket;
+    Address                           _address;
 
     /*! \}                                                                 */
-
+#   ifdef MULTICAST_STATISTICS
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Statistics                              */
+    /*! \{                                                                 */
+    UInt32                            _statBytesRead;
+    UInt32                            _statBytesWrite;
+    Time                              _statTimeRead;
+    Time                              _statTimeWrite;
+    UInt32                            _statPckDrop;
+    UInt32                            _statAckRetransmit;
+    /*! \}                                                                 */
+#   endif
+    /*==========================  PRIVATE  ================================*/
   private:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                   Class Variable                             */
+    /*! \name                 Alive thread handling                        */
     /*! \{                                                                 */
-
-	static char cvsid[];
-
+    Thread *_aliveThread;
+    Bool _stopAliveThread;
+    void startAliveThread();
+    void stopAliveThread();
+    static void *aliveProc(void *arg);
     /*! \}                                                                 */
 
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Copy                                       */
-    /*! \{                                                                 */
+    typedef Connection Inherited;
 
-	// prohibit default functions (move to 'public' if you need one)
-    StreamSockConnection(const StreamSockConnection &source);
-    StreamSockConnection& operator =(const StreamSockConnection &source);
+	/*!\brief prohibit default function (move to 'public' if needed) */
 
-    /*! \}                                                                 */
+    MulticastConnection(const MulticastConnection &source);
+    void operator =(const MulticastConnection &source);
 };
 
 //---------------------------------------------------------------------------
@@ -177,8 +231,10 @@ class OSG_CLUSTERLIB_DLLMAPPING StreamSockConnection:public Connection
 
 // class pointer
 
-typedef StreamSockConnection *StreamSockConnectionP;
+typedef MulticastConnection *MulticastConnectionP;
 
 OSG_END_NAMESPACE
 
-#endif /* _STREAMSOCKCONNECTION_H_ */
+#define OSG_MULTICASTCONNECTIONHEADER_CVSID "@(#)$Id:$"
+
+#endif /* _MULTICASTCONNECTION_H_ */

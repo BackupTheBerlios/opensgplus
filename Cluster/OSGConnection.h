@@ -47,6 +47,7 @@
 //  Includes
 //---------------------------------------------------------------------------
 
+#include <string>
 #include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGBinaryDataHandler.h>
@@ -99,6 +100,11 @@ class OSG_CLUSTERLIB_DLLMAPPING Connection:public BinaryDataHandler
     virtual ~Connection(void); 
 
     /*------------------------- your_category -------------------------------*/
+
+    virtual void accept         ( const std::string &address )=0;
+    virtual void connect        ( const std::string &address )=0;
+    virtual void wait           ()=0;
+    virtual void signal         ()=0;
 
     /*------------------------- your_operators ------------------------------*/
 

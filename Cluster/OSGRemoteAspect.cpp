@@ -393,7 +393,8 @@ void RemoteAspect::sendSync(Connection &connection,
         // apply field filter
         if(filterI != _fieldFilter.end())
         {
-            FDEBUG (( "SyncFieldFilter: :%s \n",fcPtr->getType().getName() ))
+            FDEBUG (( "SyncFieldFilter: :%s \n",
+                      fcPtr->getType().getName().str() ))
             mask &= 0xFFFFFFFF ^ filterI->second;
         }
         // send changes

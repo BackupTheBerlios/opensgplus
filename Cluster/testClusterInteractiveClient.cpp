@@ -31,7 +31,7 @@
 #include <OSGGLUTWindow.h>
 
 #include "OSGVRMLFile.h"
-#include "OSGQTWindow.h"
+#include "OSGGLUTWindow.h"
 #include "OSGViewport.h"
 #include "OSGCamera.h"
 #include "OSGTileCameraDecorator.h"
@@ -44,6 +44,7 @@
 #include "OSGRemoteAspect.h"
 #include "OSGStreamSocket.h"
 #include "OSGStreamSockConnection.h"
+#include "OSGMulticastConnection.h"
 #include "OSGClusterWindowAtt.h"
 
 using namespace OSG;
@@ -55,11 +56,10 @@ ViewportPtr           vp;
 TransformPtr          cam_trans;
 VRMLTransformPtr      trans;
 PerspectiveCameraPtr  cam;
-vector<QTWindowPtr>   windows;
 VRMLFile             *pLoader = NULL;
-
-vector<StreamSocket> servers;
-
+Connection           *connection;
+int                   servers;
+RemoteAspect          aspect;
 
 // **************
 // GLUT variables
@@ -74,13 +74,6 @@ int winwidth=0, winheight=0;
 DrawAction * ract;
 WindowPtr win;
 int winid;
-
-// Clustering variables
-
-StreamSockConnection connection;
-RemoteAspect         aspect;
-vector<StreamSocket>::iterator i;
-
 
 // Program
 
@@ -99,13 +92,13 @@ Action::ResultE calcVNormal( CNodePtr &, Action * action )
 
 void createSceneGraph(int argc,char **argv)
 {
-    int width=servers.size()*500;
+    int width=servers*500;
     int height=500;
-    int nhserv=servers.size();
+    int nhserv=servers;
     int nvserv=1;
     int i;
     char *filename;
-    QTWindowPtr window;
+    GLUTWindowPtr window;
     ClusterWindowAttPtr pWindowAtt;
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
@@ -243,7 +236,7 @@ void createSceneGraph(int argc,char **argv)
     // Viewport
 
     // one window for each server
-    for(i=0;i<(int)servers.size();i++)
+    for(i=0;i<(int)servers;i++)
     {
         deco = TileCameraDecorator::create();
         beginEditCP(deco);
@@ -273,14 +266,12 @@ void createSceneGraph(int argc,char **argv)
         }
         endEditCP(pWindowAtt);
 
-        window = QTWindow::create();
+        window = GLUTWindow::create();
         beginEditCP(window);
         window->addAttachment(pWindowAtt);
         window->addPort( vp );
         window->setSize(width/nhserv,height/nvserv);
         endEditCP(window);
-
-        windows.push_back(window);
     }
 
     // move geometry in to viewfrustum
@@ -325,46 +316,6 @@ void createSceneGraph(int argc,char **argv)
 
 	win->init();
 
-	// setup connection
-	
-	vector<StreamSocket>::iterator si;
-	
-    for(si=servers.begin();
-        si!=servers.end();
-        si++)
-    {
-        connection.addSocket(*si);
-    }
-
-}
-
-StreamSocket connectRenderClient(char *host,int port)
-{
-    StreamSocket sock;
-    Bool         connected;
-    UInt32       serverNr=servers.size();
-
-    sock.open();
-    do
-    {
-        try
-        {
-            cout << "Try to connect to " << host << " port " << port << endl;
-            sock.connect(Address(host,port));
-            // tell server its nr
-            sock.write(&serverNr,sizeof(serverNr));
-            connected=true;
-        } 
-        catch(...)
-        {
-            cout << "No rendering server at " << host << " port " << port << endl;
-            cout << "Chickening out, as this tends to kill the NCSA wall" << endl;
-			exit(1);
-			sleep(1);
-            connected=false;
-        }
-    } while(!connected);
-    return sock;
 }
 
 // ***********************************
@@ -392,28 +343,24 @@ display(void)
 
 	win->draw( ract );	
 
-	// send syncronisation
-    aspect.sendSync(connection,Thread::getCurrentChangeList());
-    Thread::getCurrentChangeList()->clearAll();
-
-	UInt8 trigger;
-	
-	vector<StreamSocket>::iterator i;
-    for(i=servers.begin();
-        i!=servers.end();
-        i++)
+    try
     {
-        // wait for all servers to finish
-        i->read(&trigger,sizeof(UInt8));
-    }
-    for(i=servers.begin();
-        i!=servers.end();
-        i++)
+        // send syncronisation
+        aspect.sendSync(*connection,Thread::getCurrentChangeList());
+        Thread::getCurrentChangeList()->clearAll();
+        // sync swap
+        connection->signal();
+	}
+    catch(exception &e)
     {
-        // trigger next frame
-        i->write(&trigger,sizeof(UInt8));
+        cout << e.what() << endl;
+        exit(0);
     }
-
+    catch(...)
+    {
+        cout << "unknown exception" << endl;
+        exit(0);
+    }
 }
 
 void reshape( int w, int h )
@@ -492,11 +439,21 @@ mouse(int button, int state, int x, int y)
 
 void key(unsigned char key, int x, int y)
 {
+    MulticastConnection *mc;
 	switch ( key )
 	{
-	case 27:	// should kill the clients here
-				osgExit(); 
-				exit(0);
+        case 's':
+            mc=dynamic_cast<MulticastConnection*>(connection);
+            if(mc)
+            {
+                mc->printStatistics();
+                mc->clearStatistics();
+                fflush(stdout);
+            }
+            break;
+        case 27:	// should kill the clients here
+            osgExit(); 
+            exit(0);
 	}
 	
 	glutPostRedisplay();
@@ -529,19 +486,13 @@ Action::ResultE ignore( CNodePtr &, Action * action )
 
 int main( int argc, char **argv )
 {
-    char host[100];
-    int port;
-    int i,j;
-    NodePtr node;
+    int connType=0;
+    int arg;
 
  	// OSG init
     osgInit(argc, argv);
-    // clear changelist from prototypes
-    Thread::getCurrentChangeList()->clearAll();
-    // ??? NodePtr xxx=Node::create();
-	
+
 	// create the GLUT window for interaction
-	
 	glutInit(&argc, argv);
 	glutInitDisplayMode( GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
 	winid = glutCreateWindow("OpenSG Cluster Client");
@@ -550,37 +501,45 @@ int main( int argc, char **argv )
 	glutDisplayFunc(display);       
 	glutMouseFunc(mouse);   
 	glutMotionFunc(motion); 
-	
+
 	ract = DrawAction::create();
 	// just draw the group's volumes as wireframe, ignore geometries
 	ract->registerEnterFunction( Group::getClassType(),
 									osgFunctionFunctor2( wireDraw ) );
 	ract->registerEnterFunction( Geometry::getClassType(),
 									osgFunctionFunctor2( ignore ) );
-	
+
+    // clear changelist from prototypes
+    OSG::Thread::getCurrentChangeList()->clearAll();
+
     try
     {
-        for(i=1;i<argc;i++)
+        for(arg=1;arg<argc;arg++)
         {
-            if(argv[i][0] == '-')
-                continue;
-            port = 7878;
-            for(j=0;j<=(int)strlen(argv[i]);j++)
-            {
-                if(argv[i][j] == ':' )
-                {
-                    host[j]='\0';
-                    port=atoi(&argv[i][j+1]);
-                    break;
-                }
-                host[j] = argv[i][j];
-            }
-            // connect to server
-            servers.push_back(connectRenderClient(host,port));
+            if(strcmp(argv[arg],"-m")==0)
+                connType=1;
         }
-        if(servers.size()==0)
+        switch(connType)
         {
-            cout << argv[0] << " [-ffile] [-wwidth] [-hheight] server1 server2 ... serverN" << endl;
+            case 0:
+                connection=new StreamSockConnection();
+                break;
+            case 1:
+                connection=new MulticastConnection();
+                break;
+        }
+        servers=0;
+        for(arg=1;arg<argc;arg++)
+        {
+            if(argv[arg][0] == '-')
+                continue;
+            cout << "Connect to :" << argv[arg] << endl;
+            connection->connect(argv[arg]);
+            servers++;
+        }
+        if(servers==0)
+        {
+            cout << argv[0] << " [-m] [-ffile] [-wwidth] [-hheight] server1 server2 ... serverN" << endl;
             exit(0);
         }
         createSceneGraph(argc,argv);
@@ -592,7 +551,7 @@ int main( int argc, char **argv )
     }
     catch(...)
     {
-        cout << "exception" << endl;
+        cout << "unknown exception" << endl;
     }
 	return 0;
 }

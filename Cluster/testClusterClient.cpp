@@ -28,7 +28,7 @@
 #include <OSGGeoFunctions.h>
 
 #include "OSGVRMLFile.h"
-#include "OSGQTWindow.h"
+#include "OSGGLUTWindow.h"
 #include "OSGViewport.h"
 #include "OSGCamera.h"
 #include "OSGTileCameraDecorator.h"
@@ -41,6 +41,7 @@
 #include "OSGRemoteAspect.h"
 #include "OSGStreamSocket.h"
 #include "OSGStreamSockConnection.h"
+#include "OSGMulticastConnection.h"
 #include "OSGClusterWindowAtt.h"
 
 using namespace OSG;
@@ -52,10 +53,10 @@ ViewportPtr           vp;
 TransformPtr          cam_trans;
 VRMLTransformPtr      trans;
 PerspectiveCameraPtr  cam;
-vector<QTWindowPtr>   windows;
 VRMLFile             *pLoader = NULL;
-
-vector<StreamSocket> servers;
+Connection           *connection;
+int                   servers;
+RemoteAspect          aspect;
 
 OSG::Action::ResultE calcVNormal( OSG::CNodePtr &, OSG::Action * action )
 {
@@ -72,11 +73,11 @@ OSG::Action::ResultE calcVNormal( OSG::CNodePtr &, OSG::Action * action )
 
 void createSceneGraph(int argc,char **argv)
 {
-    int width=servers.size()*500;
+    int width=servers*500;
     int height=500;
     int i;
     char *filename;
-    QTWindowPtr window;
+    GLUTWindowPtr window;
     ClusterWindowAttPtr pWindowAtt;
     TileCameraDecoratorPtr deco;
     NodePtr transNode;
@@ -196,14 +197,14 @@ void createSceneGraph(int argc,char **argv)
     // Viewport
 
     // one window for each server
-    for(i=0;i<(int)servers.size();i++)
+    for(i=0;i<(int)servers;i++)
     {
         deco = TileCameraDecorator::create();
         beginEditCP(deco);
         deco->setCamera( cam );
-        deco->setSize( 1.0/servers.size() * i,
+        deco->setSize( 1.0/servers * i,
                        0.0, 
-                       1.0/servers.size() * (i + 1),
+                       1.0/servers * (i + 1),
                        1.0);
         deco->setFullWidth(width);
         deco->setFullHeight(height);
@@ -226,14 +227,13 @@ void createSceneGraph(int argc,char **argv)
         }
         endEditCP(pWindowAtt);
 
-        window = QTWindow::create();
+        window = GLUTWindow::create();
         beginEditCP(window);
         window->addAttachment(pWindowAtt);
         window->addPort( vp );
-        window->setSize(width/servers.size(),height);
+        window->setSize(width/servers,height);
         endEditCP(window);
 
-        windows.push_back(window);
     }
 
     // move geometry in to viewfrustum
@@ -246,19 +246,9 @@ void createSceneGraph(int argc,char **argv)
 
 void renderLoop()
 {
-    StreamSockConnection connection;
-    RemoteAspect         aspect;
-    UInt8                trigger;
-    vector<StreamSocket>::iterator i;
     Quaternion           rot;
     static float         rad=0;
 
-    for(i=servers.begin();
-        i!=servers.end();
-        i++)
-    {
-        connection.addSocket(*i);
-    }
     while(1)
     {
         beginEditCP(trans);
@@ -267,86 +257,49 @@ void renderLoop()
         rot=Quaternion(0,1,.3,rad);
         rad+=.2;
         // send syncronisation
-        aspect.sendSync(connection,OSG::Thread::getCurrentChangeList());
+        aspect.sendSync(*connection,OSG::Thread::getCurrentChangeList());
         OSG::Thread::getCurrentChangeList()->clearAll();
-
-        for(i=servers.begin();
-            i!=servers.end();
-            i++)
-        {
-            // wait for all servers to finish
-            i->read(&trigger,sizeof(UInt8));
-        }
-        for(i=servers.begin();
-            i!=servers.end();
-            i++)
-        {
-            // trigger next frame
-            i->write(&trigger,sizeof(UInt8));
-        }
+        // synchronize swap
+        connection->signal();
     }
-}
-
-StreamSocket connectRenderClient(char *host,int port)
-{
-    StreamSocket sock;
-    Bool         connected;
-    UInt32       serverNr=servers.size();
-
-    sock.open();
-    do
-    {
-        try
-        {
-            cout << "Try to connect to " << host << " port " << port << endl;
-            sock.connect(Address(host,port));
-            // tell server its nr
-            sock.write(&serverNr,sizeof(serverNr));
-            connected=true;
-        } 
-        catch(...)
-        {
-            cout << "No rendering server at " << host << " port " << port << endl;
-            sleep(1);
-            connected=false;
-        }
-    } while(!connected);
-    return sock;
 }
 
 int main( int argc, char **argv )
 {
-    char host[100];
-    int port;
-    int i,j;
-    NodePtr node;
+    int connType=0;
+    int arg;
 
  	// OSG init
     osgInit(argc, argv);
     // clear changelist from prototypes
     OSG::Thread::getCurrentChangeList()->clearAll();
-    NodePtr xxx=Node::create();
+
     try
     {
-        for(i=1;i<argc;i++)
+        for(arg=1;arg<argc;arg++)
         {
-            if(argv[i][0] == '-')
-                continue;
-            port = 7878;
-            for(j=0;j<=(int)strlen(argv[i]);j++)
-            {
-                if(argv[i][j] == ':' )
-                {
-                    host[j]='\0';
-                    port=atoi(&argv[i][j+1]);
-                    break;
-                }
-                host[j] = argv[i][j];
-            }
-            // connect to server
-            servers.push_back(connectRenderClient(host,port));
+            if(strcmp(argv[arg],"-m")==0)
+                connType=1;
         }
-        if(servers.size()==0)
+        switch(connType)
+        {
+            case 0:
+                connection=new StreamSockConnection();
+                break;
+            case 1:
+                connection=new MulticastConnection();
+                break;
+        }
+        servers=0;
+        for(arg=1;arg<argc;arg++)
+        {
+            if(argv[arg][0] == '-')
+                continue;
+            cout << "Connect to :" << argv[arg] << endl;
+            connection->connect(argv[arg]);
+            servers++;
+        }
+        if(servers==0)
         {
             cout << argv[0] << " [-ffile] [-wwidth] [-hheight] server1 server2 ... serverN" << endl;
             exit(0);
@@ -360,7 +313,9 @@ int main( int argc, char **argv )
     }
     catch(...)
     {
-        cout << "exception" << endl;
+        cout << "unknown exception" << endl;
     }
 	return 0;
 }
+
+

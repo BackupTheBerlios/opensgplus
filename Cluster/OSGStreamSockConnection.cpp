@@ -260,12 +260,89 @@ void StreamSockConnection::write(BuffersT::iterator writeEnd)
     }
 }
 
-/** add a socket to the connection
+/** Wait for incommint connections on the given address
+ *
+ * @param address    Port number
  *
  **/
-void StreamSockConnection::addSocket(StreamSocket &sock)
+void StreamSockConnection::accept( const string &address )
 {
-    _sockets.push_back(sock);
+    string host;
+    UInt32 port;
+    StreamSocket socket;
+
+    interpreteAddress(address,host,port);
+    socket.open();
+    socket.setReusePort(true);
+    socket.bind(AnyAddress(port));
+    socket.listen();
+    _sockets.push_back(socket.accept());
+    socket.close();
+}
+
+/** connect a connection at the given address
+ *
+ * @param address    Host:Port
+ *
+ **/
+void StreamSockConnection::connect( const string &address )
+{
+    string host;
+    UInt32 port;
+    StreamSocket socket;
+
+    interpreteAddress(address,host,port);
+    socket.open();
+    socket.connect(Address(host.c_str(),port));
+    _sockets.push_back(socket);
+}
+
+/** wait for sync
+ *
+ **/
+void StreamSockConnection::wait()
+{
+    SocketsT::iterator   i;
+    UInt8                trigger;
+
+    for(i =_sockets.begin();
+        i!=_sockets.end();
+        i++)
+    {
+        // tell receiver wait entered
+        i->write(&trigger,sizeof(UInt8));
+    }
+    for(i =_sockets.begin();
+        i!=_sockets.end();
+        i++)
+    {
+        // wait for signal
+        i->read(&trigger,sizeof(UInt8));
+    }
+}
+
+/** send sync
+ *
+ **/
+void StreamSockConnection::signal()
+{
+    SocketsT::iterator   i;
+    UInt8                trigger;
+
+    for(i =_sockets.begin();
+        i!=_sockets.end();
+        i++)
+    {
+        // wait for all links to enter wait
+        i->read(&trigger,sizeof(UInt8));
+    }
+    for(i =_sockets.begin();
+        i!=_sockets.end();
+        i++)
+    {
+        // send signal to all links
+        i->write(&trigger,sizeof(UInt8));
+    }
 }
 
 /*-------------------------- assignment -----------------------------------*/
@@ -288,9 +365,37 @@ void StreamSockConnection::addSocket(StreamSocket &sock)
  -  protected                                                              -
 \*-------------------------------------------------------------------------*/
 
+void StreamSockConnection::interpreteAddress(const string &address,
+                                             std::string  &host,
+                                             UInt32       &port)
+{
+    UInt32 pos=address.find(':',0);
+    
+    if(pos>0)
+    {
+        host = address.substr(0,pos);
+        port = atoi(address.substr(pos+1).c_str());
+    }
+    else
+    {
+        string::const_iterator i;
+        for(i =address.begin();
+            i!=address.end() && isdigit(*i);
+            i++);
+        if(i==address.end())
+        {
+            host="";
+            port=atoi(address.c_str());
+        }
+        else
+        {
+            host=address;
+            port=0;
+        }
+    }
+}
 
 /*-------------------------------------------------------------------------*\
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
-
 
