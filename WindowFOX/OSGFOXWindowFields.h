@@ -2,7 +2,9 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *                                                                           *
+ *                            www.opensg.org                                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -42,156 +44,97 @@
  **          Any changes made to this file WILL be lost when it is          **
  **           regenerated, which can become necessary at any time.          **
  **                                                                         **
- **     Do not change this file, changes should be done in the derived      **
- **     class StereoCamera!
- **                                                                         **
  *****************************************************************************
 \*****************************************************************************/
 
+
+#ifndef _OSGFOXWINDOWFIELDS_H_
+#define _OSGFOXWINDOWFIELDS_H_
+#ifdef __sgi
+#pragma once
+#endif
+
 #include <OSGConfig.h>
+
+#include <OSGFieldContainerPtr.h>
+#include <OSGNodeCoreFieldDataType.h>
+#include <OSGWindowFOXDef.h>
+
+#ifdef WIN32
+# include <OSGWIN32WindowFields.h>
+#else
+# include <OSGXWindowFields.h>
+#endif
 
 OSG_BEGIN_NAMESPACE
 
+class FOXWindow;
 
-//! access the type of the class
-inline OSG::FieldContainerType &StereoCameraBase::getClassType(void)
+//! FOXWindowPtr
+
+#ifdef WIN32
+typedef FCPtr<WIN32WindowPtr, FOXWindow> FOXWindowPtr;
+#else
+typedef FCPtr<XWindowPtr,     FOXWindow> FOXWindowPtr;
+#endif
+
+/*! \brief FOXWindowPtr field traits 
+    \ingroup FieldLib
+    \ingroup SingleFields
+    \ingroup MultiFields
+*/
+
+template <>
+struct FieldDataTraits<FOXWindowPtr> : 
+    public FieldTraitsRecurseMapper<FOXWindowPtr>
 {
-    return _type; 
-} 
+    static DataType             _type;                       
 
-//! access the numerical type of the class
-inline OSG::UInt32 StereoCameraBase::getClassTypeId(void) 
-{
-    return _type.getId(); 
-} 
+    enum                        { StringConvertable = 0x00 };
+    enum                        { bHasParent        = 0x01 };
 
-//! create a new instance of the class
-inline StereoCameraPtr StereoCameraBase::create(void) 
-{
-    StereoCameraPtr fc; 
+    static DataType &getType (void) { return _type;        }
 
-    if(getClassType().getPrototype() != osg::NullFC) 
-    {
-        fc = StereoCameraPtr::dcast(
-            getClassType().getPrototype()-> shallowCopy()); 
-    }
-    
-    return fc; 
-}
+    static char     *getSName(void) { return "SFFOXWindowPtr"; }
+    static char     *getMName(void) { return "MFFOXWindowPtr"; }
+};
 
-//! create an empty new instance of the class, do not copy the prototype
-inline StereoCameraPtr StereoCameraBase::createEmpty(void) 
-{ 
-    StereoCameraPtr returnValue; 
-    
-    newPtr(returnValue); 
+//! SFFOXWindowPtr
+//! \ingroup SingleFields
 
-    return returnValue; 
-}
+typedef SField<FOXWindowPtr> SFFOXWindowPtr;
 
+#ifndef OSG_COMPILEWINDOWFOXINST
+#if defined(__sgi)
 
-/*------------------------------ get -----------------------------------*/
+#pragma do_not_instantiate SField<FOXWindowPtr>::_fieldType
 
-OSG_CLUSTERLIB_DLLMAPPING
-SFReal32 *StereoCameraBase::getSFFov(void)
-{
-    return &_sfFov;
-}
+#else
 
-OSG_CLUSTERLIB_DLLMAPPING
-SFReal32 *StereoCameraBase::getSFEyedistance(void)
-{
-    return &_sfEyedistance;
-}
+OSG_DLLEXPORT_DECL1(SField, FOXWindowPtr, OSG_WINDOWFOXLIB_DLLTMPLMAPPING)
 
-OSG_CLUSTERLIB_DLLMAPPING
-SFReal32 *StereoCameraBase::getSFZeroparallax(void)
-{
-    return &_sfZeroparallax;
-}
+#endif
+#endif
 
-OSG_CLUSTERLIB_DLLMAPPING
-SFReal32 *StereoCameraBase::getSFWhicheye(void)
-{
-    return &_sfWhicheye;
-}
+//! MFFOXWindowPtr
+//! \ingroup MultiFields
 
+typedef MField<FOXWindowPtr> MFFOXWindowPtr;
 
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &StereoCameraBase::getFov(void)
-{
-    return _sfFov.getValue();
-}
+#ifndef OSG_COMPILEFOXWINDOWINST
+#if defined(__sgi)
 
-OSG_CLUSTERLIB_DLLMAPPING
-const Real32 &StereoCameraBase::getFov(void) const
-{
-    return _sfFov.getValue();
-}
+#pragma do_not_instantiate MField<FOXWindowPtr>::_fieldType
 
-OSG_CLUSTERLIB_DLLMAPPING
-void StereoCameraBase::setFov(const Real32 &value)
-{
-    _sfFov.setValue(value);
-}
+#else
 
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &StereoCameraBase::getEyedistance(void)
-{
-    return _sfEyedistance.getValue();
-}
+OSG_DLLEXPORT_DECL1(MField, FOXWindowPtr, OSG_WINDOWFOXLIB_DLLTMPLMAPPING)
 
-OSG_CLUSTERLIB_DLLMAPPING
-const Real32 &StereoCameraBase::getEyedistance(void) const
-{
-    return _sfEyedistance.getValue();
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-void StereoCameraBase::setEyedistance(const Real32 &value)
-{
-    _sfEyedistance.setValue(value);
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &StereoCameraBase::getZeroparallax(void)
-{
-    return _sfZeroparallax.getValue();
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-const Real32 &StereoCameraBase::getZeroparallax(void) const
-{
-    return _sfZeroparallax.getValue();
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-void StereoCameraBase::setZeroparallax(const Real32 &value)
-{
-    _sfZeroparallax.setValue(value);
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-Real32 &StereoCameraBase::getWhicheye(void)
-{
-    return _sfWhicheye.getValue();
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-const Real32 &StereoCameraBase::getWhicheye(void) const
-{
-    return _sfWhicheye.getValue();
-}
-
-OSG_CLUSTERLIB_DLLMAPPING
-void StereoCameraBase::setWhicheye(const Real32 &value)
-{
-    _sfWhicheye.setValue(value);
-}
-
-
+#endif
+#endif
 
 OSG_END_NAMESPACE
 
-#define OSGSTEREOCAMERABASE_INLINE_CVSID "@(#)$Id: OSGStereoCameraBase.inl,v 1.1 2002/05/24 15:50:49 fuenfzig Exp $"
+#define OSGFOXWINDOWFIELDS_HEADER_CVSID "@(#)$Id: OSGFOXWindowFields.h,v 1.1 2002/05/24 16:07:32 fuenfzig Exp $"
 
+#endif /* _OSGFOXWINDOWFIELDS_H_ */

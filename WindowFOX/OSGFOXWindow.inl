@@ -44,5 +44,5 @@ OSG_BEGIN_NAMESPACE
 
 OSG_END_NAMESPACE
 
-#define OSGFOXWINDOW_INLINE_CVSID "@(#)$Id: OSGFOXWindow.inl,v 1.1 2002/05/24 15:50:49 fuenfzig Exp $"
+#define OSGFOXWINDOW_INLINE_CVSID "@(#)$Id: OSGFOXWindow.inl,v 1.1 2002/05/24 16:07:32 fuenfzig Exp $"
 

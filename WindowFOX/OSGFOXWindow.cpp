@@ -36,90 +36,98 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-
-#ifndef _SOCKETEXCEPTION_H_
-#define _SOCKETEXCEPTION_H_
-#ifdef __sgi
-#pragma once
-#endif
-
 //---------------------------------------------------------------------------
 //  Includes
 //---------------------------------------------------------------------------
 
-#include <iostream>
-#include <string>
-#include "OSGException.h"
-#include "OSGSocketConfig.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-OSG_BEGIN_NAMESPACE
+#include <OSGConfig.h>
 
-class OSG_SOCKET_DLLMAPPING SocketException : public Exception 
-{
-public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
-    /*! \{                                                                 */
+#include "OSGFOXWindow.h"
+#include "OSGFOXGLWidget.h"
 
-    SocketException();
+OSG_USING_NAMESPACE
 
-    /*! \}                                                                 */
-};
-
-class OSG_SOCKET_DLLMAPPING SocketError : public SocketException 
-{
-public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
-    /*! \{                                                                 */
-
-    SocketError(const char *function);
-
-    /*! \}                                                                 */
-};
-
-class OSG_SOCKET_DLLMAPPING SocketHostError : public SocketException 
-{
-public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
-    /*! \{                                                                 */
-
-    SocketHostError(const char *function);
-
-    /*! \}                                                                 */
-};
-
-class OSG_SOCKET_DLLMAPPING SocketInUse : public SocketError
-{
-public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
-    /*! \{                                                                 */
-
-    SocketInUse(const char *text);
-
-    /*! \}                                                                 */
-};
-
-class OSG_SOCKET_DLLMAPPING SocketConnReset : public SocketError
-{
-public:
-    /*---------------------------------------------------------------------*/
-    /*! \name                   Constructors                               */
-    /*! \{                                                                 */
-    
-    SocketConnReset(const char *text);
-    
-    /*! \}                                                                 */
-};
-
-OSG_END_NAMESPACE
-
+#ifdef __sgi
+#pragma set woff 1174
 #endif
 
+namespace
+{
+    static char cvsid_cpp[] = "@(#)$Id: OSGFOXWindow.cpp,v 1.1 2002/05/24 16:07:32 fuenfzig Exp $";
+    static char cvsid_hpp[] = OSGFOXWINDOW_HEADER_CVSID;
+    static char cvsid_inl[] = OSGFOXWINDOW_INLINE_CVSID;
+}
 
+#ifdef __sgi
+#pragma reset woff 1174
+#endif
 
+/*! \class osg::FOXWindow
+window fieldcontainer for FOX gui library
+*/
 
+/*----------------------- constructors & destructors ----------------------*/
 
+//! Constructor
 
+FOXWindow::FOXWindow(void) :
+    Inherited()
+{
+}
+
+//! Copy Constructor
+
+FOXWindow::FOXWindow(const FOXWindow &source) :
+    Inherited(source)
+{
+}
+
+//! Destructor
+
+FOXWindow::~FOXWindow(void)
+{
+}
+
+/*----------------------------- class specific ----------------------------*/
+
+//! initialize the static features of the class, e.g. action callbacks
+
+void FOXWindow::initMethod (void)
+{
+}
+
+//! react to field changes
+
+void FOXWindow::changed(BitVector, ChangeMode)
+{
+}
+
+//! output the instance for debug purposes
+
+void FOXWindow::dump(      UInt32    , 
+                         const BitVector ) const
+{
+    SLOG << "Dump FOXWindow NI" << endl;
+}
+
+void FOXWindow::init( void )
+{
+   getGlWidget()->create();
+}
+	
+// activate the window: bind the OGL context	
+// set the active window, if needed
+void FOXWindow::activate( void )
+{
+   getGlWidget()->makeCurrent();
+}
+
+// swap buffers	for this window
+// does not set the active window!
+void FOXWindow::swap( void )
+{
+   getGlWidget()->swapBuffers();
+}
