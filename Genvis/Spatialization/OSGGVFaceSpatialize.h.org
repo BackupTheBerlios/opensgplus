@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// File:    $Id: OSGGVFaceSpatialize.h.org,v 1.1 2003/09/11 16:20:31 fuenfzig Exp $
+// File:    $Id: OSGGVFaceSpatialize.h.org,v 1.2 2004/12/20 15:59:52 fuenfzig Exp $
 // Author:  Christoph Fuenfzig, <c.fuenfzig@cg.cs.tu-bs.de>
 // ---------------------------------------------------------------
 // face restructuring according to hierarchy
