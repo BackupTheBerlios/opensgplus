@@ -1,0 +1,29 @@
+Dynamic Tesselation of Subdivision Surfaces 
+===========================================
+
+Contact: Volker Settgast,   v.settgast@tu-bs.de
+         Christoph Fünfzig, c.fuenfzig@tu-bs.de
+
+Usage:
+
+The dynamic subdivision surfaces tesselation is implemented currently
+for the Catmull-Clark type (with creases) on quad meshes.
+For an example have a look at the test program testDynamicSubdivisionCC.cpp.
+./testDynamicSubdivisionCC.cpp lbox.obj
+with keys 's' solid shading
+          'w' wireframe shading
+          ESC exit
+
+
+Compilation:
+
+To compile this package you need the OpenMesh, see http://www.openmesh.org
+(for example version 1.0.0.pre3 tested).
+Simplest you compile all files *.cc (reader, writer) into a static library 
+OpenMesh.
+
+For this configure OpenSG with the following options added
+(You have to change the paths according to your system!)
+--with-add-incdir=/cygdrive/e/extern
+--with-add-libdir=/cygdrive/e/extern/OpenMesh/lib 
+--with-add-lib=OpenMesh
