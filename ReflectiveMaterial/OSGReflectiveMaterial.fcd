@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="ReflectiveMaterial"
+	parent="ChunkMaterial"
+	library="System"
+	pointerfieldtypes="none"
+	structure="concrete"
+	systemcomponent="false"
+	parentsystemcomponent="true"
+	decoratable="false"
+	useLocalIncludes="false"
+>
+This material represents the reflectivity property (environment mapping type: CubeMap). It possible to vary the reflectivity from the ideal mirror level to the zero level. This property achieved by the use of spherical harmonics BRDF approximation.
+	<Field
+		name="diffuse"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,0"
+		access="public"
+	>
+	diffuse color
+	</Field>
+	<Field
+		name="Fresnel"
+		type="Color3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0.05,0.05,0.05"
+		access="public"
+	>
+	Fresnel coefficient to control the reflectiviness
+	</Field>
+	<Field
+		name="transparency"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0"
+		access="public"
+	>
+	transparency
+	</Field>
+	<Field
+		name="ImageDiffuse"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the own texture of the object (diffuse texture)
+	</Field>
+	<Field
+		name="ImagePosX"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the right cube face image (positive X)
+	</Field>
+	<Field
+		name="ImageNegX"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the left cube face image (negative X)
+	</Field>
+	<Field
+		name="ImagePosY"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the top cube face image (positive Y)
+	</Field>
+	<Field
+		name="ImageNegY"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the bottom cube face image (negative Y)
+	</Field>
+	<Field
+		name="ImagePosZ"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the front cube face image (positive Z)
+	</Field>
+	<Field
+		name="ImageNegZ"
+		type="ImagePtr"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	The pointer to the back cube face image (negative Z)
+	</Field>
+	<Field
+		name="lightPos"
+		type="Vec3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,1"
+		access="public"
+	>
+	Light source position
+	</Field>
+	<Field
+		name="viewPos"
+		type="Vec3f"
+		cardinality="single"
+		visibility="external"
+		defaultValue="0,0,1"
+		access="public"
+	>
+	Viewer position
+	</Field>
+	<Field
+		name="compTexCoord"
+		type="bool"
+		cardinality="single"
+		visibility="external"
+		defaultValue="false"
+		access="public"
+	>
+	Compute texture coordinates if model does not contain them
+	</Field>
+	<Field
+		name="halfBBoxObj"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0"
+		access="public"
+	>
+	half length of the diagonal of the object's bounding box
+	</Field>
+</FieldContainer>

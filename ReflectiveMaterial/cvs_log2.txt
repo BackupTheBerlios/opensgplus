@@ -1,0 +1,16 @@
+Description:
+---------------------------------------------------------------------
+The directory "ReflectiveMaterial" contains the base classes to
+represent the reflective material (environmant mapping type: CubeMapping). Moreover,
+there is auxiliary class SimpleSphericalHarmonics which serves for computation
+of the basis functions and coefficients to represent the reflectance model
+with help of spherical harmonics. Additionaly, there are two files with
+3D-objects (this objects will be reflective) and a couple of textures for
+environment and for object.
+
+Version: 1.0
+
+
+
+
+
