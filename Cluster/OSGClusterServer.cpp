@@ -106,18 +106,16 @@ ClusterServer::ClusterServer(WindowPtr window,
                              const string &address,
                              UInt32 servicePort):
     _window(window),
+    _connection(NULL),
     _clusterWindow(),
+    _aspect(NULL),
     _serviceName(serviceName),
     _servicePort(servicePort),
     _serviceAvailable(false),
     _serverId(0),
-    _address(address)
+    _address(address),
+    _connectionType(connectionType)
 {
-    _connection = ConnectionFactory::the().create(connectionType);
-    if(_connection == NULL)
-    {
-        SFATAL << "Unknown connection type " << connectionType << endl;
-    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -129,8 +127,22 @@ ClusterServer::ClusterServer(WindowPtr window,
  */
 ClusterServer::~ClusterServer(void)
 {
-    if(_connection)
-        delete _connection;
+    try
+    {
+        if(_clusterWindow!=NullFC)
+        {
+            // TODO does clusterWindow need the connection on server side?
+            _clusterWindow->_connection = NULL;
+            _clusterWindow=NullFC;
+        }
+        if(_connection)
+            delete _connection;
+        if(_aspect)
+            delete _aspect;
+    }
+    catch(...)
+    {
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -142,10 +154,21 @@ ClusterServer::~ClusterServer(void)
  * Start cluster server and wait for a client to connect. This method
  * will return after a client connection or an error situation.
  */
-void ClusterServer::init()
+void ClusterServer::start()
 {
     Thread                  *serviceThread;
     OSG::FieldContainerType *fct;
+
+    // create connection
+    _connection = ConnectionFactory::the().create(_connectionType);
+    if(_connection == NULL)
+    {
+        SFATAL << "Unknown connection type " << _connectionType << endl;
+        return;
+    }
+
+    // create aspect
+    _aspect = new RemoteAspect();
 
     // bind connection
     _address = _connection->bind(_address);
@@ -161,7 +184,7 @@ void ClusterServer::init()
         fct=OSG::FieldContainerFactory::the()->findType(i);
         if(fct && fct->isDerivedFrom(ClusterWindow::getClassType()))
         {
-            _aspect.registerChanged(
+            _aspect->registerChanged(
                 *fct,
                 osgTypedMethodFunctor2ObjPtrCPtrRef
                 <
@@ -181,6 +204,32 @@ void ClusterServer::init()
     {
         _serviceAvailable=false;
         throw;
+    }
+}
+
+
+/*! start server
+ *
+ * Start cluster server and wait for a client to connect. This method
+ * will return after a client connection or an error situation.
+ */
+void ClusterServer::stop()
+{
+    if(_clusterWindow!=NullFC)
+    {
+        // TODO does clusterWindow need the connection on server side?
+        _clusterWindow->_connection = NULL;
+        _clusterWindow=NullFC;
+    }
+    if(_connection)
+    {
+        delete _connection;
+        _connection=NULL;
+    }
+    if(_aspect)
+    {
+        delete _aspect;
+        _aspect=NULL;
     }
 }
 
@@ -205,7 +254,7 @@ void ClusterServer::render(RenderAction *action)
         do
         {
             // recive 
-            _aspect.receiveSync(*_connection);
+            _aspect->receiveSync(*_connection);
         }
         while(_clusterWindow==NullFC);
         // get server id
@@ -221,7 +270,7 @@ void ClusterServer::render(RenderAction *action)
         _clusterWindow->serverInit(_window,_serverId);
     }
     // sync with render clinet
-    _aspect.receiveSync(*_connection);
+    _aspect->receiveSync(*_connection);
     _clusterWindow->serverRender( _window,_serverId,action );
     _clusterWindow->serverSwap  ( _window,_serverId );
 }

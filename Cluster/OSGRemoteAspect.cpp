@@ -123,7 +123,8 @@ RemoteAspect::~RemoteAspect(void)
         fcPtr=factory->getContainer(i->second);
         
         callDestroyed(fcPtr);
-        // subRefCP(fcPtr);
+        // subref all Fealdcontainers
+        subRefCP(fcPtr);
     }
 }
 
@@ -258,31 +259,39 @@ void RemoteAspect::receiveSync(Connection &connection)
             case ADDREFED:
             {
                 connection.getUInt32(remoteId);
-                /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
                     SWARNING << "Can't addref unknown FC:" << remoteId 
                              << endl; 
                 }
-                fcPtr=factory->getContainer(receivedFCI->second);
-                addRefCP(fcPtr);
-                */
+                else
+                {
+                    fcPtr=factory->getContainer(receivedFCI->second);
+                    FDEBUG (( "AddRef: %s ID:%d\n",
+                              fcPtr->getType().getName().str(),
+                              fcPtr.getFieldContainerId() ))
+                    addRefCP(fcPtr);
+                }
                 break;
             }
             case SUBREFED:
             {
                 connection.getUInt32(remoteId);
-                /*
                 receivedFCI=_receivedFC.find(remoteId);
                 if(receivedFCI == _receivedFC.end())
                 {
-                SWARNING << "Can't subref unknown FC:" << remoteId 
-                    << endl; 
-                             }
-                fcPtr=factory->getContainer(receivedFCI->second);
-                subRefCP(fcPtr);
-                */
+                    SWARNING << "Can't subref unknown FC:" << remoteId 
+                             << endl; 
+                }
+                else
+                {
+                    fcPtr=factory->getContainer(receivedFCI->second);
+                    FDEBUG (( "SubRef: %s ID:%d\n",
+                              fcPtr->getType().getName().str(),
+                              fcPtr.getFieldContainerId() ))
+                    subRefCP(fcPtr);
+                }
                 break;
             }
             default:

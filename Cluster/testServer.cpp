@@ -15,9 +15,16 @@ int             winid;
 ClusterServer  *server;
 GLUTWindowPtr   window;
 RenderAction   *ract;
+bool            running=false;
 
 void display()
 {
+    if(!running)
+    {
+        server->start();
+        running=true;
+        glutShowWindow();
+    }
     try
     {
         server->render(ract);
@@ -26,16 +33,16 @@ void display()
     } 
     catch(exception &e)
     {
+#if 1
         SLOG << e.what() << endl;
-        try
-        {
-            delete server;
-            osgExit(); 
-        }
-        catch(...)
-        {
-        }
-        exit(0);
+        delete server;
+        osgExit(); 
+#else
+        // try to restart server
+        server->stop();
+        running=false;
+        glutHideWindow();
+#endif
     }
 }
 
@@ -135,7 +142,8 @@ int main(int argc,char **argv)
         window->setId(winid);
         window->init();
         server     = new ClusterServer(window,name,connectionType,address);
-        server->init();
+        server->start();
+        running=true;
         glutMainLoop();
     } 
     catch(exception &e)

@@ -123,7 +123,29 @@ StreamSockConnection::StreamSockConnection():
 
 StreamSockConnection::~StreamSockConnection(void)
 {
-    // TODO close all sockets
+    SocketsT::iterator socket;
+
+    // close all sockets
+    for(socket =_sockets.begin();
+        socket!=_sockets.end();
+        socket++)
+    {
+        try
+        {
+            socket->close();
+        }
+        catch(...)
+        {
+        }
+    }
+    try
+    {
+        _acceptSocket.close();
+        _readSocket.close();
+    }
+    catch(...)
+    {
+    }
 }
 
 /** Read data into given memory

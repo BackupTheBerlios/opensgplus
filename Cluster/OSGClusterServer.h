@@ -85,7 +85,8 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     /*! \name                   your_category                              */
     /*! \{                                                                 */
 
-    void init              (void);
+    void start             (void);
+    void stop              (void);
     void render            (RenderAction *action);
 
     /*! \}                                                                 */
@@ -118,11 +119,12 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterServer
     Connection      *_connection;
     string           _address;
     ClusterWindowPtr _clusterWindow;
-    RemoteAspect     _aspect;
+    RemoteAspect    *_aspect;
     string           _serviceName;
     UInt32           _servicePort;
     bool             _serviceAvailable;
     UInt32           _serverId;
+    string           _connectionType;
 
     /*! \}                                                                 */
     /*==========================  PRIVATE  ================================*/

@@ -190,16 +190,16 @@ MulticastConnection::~MulticastConnection(void)
             SLOG << "Connection closed" << endl;
             _socket.sendTo(&closed,sizeof(closed),_destination);
         }
+        _socket.close();
+        _groupSocket.close();
+        _aliveSocket.close();
+#   ifdef MULTICAST_STATISTICS
+        printStatistics();
+#   endif
     }
     catch(...)
     {
     }
-    _socket.close();
-    _groupSocket.close();
-    _aliveSocket.close();
-#   ifdef MULTICAST_STATISTICS
-    printStatistics();
-#   endif
 }
 
 /** \brief create conneciton
