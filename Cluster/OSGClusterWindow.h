@@ -143,6 +143,7 @@ class OSG_CLUSTERLIB_DLLMAPPING ClusterWindow : public ClusterWindowBase
 
     Connection      *_connection;
     RemoteAspect    *_remoteAspect;
+    bool             _firstFrame;
 
     /*! \}                                                                 */
 

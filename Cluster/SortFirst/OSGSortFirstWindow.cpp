@@ -52,6 +52,7 @@
 #include "OSGSortFirstWindow.h"
 #include "OSGViewBufferHandler.h"
 #include "OSGConnection.h"
+#include "OSGRenderNode.h"
 #include "OSGGeoLoad.h"
 
 OSG_USING_NAMESPACE
@@ -83,14 +84,17 @@ Cluster rendering configuration for sort first image composition
 
 SortFirstWindow::SortFirstWindow(void) :
     Inherited(),
-    _loadManager(NULL)
+    _loadManager(NULL),
+    _renderNode(NULL)
 {
 }
 
 //! Copy Constructor
 
 SortFirstWindow::SortFirstWindow(const SortFirstWindow &source) :
-    Inherited(source)
+    Inherited(source),
+    _loadManager(NULL),
+    _renderNode(NULL)
 {
 }
 
@@ -98,6 +102,10 @@ SortFirstWindow::SortFirstWindow(const SortFirstWindow &source) :
 
 SortFirstWindow::~SortFirstWindow(void)
 {
+    if(_loadManager)
+        delete _loadManager;
+    if(_renderNode)
+        delete _renderNode;
 }
 
 /*----------------------------- class specific ----------------------------*/
@@ -124,18 +132,45 @@ void SortFirstWindow::dump(      UInt32    ,
 
 /*----------------------------- server methods ----------------------------*/
 
-/*! update server window
- */
+/** transfer server cababilities to the client
+ *
+ **/
+void SortFirstWindow::serverInit( WindowPtr ,
+                                  UInt32 id)
+{
+    UInt32 sync;
+    RenderNode renderNode;
+
+    // create cluster node information
+    // get performance
+    renderNode.determinePerformance();
+    renderNode.dump();
+    // transfer to client for load balancing
+    _connection->putUInt32(id);
+    renderNode.copyToBin(*_connection);
+    _connection->flush();
+    _connection->selectChannel();
+    _connection->getUInt32(sync);
+}
+
+/** update server window
+ *
+ * \todo enamble frustum culling if error is removed
+ **/
 void SortFirstWindow::serverRender( WindowPtr serverWindow,
                                     UInt32 id,
                                     RenderAction *action        )
 {
+    cout << "server render" << endl;
     TileCameraDecoratorPtr deco;
     ViewportPtr serverPort;
     ViewportPtr clientPort;
     UInt32 sv,cv,regionStart;
     UInt32 vpWidth;
     UInt32 vpHeight;
+
+    // error in frustum culling !!!!!!!!!!!!!!
+    action->setFrustumCulling(false);
 
     // duplicate viewports
     for(cv=0,sv=0;cv<getPort().size();cv++)
@@ -250,11 +285,31 @@ void SortFirstWindow::serverSwap( WindowPtr window,
 
 /*----------------------------- client methods ----------------------------*/
 
-/*! init client window
+/*! read server cababilities
  */
 
 void SortFirstWindow::clientInit( void )
 {
+    UInt32 id;
+    RenderNode renderNode;
+
+    _loadManager=new GeoLoadManager();
+    // read all node infos
+    for(UInt32 i=0;i<_connection->getChannelCount();++i)
+    {
+        cout << "read cluster node info" << endl;
+        _connection->selectChannel();
+        _connection->getUInt32(id);
+        renderNode.copyFromBin(*_connection);
+        cout << id << endl;
+        renderNode.dump();
+        _loadManager->addRenderNode(renderNode);    
+    }
+    cout << "sync" << endl;
+    // sync servers
+    _connection->putUInt32(0);
+    _connection->flush();
+    cout << "end" << endl;
 }
 
 /*! client frame init
@@ -299,23 +354,16 @@ void SortFirstWindow::clientPreSync( void )
                   Window::HeightFieldMask);
     }
 #endif
-    if(_loadManager==NULL)
-    {
-        _loadManager=new GeoLoadManager();
-        _loadManager->estimatePerformace();
-    }
-
     UInt32 i;
     UInt32 cv;
     GeoLoadManager::ResultT region;
-
+    
     beginEditCP(ptr,SortFirstWindow::RegionFieldMask);
     getRegion().clear();
     for(cv=0;cv<getPort().size();cv++)
     {
         _loadManager->update( getPort()[cv]->getRoot() );
         _loadManager->balance(getPort()[cv],
-                              getServers().size(),
                               false,
                               region);
         for(i=0;i<getServers().size();i++)
@@ -324,14 +372,9 @@ void SortFirstWindow::clientPreSync( void )
             getRegion().push_back(region[4*i+1]);
             getRegion().push_back(region[4*i+2]);
             getRegion().push_back(region[4*i+3]);
-
-            cout << "VP:" << cv << " ";
-            cout << region[4*i + 0] << " ";
-            cout << region[4*i + 1] << " ";
-            cout << region[4*i + 2] << " ";
-            cout << region[4*i + 3] << endl;
         }
     }
+
     endEditCP(ptr,SortFirstWindow::RegionFieldMask);
 }
 

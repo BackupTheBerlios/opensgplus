@@ -150,6 +150,6 @@ typedef ViewBufferHandler *ViewBufferHandlerP;
 
 OSG_END_NAMESPACE
 
-#define OSG_VIEWBUFFERHANDLERHEADER_CVSID "@(#)$Id:$"
+#define OSG_VIEWBUFFERHANDLER_HEADER_CVSID "@(#)$Id:$"
 
 #endif /* _VIEWBUFFERHANDLER_H_ */

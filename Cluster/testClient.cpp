@@ -41,6 +41,7 @@ SortFirstWindowPtr    sortfirst;
 MultiDisplayWindowPtr multidisplay;
 SimpClustSterWinPtr   stereodisplay;
 bool                  animate=false;
+bool                  multiport=false;
 
 void showText(int x, int y, char *string)
 {
@@ -354,21 +355,31 @@ void init(vector<char *> &filenames)
     endEditCP(bkgnd);
 
     // Viewport
-    OSG::ViewportPtr vp;
-    vp = OSG::Viewport::create();
-    beginEditCP(vp);
-    vp->setCamera    ( cam );
-    vp->setBackground( bkgnd );
-    vp->setRoot      ( root );
-    vp->setSize      ( 0,0, 1,1 );
-    endEditCP(vp);
+    OSG::ViewportPtr vp1;
+    vp1 = OSG::Viewport::create();
+    beginEditCP(vp1);
+    vp1->setCamera    ( cam );
+    vp1->setBackground( bkgnd );
+    vp1->setRoot      ( root );
+    vp1->setSize      ( 0,0, 1,1 );
+    endEditCP(vp1);
+    OSG::ViewportPtr vp2;
+    vp2 = OSG::Viewport::create();
+    beginEditCP(vp2);
+    vp2->setCamera    ( cam );
+    vp2->setBackground( bkgnd );
+    vp2->setRoot      ( root );
+    vp2->setSize      ( .1, .55, .5,.95 );
+    endEditCP(vp2);
 
     GLint glvp[4];
     glGetIntegerv( GL_VIEWPORT, glvp );
     
 	beginEditCP(clusterWindow);
     clusterWindow->setSize( glvp[2], glvp[3] );
-    clusterWindow->addPort( vp );
+    clusterWindow->addPort( vp1 );
+    if(multiport)
+        clusterWindow->addPort( vp2 );
 	endEditCP(clusterWindow);
 
     // tball
@@ -444,6 +455,9 @@ int main(int argc,char **argv)
                     case 'd':
                         clientRendering=false;
                         break;
+                    case 'v':
+                        multiport=true;
+                        break;
                     case 'h':
                         cout << argv[0] 
                              << "-ffile -m -rrows -C -M"
@@ -457,7 +471,8 @@ int main(int argc,char **argv)
                              << "-S  stereo" << endl
                              << "-e  eye distance" << endl
                              << "-z  zero parallax" << endl
-                             << "-d  disable client rendering" << endl;
+                             << "-d  disable client rendering" << endl
+                             << "-v  use two viewports" << endl;
                         return 0;
                 }
             }

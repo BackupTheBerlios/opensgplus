@@ -62,6 +62,7 @@ OSG_USING_NAMESPACE
 namespace
 {
     static Char8 cvsid_cpp[] = "@(#)$Id:$";
+    static Char8 cvsid_hpp[] = OSG_VIEWBUFFERHANDLER_HEADER_CVSID;
 }
 
 #ifdef __sgi
@@ -149,7 +150,6 @@ void ViewBufferHandler::recv(Connection &connection)
             missing--;
             continue;
         }
-
         // get dimension
         connection.getUInt32(tx);
         connection.getUInt32(ty);
@@ -222,6 +222,8 @@ void ViewBufferHandler::recv(Connection &connection)
             glDisable(GL_STENCIL_TEST);  
         }
     }
+    connection.putUInt32(0);
+    connection.flush();
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
@@ -356,7 +358,8 @@ void ViewBufferHandler::send(Connection &connection,
     }
     connection.putUInt32(0);
     connection.flush();
-    
+    connection.selectChannel();
+    connection.getUInt32(component);
     cout << "IMG size" << imgtranssize << endl;
 
 }
@@ -431,6 +434,4 @@ UInt32 ViewBufferHandler::getBufferHeight()
     glGetIntegerv(GL_VIEWPORT,view);
     return view[3];
 }
-
-
 

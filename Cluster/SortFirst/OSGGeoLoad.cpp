@@ -57,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.9 2002/04/25 07:22:13 vossg Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.10 2002/04/30 16:37:12 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -363,10 +363,10 @@ UInt32 GeoLoad::getFaces()
 /** Which part of the faces are visible
  **/
 Real32 GeoLoad::getVisibleFraction( const Int32 wmin[2],
-                                    const Int32 wmax[2] )
+                                    const Int32 wmax[2],
+                                          Int32 viswmin[2],
+                                          Int32 viswmax[2] )
 {
-    Int32 viswmin[2];
-    Int32 viswmax[2];
     Real32 faceFraction,x,y;
 
     if(_visible==false)

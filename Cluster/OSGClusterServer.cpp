@@ -220,11 +220,8 @@ void ClusterServer::render(RenderAction *action)
         _clusterWindow->_connection = _connection;
         _clusterWindow->serverInit(_window,_serverId);
     }
-    else
-    {
-        // sync with render clinet
-        _aspect.receiveSync(*_connection);
-    }
+    // sync with render clinet
+    _aspect.receiveSync(*_connection);
     _clusterWindow->serverRender( _window,_serverId,action );
     _clusterWindow->serverSwap  ( _window,_serverId );
 }

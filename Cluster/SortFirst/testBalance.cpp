@@ -8,6 +8,7 @@
 #include <OSGGroup.h>
 #include <OSGTransform.h>
 #include <OSGSceneFileHandler.h>
+#include <OSGRenderNode.h>
 
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
@@ -36,11 +37,16 @@ public:
         _win->frameInit();
         if(first)
         {
-            loadManager.estimatePerformace();
+            for(int i=0;i<3;i++)
+            {
+                RenderNode rn;
+//                rn.setDrawPixelCost(1.0/(1000+i*1000));
+                loadManager.addRenderNode(rn);
+            }
             first=false;
         }
         loadManager.update(_win->getPort()[0]->getRoot());
-        loadManager.balance(_win->getPort()[0],4,false,region);
+        loadManager.balance(_win->getPort()[0],false,region);
         _win->renderAllViewports( _action );
         glPushMatrix();
         glLoadIdentity();
@@ -150,6 +156,9 @@ void key(unsigned char key, int , int )
                 break;
     case 't':   mgr->setNavigationMode(Navigator::TRACKBALL);
                 break;
+case  'c': glutSetCursor(GLUT_CURSOR_NONE); break;
+case  'C': glutSetCursor(GLUT_CURSOR_CYCLE); break;
+
     }
     glutPostRedisplay();
 }

@@ -221,8 +221,7 @@ void ClusterWindow::init( void )
         }
         serviceSock.close();
     }
-    // init client window
-    clientInit();
+    _firstFrame=true;
 }
 
 void ClusterWindow::render( RenderAction *action )
@@ -262,8 +261,30 @@ void ClusterWindow::frameInit(void)
 {
     if(_remoteAspect && _connection)
     {
-        clientPreSync();
-        _remoteAspect->sendSync(*_connection);
+        if(_firstFrame)
+        {
+            // send sync
+            _remoteAspect->sendSync(*_connection);
+            // init client window
+            clientInit();
+            ChangeList cl;
+            cl.clearAll();
+            cl.merge(*Thread::getCurrentChangeList());
+            Thread::getCurrentChangeList()->clearAll();
+            // last chance to modifie before sync
+            clientPreSync();
+            // send sync
+            _remoteAspect->sendSync(*_connection);
+            cl.merge(*Thread::getCurrentChangeList());
+            Thread::getCurrentChangeList()->clearAll();
+            Thread::getCurrentChangeList()->merge(cl);
+            _firstFrame=false;
+        }
+        else
+        {
+            clientPreSync();
+            _remoteAspect->sendSync(*_connection);
+        }
     }
 }
 

@@ -47,6 +47,7 @@
 #include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGGeoLoad.h>
+#include <OSGRenderNode.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -60,6 +61,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     typedef std::vector<GeoLoad>                   GeoLoadLstT;
     typedef std::map<UInt32,GeoLoadLstT::iterator> GeoLoadMapT;
     typedef std::vector<Int32>                     ResultT;
+    typedef std::vector<RenderNode>                RenderNodeLstT;
 
     /*---------------------------------------------------------------------*/
     /*! \name                      dcast                                   */
@@ -97,12 +99,11 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                 Load balancing functions                     */
     /*! \{                                                                 */
 
-    void update      (NodePtr node);
-    void balance     (ViewportPtr     vp,
-                      UInt32          regions,
-                      bool            shrink,
-                      ResultT        &result);
-    void estimatePerformace();
+    void update             (NodePtr           node   );
+    void balance            (ViewportPtr       vp,
+                             bool              shrink,
+                             ResultT          &result );
+    void addRenderNode      (const RenderNode &rn     );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -130,12 +131,18 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     class RegionLoad 
     {
       public:
-        RegionLoad      ( GeoLoad *load=NULL );
-        Real32   getCost( void               );
-        GeoLoad *getLoad( void               );
-        void     setCost( Real32 cost        );
+        RegionLoad         ( GeoLoad *load=NULL           );
+        Real32   getCost   ( const RenderNode &renderNode );
+        Real32   getCost   ( const RenderNode &renderNode,
+                             const Int32 wmin[2],
+                             const Int32 wmax[2]          ) const;
+        GeoLoad *getLoad   ( void                         );
+        void     updateCost( const Int32 wmin[2],
+                             const Int32 wmax[2]          );
       private:
-        Real32   _cost;
+        Real32   _visibleFaces;
+        Real32   _invisibleFaces;
+        Real32   _pixel;
         GeoLoad *_load;
     };
     typedef std::vector<RegionLoad>   RegionLoadVecT;
@@ -146,9 +153,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \{                                                                 */
 
     GeoLoadLstT           _geoLoad;
-    Real64                _faceCostInvisible;
-    Real64                _faceCostVisible;
-    Real64                _faceCostVisibleArea;
+    RenderNodeLstT        _renderNode;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -157,12 +162,15 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 
     double runFaceBench(GLuint dlist,UInt32 size,Real32 visible);
     void updateSubtree (NodePtr &node,GeoLoadMapT &loadMap);
-    void splitRegion   (UInt32          regions,
+    void splitRegion   (UInt32          rnFrom,
+                        UInt32          rnTo,
                         RegionLoadVecT &visible,
                         Int32           amin[2],
                         Int32           amax[2],
                         ResultT        &result);
-    Real32 findBestCut (RegionLoadVecT &visible,
+    Real32 findBestCut (const RenderNode &renderNodeA,
+                        const RenderNode &renderNodeB,
+                        RegionLoadVecT &visible,
                         Int32           amin[2],
                         Int32           amax[2],
                         Int32          &bestAxis,
@@ -181,7 +189,7 @@ OSG_END_NAMESPACE
 
 #include "OSGGeoLoadManager.inl"
 
-#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.4 2002/04/12 12:02:44 marcus Exp $"
+#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.5 2002/04/30 16:37:12 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
 

@@ -2,7 +2,9 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *                     Copyright 2000,2001 by OpenSG Forum                   *
+ *           Copyright (C) 2000,2001,2002 by the OpenSG Forum                *
+ *                                                                           *
+ *                            www.opensg.org                                 *
  *                                                                           *
  *   contact: dirk@opensg.org, gerrit.voss@vossg.org, jbehr@zgdv.de          *
  *                                                                           *
@@ -34,91 +36,73 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#include <OSGConfig.h>
-
 OSG_BEGIN_NAMESPACE
 
-/** Constructor
- **/
-inline GeoLoadManager::RegionLoad::RegionLoad(GeoLoad *load):
-    _load(load)
+inline Real32 RenderNode::getVisibleFaceCost(void) const
 {
+    return _visibleFaceCost;
 }
 
-/** Update region dependent values
- **/
-inline void GeoLoadManager::RegionLoad::updateCost(const Int32 wmin[2],
-                                                   const Int32 wmax[2])
+inline Real32 RenderNode::getInvisibleFaceCost(void) const
 {
-    Int32 vismin[2];
-    Int32 vismax[2];
-    Real32 visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
-    Real32 faces  =_load->getFaces();
-    if(visible)
-    {
-        _visibleFaces=faces*visible;
-        _pixel=
-            (vismax[0] - vismin[0] + 1)*
-            (vismax[1] - vismin[1] + 1);
-        _invisibleFaces=faces-_visibleFaces;
-    }
-    else
-    {
-        _pixel=0;
-        _invisibleFaces=0;
-        _visibleFaces=0;
-    }
+    return _invisibleFaceCost;
 }
 
-/** Calculate the rendering cost
- *
- * \param renderNode  Node to render the geometry
- **/
-inline Real32 GeoLoadManager::RegionLoad::getCost(const RenderNode &renderNode)
+inline Real32 RenderNode::getDrawPixelCost(void) const
 {
-    return renderNode.estimatePerformance(_invisibleFaces,
-                                          _visibleFaces,
-                                          _pixel);
+    return _drawPixelCost;
 }
 
-/** Calculate the rendering cost for the given region
- *
- * \param renderNode  Node to render the geometry
- * \param wmin        bottom, left corner of the area
- * \param wmax        top, right corner of the area
- **/
-inline Real32 GeoLoadManager::RegionLoad::getCost(const RenderNode &renderNode,
-                                                  const Int32 wmin[2],
-                                                  const Int32 wmax[2]) const
+inline Real32 RenderNode::getReadPixelCost(void) const
 {
-    Int32 vismin[2];
-    Int32 vismax[2];
-    Real32 visible=_load->getVisibleFraction(wmin,wmax,vismin,vismax);
-    if(visible==0.0)
-    {
-        return 0.0;
-    }
-    Real32 faces  =_load->getFaces();
-    Real32 visibleFaces=faces*visible;
-    Real32 invisibleFaces=faces-visibleFaces;
-    Real32 pixel=
-        (vismax[0] - vismin[0] + 1)*
-        (vismax[1] - vismin[1] + 1);
-    return renderNode.estimatePerformance(invisibleFaces,
-                                          visibleFaces,
-                                          pixel);
+    return _readPixelCost;
 }
 
-/** Return gemetry load info object
- **/
-inline GeoLoad * GeoLoadManager::RegionLoad::getLoad(void)
+inline Real32 RenderNode::getWritePixelCost(void) const
 {
-    return _load;
+    return _writePixelCost;
+}
+
+inline void RenderNode::setVisibleFaceCost(Real32 value)
+{
+    _visibleFaceCost=value;
+}
+
+inline void RenderNode::setInvisibleFaceCost(Real32 value)
+{
+    _invisibleFaceCost=value;
+}
+
+inline void RenderNode::setDrawPixelCost(Real32 value)
+{
+    _drawPixelCost=value;
+}
+
+inline void RenderNode::setReadPixelCost(Real32 value)
+{
+    _readPixelCost=value;
+}
+
+inline void RenderNode::setWritePixelCost(Real32 value)
+{
+    _writePixelCost=value;
+}
+
+inline Real32 RenderNode::estimatePerformance( Real32 invisibleFaces,
+                                               Real32 visibleFaces,
+                                               Real32 pixel ) const
+{
+    return 
+        ( invisibleFaces * _invisibleFaceCost ) +
+        ( visibleFaces   * _visibleFaceCost   ) +
+        ( pixel          * _drawPixelCost     );
 }
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADMANAGER_INLINE_CVSID "@(#)$Id:$"
+#define OSG_CLUSTERNODE_INLINE_CVSID "@(#)$Id:$"
+
+
 
 
 

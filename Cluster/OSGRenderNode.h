@@ -2,7 +2,7 @@
  *                                OpenSG                                     *
  *                                                                           *
  *                                                                           *
- *             Copyright (C) 2000,2001 by the OpenSG Forum                   *
+ *           Copyright (C) 2000,2001,2002 by the OpenSG Forum                *
  *                                                                           *
  *                            www.opensg.org                                 *
  *                                                                           *
@@ -36,23 +36,19 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _GEOLOAD_H_
-#define _GEOLOAD_H_
+#ifndef _CLUSTERNODE_H_
+#define _CLUSTERNODE_H_
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <OSGBaseTypes.h>
 #include <OSGClusterDef.h>
-#include <OSGGeometry.h>
-#include <OSGCamera.h>
-#include <OSGViewport.h>
+#include <OSGBaseTypes.h>
+#include <OSGBinaryDataHandler.h>
 
 OSG_BEGIN_NAMESPACE
 
-#define FACE_DISTRIBUTION_SAMPLING_COUNT 16
-
-class OSG_CLUSTERLIB_DLLMAPPING GeoLoad 
+class OSG_CLUSTERLIB_DLLMAPPING RenderNode 
 {
     /*==========================  PUBLIC  =================================*/
   public:
@@ -61,108 +57,93 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
 
-    GeoLoad(NodePtr node);
-    GeoLoad(const GeoLoad &source);
+    RenderNode(void);
+    RenderNode(const RenderNode &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Destructor                                 */
     /*! \{                                                                 */
 
-    virtual ~GeoLoad(void);
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                  load calculation                            */
-    /*! \{                                                                 */
-
-    void updateView        ( Matrix &viewing,
-                             Matrix &projection,
-                             Real32 near,
-                             UInt32 width,
-                             UInt32 height                );
-    void updateGeometry    (                              );
-    bool checkRegion       ( Int32 min[2],
-                             Int32 max[2]                 );
-    bool isVisible         (                              ) const;
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                      Set                                     */
-    /*! \{                                                                 */
+    virtual ~RenderNode(void);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Get                                     */
     /*! \{                                                                 */
 
-    NodePtr           getNode() const;
-    const Int32 *     getMin();
-    const Int32 *     getMax();
-    UInt32            getFaces();
-    Real32            getVisibleFraction( const Int32 wmin[2],
-                                          const Int32 wmax[2],
-                                                Int32 viswmin[2],
-                                                Int32 viswmax[2] );
-    bool              getVisibleArea    ( const Int32 wmin[2],
-                                          const Int32 wmax[2],
-                                                Int32 viswmin[2],
-                                                Int32 viswmax[2] );
+    Real32 getVisibleFaceCost   (void) const;
+    Real32 getInvisibleFaceCost (void) const;
+    Real32 getDrawPixelCost     (void) const;
+    Real32 getReadPixelCost     (void) const;
+    Real32 getWritePixelCost    (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                   your_operators                             */
+    /*! \name                      Set                                     */
     /*! \{                                                                 */
+
+    void setVisibleFaceCost    (Real32 value);
+    void setInvisibleFaceCost  (Real32 value);
+    void setDrawPixelCost      (Real32 value);
+    void setReadPixelCost      (Real32 value);
+    void setWritePixelCost     (Real32 value);
+    void setGroup              (const RenderNode *begin,const RenderNode *end);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   performance analysis                       */
+    /*! \{                                                                 */
+
+    void   determinePerformance( void );
+    Real32 estimatePerformance ( Real32 invisibleFaces,
+                                 Real32 visibleFaces,
+                                 Real32 pixel ) const;
+    
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                load/store                                    */
+    /*! \{                                                                 */
+
+    void copyToBin  (BinaryDataHandler &handle);
+    void copyFromBin(BinaryDataHandler &handle);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Assignment                                */
     /*! \{                                                                 */
 
-    GeoLoad& operator = (const GeoLoad &source);
+    RenderNode & operator =(const RenderNode &source);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
-    /*! \name                    Comparison                                */
+    /*! \name                    dump                                      */
     /*! \{                                                                 */
-
-    bool operator < (const GeoLoad &other) const;
-    //bool operator == (const GeoLoad &other) const;
-    //bool operator != (const GeoLoad &other) const;
-
-    /*! \}                                                                 */
-    /*---------------------------------------------------------------------*/
-    /*! \name                        Dump                                  */
-    /*! \{                                                                 */
-
-    void dump(void);
-
+    
+    void dump(void) const;
+    
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
 
     /*---------------------------------------------------------------------*/
-    /*! \name                     utilities                                */
+    /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    Real32 getFaceDistribution(Real32 cut);
+    Real32                _visibleFaceCost;
+    Real32                _invisibleFaceCost;
+    Real32                _drawPixelCost;
+    Real32                _readPixelCost;
+    Real32                _writePixelCost;
 
     /*! \}                                                                 */
-
     /*---------------------------------------------------------------------*/
-    /*! \name                        Members                               */
+    /*! \name                   helper                                     */
     /*! \{                                                                 */
 
-    NodePtr               _node;
-    GeometryPtr           _geometry;
-    UInt32                _faces;
-    Int32                 _min[2];
-    Int32                 _max[2];
-    vector<Real32>        _faceDistribution;
-    bool                  _visible;
+    double runFaceBench(UInt32 dlist,UInt32 size,Real32 visible);
 
     /*! \}                                                                 */
-
     /*==========================  PRIVATE  ================================*/
   private:
 
@@ -170,6 +151,12 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.7 2002/04/30 16:37:12 marcus Exp $"
+#define OSG_CLUSTERNODE_HEADER_CVSID "@(#)$Id:$"
 
-#endif /* _GEOLOAD_H_ */
+#include "OSGRenderNode.inl"
+
+#endif /* _CLUSTERNODE_H_ */
+
+
+
+

@@ -47,6 +47,7 @@
 #include <OSGSortFirstWindowBase.h>
 #include <OSGGeoLoadManager.h>
 #include <OSGCamera.h>
+#include <OSGRenderNode.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -95,6 +96,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
     /*! \name      server window funcitons                                 */
     /*! \{                                                                 */
 
+    virtual void serverInit              ( WindowPtr window,UInt32 id  );
     virtual void serverRender            ( WindowPtr window,UInt32 id,
                                            RenderAction *action        );
     virtual void serverSwap              ( WindowPtr window,UInt32 id  );
@@ -126,6 +128,7 @@ class OSG_CLUSTERLIB_DLLMAPPING SortFirstWindow : public SortFirstWindowBase
 
     static ViewBufferHandler _bufferHandler;
     GeoLoadManager           *_loadManager;
+    RenderNode              *_renderNode;
 
     friend class FieldContainer;
     friend class SortFirstWindowBase;
