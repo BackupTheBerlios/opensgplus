@@ -147,6 +147,13 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
          getTesselator()->isSetBFCull = getBackfaceCulling();         
       }
    }   
+   // changed MinDepth
+   // * update in tesselator
+   if (whichField & MinDepthFieldMask) {
+      if (getTesselator() != NULL) {
+         getTesselator()->setMinDepth(getMinDepth());
+      }
+   } 
    // changed MeshField: 
    // * create tesselator
    // * do tesselator preprocessing  
@@ -159,6 +166,7 @@ void DynamicSubdivisionLP<MESH>::changed(BitVector whichField, UInt32 origin)
          setTesselator(new OpenMeshTesselator(getMesh()));
          // only chance to adjust the maxdepth
          getTesselator()->setMaxDepth(getMaxDepth());
+         getTesselator()->setMinDepth(getMinDepth());
          // update fields-data in tesselator
          getTesselator()->Pmin = getMinProjSize();
          getTesselator()->Pmax = getMaxProjSize();
@@ -316,7 +324,7 @@ void DynamicSubdivisionLP<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.2 2004/03/24 12:47:40 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.3 2004/05/11 09:44:07 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONLP_INLINE_CVSID;
 }
