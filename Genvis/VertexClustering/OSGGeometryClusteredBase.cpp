@@ -66,8 +66,11 @@ OSG_USING_NAMESPACE
 
 const OSG::BitVector  GeometryClusteredBase::NumCellsFieldMask = 
     (1 << GeometryClusteredBase::NumCellsFieldId);
-
-const OSG::BitVector GeometryClusteredBase::MTInfluenceMask = 
+const OSG::BitVector  GeometryClusteredBase::PoolFieldMask = 
+    (1 << GeometryClusteredBase::PoolFieldId);
+const OSG::BitVector  GeometryClusteredBase::GridFieldMask = 
+    (1 << GeometryClusteredBase::GridFieldId);
+const OSG::BitVector  GeometryClusteredBase::MTInfluenceMask = 
     (Inherited::MTInfluenceMask) | 
     (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
 
@@ -80,10 +83,28 @@ const OSG::BitVector GeometryClusteredBase::MTInfluenceMask =
 FieldDescription *GeometryClusteredBase::_desc[] = 
 {
     new FieldDescription(SFReal32::getClassType(), 
-                     "number of cells", 
-                     NumCellsFieldId, NumCellsFieldMask,
-                     false,
-                     (FieldAccessMethod) &GeometryClusteredBase::getSFNumCells)
+			 "number of cells", 
+			 NumCellsFieldId, NumCellsFieldMask,
+			 false,
+			 (FieldAccessMethod) &GeometryClusteredBase::getSFNumCells),
+#ifdef GV_CLUSTERED_ADAPTIVE
+    new FieldDescription(MFSetUnionPoolP::getClassType(), 
+			 "element datastructure", 
+			 PoolFieldId, PoolFieldMask,
+			 true,
+			 (FieldAccessMethod) &GeometryClusteredBase::getMFPool),
+#else
+    new FieldDescription(SFSetUnionPoolP::getClassType(), 
+			 "element datastructure", 
+			 PoolFieldId, PoolFieldMask,
+			 true,
+			 (FieldAccessMethod) &GeometryClusteredBase::getSFPool),
+#endif
+    new FieldDescription(SFSetUnionGridP::getClassType(), 
+			 "regular grid", 
+			 GridFieldId, GridFieldMask,
+			 true,
+			 (FieldAccessMethod) &GeometryClusteredBase::getSFGrid)
 };
 
 FieldContainerType GeometryClusteredBase::_type(
@@ -138,7 +159,13 @@ void GeometryClusteredBase::executeSync(      FieldContainer &other,
 #endif
 
 GeometryClusteredBase::GeometryClusteredBase(void) :
-    _sfNumCells                   (Real32(10)), 
+    _sfNumCells                   (Real32(5)), 
+#ifdef GV_CLUSTERED_ADAPTIVE
+    _sfPool                       (), 
+#else
+    _sfPool                       (SetUnionPoolP(NULL)), 
+#endif
+    _sfGrid                       (SetUnionGridP(NULL)), 
     Inherited()
 {
 }
@@ -149,6 +176,8 @@ GeometryClusteredBase::GeometryClusteredBase(void) :
 
 GeometryClusteredBase::GeometryClusteredBase(const GeometryClusteredBase &source) :
     _sfNumCells               (source._sfNumCells), 
+    _sfPool                   (source._sfPool), 
+    _sfGrid                   (source._sfGrid), 
     Inherited                 (source)
 {
 }
@@ -169,7 +198,16 @@ UInt32 GeometryClusteredBase::getBinSize(const BitVector &whichField)
     {
         returnValue += _sfNumCells.getBinSize();
     }
-
+#if 0
+    if(FieldBits::NoField != (PoolFieldMask & whichField))
+    {
+        returnValue += _sfPool.getBinSize();
+    }
+    if(FieldBits::NoField != (GridFieldMask & whichField))
+    {
+        returnValue += _sfGrid.getBinSize();
+    }
+#endif
     return returnValue;
 }
 
@@ -182,6 +220,16 @@ void GeometryClusteredBase::copyToBin(      BinaryDataHandler &pMem,
     {
         _sfNumCells.copyToBin(pMem);
     }
+#if 0
+    if(FieldBits::NoField != (PoolFieldMask & whichField))
+    {
+        _sfPool.copyToBin(pMem);
+    }
+    if(FieldBits::NoField != (GridFieldMask & whichField))
+    {
+        _sfGrid.copyToBin(pMem);
+    }
+#endif
 
 }
 
@@ -194,6 +242,16 @@ void GeometryClusteredBase::copyFromBin(      BinaryDataHandler &pMem,
     {
         _sfNumCells.copyFromBin(pMem);
     }
+#if 0
+    if(FieldBits::NoField != (PoolFieldMask & whichField))
+    {
+        _sfPool.copyFromBin(pMem);
+    }
+    if(FieldBits::NoField != (GridFieldMask & whichField))
+    {
+        _sfGrid.copyFromBin(pMem);
+    }
+#endif
 
 }
 
@@ -205,6 +263,12 @@ void GeometryClusteredBase::executeSyncImpl(      GeometryClusteredBase *pOther,
 
     if(FieldBits::NoField != (NumCellsFieldMask & whichField))
         _sfNumCells.syncWith(pOther->_sfNumCells);
+#if 0
+    if(FieldBits::NoField != (PoolFieldMask & whichField))
+        _sfPool.syncWith(pOther->_sfPool);
+    if(FieldBits::NoField != (GridFieldMask & whichField))
+        _sfGrid.syncWith(pOther->_sfGrid);
+#endif
 
 }
 
@@ -233,7 +297,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 

@@ -125,8 +125,99 @@ void GeometryClusteredBase::setNumCells(const Real32 &value)
 }
 
 
+//! Get the GeometryClustered::_sfGrid field.
+inline
+SFSetUnionGridP* GeometryClusteredBase::getSFGrid (void)
+{
+    return &_sfGrid;
+}
+
+//! Get the value of the GeometryClustered::_sfGrid field.
+inline
+SetUnionGridP& GeometryClusteredBase::getGrid (void)
+{
+    return _sfGrid.getValue();
+}
+
+//! Get the value of the GeometryClustered::_sfGrid field.
+inline
+const SetUnionGridP& GeometryClusteredBase::getGrid (void) const
+{
+    return _sfGrid.getValue();
+}
+
+//! Set the value of the GeometryClustered::_sfGrid field.
+inline
+void GeometryClusteredBase::setGrid(const SetUnionGridP& value)
+{
+    _sfGrid.setValue(value);
+}
+
+#ifdef GV_CLUSTERED_ADAPTIVE
+//! Get the GeometryClustered::_sfPool field.
+inline
+MFSetUnionPoolP* GeometryClusteredBase::getMFPool (void)
+{
+    return &_sfPool;
+}
+
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+const SetUnionPoolP &GeometryClusteredBase::getPool(const UInt32 index) const
+{
+    return _sfPool.getValue(index);
+}
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+SetUnionPoolP &GeometryClusteredBase::getPool(const UInt32 index)
+{
+    return _sfPool.getValue(index);
+}
+
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+MFSetUnionPoolP &GeometryClusteredBase::getPool(void)
+{
+    return _sfPool;
+}
+
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+const MFSetUnionPoolP &GeometryClusteredBase::getPool(void) const
+{
+    return _sfPool;
+}
+#else
+//! Get the GeometryClustered::_sfPool field.
+inline
+SFSetUnionPoolP* GeometryClusteredBase::getSFPool (void)
+{
+    return &_sfPool;
+}
+
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+SetUnionPoolP &GeometryClusteredBase::getPool(void)
+{
+    return _sfPool.getValue();
+}
+
+//! Get the value of the GeometryClustered::_sfPool field.
+inline
+const SetUnionPoolP &GeometryClusteredBase::getPool(void) const
+{
+    return _sfPool.getValue();
+}
+
+//! Set the value of the GeometryClustered::_sfPool field.
+inline
+void GeometryClusteredBase::setPool(const SetUnionPoolP &value)
+{
+    _sfPool.setValue(value);
+}
+#endif
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
 

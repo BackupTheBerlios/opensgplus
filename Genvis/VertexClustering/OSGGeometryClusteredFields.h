@@ -58,7 +58,6 @@
 
 #include <OSGFieldContainerPtr.h>
 #include <OSGNodeCoreFieldDataType.h>
-//#include <OSGSystemDef.h>
 #include <OSGGVBase.h>
 
 #include <OSGGeometryFields.h>
@@ -103,6 +102,6 @@ struct FieldDataTraits<GeometryClusteredPtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.2 2003/09/19 21:56:27 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.3 2004/03/12 13:37:26 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDFIELDS_H_ */

@@ -42,20 +42,13 @@
 #pragma once
 #endif
 
-#include "OSGGVBase.h"
 #include <OSGConfig.h>
-
 #include <OSGGeometryClusteredBase.h>
-
-#include <OSGGVRegularGrid.h>
-class SetUnion;
 
 OSG_BEGIN_NAMESPACE
 
-/*! \brief GeometryClustered class. See \ref 
-           PageSystemGeometryClustered for a description.
+/*! \brief GeometryClustered class.
 */
-
 class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
 {
   private:
@@ -64,6 +57,15 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
 
     /*==========================  PUBLIC  =================================*/
   public:
+
+    SetUnion&               getPoolEntry (UInt32 i);
+    const SetUnion&         getPoolEntry (UInt32 i) const;
+    SetUnion&               getPoolEntry (const Pnt3f& eye, 
+					  Real32 minDist, Real32 maxDist, 
+					  UInt32 i);
+    const SetUnion&         getPoolEntry (const Pnt3f& eye, 
+					  Real32 minDist, Real32 maxDist, 
+					  UInt32 i) const;
 
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -80,23 +82,14 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
     virtual void dump(      UInt32     uiIndent = 0, 
                       const BitVector  bvFlags  = 0) const;
 
-    /*! \}                                                                 */
     virtual Action::ResultE drawPrimitives (DrawActionBase * action );
     void                    fillGrid       (GeoPositionsPtr pos);
 
-    genvis::RegularGrid<SetUnion>&       getGrid ();
-    const genvis::RegularGrid<SetUnion>& getGrid () const;
-    std::vector<SetUnion>&               getPool ();
-    const std::vector<SetUnion>&         getPool () const;
-    SetUnion&                            getPool (UInt32 i);
-    const SetUnion&                      getPool (UInt32 i) const;
- 
+    /*! \}                                                                 */ 
+
     /*=========================  PROTECTED  ===============================*/
   protected:
-
     // Variables should all be in GeometryClusteredBase.
-    genvis::RegularGrid<SetUnion> m_grid;
-    std::vector<SetUnion>         m_pool;
 
     /*---------------------------------------------------------------------*/
     /*! \name                  Constructors                                */
@@ -134,6 +127,6 @@ OSG_END_NAMESPACE
 #include <OSGGeometryClusteredBase.inl>
 #include <OSGGeometryClustered.inl>
 
-#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTERED_H_ */

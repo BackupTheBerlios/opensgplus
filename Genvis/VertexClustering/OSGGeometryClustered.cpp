@@ -53,9 +53,14 @@
 #include <OSGIntersectAction.h>
 #include <OSGRenderAction.h>
 #include <OSGGeoFunctions.h>
+#include <OSGViewport.h>
+#include <OSGCamera.h>
 
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
+
+static const u32 sizePool = 3;
+#undef GV_COLORPRIMITIVES
 
 /***************************************************************************\
  *                            Description                                  *
@@ -118,6 +123,14 @@ GeometryClustered::~GeometryClustered(void)
 void GeometryClustered::changed(BitVector whichField, UInt32 origin)
 {
     Inherited::changed(whichField, origin);
+    if (whichField | NumCellsFieldMask) {
+      delete getGrid();
+      setGrid(NULL);
+      while (getPool().size() > 0) {
+	delete getPool(0);
+	getPool().erase(getPool().begin());
+      }
+    }
 }
 
 void GeometryClustered::dump(      UInt32    , 
@@ -126,290 +139,77 @@ void GeometryClustered::dump(      UInt32    ,
     SLOG << "Dump GeometryClustered NI" << std::endl;
 }
 
-/*! Element datastructure for separating the Positions field into clusters. 
-    The elements are organized into a union-find datastructure. After calling 
-    optimize() the query time is constant!
- */
-class SetUnion : public Adapter
+SetUnion& GeometryClustered::getPoolEntry (UInt32 i)
 {
-public:
-   /*! Construct empty datastructure. */
-   inline SetUnion  ();
-   /*! Construct new element in the set pred. */
-   inline SetUnion  (UInt32 id, SetUnion* pred);
-   /*! Init element in the set pred. */
-   inline void init (UInt32 id, SetUnion* pred);
-
-   /*! Identifier of this element. */
-   inline UInt32    getIdentifier  () const;
-   /*! Predecessor of this element. */
-   inline SetUnion* getPredecessor () const;
-   /*! Change the predecessor of this element. Changes the set membership
-       implicitly! */
-   inline void      setPredecessor (SetUnion* pred);
-   /*! Set membership of this element. */
-   inline SetUnion* getSetInternal () const;
-   /*! Set membership of this element. Same as getSetInternal, 
-       if omit==false. Otherwise the timestamp of this element is compared
-       to the current timestamp and the set memebership is returned only
-       if the timestamps are different. The timestamp of this element is set
-       to the current timestamp. */
-   inline SetUnion* getSet (bool omit=false);
-   /*! Count size of the set this element belongs to. */
-   inline UInt32    getSize () const;
-   /*! Change the set membership of this element. Not implemented yet! */
-   inline void      chooseRepresent (const GeoPositionsPtr& pos);
-   /*! Perform path shortening. */
-   inline void      optimize ();
-
-   /*! Init timestamps. */
-   static inline void   firstFrame ();
-   /*! Switch to next timestamp. */
-   static inline void   nextFrame ();
- 
-   /*! Identifier of this adapter class. */
-   static inline unsigned getAdapterId();
-
-private:
-   static UInt32 s_currentStamp;
-   UInt32    m_stamp;
-   UInt32    m_id;
-   SetUnion* m_pred;
-};
-UInt32 SetUnion::s_currentStamp = 0;
-inline void   SetUnion::firstFrame ()
-{
-   s_currentStamp = 0;
-}
-inline void   SetUnion::nextFrame ()
-{
-   ++s_currentStamp;
-}
-inline unsigned SetUnion::getAdapterId ()
-{
-   static unsigned id = getNextId();
-   return id;
-}
-inline SetUnion::SetUnion()
-  : m_id(0), m_stamp(0), m_pred(NULL)
-{
-}
-inline UInt32 SetUnion::getSize () const
-{
-   UInt32 i = 0;
-   const SetUnion* set  = this;
-   const SetUnion* pred = set->getPredecessor();
-   // search for set 
-   while (pred != NULL) {
-      ++i;
-      set  = pred;
-      pred = set->getPredecessor();
-   }
-   return i;
-}
-inline void SetUnion::init (UInt32 id, SetUnion* pred)
-{
-   m_id = id; 
-   m_stamp = 0;
-   m_pred = pred;
-}
-inline SetUnion::SetUnion(UInt32 id, SetUnion* pred)
-{
-   init(id, pred);
-}
-inline UInt32    SetUnion::getIdentifier  () const
-{
-   return m_id;
-}
-inline SetUnion* SetUnion::getPredecessor () const
-{
-   return m_pred;
-}
-inline void SetUnion::setPredecessor (SetUnion* pred)
-{
-   m_pred = pred;
-}
-inline SetUnion* SetUnion::getSetInternal () const
-{
-   SetUnion* set  = (SetUnion*)this;
-   SetUnion* pred = set->getPredecessor();
-   // search for set 
-   while (pred != NULL) {
-      set  = pred;
-      pred = set->getPredecessor();
-   }
-   return set;
-}
-inline SetUnion* SetUnion::getSet (bool omit)
-{
-   SetUnion* set = getSetInternal();
-   if (!omit) {
-      return set;
-   }
-   if (set->m_stamp != s_currentStamp) {
-      // apply current stamp
-      set->m_stamp = s_currentStamp;
-      return set;
-   }
-   return NULL;
-}
-inline void SetUnion::optimize ()
-{
-   SetUnion* set  = getSetInternal();
-   // path shortening
-   SetUnion* iter = this;
-   SetUnion* pred;
-   while (iter != set) {
-      // shortcut to set object
-      pred = iter->getPredecessor();
-      iter->setPredecessor(set);
-      iter = pred;
-   }
-}
-inline void SetUnion::chooseRepresent (const GeoPositionsPtr&)
-{
-   // do nothing at first!
-}
-
-
-
-#if 0
-class PositionsGrid
-{
-public:
-   inline PositionsGrid (Real32 cellSize, 
-		  const Pnt3f& minBound, const Pnt3f& maxBound);
-
-   inline void                   create    (GeoPositionsPtr pos);
-
-   inline std::vector<SetUnion>& createAll (UInt32 num);
-   inline void                   clearAll();
-
-   inline void                   map (const Pnt3f& p, 
-			       UInt32& x, UInt32& y, UInt32& z);
-   inline SetUnion*              query (UInt32 id);
-   inline SetUnion*              query (const Pnt3f& p);
-
-   inline Real32                 getSize () const;
-
-protected:
-   std::vector<std::vector<std::vector<SetUnion*> > > m_grid;
-   std::vector<SetUnion>                              m_pool;
-   std::vector<SetUnion*>                             m_current;
-   Real32 m_cellSize;
-   Pnt3f  m_minBound;
-   Pnt3f  m_maxBound;
-   UInt32 m_numX, m_numY, m_numZ;
-   Real32 m_avg;
-};
-inline std::vector<SetUnion>& PositionsGrid::createAll (UInt32 num)
-{
-   m_pool.reserve(num);
-   return m_pool;
-}
-inline void                  PositionsGrid::clearAll()
-{
-   m_pool.clear();
-   m_current.clear();
-}
-inline   PositionsGrid::PositionsGrid (Real32 cellSize,
-				       const Pnt3f& minBound, const Pnt3f& maxBound)
-  : m_cellSize(cellSize), m_minBound(minBound), m_maxBound(maxBound), m_avg(0)
-{
-   m_numX = ceil((m_maxBound[0]-m_minBound[0])/m_cellSize+0.5);
-   m_numY = ceil((m_maxBound[1]-m_minBound[1])/m_cellSize+0.5);
-   m_numZ = ceil((m_maxBound[2]-m_minBound[2])/m_cellSize+0.5);
-
-   m_grid.resize(m_numX);
-   for (UInt32 x=0; x<m_numX; ++x) {
-      std::vector<std::vector<SetUnion*> >& gridX = m_grid[x];
-      gridX.resize(m_numY);
-      for (UInt32 y=0; y<m_numY; ++y) {
-	 gridX[y].resize(m_numZ);
-	 // initialize with NULL
-	 std::fill(gridX[y].begin(), gridX[y].end(), NULL);
-      }
-   }
-}
-inline Real32 PositionsGrid::getSize () const
-{
-   return m_avg;
-}
-inline void PositionsGrid::map (const Pnt3f& p, 
-				UInt32& x, UInt32& y, UInt32& z)
-{
-   x = (p[0]-m_minBound[0])/m_cellSize;
-   y = (p[1]-m_minBound[1])/m_cellSize;
-   z = (p[2]-m_minBound[2])/m_cellSize;
-}
-inline SetUnion* PositionsGrid::query (UInt32 id)
-{
-   return m_pool.begin() + id;
-}
-inline SetUnion* PositionsGrid::query (const Pnt3f& p)
-{
-   UInt32 x, y, z; map (p, x, y, z);
-   return m_grid[x][y][z];
-}
-inline void                  PositionsGrid::create    (GeoPositionsPtr pos)
-{
-   UInt32 x, y, z;
-   std::vector<SetUnion>& all = createAll(pos->getSize());
-   for (UInt32 i=0; i<pos->getSize(); ++i) {
-      all.push_back(SetUnion()); SetUnion* set = &(all.back());
-      map(pos->getValue(i), x, y, z);
-      if (m_grid[x][y][z] == NULL) {
-	 set->init(i, NULL);
- 	 m_grid[x][y][z] = set;
-	 m_current.push_back(set);
-      } else {
-	 set->init(i, m_grid[x][y][z]);
- 	 m_grid[x][y][z] = set;
-      }
-   }
-   for (UInt32 x=0; x<m_numX; ++x) {
-      std::vector<std::vector<SetUnion*> >& gridX = m_grid[x];
-      for (UInt32 y=0; y<m_numY; ++y) {
-	 std::vector<SetUnion*>& gridY = gridX[y];
-	 for (UInt32 z=0; z<m_numZ; ++z) {
-	    if (gridY[z] != NULL) {
-	       m_avg += gridY[z]->getSize();
-	       gridY[z]->optimize();
-	    }
-	 }
-      }
-   }
-   m_avg /= Real32(m_numX)*Real32(m_numY)*Real32(m_numZ);
-}
+#ifdef GV_CLUSTERED_ADAPTIVE
+   assert(getPool(0) != NULL);
+   return (*getPool(0))[i];
+#else
+   assert(getPool() != NULL);
+   return (*getPool())[i];
 #endif
-
-
-
-RegularGrid<SetUnion>& GeometryClustered::getGrid ()
-{
-   return m_grid;
 }
-const RegularGrid<SetUnion>& GeometryClustered::getGrid () const
+const SetUnion& GeometryClustered::getPoolEntry (UInt32 i) const
 {
-   return m_grid;
+#ifdef GV_CLUSTERED_ADAPTIVE
+   assert(getPool(0) != NULL);
+   return (*getPool(0))[i];
+#else
+   assert(getPool() != NULL);
+   return (*getPool())[i];
+#endif
 }
-
-std::vector<SetUnion>& GeometryClustered::getPool ()
+SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye, 
+					   Real32 minDist, Real32 maxDist, 
+					   UInt32 i)
 {
-   return m_pool;
+#ifdef GV_CLUSTERED_ADAPTIVE
+   Int32 pindex;
+#if 0
+   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   pindex = Int32(log10(dist))-Int32(log10(maxDist-minDist));
+   if (pindex < 0) {
+     pindex = 0;
+   } 
+   if (dist >= sizePool) {
+     pindex = sizePool-1;
+   }
+#else
+   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   pindex = Int32(sizePool*(dist-minDist)/(maxDist-minDist));
+#endif
+   assert(pindex < 3);
+   return (*getPool(pindex))[i];
+#else
+   assert(getPool() != NULL);
+   return (*getPool())[i];
+#endif
 }
-const std::vector<SetUnion>& GeometryClustered::getPool () const
+const SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye, 
+						 Real32 minDist, Real32 maxDist, 
+						 UInt32 i) const
 {
-   return m_pool;
-}
-
-SetUnion& GeometryClustered::getPool (UInt32 i)
-{
-   return m_pool[i];
-}
-const SetUnion& GeometryClustered::getPool (UInt32 i) const
-{
-   return m_pool[i];
+#ifdef GV_CLUSTERED_ADAPTIVE
+   Int32 pindex;
+#if 0
+   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   pindex = Int32(log10(dist))-Int32(log10(maxDist-minDist));
+   if (pindex < 0) {
+     pindex = 0;
+   } 
+   if (dist >= sizePool) {
+     pindex = sizePool-1;
+   }
+#else
+   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   pindex = Int32(sizePool*(dist-minDist)/(maxDist-minDist));
+#endif
+   assert(pindex < 3);
+   return (*getPool(pindex))[i];
+#else
+   assert(getPool() != NULL);
+   return (*getPool())[i];
+#endif
 }
 
 
@@ -776,8 +576,23 @@ static UInt32 TexCoords1IDs[numFormats][4];
         name##Stride = 0;                                                   \
     }
 
-static void masterGeoPump (Window* win, GeometryClustered* geo)
+static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo, 
+			   Matrix wcMatrix, const Pnt3f& minBound, const Pnt3f& maxBound)
 {
+    static const Real32 sqrt2 = 1.0f/sqrt(2.0f);
+
+    CameraPtr cam = port->getCamera();
+    wcMatrix.invert();
+    wcMatrix.mult(cam->getBeacon()->getToWorld());
+    // calc eye point and center point
+    Pnt3f  eye (wcMatrix[3][0], wcMatrix[3][1], wcMatrix[3][2]); 
+    Vec3f  diff = maxBound-minBound;
+    Pnt3f  center = minBound + 0.5f*diff;
+    Real32 d = sqrt2*diff.length();
+    Real32 minDist = (center-eye).length();
+    Real32 maxDist = minDist + d;
+    minDist = (minDist > d ? minDist - d : 0);
+    SLOG << "distance=[" << minDist << "," << maxDist << "]" << std::endl;
     // Setup: get all the data
     pumpInternalSetup( Type,   GeoPTypesPtr,   getTypes,   true  );
     pumpInternalSetup( Length, GeoPLengthsPtr, getLengths, false );
@@ -861,38 +676,47 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
     SetUnion* set = NULL;
     UInt32    index;
     UInt32*   vind;
+    // store color on entry
+    srand(4711);
+    GLfloat current[4];
+    glGetFloatv(GL_CURRENT_COLOR, current);
     for (LengthInd = 0; LengthInd < LengthSize; LengthInd++) {
+#ifdef GV_COLORPRIMITIVES
+        glColor3f(GLfloat(rand())/RAND_MAX, 
+		  GLfloat(rand())/RAND_MAX, 
+		  GLfloat(rand())/RAND_MAX);
+#endif
         GLuint type = *(TypeData + TypeInd++ * TypeStride);
 	switch (type) {
 	case GL_QUADS: 
-	   SLOG << "GL_QUADS" << std::endl;
+	   SINFO << "GL_QUADS" << std::endl;
  	   omit = true;
 	   glBegin(GL_TRIANGLE_FAN);
 	   break;
 	case GL_QUAD_STRIP:
-	   SLOG << "GL_QUAD_STRIP" << std::endl;
+	   SINFO << "GL_QUAD_STRIP" << std::endl;
  	   omit = false;
 	   glBegin(type);
 	   break;
 	case GL_TRIANGLES: {
-	   SLOG << "GL_TRIANGLES" << std::endl;
+	   SINFO << "GL_TRIANGLES" << std::endl;
 	   SetUnion* setArray[3];
 	   glBegin(type);
 	   for (UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); l+=3) {
 	     SetUnion::nextFrame ();
 	     // test if triangle collapses then omit OpenGL commands
 	     if (IndexData) {
- 	        setArray[0] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex))].getSet(true);
- 	        setArray[1] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex))].getSet(true);
- 	        setArray[2] = geo->getPool()[*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex + nmappings))].getSet(true);
+ 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex))).getSet(true);
+ 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex))).getSet(true);
+ 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex + nmappings))).getSet(true);
 		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   IndexInd += 3*nmappings;
 		   continue;
 		}
 	     } else {
- 	        setArray[0] = geo->getPool()[index].getSet(true);
- 	        setArray[1] = geo->getPool()[index+1].getSet(true);
- 	        setArray[2] = geo->getPool()[index+2].getSet(true);
+ 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
+ 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,index+1).getSet(true);
+ 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,index+2).getSet(true);
 		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   index += 3;
 		   continue;
@@ -943,7 +767,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   continue;
 	}
 	case GL_TRIANGLE_STRIP: {
-	   SLOG << "GL_TRIANGLE_STRIP" << std::endl;
+	   SINFO << "GL_TRIANGLE_STRIP" << std::endl;
 	   SetUnion::nextFrame ();
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
@@ -953,9 +777,9 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
                 IndexInd += nmappings;
 		// always use the first two vertices
 		if (l > 2) {
-		  set = geo->getPool()[vind[PositionIndex]].getSet(true);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(true);
 		} else {
-		  set = geo->getPool()[vind[PositionIndex]].getSet(false);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(false);
 		}
 		if (set == NULL) { // omit vertex
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
@@ -968,9 +792,9 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
                 ++index;
 		// always use the first two vertices
 		if (l > 2) {
-		  set = geo->getPool()[index].getSet(true);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
 		} else {
-		  set = geo->getPool()[index].getSet(false);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(false);
 		}
 		if (set == NULL) { // omit vertex
 		   SINFO << index << " omitted!" << std::endl;
@@ -1010,7 +834,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   continue;
 	}
 	case GL_TRIANGLE_FAN: {
-	   SLOG << "GL_TRIANGLE_FAN" << std::endl;
+	   SINFO << "GL_TRIANGLE_FAN" << std::endl;
 	   SetUnion::nextFrame ();
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
@@ -1018,7 +842,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	      if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-		set = geo->getPool()[vind[PositionIndex]].getSet(true);
+		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(true);
 		if (set == NULL) { 
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
@@ -1027,7 +851,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	      } else {
                 vind = &index;
                 ++index;
-		set = geo->getPool()[index].getSet(true);
+		set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
 		if (set == NULL) {
 		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
@@ -1065,13 +889,13 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   continue;
 	}
 	case GL_POLYGON:
-	   SLOG << "GL_POLYGON" << std::endl;
+	   SINFO << "GL_POLYGON" << std::endl;
 	   SetUnion::nextFrame ();
 	   omit = true;
 	   glBegin(type);
 	   break;
 	default:
- 	   SLOG << "other " << type << std::endl;
+ 	   SINFO << "other " << type << std::endl;
 	   SetUnion::nextFrame ();
 	   omit = true;
 	   glBegin(type);
@@ -1082,7 +906,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-		set = geo->getPool()[vind[PositionIndex]].getSet(omit);
+		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(omit);
 		if (set == NULL) { 
 		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
@@ -1091,7 +915,7 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	   } else {
                 vind = &index;
                 ++index;
-		set = geo->getPool()[index].getSet(omit);
+		set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(omit);
 		if (set == NULL) {
 		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
@@ -1127,15 +951,18 @@ static void masterGeoPump (Window* win, GeometryClustered* geo)
 	}
         glEnd();
     }
+    // restore color on exit
+    glColor3fv(current);
 }
 
 void GeometryClustered::fillGrid (GeoPositionsPtr pos)
 {
-   m_pool.clear();
-   m_pool.reserve(pos->getSize());
+#ifndef GV_CLUSTERED_ADAPTIVE
+   getPool()->clear();
+   getPool()->reserve(pos->getSize());
    for (UInt32 i=0; i<pos->getSize(); ++i) {
-      std::vector<SetUnion*>& cell = m_grid.primitives(pos->getValue(i));
-      m_pool.push_back(SetUnion()); SetUnion* set = &(m_pool.back());
+      std::vector<SetUnion*>& cell = getGrid()->primitives(pos->getValue(i));
+      getPool()->push_back(SetUnion()); SetUnion* set = &(getPool()->back());
       if (cell.size() == 0) {
 	 set->init(i, NULL);
  	 cell.push_back(set);
@@ -1144,11 +971,45 @@ void GeometryClustered::fillGrid (GeoPositionsPtr pos)
  	 cell[0] = set;
       }
    }
-   for (i64 i=0; i<m_grid.getNumVoxels(); ++i) {
-      if (m_grid.getVoxel()[i].size() > 0) {
-	 m_grid.getVoxel()[i][0]->optimize();
+   for (i64 i=0; i<getGrid()->getNumVoxels(); ++i) {
+      if (getGrid()->getVoxel()[i].size() > 0) {
+	 getGrid()->getVoxel()[i][0]->optimize();
       }
    }
+#else
+   UInt32 i;
+   for (i=0; i<sizePool; ++i) {
+      getPool(i)->clear();
+      getPool(i)->reserve(pos->getSize());
+   }
+   for (i=0; i<pos->getSize(); ++i) {
+      SetUnionGrid::CellType* intern = getGrid()->getLeafCell(pos->getValue(i));
+      UInt32 j=0; 
+      while (j<3 && intern != NULL) {
+	 getPool(j)->push_back(SetUnion()); SetUnion* set = &(getPool(j)->back());
+	 std::vector<SetUnion*>& cell = intern->getContainer();
+	 if (cell.size() == 0) {
+	    set->init(i, NULL);
+	    cell.push_back(set);
+	 } else {
+	    set->init(i, cell[0]);
+	    cell[0] = set;
+	 }
+	 intern = intern->getParent(); ++j;
+      } 
+   }
+   for (u32 xCode=0; xCode<getGrid()->getMaxCode(); ++xCode) {
+      for (u32 yCode=0; yCode<getGrid()->getMaxCode(); ++yCode) {
+	 for (u32 zCode=0; zCode<getGrid()->getMaxCode(); ++zCode) {
+	   SetUnionGrid::CellType* intern = getGrid()->getCell(xCode, yCode, zCode);
+	   std::vector<SetUnion*>& cell = intern->getContainer();
+	   if (cell.size() > 0) {
+	      cell[0]->optimize();
+	   }
+	 }
+      }
+   }
+#endif
 }
 
 Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
@@ -1158,16 +1019,40 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
 
    Pnt3f minBound, maxBound;
    node->getVolume().getBounds(minBound, maxBound);
-   Real32 d = osgMax(osgMax(maxBound[0]-minBound[0], maxBound[1]-minBound[1]), maxBound[2]-minBound[2]);
 
+   // create datastructures
+#ifndef GV_CLUSTERED_ADAPTIVE
+   if (getGrid() == NULL) {
+      setGrid(new SetUnionGrid());
+   }
+   if (getPool() == NULL) {
+      setPool(new SetUnionPool());
+   }
+   // init grid
    SetUnion::firstFrame ();
-   m_grid.init(K6Dop(minBound.getValues(), maxBound.getValues()),
-	       getNumCells(), 
-	       RegularGridBase::MinVoxelsPerDim);
+   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+		   getNumCells(), 
+		   RegularGridBase::MinVoxelsPerDim);
    fillGrid(getPositions());
    SLOG << "RegularGrid created: " << std::endl;
+#else
+   while (getPool().size() < sizePool) {
+      getPool().addValue(new SetUnionPool());
+   }
+   if (getGrid() == NULL) {
+      setGrid(new SetUnionGrid());
+      // init grid
+      SetUnion::firstFrame ();
+      getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+		      getNumCells(), 
+		      RegularGridBase::MaxVoxels);
+      fillGrid(getPositions());
+      SLOG << "RegularGrid created: " << std::endl;
+   }
+#endif
 
-   masterGeoPump(action->getWindow(), this);
+   masterGeoPump(action->getWindow(), action->getViewport(), this, 
+		 node->getToWorld(), minBound, maxBound);
 
    StatCollector *coll = action->getStatistics();
    if(coll != NULL) {
@@ -1211,7 +1096,7 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 

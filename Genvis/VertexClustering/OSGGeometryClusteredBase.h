@@ -57,14 +57,15 @@
 #pragma once
 #endif
 
+#define GV_CLUSTERED_ADAPTIVE
 
-#include <OSGConfig.h>
-#include <OSGSystemDef.h>
-
+#include "OSGGVBase.h"
 #include <OSGBaseTypes.h>
 
 #include <OSGGeometry.h> // Parent
-
+#include <OSGReal32Fields.h> // NumCells type
+#include <OSGGeometryPositionCluster.h> // Pool type
+#include <OSGGeometryPositionCluster.h> // Grid type
 
 #include <OSGGeometryClusteredFields.h>
 
@@ -74,7 +75,6 @@ class GeometryClustered;
 class BinaryDataHandler;
 
 //! \brief GeometryClustered Base Class.
-
 class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
 {
   private:
@@ -86,12 +86,15 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
 
     enum
     {
-        NumCellsFieldId         = Inherited::NextFieldId,
-	NextFieldId             = NumCellsFieldId + 1
+        NumCellsFieldId     = Inherited::NextFieldId,
+        PoolFieldId         = NumCellsFieldId + 1,
+        GridFieldId         = PoolFieldId     + 1,
+	NextFieldId         = GridFieldId     + 1
     };
 
     static const OSG::BitVector NumCellsFieldMask;
-
+    static const OSG::BitVector PoolFieldMask;
+    static const OSG::BitVector GridFieldMask;
     static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
@@ -116,17 +119,34 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-           SFReal32            *getSFNumCells           (void);
+           SFReal32            *getSFNumCells (void);
+           Real32              &getNumCells   (void);
+     const Real32              &getNumCells   (void) const;
 
-           Real32              &getNumCells           (void);
-     const Real32              &getNumCells           (void) const;
+           SFSetUnionGridP     *getSFGrid (void);
+    SetUnionGridP&              getGrid   (void);
+    const SetUnionGridP&        getGrid   (void) const;
+
+#ifdef GV_CLUSTERED_ADAPTIVE
+       MFSetUnionPoolP         *getMFPool (void);
+    SetUnionPoolP&              getPool   (const UInt32 index);
+    const SetUnionPoolP&        getPool   (const UInt32 index) const;
+    MFSetUnionPoolP&            getPool   (void);
+    const MFSetUnionPoolP&      getPool   (void) const;
+#else
+       SFSetUnionPoolP         *getSFPool (void);
+    SetUnionPoolP&              getPool   (void);
+    const SetUnionPoolP&        getPool   (void) const;
+#endif
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-     void setNumCells           ( const Real32 &value );
+     void                       setNumCells ( const Real32 &value );
+     void                       setGrid     (const SetUnionGridP& value);
+     void                       setPool     (const SetUnionPoolP& value);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -172,6 +192,12 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \{                                                                 */
 
     SFReal32            _sfNumCells;
+#ifdef GV_CLUSTERED_ADAPTIVE
+    MFSetUnionPoolP     _sfPool;
+#else
+    SFSetUnionPoolP     _sfPool;
+#endif
+    SFSetUnionGridP     _sfGrid;
 
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
@@ -218,6 +244,6 @@ typedef GeometryClusteredBase *GeometryClusteredBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.3 2003/09/19 21:56:27 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDBASE_H_ */
