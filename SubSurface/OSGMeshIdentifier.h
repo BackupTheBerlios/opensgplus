@@ -39,7 +39,10 @@
 #ifndef OSGMESHIDENTIFIER_H
 #define OSGMESHIDENTIFIER_H
 
+#include <stdio.h>
+#include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
+#include "OSGBaseTypes.h"
 
 OSG_BEGIN_NAMESPACE
 
@@ -49,10 +52,7 @@ OSG_BEGIN_NAMESPACE
 class OSG_SUBSURFACELIB_DLLMAPPING MeshIdentifierBase
 {
 public:
-   static UInt32 getNextId () {
-      static UInt32 nextId = 0;
-      return nextId++;
-   }
+   static UInt32 getNextId ();
 };
 
 /*! \brief Identifier for mesh type.
@@ -61,10 +61,33 @@ template <class MESH>
 class OSG_SUBSURFACELIB_DLLMAPPING MeshIdentifier
 {
 public:
+   static inline UInt32       getId ();
+   static inline const Char8* getIdString ();
+
+protected:
    static UInt32 id;
 };
+
 template <class MESH>
-UInt32 MeshIdentifier<MESH>::id = MeshIdentifierBase::getNextId();
+inline UInt32       MeshIdentifier<MESH>::getId ()
+{
+   return id;
+}
+template <class MESH>
+inline const Char8* MeshIdentifier<MESH>::getIdString ()
+{
+   static Char8  sstore[100];
+   static Char8* sname = NULL;
+   if (sname == NULL) {
+      id = MeshIdentifierBase::getNextId();
+      sname = sstore;
+      sprintf(sname, "%u", MeshIdentifier<MESH>::id);
+   }
+   return sname; 
+}
+
+template <class MESH>
+UInt32 MeshIdentifier<MESH>::id; // = MeshIdentifierBase::getNextId();
 
 OSG_END_NAMESPACE
 
