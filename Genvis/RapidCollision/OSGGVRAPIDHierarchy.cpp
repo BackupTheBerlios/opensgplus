@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/03/12 13:28:31 $
+//   $Revision: 1.4 $
+//   $Date: 2004/12/22 18:42:07 $
 //                                                                            
 //=============================================================================
 
@@ -69,7 +69,7 @@ void RAPIDHierarchy<BasicTraits>::destroy ()
 {
    Cache::the().clearAdapter(AdapterType::getAdapterId());
    // clear adapter nodes
-   std::vector<AdapterType*>::const_iterator it;
+   typename std::vector<AdapterType*>::const_iterator it;
    for (it = m_leaf.begin();
 	it != m_leaf.end();
 	++it){
