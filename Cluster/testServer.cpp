@@ -107,8 +107,10 @@ int main(int argc,char **argv)
 
         if(fullscreen)
             glutFullScreen();
+        /*
         else
             glutReshapeWindow(300,300);
+        */
 
         glutPopWindow();
         glutDisplayFunc(display);       

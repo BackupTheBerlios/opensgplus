@@ -423,6 +423,9 @@ int main(int argc,char **argv)
                     case 'C':
                         type='C';
                         break;
+                    case 'F':
+                        type='F';
+                        break;
                     case 'P':
                         type='P';
                         break;
@@ -448,7 +451,8 @@ int main(int argc,char **argv)
                         cout << "-m  use multicast" << endl
                              << "-M  multi display" << endl
                              << "-r  number of display rows" << endl
-                             << "-C  composite" << endl
+                             << "-C  sort-first and compose" << endl
+                             << "-F  sort-first" << endl
                              << "-h  this msg" << endl
                              << "-S  stereo" << endl
                              << "-e  eye distance" << endl
@@ -497,7 +501,14 @@ int main(int argc,char **argv)
             case 'C':
                 sortfirst=SortFirstWindow::create();
                 beginEditCP(sortfirst);
-//                sortfirst->setCompose(false);
+                sortfirst->setCompose(true);
+                endEditCP(sortfirst);
+                clusterWindow=sortfirst;
+                break;
+            case 'F':
+                sortfirst=SortFirstWindow::create();
+                beginEditCP(sortfirst);
+                sortfirst->setCompose(false);
                 endEditCP(sortfirst);
                 clusterWindow=sortfirst;
                 break;
@@ -519,7 +530,9 @@ int main(int argc,char **argv)
             for(i=1;i<argc;i++)
             {
                 if(argv[i][0]!='-')
+                {
                     clusterWindow->getServers().push_back(argv[i]);
+                }
             }
             switch(type)
             {
@@ -540,6 +553,7 @@ int main(int argc,char **argv)
         // create client window
         clientWindow=GLUTWindow::create();
         clientWindow->setId(winid);
+        clientWindow->init();
 
         // init scene graph
         init(filenames);
