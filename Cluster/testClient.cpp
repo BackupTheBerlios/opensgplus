@@ -25,6 +25,7 @@
 #include <OSGDrawAction.h>
 #include <OSGMultiDisplayWindow.h>
 #include <OSGSortFirstWindow.h>
+#include <OSGSimpClustSterWin.h>
 
 OSG_USING_NAMESPACE
 
@@ -41,6 +42,7 @@ RenderAction         *ract,*ract1,*ract2;
 GLUTWindowPtr         clientWindow;
 SortFirstWindowPtr    sortfirst;
 MultiDisplayWindowPtr multidisplay;
+SimpClustSterWinPtr   stereodisplay;
 Bool                  animate=false;
 
 void showText(int x, int y, char *string)
@@ -311,7 +313,7 @@ void init(vector<char *> &filenames)
     }
 	if ( filenames.size()==0 )
 	{
-		file = makeTorus( .5, 2, 16, 16 );
+		file = makeTorus( .5, 2, 32, 32 );
         beginEditCP(file->getCore());
         endEditCP(file->getCore());
         dlight->addChild(file);
@@ -349,7 +351,7 @@ void init(vector<char *> &filenames)
     // Solid Background
     OSG::SolidBackgroundPtr bkgnd = OSG::SolidBackground::create();
     beginEditCP(bkgnd);
-    bkgnd->setColor( OSG::Color3f(0,.2,0) );
+    bkgnd->setColor( OSG::Color3f(0,0,0) );
     endEditCP(bkgnd);
 
     // Viewport
@@ -400,7 +402,9 @@ int main(int argc,char **argv)
     string connectionType = "StreamSock";
     int rows=1;
     char type='M';
-
+    float eyedistance=1,zeroparallax=10;
+    bool clientRendering=true;
+    
     try
     {
         for(i=1;i<argc;i++)
@@ -424,6 +428,18 @@ int main(int argc,char **argv)
                     case 'M':
                         type='M';
                         break;
+                    case 'S':
+                        type='S';
+                        break;
+                    case 'e':
+                        sscanf(argv[i]+2,"%f",&eyedistance);
+                        break;
+                    case 'z':
+                        sscanf(argv[i]+2,"%f",&zeroparallax);
+                        break;
+                    case 'd':
+                        clientRendering=false;
+                        break;
                     case 'h':
                         cout << argv[0] 
                              << "-ffile -m -rrows -C -M"
@@ -432,7 +448,11 @@ int main(int argc,char **argv)
                              << "-M  multi display" << endl
                              << "-r  number of display rows" << endl
                              << "-C  composite" << endl
-                             << "-h  this msg" << endl;
+                             << "-h  this msg" << endl
+                             << "-S  stereo" << endl
+                             << "-e  eye distance" << endl
+                             << "-z  zero parallax" << endl
+                             << "-d  disable client rendering" << endl;
                         return 0;
                 }
             }
@@ -470,6 +490,10 @@ int main(int argc,char **argv)
                 sortfirst=SortFirstWindow::create();
                 clusterWindow=sortfirst;
                 break;
+            case 'S':
+                stereodisplay=SimpClustSterWin::create();
+                clusterWindow=stereodisplay;
+                break;
         }
         beginEditCP(clusterWindow);
         {
@@ -487,6 +511,10 @@ int main(int argc,char **argv)
                     multidisplay->setVServers(
                         rows);
                     break;
+                case 'S':
+                    stereodisplay->setEyedistance(eyedistance);
+                    stereodisplay->setZeroparallax(zeroparallax);
+                    break;
             }
         }
         endEditCP(clusterWindow);
@@ -500,9 +528,18 @@ int main(int argc,char **argv)
         init(filenames);
 
         // init client
-        client = new ClusterClient(clusterWindow,
-                                   clientWindow,
-                                   connectionType);
+        if(clientRendering)
+        {
+            client = new ClusterClient(clusterWindow,
+                                       clientWindow,
+                                       connectionType);
+        }
+        else
+        {
+            client = new ClusterClient(clusterWindow,
+                                       NullFC,
+                                       connectionType);
+        }
         client->start();
 
         glutMainLoop();

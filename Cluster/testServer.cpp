@@ -39,8 +39,6 @@ int main(int argc,char **argv)
     char           *connectionType="StreamSock";
     bool           fullscreen=true;
 
-    if(argc>1)
-        name          =argv[1];
     for(int i=1;i<argc;i++)
     {
         if(strlen(argv[i])>1 && argv[i][0]=='-')
@@ -61,6 +59,8 @@ int main(int argc,char **argv)
                     return 0;
             }
         }
+        else
+            name=argv[i];
     }
     try
     {
@@ -78,6 +78,7 @@ int main(int argc,char **argv)
         glutDisplayFunc(display);       
         glutIdleFunc(display);       
         glutReshapeFunc(reshape);       
+        glutSetWindowTitle(name);
         glEnable( GL_LIGHTING );
         glEnable( GL_LIGHT0 );
         glEnable( GL_DEPTH_TEST );
