@@ -56,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.3 2002/02/10 12:51:34 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.4 2002/02/11 05:45:54 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -122,7 +122,7 @@ GeoLoad::~GeoLoad(void)
  **/
 
 void GeoLoad::clipLine(int from,
-                       Real32 near,
+                       Real32 rNear,
                        vector<Pnt3f> &pnt,
                        vector<Pnt3f> &clip) 
 {
@@ -132,10 +132,10 @@ void GeoLoad::clipLine(int from,
     {
         to=from^i;
         // different sides ?
-        if( (pnt[from][2] < near) !=
-            (pnt[to][2]   < near) )
+        if( (pnt[from][2] < rNear) !=
+            (pnt[to][2]   < rNear) )
         {
-            l=(near - pnt[from][2]) / (pnt[to][2] - pnt[from][2]);
+            l=(rNear - pnt[from][2]) / (pnt[to][2] - pnt[from][2]);
             clip.push_back(Pnt3f( pnt[from] + ( pnt[to] - pnt[from] ) * l ));
         }
     }
@@ -155,7 +155,7 @@ void GeoLoad::updateView(ViewportPtr port)
     Real32 maxx,maxy;
     Matrix v;
     Matrix p;
-    Real32 near=-camera->getNear();
+    Real32 rNear=-camera->getNear();
     bool needClip=false;
     DynamicVolume volume;
 
@@ -170,17 +170,17 @@ void GeoLoad::updateView(ViewportPtr port)
                                    vol[ (i>>1)&1 ][1] ,
                                    vol[ (i>>2)&1 ][2]) , pnt[i]);
         // behind the front clipping plane ?
-        if(pnt[i][2]<near)
+        if(pnt[i][2]<rNear)
             clip.push_back(pnt[i]);
         else
             needClip=true;
     }
     if(needClip)
     {                               // binary indices
-        clipLine(0,near,pnt,clip);  // from 000  to 100 010 001
-        clipLine(3,near,pnt,clip);  // from 011  to 111 001 010
-        clipLine(5,near,pnt,clip);  // from 101  to 001 111 100
-        clipLine(6,near,pnt,clip);  // from 110  to 111 010 100
+        clipLine(0,rNear,pnt,clip);  // from 000  to 100 010 001
+        clipLine(3,rNear,pnt,clip);  // from 011  to 111 001 010
+        clipLine(5,rNear,pnt,clip);  // from 101  to 001 111 100
+        clipLine(6,rNear,pnt,clip);  // from 110  to 111 010 100
     }
     // all points behind the front clipping plane?
     if(clip.size()==0)

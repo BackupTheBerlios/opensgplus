@@ -64,7 +64,7 @@
 
 OSG_BEGIN_NAMESPACE
 
-DataType FieldDataTraits<ClusterWindowPtr>::_type("ClusterWindowPtr", "WindowPtr", true);
+DataType FieldDataTraits<ClusterWindowPtr>::_type("ClusterWindowPtr", "WindowPtr");
 
 #if defined(__sgi)
 

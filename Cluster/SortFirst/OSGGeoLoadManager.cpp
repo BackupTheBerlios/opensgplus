@@ -72,7 +72,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.1 2002/02/10 12:51:34 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.2 2002/02/11 05:45:54 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGERHEADER_CVSID;
 }
 
@@ -83,11 +83,11 @@ namespace
 class GeoRegionLoad {
 public:
     GeoRegionLoad(GeoLoad *l,Real32 c,Int32 mi,Int32 ma):
-        load(l),rendering(c),min(mi),max(ma){}
+        load(l),rendering(c),_min(mi),_max(ma){}
     Real32   rendering;
     GeoLoad *load;
-    Int32    min;
-    Int32    max;
+    Int32    _min;
+    Int32    _max;
 };
 
 double sort_t=0;
@@ -168,8 +168,8 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     balance_t-=getSystemTime();
 
     int i,a;
-    int min[2]={vp->getPixelWidth()-1, vp->getPixelHeight()-1};
-    int max[2]={0,0};
+    int amin[2]={vp->getPixelWidth()-1, vp->getPixelHeight()-1};
+    int amax[2]={0,0};
     Int32 vpMax[2]={vp->getPixelWidth()-1, vp->getPixelHeight()-1};
 
     sortrow_t-=getSystemTime();
@@ -183,26 +183,26 @@ void GeoLoadManager::balance(ViewportPtr    vp,
             for(a=0;a<=1;++a)
             {
                 // shrink min, max to visible geometries
-                if(l->getMin()[a] <   min[a] &&
+                if(l->getMin()[a] <   amin[a] &&
                    l->getMax()[a] >= 0)
                     if(l->getMin()[a]<0)
-                        min[a]=0;
+                        amin[a]=0;
                     else
-                        min[a]=l->getMin()[a];
-                if(l->getMax()[a] >   max[a] &&
+                        amin[a]=l->getMin()[a];
+                if(l->getMax()[a] >   amax[a] &&
                    l->getMin()[a] <= vpMax[a])
                     if(l->getMax()[a]>vpMax[a])
-                        max[a]=vpMax[a];
+                        amax[a]=vpMax[a];
                     else
-                        max[a]=l->getMax()[a];
+                        amax[a]=l->getMax()[a];
             }
         }
     }
     sortrow_t+=getSystemTime();
-    if(max[0]<min[0] ||
-       max[1]<min[1])
-        max[0]=min[0]=max[1]=min[1]=0;
-    splitRegion(servers,min,max,result);
+    if(amax[0]<amin[0] ||
+       amax[1]<amin[1])
+       amax[0]=amin[0]=amax[1]=amin[1]=0;
+    splitRegion(servers,amin,amax,result);
 
     balance_t+=getSystemTime();
     printf("Balance:   %10.8f\n",balance_t);
@@ -217,14 +217,14 @@ void GeoLoadManager::balance(ViewportPtr    vp,
 /** Splitupt region
  **/
 void GeoLoadManager::splitRegion(UInt32  servers,
-                                 Int32   min[2],
-                                 Int32   max[2],
+                                 Int32   amin[2],
+                                 Int32   amax[2],
                                  ResultT &result)
 {
     if(servers==1)
     {
-        result.insert(result.end(),min,min+2);
-        result.insert(result.end(),max,max+2);
+        result.insert(result.end(),amin,amin+2);
+        result.insert(result.end(),amax,amax+2);
         return;
     }
     Int32  x    ,y;
@@ -236,37 +236,37 @@ void GeoLoadManager::splitRegion(UInt32  servers,
 
     bestcut_t-=getSystemTime();
     // test horizontal cut
-    findBestCut(min,max,0,1,x,xLoad);
+    findBestCut(amin,amax,0,1,x,xLoad);
     // test vertical cut
-    findBestCut(min,max,1,0,y,yLoad);
+    findBestCut(amin,amax,1,0,y,yLoad);
     bestcut_t+=getSystemTime();
 
     // create new regions
     if(xLoad < yLoad)
     {
         // Region A
-        newMinA[0] = min[0];
-        newMinA[1] = min[1];
+        newMinA[0] = amin[0];
+        newMinA[1] = amin[1];
         newMaxA[0] = x;
-        newMaxA[1] = max[1];
+        newMaxA[1] = amax[1];
         // Region B
         newMinB[0] = x+1;
-        newMinB[1] = min[1];
-        newMaxB[0] = max[0];
-        newMaxB[1] = max[1];
+        newMinB[1] = amin[1];
+        newMaxB[0] = amax[0];
+        newMaxB[1] = amax[1];
     }
     else
     {
         // Region A
-        newMinA[0] = min[0];
-        newMinA[1] = min[1];
-        newMaxA[0] = max[0];
+        newMinA[0] = amin[0];
+        newMinA[1] = amin[1];
+        newMaxA[0] = amax[0];
         newMaxA[1] = y;
         // Region B
-        newMinB[0] = min[0];
+        newMinB[0] = amin[0];
         newMinB[1] = y+1;
-        newMaxB[0] = max[0];
-        newMaxB[1] = max[1];
+        newMaxB[0] = amax[0];
+        newMaxB[1] = amax[1];
     }
     splitRegion(servers/2            ,newMinA,newMaxA,result);
     splitRegion(servers - (servers/2),newMinB,newMaxB,result);
@@ -274,8 +274,8 @@ void GeoLoadManager::splitRegion(UInt32  servers,
 
 /** Find best cut through the geometries
  **/
-void GeoLoadManager::findBestCut(Int32   min[2],
-                                 Int32   max[2],
+void GeoLoadManager::findBestCut(Int32   amin[2],
+                                 Int32   amax[2],
                                  UInt32  a,
                                  UInt32  b,
                                  Int32  &bestCut,
@@ -294,17 +294,17 @@ void GeoLoadManager::findBestCut(Int32   min[2],
     // collect all visible geometries
     for(l=_geoLoad.begin();l!=_geoLoad.end();l++)
     {
-        if(l->checkRegion(min,max))
+        if(l->checkRegion(amin,amax))
         {
             visible.push_back( GeoRegionLoad(&(*l),
-                                             l->getRenderingLoad(min ,max),
-                                             min[a],max[a]) );
+                                             l->getRenderingLoad(amin ,amax),
+                                             amin[a],amax[a]) );
         }
     }
-    f=min[a];
-    t=max[a];
-    maxA[b]=max[b];;
-    minB[b]=min[b];;
+    f=amin[a];
+    t=amax[a];
+    maxA[b]=amax[b];;
+    minB[b]=amin[b];;
     do
     {
         newCut=(f+t)/2;
@@ -313,15 +313,15 @@ void GeoLoadManager::findBestCut(Int32   min[2],
         costA=costB=0;
         for(v=visible.begin();v!=visible.end();v++)
         {
-            if(v->max <= newCut)
+            if(v->_max <= newCut)
                 costA+=v->rendering;
             else
-                if(v->min > newCut)
+                if(v->_min > newCut)
                     costB+=v->rendering;
                 else
                 {
-                    costA+=v->load->getRenderingLoad(min ,maxA);
-                    costB+=v->load->getRenderingLoad(minB ,max);
+                    costA+=v->load->getRenderingLoad(amin ,maxA);
+                    costB+=v->load->getRenderingLoad(minB ,amax);
                 }
 
         }
