@@ -50,8 +50,10 @@
 #include "OSGGeoPropPtrs.h"
 #include "OSGGeoPositionsFields.h"
 
-#include "OSGGVBase.h"
+// switch to use adaptive grid (octree) instead of regular grid
 #define GV_CLUSTERED_ADAPTIVE
+
+#include "OSGGVBase.h"
 #ifndef GV_CLUSTERED_ADAPTIVE
 #include "OSGGVRegularGrid.h"
 #else
@@ -60,156 +62,231 @@
 
 OSG_BEGIN_NAMESPACE
 
-/*! Element datastructure for separating the Positions field into clusters. 
-    The elements are organized into a union-find datastructure. After calling 
-    optimize() the query time is constant!
- */
-class OSG_GENVISLIB_DLLMAPPING SetUnion : public genvis::Adapter
+class OSG_GENVISLIB_DLLMAPPING CellDataInternal
 {
 public:
    /*! Construct empty datastructure. */
-   SetUnion  ();
-   /*! Construct new element in the set pred. */
-   SetUnion  (UInt32 id, SetUnion* pred);
-   /*! Init element in the set pred. */
-   void init (UInt32 id, SetUnion* pred);
+   inline CellDataInternal ();
 
-   /*! Identifier of this element. */
-   UInt32    getIdentifier  () const;
-   /*! Predecessor of this element. */
-   SetUnion* getPredecessor () const;
-   /*! Change the predecessor of this element. Changes the set membership
-       implicitly! */
-   void      setPredecessor (SetUnion* pred);
-   /*! Set membership of this element. */
-   SetUnion* getSetInternal () const;
-   /*! Set membership of this element. Same as getSetInternal, 
-       if omit==false. Otherwise the timestamp of this element is compared
-       to the current timestamp and the set memebership is returned only
-       if the timestamps are different. The timestamp of this element is set
-       to the current timestamp. */
-   SetUnion* getSet (bool omit=false);
-   /*! Count size of the set this element belongs to. */
-   UInt32    getSize () const;
-   /*! Change the set membership of this element. Not implemented yet! */
-   void      chooseRepresent (const GeoPositionsPtr& pos);
-   /*! Perform path shortening. */
-   void      optimize ();
+   inline UInt32       getNumPoints () const;
+   inline void         setNumPoints (UInt32 num);
+   inline Vec3f&       getNormal ();
+   inline const Vec3f& getNormal () const;
+   inline Pnt3f&       getPointRep ();
+   inline const Pnt3f& getPointRep () const;
+   inline Matrix&       getQuadric ();
+   inline const Matrix& getQuadric () const;
+   inline void         clear ();
+
+private:
+   UInt32 m_num;
+   Vec3f  m_normal;
+   Pnt3f  m_rep;
+   static Matrix m_quad;
+};
+
+inline void         CellDataInternal::clear ()
+{
+   m_num = 0;
+   m_normal.setValue(Vec3f::Null);
+   m_rep.setValue(Pnt3f::Null);
+#if 0
+   m_quad.setValue(0, 0, 0, 0,
+		   0, 0, 0, 0,
+		   0, 0, 0, 0,
+		   0, 0, 0, 0);
+#endif
+}
+inline CellDataInternal::CellDataInternal ()
+{
+   clear();
+}
+inline UInt32       CellDataInternal::getNumPoints () const
+{
+   return m_num;
+}
+inline void         CellDataInternal::setNumPoints (UInt32 num)
+{
+   m_num = num;
+}
+inline Vec3f&      CellDataInternal::getNormal () 
+{
+   return m_normal;
+}
+inline const Vec3f&         CellDataInternal::getNormal () const
+{
+   return m_normal;
+}
+#if 0
+inline Vec3f CellDataInternal::getNormal () const
+{
+   Real32 factor = sqrt(m_quad[0][0]);
+   Vec3f norm(factor, m_quad[0][1]/factor, m_quad[0][2]/factor);
+   //norm.normalize();
+   return norm;
+}
+#endif
+inline Pnt3f&       CellDataInternal::getPointRep ()
+{
+   return m_rep;
+}
+inline const Pnt3f& CellDataInternal::getPointRep () const
+{
+   return m_rep;
+}
+inline Matrix&       CellDataInternal::getQuadric ()
+{
+   return m_quad;
+}
+inline const Matrix& CellDataInternal::getQuadric () const
+{
+   return m_quad;
+}
+
+
+#if 0
+/*! 
+ */
+template <class ADAPTER>
+class OSG_GENVISLIB_DLLMAPPING CellDataTemplate
+{
+public:
+   /*! Construct empty datastructure. */
+   inline CellDataTemplate ();
+
+   inline UInt32       getNumPoints () const;
+   inline void         setNumPoints (UInt32 num);
+   inline Pnt3f&       getPointRep ();
+   inline const Pnt3f& getPointRep () const;
+   inline void         clear ();
 
    /*! Init timestamps. */
-   static void   firstFrame ();
+   static inline void   firstFrame ();
    /*! Switch to next timestamp. */
-   static void   nextFrame ();
- 
-   /*! Identifier of this adapter class. */
-   static unsigned getAdapterId();
+   static inline void   nextFrame ();
 
 private:
    static UInt32 s_currentStamp;
-   UInt32    m_stamp;
-   UInt32    m_id;
-   SetUnion* m_pred;
+   UInt32 m_stamp;
+   UInt32 m_num;
+   Pnt3f  m_rep;
 };
+typedef CellDataTemplate<DummyAdapter> CellData;
 
-inline void   SetUnion::firstFrame ()
+template <class ADAPTER>
+inline CellDataTemplate<ADAPTER>::CellDataTemplate ()
+  : m_stamp(0), m_num(0)
+{
+}
+template <class ADAPTER>
+inline void         CellDataTemplate<ADAPTER>::clear ()
+{
+   m_num = 0;
+   m_rep.setValue(Pnt3f::Null);
+}
+template <class ADAPTER>
+inline UInt32       CellDataTemplate<ADAPTER>::getNumPoints () const
+{
+   return m_num;
+}
+template <class ADAPTER>
+inline void         CellDataTemplate<ADAPTER>::setNumPoints (UInt32 num)
+{
+   m_num = num;
+}
+template <class ADAPTER>
+inline Pnt3f&       CellDataTemplate<ADAPTER>::getPointRep ()
+{
+   return m_rep;
+}
+template <class ADAPTER>
+inline const Pnt3f& CellDataTemplate<ADAPTER>::getPointRep () const
+{
+   return m_rep;
+}
+
+template <class ADAPTER>
+inline void   CellDataTemplate<ADAPTER>::firstFrame ()
 {
    s_currentStamp = 0;
 }
-inline void   SetUnion::nextFrame ()
+template <class ADAPTER>
+inline void   CellDataTemplate<ADAPTER>::nextFrame ()
 {
    ++s_currentStamp;
 }
-inline unsigned SetUnion::getAdapterId ()
-{
-   static unsigned id = getNextId();
-   return id;
-}
-inline SetUnion::SetUnion()
-  : m_id(0), m_stamp(0), m_pred(NULL)
-{
-}
-inline UInt32    SetUnion::getIdentifier  () const
-{
-   return m_id;
-}
-inline SetUnion* SetUnion::getPredecessor () const
-{
-   return m_pred;
-}
-inline void SetUnion::setPredecessor (SetUnion* pred)
-{
-   m_pred = pred;
-}
-inline UInt32 SetUnion::getSize () const
-{
-   UInt32 i = 0;
-   const SetUnion* set  = this;
-   const SetUnion* pred = set->getPredecessor();
-   // search for set 
-   while (pred != NULL) {
-      ++i;
-      set  = pred;
-      pred = set->getPredecessor();
-   }
-   return i;
-}
-inline void SetUnion::init (UInt32 id, SetUnion* pred)
-{
-   m_id = id; 
-   m_stamp = 0;
-   m_pred = pred;
-}
-inline SetUnion::SetUnion(UInt32 id, SetUnion* pred)
-{
-   init(id, pred);
-}
-inline SetUnion* SetUnion::getSetInternal () const
-{
-   SetUnion* set  = (SetUnion*)this;
-   SetUnion* pred = set->getPredecessor();
-   // search for set 
-   while (pred != NULL) {
-      set  = pred;
-      pred = set->getPredecessor();
-   }
-   return set;
-}
-inline SetUnion* SetUnion::getSet (bool omit)
-{
-#if 1
-   SetUnion* set = getSetInternal();
-   if (!omit) {
-      return set;
-   }
-   if (set->m_stamp != s_currentStamp) {
-      // apply current stamp
-      set->m_stamp = s_currentStamp;
-      return set;
-   }
-   return NULL;
 #else
-   return getSetInternal();
-#endif
-}
-inline void SetUnion::optimize ()
+class CellDataInternal;
+/*! 
+ */
+template <class ADAPTER>
+class OSG_GENVISLIB_DLLMAPPING CellDataTemplate
 {
-   SetUnion* set  = getSetInternal();
-   // path shortening
-   SetUnion* iter = this;
-   SetUnion* pred;
-   while (iter != set) {
-      // shortcut to set object
-      pred = iter->getPredecessor();
-      iter->setPredecessor(set);
-      iter = pred;
+public:
+   inline CellDataTemplate () {
+      m_data = NULL;
    }
-}
-inline void SetUnion::chooseRepresent (const GeoPositionsPtr&)
-{
-   // do nothing at first!
-}
+   inline void clear () {
+      m_data = NULL;
+      for (std::vector<ADAPTER*>::const_iterator it=s_factory.begin();
+	   it != s_factory.end();
+	   ++it) {
+	 delete (*it);
+      }
+      s_factory.clear();
+   }
+   inline void createAdapter () const {
+      s_factory.push_back(new ADAPTER());
+      m_data = s_factory.back();
+   }
+   inline ADAPTER* operator-> () {
+      if (m_data == NULL) {
+	 createAdapter();
+      }
+      return m_data;
+   }
+   inline const ADAPTER* operator-> () const {
+      if (m_data == NULL) {
+	 createAdapter();
+      }
+      return m_data;
+   }
+   inline ADAPTER& operator* () {
+      if (m_data == NULL) {
+	 createAdapter();
+      }
+      return *m_data;
+   }
+   inline const ADAPTER& operator* () const {
+      if (m_data == NULL) {
+	 createAdapter();
+      }
+      return *m_data;
+   }
 
+   static inline void   firstFrame () {
+   }
+   static inline void   nextFrame () {
+      s_query.reserve(8);
+      s_query.clear();
+   }
+   inline bool          isValid () const {
+      if (std::find(s_query.begin(), s_query.end(), this)==s_query.end()) {
+	 s_query.push_back(this);
+         return true;
+      }
+      return false;
+      //return (m_stamp == s_currentStamp);
+   }
 
+protected:
+   static std::vector<const CellDataTemplate<ADAPTER>*> s_query;
+   static std::vector<ADAPTER*>                         s_factory;
+   mutable ADAPTER* m_data;
+};
+typedef CellDataTemplate<CellDataInternal> CellData;
+
+#endif
 
 #if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
 
@@ -220,11 +297,11 @@ inline void SetUnion::chooseRepresent (const GeoPositionsPtr&)
 #endif
 
 #ifdef GV_CLUSTERED_ADAPTIVE
-typedef genvis::AdaptiveGrid<SetUnion>  SetUnionGrid;
-typedef genvis::AdaptiveGrid<SetUnion>* SetUnionGridP;
+typedef genvis::AdaptiveGrid<CellDataInternal, CellData>  SetUnionGrid;
+typedef genvis::AdaptiveGrid<CellDataInternal, CellData>* SetUnionGridP;
 #else
-typedef genvis::RegularGrid<SetUnion>  SetUnionGrid;
-typedef genvis::RegularGrid<SetUnion>* SetUnionGridP;
+typedef genvis::RegularGrid<CellDataInternal, CellData>   SetUnionGrid;
+typedef genvis::RegularGrid<CellDataInternal, CellData>*  SetUnionGridP;
 #endif
 
 template <>
@@ -297,89 +374,8 @@ OSG_DLLEXPORT_DECL1(SField, SetUnionGridP, OSG_GENVISLIB_DLLTMPLMAPPING)
 OSG_DLLEXPORT_DECL1(MField, SetUnionGridP, OSG_GENVISLIB_DLLTMPLMAPPING)
 #endif
 
-
-#if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
-
-/*! \ingroup FieldLib
- */
-#if !defined(OSG_DOC_DEV_TRAITS)
-/*! \hideinhierarchy */
-#endif
-
-typedef std::vector<SetUnion>  SetUnionPool;
-typedef std::vector<SetUnion>* SetUnionPoolP;
-
-template <>
-struct FieldDataTraits<SetUnionPoolP> : 
-    public FieldTraitsIntegralRecurseMapper<SetUnionPoolP>
-{
-    static DataType             _type;                       
-
-    enum                        { StringConvertable = 0x00 };
-    enum                        { bHasParent        = 0x01 };
-
-    static DataType& getType (void) { return _type;        }
-
-    static char* getName(void) { 
-       return "SetUnionPoolP";
-    }
-    static char* getSName(void) { 
-       return "SFSetUnionPoolP";
-    }
-    static char* getMName(void) { 
-       return "MFSetUnionPoolP";
-    }
-
-    static UInt32 getBinSize (const SetUnionPoolP&) {
-       return sizeof(SetUnionPoolP);
-    }
-    static UInt32    getBinSize (const SetUnionPoolP*,
-				 UInt32  uiNumObjects) {
-        return sizeof(SetUnionPoolP) * 3 * uiNumObjects;
-    }
-    static void   copyToBin  (BinaryDataHandler&, const SetUnionPoolP&) {
-    }
-    static void   copyFromBin(BinaryDataHandler&, SetUnionPoolP&) {
-    }
-    static void copyToBin(      BinaryDataHandler &,
-                                const SetUnionPoolP*,
-                                UInt32             ) {
-    }
-    
-    static void copyFromBin(    BinaryDataHandler &,
-                                SetUnionPoolP*,
-                                UInt32             ) {
-    }
-};
-
-#if !defined(OSG_DOC_DEV_TRAITS)
-/*! \class FieldTraitsRecurseBase<SetUnionPoolP> */
-/*! \hideinhierarchy                               */
-#endif
-
-#endif // !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
-
-/*! \brief SetUnionPoolP fields
-*/
-
-#if !defined(OSG_DO_DOC) || defined(OSG_DOC_FIELD_TYPEDEFS) 
-/*! \ingroup GrpBaseFieldSingle */
-
-typedef SField<SetUnionPoolP> SFSetUnionPoolP;
-#endif
-#if !defined(OSG_DO_DOC) || defined(OSG_DOC_FIELD_TYPEDEFS) 
-/*! \ingroup GrpBaseFieldSingle */
-
-typedef MField<SetUnionPoolP> MFSetUnionPoolP;
-#endif
-
-#ifndef OSG_COMPILESETUNIONPFIELDSINST
-OSG_DLLEXPORT_DECL1(SField, SetUnionPoolP, OSG_GENVISLIB_DLLTMPLMAPPING)
-OSG_DLLEXPORT_DECL1(MField, SetUnionPoolP, OSG_GENVISLIB_DLLTMPLMAPPING)
-#endif
-
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYPOSITIONCLUSTER_HEADER_CVSID "@(#)$Id: OSGGeometryPositionCluster.h,v 1.1 2004/03/12 13:37:26 fuenfzig Exp $"
+#define OSGGEOMETRYPOSITIONCLUSTER_HEADER_CVSID "@(#)$Id: OSGGeometryPositionCluster.h,v 1.2 2004/12/20 15:54:30 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYPOSITIONCLUSTER_H_ */

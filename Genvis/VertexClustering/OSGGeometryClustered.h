@@ -42,6 +42,7 @@
 #pragma once
 #endif
 
+#include <fstream>
 #include <OSGConfig.h>
 #include <OSGGeometryClusteredBase.h>
 
@@ -58,12 +59,13 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
     /*==========================  PUBLIC  =================================*/
   public:
 
-    SetUnion&               getPoolEntry (UInt32 i);
-    const SetUnion&         getPoolEntry (UInt32 i) const;
-    SetUnion&               getPoolEntry (const Pnt3f& eye, 
+    CellData*               getPoolEntry (UInt32 i, bool omit=false);
+    const CellData*         getPoolEntry (UInt32 i) const;
+    CellData*               getPoolEntry (const Pnt3f& eye, 
 					  Real32 minDist, Real32 maxDist, 
-					  UInt32 i);
-    const SetUnion&         getPoolEntry (const Pnt3f& eye, 
+					  UInt32 i,
+					  bool omit=false);
+    const CellData*         getPoolEntry (const Pnt3f& eye, 
 					  Real32 minDist, Real32 maxDist, 
 					  UInt32 i) const;
 
@@ -71,8 +73,10 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
     /*! \name                      Sync                                    */
     /*! \{                                                                 */
 
-    virtual void changed(BitVector  whichField, 
-                         UInt32     origin    );
+    virtual void changed  (BitVector  whichField, 
+			   UInt32     origin    );
+    void         onCreate (const GeometryClustered* source=NULL);
+    void         handleGL (Window* win, UInt32 idstatus);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -83,13 +87,17 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClustered : public GeometryClusteredBase
                       const BitVector  bvFlags  = 0) const;
 
     virtual Action::ResultE drawPrimitives (DrawActionBase * action );
-    void                    fillGrid       (GeoPositionsPtr pos);
+    void                    fillPositions  (std::istream& is);
+    void                    fillGrid       ();
+    void                    fillGridFile   (std::istream& is);
 
     /*! \}                                                                 */ 
 
     /*=========================  PROTECTED  ===============================*/
   protected:
     // Variables should all be in GeometryClusteredBase.
+
+    void adjustVolume (Volume& volume);
 
     /*---------------------------------------------------------------------*/
     /*! \name                  Constructors                                */
@@ -127,6 +135,6 @@ OSG_END_NAMESPACE
 #include <OSGGeometryClusteredBase.inl>
 #include <OSGGeometryClustered.inl>
 
-#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTERED_HEADER_CVSID "@(#)$Id: OSGGeometryClustered.h,v 1.5 2004/12/20 15:54:30 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTERED_H_ */

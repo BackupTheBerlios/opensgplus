@@ -98,10 +98,46 @@ GeometryClusteredPtr GeometryClusteredBase::createEmpty(void)
 
 //! Get the GeometryClustered::_sfNumCells field.
 inline
-SFReal32 *GeometryClusteredBase::getSFNumCells (void)
+SFReal32 *GeometryClusteredBase::getSFNumCells(void)
 {
     return &_sfNumCells;
 }
+
+//! Get the GeometryClustered::_sfGrid field.
+inline
+SFSetUnionGridP *GeometryClusteredBase::getSFGrid(void)
+{
+    return &_sfGrid;
+}
+
+//! Get the GeometryClustered::_sfModelFilename field.
+inline
+SFString *GeometryClusteredBase::getSFModelFilename(void)
+{
+    return &_sfModelFilename;
+}
+
+//! Get the GeometryClustered::_sfNormalScale field.
+inline
+SFReal32 *GeometryClusteredBase::getSFNormalScale(void)
+{
+    return &_sfNormalScale;
+}
+
+//! Get the GeometryClustered::_sfNumTriangles field.
+inline
+SFUInt32 *GeometryClusteredBase::getSFNumTriangles(void)
+{
+    return &_sfNumTriangles;
+}
+
+//! Get the GeometryClustered::_sfOffsetFaces field.
+inline
+SFInt32 *GeometryClusteredBase::getSFOffsetFaces(void)
+{
+    return &_sfOffsetFaces;
+}
+
 
 //! Get the value of the GeometryClustered::_sfNumCells field.
 inline
@@ -124,100 +160,113 @@ void GeometryClusteredBase::setNumCells(const Real32 &value)
     _sfNumCells.setValue(value);
 }
 
-
-//! Get the GeometryClustered::_sfGrid field.
-inline
-SFSetUnionGridP* GeometryClusteredBase::getSFGrid (void)
-{
-    return &_sfGrid;
-}
-
 //! Get the value of the GeometryClustered::_sfGrid field.
 inline
-SetUnionGridP& GeometryClusteredBase::getGrid (void)
+SetUnionGridP &GeometryClusteredBase::getGrid(void)
 {
     return _sfGrid.getValue();
 }
 
 //! Get the value of the GeometryClustered::_sfGrid field.
 inline
-const SetUnionGridP& GeometryClusteredBase::getGrid (void) const
+const SetUnionGridP &GeometryClusteredBase::getGrid(void) const
 {
     return _sfGrid.getValue();
 }
 
 //! Set the value of the GeometryClustered::_sfGrid field.
 inline
-void GeometryClusteredBase::setGrid(const SetUnionGridP& value)
+void GeometryClusteredBase::setGrid(const SetUnionGridP &value)
 {
     _sfGrid.setValue(value);
 }
 
-#ifdef GV_CLUSTERED_ADAPTIVE
-//! Get the GeometryClustered::_sfPool field.
+//! Get the value of the GeometryClustered::_sfModelFilename field.
 inline
-MFSetUnionPoolP* GeometryClusteredBase::getMFPool (void)
+std::string &GeometryClusteredBase::getModelFilename(void)
 {
-    return &_sfPool;
+    return _sfModelFilename.getValue();
 }
 
-//! Get the value of the GeometryClustered::_sfPool field.
+//! Get the value of the GeometryClustered::_sfModelFilename field.
 inline
-const SetUnionPoolP &GeometryClusteredBase::getPool(const UInt32 index) const
+const std::string &GeometryClusteredBase::getModelFilename(void) const
 {
-    return _sfPool.getValue(index);
-}
-//! Get the value of the GeometryClustered::_sfPool field.
-inline
-SetUnionPoolP &GeometryClusteredBase::getPool(const UInt32 index)
-{
-    return _sfPool.getValue(index);
+    return _sfModelFilename.getValue();
 }
 
-//! Get the value of the GeometryClustered::_sfPool field.
+//! Set the value of the GeometryClustered::_sfModelFilename field.
 inline
-MFSetUnionPoolP &GeometryClusteredBase::getPool(void)
+void GeometryClusteredBase::setModelFilename(const std::string &value)
 {
-    return _sfPool;
+    _sfModelFilename.setValue(value);
 }
 
-//! Get the value of the GeometryClustered::_sfPool field.
+//! Get the value of the GeometryClustered::_sfNormalScale field.
 inline
-const MFSetUnionPoolP &GeometryClusteredBase::getPool(void) const
+Real32 &GeometryClusteredBase::getNormalScale(void)
 {
-    return _sfPool;
-}
-#else
-//! Get the GeometryClustered::_sfPool field.
-inline
-SFSetUnionPoolP* GeometryClusteredBase::getSFPool (void)
-{
-    return &_sfPool;
+    return _sfNormalScale.getValue();
 }
 
-//! Get the value of the GeometryClustered::_sfPool field.
+//! Get the value of the GeometryClustered::_sfNormalScale field.
 inline
-SetUnionPoolP &GeometryClusteredBase::getPool(void)
+const Real32 &GeometryClusteredBase::getNormalScale(void) const
 {
-    return _sfPool.getValue();
+    return _sfNormalScale.getValue();
 }
 
-//! Get the value of the GeometryClustered::_sfPool field.
+//! Set the value of the GeometryClustered::_sfNormalScale field.
 inline
-const SetUnionPoolP &GeometryClusteredBase::getPool(void) const
+void GeometryClusteredBase::setNormalScale(const Real32 &value)
 {
-    return _sfPool.getValue();
+    _sfNormalScale.setValue(value);
 }
 
-//! Set the value of the GeometryClustered::_sfPool field.
+//! Get the value of the GeometryClustered::_sfNumTriangles field.
 inline
-void GeometryClusteredBase::setPool(const SetUnionPoolP &value)
+UInt32 &GeometryClusteredBase::getNumTriangles(void)
 {
-    _sfPool.setValue(value);
+    return _sfNumTriangles.getValue();
 }
-#endif
+
+//! Get the value of the GeometryClustered::_sfNumTriangles field.
+inline
+const UInt32 &GeometryClusteredBase::getNumTriangles(void) const
+{
+    return _sfNumTriangles.getValue();
+}
+
+//! Set the value of the GeometryClustered::_sfNumTriangles field.
+inline
+void GeometryClusteredBase::setNumTriangles(const UInt32 &value)
+{
+    _sfNumTriangles.setValue(value);
+}
+
+//! Get the value of the GeometryClustered::_sfOffsetFaces field.
+inline
+Int32 &GeometryClusteredBase::getOffsetFaces(void)
+{
+    return _sfOffsetFaces.getValue();
+}
+
+//! Get the value of the GeometryClustered::_sfOffsetFaces field.
+inline
+const Int32 &GeometryClusteredBase::getOffsetFaces(void) const
+{
+    return _sfOffsetFaces.getValue();
+}
+
+//! Set the value of the GeometryClustered::_sfOffsetFaces field.
+inline
+void GeometryClusteredBase::setOffsetFaces(const Int32 &value)
+{
+    _sfOffsetFaces.setValue(value);
+}
+
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID "@(#)$Id: OSGGeometryClusteredBase.inl,v 1.5 2004/12/20 15:54:30 fuenfzig Exp $"
 

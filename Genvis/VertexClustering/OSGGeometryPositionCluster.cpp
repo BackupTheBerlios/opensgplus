@@ -48,8 +48,13 @@
 
 OSG_USING_NAMESPACE
 
-UInt32 SetUnion::s_currentStamp = 0;
+template class CellDataTemplate<CellDataInternal>;
+template <class ADAPTER>
+std::vector<const CellDataTemplate<ADAPTER>*> CellDataTemplate<ADAPTER>::s_query;
+template <class ADAPTER>
+std::vector<ADAPTER*>                         CellDataTemplate<ADAPTER>::s_factory;
 
+Matrix CellDataInternal::m_quad;
 
 DataType FieldDataTraits<SetUnionGridP>::_type(getName(), "IntegralType");
 
@@ -62,20 +67,5 @@ DataType FieldDataTraits<SetUnionGridP>::_type(getName(), "IntegralType");
 
 OSG_DLLEXPORT_SFIELD_DEF1(SetUnionGridP, OSG_GENVISLIB_DLLTMPLMAPPING);
 OSG_DLLEXPORT_MFIELD_DEF1(SetUnionGridP, OSG_GENVISLIB_DLLTMPLMAPPING);
-
-#endif
-
-
-DataType FieldDataTraits<SetUnionPoolP>::_type(getName(), "IntegralType");
-
-#if defined(__sgi)
-
-#pragma instantiate SField<SetUnionPoolP>::_fieldType
-#pragma instantiate MField<SetUnionPoolP>::_fieldType
-
-#else
-
-OSG_DLLEXPORT_SFIELD_DEF1(SetUnionPoolP, OSG_GENVISLIB_DLLTMPLMAPPING);
-OSG_DLLEXPORT_MFIELD_DEF1(SetUnionPoolP, OSG_GENVISLIB_DLLTMPLMAPPING);
 
 #endif

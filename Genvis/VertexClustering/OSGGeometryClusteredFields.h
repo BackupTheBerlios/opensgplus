@@ -58,7 +58,7 @@
 
 #include <OSGFieldContainerPtr.h>
 #include <OSGNodeCoreFieldDataType.h>
-#include <OSGGVBase.h>
+#include <OSGGeometryPositionCluster.h>
 
 #include <OSGGeometryFields.h>
 
@@ -74,7 +74,7 @@ typedef FCPtr<GeometryPtr, GeometryClustered> GeometryClusteredPtr;
 #endif
 
 #if !defined(OSG_DO_DOC) || (OSG_DOC_LEVEL >= 3)
-/*! \ingroup GrpSystemFieldTraits
+/*! \ingroup GrpGenvisFieldTraits
  */
 #if !defined(OSG_DOC_DEV_TRAITS)
 /*! \hideinhierarchy */
@@ -102,6 +102,6 @@ struct FieldDataTraits<GeometryClusteredPtr> :
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.3 2004/03/12 13:37:26 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDFIELDS_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredFields.h,v 1.4 2004/12/20 15:54:30 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDFIELDS_H_ */

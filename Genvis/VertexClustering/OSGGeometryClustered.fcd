@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+
+<FieldContainer
+	name="GeometryClustered"
+	parent="Geometry"
+	library="Genvis"
+	pointerfieldtypes="none"
+	structure="concrete"
+	systemcomponent="true"
+	parentsystemcomponent="true"
+	decoratable="false"
+	useLocalIncludes="false"
+>
+Derived Geometry, used for rendering with vertex clustering (employing a regular or adaptive grid). The model can be stored in core (like Geometry) or out of core (OBJ file).
+	<Field
+		name="numCells"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="5"
+		access="public"
+	>
+	parameter for grid creation
+	</Field>
+	<Field
+		name="grid"
+		type="SetUnionGridP"
+		cardinality="single"
+		visibility="external"
+		defaultValue="NULL"
+		defaultHeader="OSGGeometryPositionCluster.h"
+		access="public"
+	>
+	grid used for clustering
+	</Field>
+	<Field
+		name="modelFilename"
+		type="std::string"
+		cardinality="single"
+		visibility="external"
+		access="public"
+	>
+	filename of OBJ model; if not set then use Geometry fields
+	</Field>
+	<Field
+		name="normalScale"
+		type="Real32"
+		cardinality="single"
+		visibility="external"
+		defaultValue="1.0f"
+		access="public"
+	>
+	scaling factor for surface normals; use +/-1 depending on the model
+	</Field>
+	<Field
+		name="numTriangles"
+		type="UInt32"
+		cardinality="single"
+		visibility="internal"
+		access="protected"
+	>
+	internal counter for triangles after clustering
+	</Field>
+	<Field
+		name="offsetFaces"
+		type="Int32"
+		cardinality="single"
+		visibility="internal"
+		defaultValue="0"
+		access="protected"
+	>
+	internal filestream offset of the faces section in the OBJ file
+	</Field>
+	<Field
+		name="filestream"
+		type="std::ifstream"
+		cardinality="single"
+		visibility="internal"
+		access="protected"
+	>
+	internal filestream for reading the OBJ model
+	</Field>
+</FieldContainer>

@@ -61,51 +61,90 @@
 #include "OSGGeometryClusteredBase.h"
 #include "OSGGeometryClustered.h"
 
+#include "OSGGeometryPositionCluster.h"     // Grid default header
 
 OSG_USING_NAMESPACE
 
 const OSG::BitVector  GeometryClusteredBase::NumCellsFieldMask = 
-    (1 << GeometryClusteredBase::NumCellsFieldId);
-const OSG::BitVector  GeometryClusteredBase::PoolFieldMask = 
-    (1 << GeometryClusteredBase::PoolFieldId);
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::NumCellsFieldId);
+
 const OSG::BitVector  GeometryClusteredBase::GridFieldMask = 
-    (1 << GeometryClusteredBase::GridFieldId);
-const OSG::BitVector  GeometryClusteredBase::MTInfluenceMask = 
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::GridFieldId);
+
+const OSG::BitVector  GeometryClusteredBase::ModelFilenameFieldMask = 
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::ModelFilenameFieldId);
+
+const OSG::BitVector  GeometryClusteredBase::NormalScaleFieldMask = 
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::NormalScaleFieldId);
+
+const OSG::BitVector  GeometryClusteredBase::NumTrianglesFieldMask = 
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::NumTrianglesFieldId);
+
+const OSG::BitVector  GeometryClusteredBase::OffsetFacesFieldMask = 
+    (TypeTraits<BitVector>::One << GeometryClusteredBase::OffsetFacesFieldId);
+
+const OSG::BitVector GeometryClusteredBase::MTInfluenceMask = 
     (Inherited::MTInfluenceMask) | 
     (static_cast<BitVector>(0x0) << Inherited::NextFieldId); 
+
 
 // Field descriptions
 
 /*! \var Real32          GeometryClusteredBase::_sfNumCells
-    Number of regular grid cells along shortest axis.
+    parameter for grid creation
 */
+/*! \var SetUnionGridP   GeometryClusteredBase::_sfGrid
+    grid used for clustering
+*/
+/*! \var std::string     GeometryClusteredBase::_sfModelFilename
+    filename of OBJ model; if not set then use Geometry fields
+*/
+/*! \var Real32          GeometryClusteredBase::_sfNormalScale
+    scaling factor for surface normals; use +/-1 depending on the model
+*/
+/*! \var UInt32          GeometryClusteredBase::_sfNumTriangles
+    internal counter for triangles after clustering
+*/
+/*! \var Int32           GeometryClusteredBase::_sfOffsetFaces
+    internal filestream offset of the faces section in the OBJ file
+*/
+
+//! GeometryClustered description
 
 FieldDescription *GeometryClusteredBase::_desc[] = 
 {
     new FieldDescription(SFReal32::getClassType(), 
-			 "number of cells", 
-			 NumCellsFieldId, NumCellsFieldMask,
-			 false,
-			 (FieldAccessMethod) &GeometryClusteredBase::getSFNumCells),
-#ifdef GV_CLUSTERED_ADAPTIVE
-    new FieldDescription(MFSetUnionPoolP::getClassType(), 
-			 "element datastructure", 
-			 PoolFieldId, PoolFieldMask,
-			 true,
-			 (FieldAccessMethod) &GeometryClusteredBase::getMFPool),
-#else
-    new FieldDescription(SFSetUnionPoolP::getClassType(), 
-			 "element datastructure", 
-			 PoolFieldId, PoolFieldMask,
-			 true,
-			 (FieldAccessMethod) &GeometryClusteredBase::getSFPool),
-#endif
+                     "numCells", 
+                     NumCellsFieldId, NumCellsFieldMask,
+                     false,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFNumCells),
     new FieldDescription(SFSetUnionGridP::getClassType(), 
-			 "regular grid", 
-			 GridFieldId, GridFieldMask,
-			 true,
-			 (FieldAccessMethod) &GeometryClusteredBase::getSFGrid)
+                     "grid", 
+                     GridFieldId, GridFieldMask,
+                     false,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFGrid),
+    new FieldDescription(SFString::getClassType(), 
+                     "modelFilename", 
+                     ModelFilenameFieldId, ModelFilenameFieldMask,
+                     false,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFModelFilename),
+    new FieldDescription(SFReal32::getClassType(), 
+                     "normalScale", 
+                     NormalScaleFieldId, NormalScaleFieldMask,
+                     false,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFNormalScale),
+    new FieldDescription(SFUInt32::getClassType(), 
+                     "numTriangles", 
+                     NumTrianglesFieldId, NumTrianglesFieldMask,
+                     true,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFNumTriangles),
+    new FieldDescription(SFInt32::getClassType(), 
+                     "offsetFaces", 
+                     OffsetFacesFieldId, OffsetFacesFieldMask,
+                     true,
+                     (FieldAccessMethod) &GeometryClusteredBase::getSFOffsetFaces)
 };
+
 
 FieldContainerType GeometryClusteredBase::_type(
     "GeometryClustered",
@@ -159,14 +198,13 @@ void GeometryClusteredBase::executeSync(      FieldContainer &other,
 #endif
 
 GeometryClusteredBase::GeometryClusteredBase(void) :
-    _sfNumCells                   (Real32(5)), 
-#ifdef GV_CLUSTERED_ADAPTIVE
-    _sfPool                       (), 
-#else
-    _sfPool                       (SetUnionPoolP(NULL)), 
-#endif
-    _sfGrid                       (SetUnionGridP(NULL)), 
-    Inherited()
+    _sfNumCells               (Real32(5)), 
+    _sfGrid                   (SetUnionGridP(NULL)), 
+    _sfModelFilename          (), 
+    _sfNormalScale            (Real32(1.0f)), 
+    _sfNumTriangles           (), 
+    _sfOffsetFaces            (Int32(0)), 
+    Inherited() 
 {
 }
 
@@ -175,9 +213,12 @@ GeometryClusteredBase::GeometryClusteredBase(void) :
 #endif
 
 GeometryClusteredBase::GeometryClusteredBase(const GeometryClusteredBase &source) :
-    _sfNumCells               (source._sfNumCells), 
-    _sfPool                   (source._sfPool), 
-    _sfGrid                   (source._sfGrid), 
+    _sfNumCells               (source._sfNumCells               ), 
+    _sfGrid                   (source._sfGrid                   ), 
+    _sfModelFilename          (source._sfModelFilename          ), 
+    _sfNormalScale            (source._sfNormalScale            ), 
+    _sfNumTriangles           (source._sfNumTriangles           ), 
+    _sfOffsetFaces            (source._sfOffsetFaces            ), 
     Inherited                 (source)
 {
 }
@@ -198,16 +239,33 @@ UInt32 GeometryClusteredBase::getBinSize(const BitVector &whichField)
     {
         returnValue += _sfNumCells.getBinSize();
     }
-#if 0
-    if(FieldBits::NoField != (PoolFieldMask & whichField))
-    {
-        returnValue += _sfPool.getBinSize();
-    }
+
     if(FieldBits::NoField != (GridFieldMask & whichField))
     {
         returnValue += _sfGrid.getBinSize();
     }
-#endif
+
+    if(FieldBits::NoField != (ModelFilenameFieldMask & whichField))
+    {
+        returnValue += _sfModelFilename.getBinSize();
+    }
+
+    if(FieldBits::NoField != (NormalScaleFieldMask & whichField))
+    {
+        returnValue += _sfNormalScale.getBinSize();
+    }
+
+    if(FieldBits::NoField != (NumTrianglesFieldMask & whichField))
+    {
+        returnValue += _sfNumTriangles.getBinSize();
+    }
+
+    if(FieldBits::NoField != (OffsetFacesFieldMask & whichField))
+    {
+        returnValue += _sfOffsetFaces.getBinSize();
+    }
+
+
     return returnValue;
 }
 
@@ -220,16 +278,32 @@ void GeometryClusteredBase::copyToBin(      BinaryDataHandler &pMem,
     {
         _sfNumCells.copyToBin(pMem);
     }
-#if 0
-    if(FieldBits::NoField != (PoolFieldMask & whichField))
-    {
-        _sfPool.copyToBin(pMem);
-    }
+
     if(FieldBits::NoField != (GridFieldMask & whichField))
     {
         _sfGrid.copyToBin(pMem);
     }
-#endif
+
+    if(FieldBits::NoField != (ModelFilenameFieldMask & whichField))
+    {
+        _sfModelFilename.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NormalScaleFieldMask & whichField))
+    {
+        _sfNormalScale.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NumTrianglesFieldMask & whichField))
+    {
+        _sfNumTriangles.copyToBin(pMem);
+    }
+
+    if(FieldBits::NoField != (OffsetFacesFieldMask & whichField))
+    {
+        _sfOffsetFaces.copyToBin(pMem);
+    }
+
 
 }
 
@@ -242,16 +316,32 @@ void GeometryClusteredBase::copyFromBin(      BinaryDataHandler &pMem,
     {
         _sfNumCells.copyFromBin(pMem);
     }
-#if 0
-    if(FieldBits::NoField != (PoolFieldMask & whichField))
-    {
-        _sfPool.copyFromBin(pMem);
-    }
+
     if(FieldBits::NoField != (GridFieldMask & whichField))
     {
         _sfGrid.copyFromBin(pMem);
     }
-#endif
+
+    if(FieldBits::NoField != (ModelFilenameFieldMask & whichField))
+    {
+        _sfModelFilename.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NormalScaleFieldMask & whichField))
+    {
+        _sfNormalScale.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (NumTrianglesFieldMask & whichField))
+    {
+        _sfNumTriangles.copyFromBin(pMem);
+    }
+
+    if(FieldBits::NoField != (OffsetFacesFieldMask & whichField))
+    {
+        _sfOffsetFaces.copyFromBin(pMem);
+    }
+
 
 }
 
@@ -263,12 +353,22 @@ void GeometryClusteredBase::executeSyncImpl(      GeometryClusteredBase *pOther,
 
     if(FieldBits::NoField != (NumCellsFieldMask & whichField))
         _sfNumCells.syncWith(pOther->_sfNumCells);
-#if 0
-    if(FieldBits::NoField != (PoolFieldMask & whichField))
-        _sfPool.syncWith(pOther->_sfPool);
+
     if(FieldBits::NoField != (GridFieldMask & whichField))
         _sfGrid.syncWith(pOther->_sfGrid);
-#endif
+
+    if(FieldBits::NoField != (ModelFilenameFieldMask & whichField))
+        _sfModelFilename.syncWith(pOther->_sfModelFilename);
+
+    if(FieldBits::NoField != (NormalScaleFieldMask & whichField))
+        _sfNormalScale.syncWith(pOther->_sfNormalScale);
+
+    if(FieldBits::NoField != (NumTrianglesFieldMask & whichField))
+        _sfNumTriangles.syncWith(pOther->_sfNumTriangles);
+
+    if(FieldBits::NoField != (OffsetFacesFieldMask & whichField))
+        _sfOffsetFaces.syncWith(pOther->_sfOffsetFaces);
+
 
 }
 
@@ -297,7 +397,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClusteredBase.cpp,v 1.5 2004/12/20 15:54:30 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 

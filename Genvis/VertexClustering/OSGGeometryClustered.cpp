@@ -55,6 +55,7 @@
 #include <OSGGeoFunctions.h>
 #include <OSGViewport.h>
 #include <OSGCamera.h>
+#include <OSGTriangleIterator.h>
 
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
@@ -118,19 +119,156 @@ GeometryClustered::~GeometryClustered(void)
 {
 }
 
+enum DataElem {
+   UNKNOWN_DE = 0,
+
+   VERTEX_DE, VERTEX_TEXTURECOORD_DE, VERTEX_NORMAL_DE,
+   FACE_DE,
+   
+   LIB_MTL_DE,
+   USE_MTL_DE,
+   
+   GROUP_DE, SMOOTHING_GROUP_DE, OBJECT_DE
+};
+static std::map<std::string, DataElem> _dataElemMap;
+static void fillDataElemMap ()
+{
+   if (_dataElemMap.empty()) {
+      _dataElemMap[""]        = UNKNOWN_DE;
+
+      _dataElemMap["v"]       = VERTEX_DE;
+      _dataElemMap["vt"]      = VERTEX_TEXTURECOORD_DE;
+      _dataElemMap["vn"]      = VERTEX_NORMAL_DE;
+      _dataElemMap["f"]       = FACE_DE;
+      _dataElemMap["fo"]      = FACE_DE;
+      _dataElemMap["mtllib"]  = LIB_MTL_DE;
+      _dataElemMap["usemtl"]  = USE_MTL_DE;
+      _dataElemMap["g"]       = GROUP_DE;
+      _dataElemMap["s"]       = SMOOTHING_GROUP_DE;
+      _dataElemMap["o"]       = OBJECT_DE;
+   }
+}
+
+void GeometryClustered::fillPositions (std::istream& is)
+{
+   fillDataElemMap();
+
+   Real32 x,y,z;
+   Pnt3f  vec3f;
+   Vec2f  vec2f;
+   DataElem dataElem;
+   Char8 strBuf[8192], *token, *nextToken;
+   Int32 strBufSize = sizeof(strBuf)/sizeof(Char8);
+   Int32 index, posIndex, indexType;
+   Int32 i,j,n;
+   std::string elem;
+   std::map<std::string, DataElem>::const_iterator elemI;
+   GeoPositionsPtr coordPtr = GeoPositions3f::create();
+   if (is) {
+      beginEditCP(coordPtr);
+
+      for (is >> elem; !is.eof(); is >> elem) {
+         if (elem[0] == '#' || elem[0] == '$') {
+           is.ignore(INT_MAX, '\n');
+	 } else {
+	   elemI = _dataElemMap.find(elem);
+	   dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	   switch (dataElem) {
+              case OBJECT_DE:
+              case GROUP_DE:
+              case SMOOTHING_GROUP_DE:
+                is.ignore(INT_MAX, '\n');
+                break;
+              case VERTEX_DE:
+                is >> x >> y >> z;
+                vec3f.setValues(x,y,z);
+                coordPtr->push_back(vec3f);
+                break;
+              case VERTEX_TEXTURECOORD_DE:
+                is >> x >> y;
+                vec2f.setValues(x,y);
+                break;
+              case VERTEX_NORMAL_DE:
+                is >> x >> y >> z;
+                break;
+              case LIB_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case USE_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case FACE_DE:
+              case UNKNOWN_DE:
+              default:
+                FWARNING (( "fillPositions: Unknown obj data elem: %s\n", elem.c_str()));
+                is.ignore(INT_MAX, '\n');
+                break;
+              }
+	 }
+	 if (is.peek() == 'f') {
+	    break;
+	 }
+      }
+      endEditCP(coordPtr);
+      getOffsetFaces() = is.tellg();
+
+      // positions cache
+      GeometryClusteredPtr tmpPtr(this);
+      beginEditCP(tmpPtr, PositionsFieldMask);
+      tmpPtr->setPositions(coordPtr);
+      endEditCP  (tmpPtr, PositionsFieldMask);
+   }
+}
+
 /*----------------------------- class specific ----------------------------*/
 
 void GeometryClustered::changed(BitVector whichField, UInt32 origin)
 {
-    Inherited::changed(whichField, origin);
-    if (whichField | NumCellsFieldMask) {
+   if (whichField & ModelFilenameFieldMask) {
+      _fileStream.open(getModelFilename().c_str(), std::ios_base::in | std::ios_base::binary);
+      fillPositions(_fileStream);
+   }
+   if (whichField & NumCellsFieldMask) {
       delete getGrid();
       setGrid(NULL);
-      while (getPool().size() > 0) {
-	delete getPool(0);
-	getPool().erase(getPool().begin());
-      }
-    }
+   }
+   // invalidate the dlist cache
+   if (getDlistCache()) {
+       if (getGLId() == 0) {
+	  GeometryClusteredPtr tmpPtr(this);
+	  beginEditCP(tmpPtr, GLIdFieldMask);
+	  setGLId(Window::registerGLObject(
+		  osgTypedMethodVoidFunctor2ObjCPtrPtr<GeometryClusteredPtr,
+		  Window,
+		  UInt32>(tmpPtr, &GeometryClustered::handleGL),
+		  1));
+	  endEditCP(tmpPtr, GLIdFieldMask);
+       }
+       Window::refreshGLObject(getGLId());
+   } else {
+       if (getGLId() != 0) {
+	  Window::destroyGLObject(getGLId(), 1);
+       }
+       setGLId(0);
+   }
+   Inherited::changed(whichField, origin);
+}
+void GeometryClustered::onCreate (const GeometryClustered*)
+{
+   // if we're in startup this is the prototype, which shouldn't have an id
+   if (GlobalSystemState == Startup)
+      return;
+
+   GeometryClusteredPtr tmpPtr(this);
+   beginEditCP(tmpPtr, GLIdFieldMask);
+   setGLId(Window::registerGLObject(
+	   osgTypedMethodVoidFunctor2ObjCPtrPtr<GeometryClusteredPtr,
+	   Window,
+	   UInt32>(tmpPtr, &GeometryClustered::handleGL),
+	   1));
+   endEditCP(tmpPtr, GLIdFieldMask);
 }
 
 void GeometryClustered::dump(      UInt32    , 
@@ -139,34 +277,530 @@ void GeometryClustered::dump(      UInt32    ,
     SLOG << "Dump GeometryClustered NI" << std::endl;
 }
 
-SetUnion& GeometryClustered::getPoolEntry (UInt32 i)
+
+void GeometryClustered::fillGrid ()
 {
-#ifdef GV_CLUSTERED_ADAPTIVE
-   assert(getPool(0) != NULL);
-   return (*getPool(0))[i];
+#ifndef GV_CLUSTERED_ADAPTIVE
+#if 1
+   TriangleIterator end = endTriangles();
+   for (TriangleIterator tri = beginTriangles(); 
+	tri!=end; 
+	++tri) {
+      // fetch grid cells
+      CellData& cell0 = getGrid()->primitives(tri.getPosition(0));
+      CellData& cell1 = getGrid()->primitives(tri.getPosition(1));
+      CellData& cell2 = getGrid()->primitives(tri.getPosition(2));
+
+      Vec3f norm = tri.getPosition(0).subZero().cross(
+		   tri.getPosition(1))+tri.getPosition(1).subZero().cross(
+		   tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0));
+      // update cell data
+      cell0->getNormal() += norm;
+      if (&cell0 != &cell1) {
+	 cell1->getNormal() += norm;
+      }
+      if (&cell0 != &cell2 && &cell1 != &cell2) {
+	 cell2->getNormal() += norm;
+      }
+      cell0->setNumPoints(cell0->getNumPoints() + 1);
+      cell0->getPointRep() += tri.getPosition(0);
+      cell1->setNumPoints(cell1->getNumPoints() + 1);
+      cell1->getPointRep() += tri.getPosition(1);
+      cell2->setNumPoints(cell2->getNumPoints() + 1);
+      cell2->getPointRep() += tri.getPosition(2);
+   }
+   Real32 slen;
+   for (i64 i=0; i<getGrid()->getNumVoxels(); ++i) {
+      CellData& cell = getGrid()->primitives(i);
+      if (cell->getNumPoints() > 0) { // calc center
+	 cell->getPointRep() *= 1.0f/cell->getNumPoints();
+	 slen = getNormalScale() / cell->getNormal().length();
+	 cell->getNormal() *= slen;
+      }
+   }
 #else
-   assert(getPool() != NULL);
-   return (*getPool())[i];
+   UInt32 i, j;
+   TriangleIterator end = endTriangles();
+   for (TriangleIterator tri = beginTriangles(); 
+	tri!=end; 
+	++tri) {
+      // fetch grid cells
+      CellData& cell0 = getGrid()->primitives(tri.getPosition(0));
+      CellData& cell1 = getGrid()->primitives(tri.getPosition(1));
+      CellData& cell2 = getGrid()->primitives(tri.getPosition(2));
+      Vec3f  n2(tri.getPosition(0).subZero().cross(tri.getPosition(1))+tri.getPosition(1).subZero().cross(tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0)));
+      Matrix triQuad(tri.getPosition(0), tri.getPosition(1), tri.getPosition(2));
+      Vec4f  n(n2[0], n2[1], n2[2], -triQuad.det3());
+      for (i=0; i<4; ++i) {
+	 for (j=0; j<4; ++j) {
+	    triQuad[i][j] = n[i]*n[j];
+	 }
+      }
+      // update cell data
+      cell0->getQuadric().add(triQuad);
+      cell0->getNormal() += n2;
+      cell0->setNumPoints(cell0->getNumPoints()+1);
+      if (&cell0 != &cell1) {
+	 cell1->getQuadric().add(triQuad);
+	 cell1->getNormal() += n2;
+	 cell1->setNumPoints(cell1->getNumPoints()+1);
+      }
+      if (&cell0 != &cell2 && &cell1 != &cell2) {
+	 cell2->getQuadric().add(triQuad);
+	 cell2->getNormal() += n2;
+	 cell2->setNumPoints(cell2->getNumPoints()+1);
+      }
+   }
+   Matrix invQuad;
+   Vec3f  b; 
+   K6Dop  cellBox;
+   u32    k;
+   for (u32 x=0; x<getGrid()->getNumVoxelsDim()[0]; ++x) {
+      for (u32 y=0; y<getGrid()->getNumVoxelsDim()[1]; ++y) {
+	 for (u32 z=0; z<getGrid()->getNumVoxelsDim()[2]; ++z) {
+	   CellData& cell = getGrid()->primitives(x, y, z);
+	   if (cell->getNumPoints() > 0) { // calc center
+	      cell->getNormal().normalize();
+	      bool invertable = invQuad.invertFrom3(cell->getQuadric());
+	      assert(invertable);
+	      b.setValues(-cell->getQuadric()[3][0], -cell->getQuadric()[3][1], -cell->getQuadric()[3][2]);
+	      invQuad.multVecMatrix(b, (Vec3f&)cell->getPointRep());
+#if 1
+	      getGrid()->getVoxel(cellBox, x, y, z);
+	      if ((k=cellBox.checkNotIntersect(cell->getPointRep()))) { // problem case
+		 --k;
+	 	 cell->getPointRep()[k%3] = stdClamp(cellBox.minVector()[k], cell->getPointRep()[k], cellBox.maxVector()[k]);
+		 if (k%3 < 1) {
+		    cell->getPointRep()[1] = stdClamp(cellBox.minVector()[1], cell->getPointRep()[1], cellBox.maxVector()[1]);
+		 }
+		 if (k%3 < 2) {
+		    cell->getPointRep()[2] = stdClamp(cellBox.minVector()[2], cell->getPointRep()[2], cellBox.maxVector()[2]);
+		 }
+	      }
+#else
+	      getGrid()->getVoxel(cellBox, x, y, z);
+	      if ((k=cellBox.checkNotIntersect(cell->getPointRep()))) { // problem case
+		 do {
+		   Vec3f t = cell->getPointRep() - cellBox.getCenter();
+		   k -= 1;
+		   if (k < 3) {
+		     SLOG << "+" << (cell->getPointRep()[k]-cellBox.maxVector()[k])/t[k] << std::endl;
+		     t *= (cell->getPointRep()[k]-cellBox.maxVector()[k])/t[k];
+		     cell->getPointRep() -= t;
+		   } else {
+		     k -= 3;
+		     SLOG << "+" << (cell->getPointRep()[k]-cellBox.minVector()[k])/t[k] << std::endl;
+		     t *= (cell->getPointRep()[k]-cellBox.minVector()[k])/t[k];
+		     cell->getPointRep() -= t;
+		   }
+		 } while ((k=cellBox.checkNotIntersect(cell->getPointRep())));
+	      }
+#endif
+	   }
+	 }
+      }
+   }
+#endif
+#else
+   UInt32 j; 
+   TriangleIterator end = endTriangles();
+   for (TriangleIterator tri = beginTriangles(); 
+	tri!=end; 
+	++tri) {
+      Vec3f norm = tri.getPosition(0).subZero().cross(
+		   tri.getPosition(1))+tri.getPosition(1).subZero().cross(
+		   tri.getPosition(2))+tri.getPosition(2).subZero().cross(tri.getPosition(0));
+      // fetch grid cells
+      SetUnionGrid::CellType* intern0 = getGrid()->getLeafCell(tri.getPosition(0));
+      // sort into lowest three levels
+      for (j=0; j<3 && intern0 != NULL; intern0 = intern0->getParent(), ++j) {
+	 // create new set element
+	 CellData& cell = intern0->getContainer();
+	 // update cell data
+	 cell->setNumPoints(cell->getNumPoints() + 1);
+	 cell->getPointRep() += tri.getPosition(0);
+	 cell->getNormal()   += norm;
+      } 
+      SetUnionGrid::CellType* intern1 = getGrid()->getLeafCell(tri.getPosition(1));
+      for (j=0; j<3 && intern1 != NULL; intern1 = intern1->getParent(), ++j) {
+	 // create new set element
+	 CellData& cell = intern1->getContainer();
+	 // update cell data
+	 cell->setNumPoints(cell->getNumPoints() + 1);
+	 cell->getPointRep() += tri.getPosition(1);
+	 cell->getNormal()   += norm;
+      } 
+      SetUnionGrid::CellType* intern2 = getGrid()->getLeafCell(tri.getPosition(2));
+      for (j=0; j<3 && intern2 != NULL; intern2 = intern2->getParent(), ++j) {
+	 // create new set element
+	 CellData& cell = intern2->getContainer();
+	 // update cell data
+	 cell->setNumPoints(cell->getNumPoints() + 1);
+	 cell->getPointRep() += tri.getPosition(2);
+	 cell->getNormal()   += norm;
+      } 
+   }
+   // traverse all grid cells
+   Pnt3f center;
+   getParents()[0]->getVolume().getCenter(center);
+   Real32 slen;
+   u32 maxCode  = getGrid()->getMaxCode();
+   for (u32 xCode=0; xCode<maxCode; ++xCode) {
+      for (u32 yCode=0; yCode<maxCode; ++yCode) {
+	 for (u32 zCode=0; zCode<maxCode; ++zCode) {
+	   SetUnionGrid::CellType* intern = getGrid()->getCell(xCode, yCode, zCode, 0);
+	   CellData& cell = intern->getContainer();
+	   if (cell->getNumPoints() > 0) { // calc center
+	      cell->getPointRep() *= 1.0f/cell->getNumPoints();
+	      //cell->setNumPoints(0);
+	      slen = getNormalScale() / cell->getNormal().length();
+	      cell->getNormal() *= slen;
+	   } 
+	   if ((xCode & 0x1) == 0 && (yCode & 0x1) == 0 && (zCode & 0x1) == 0) {
+	      intern = intern->getParent();
+	      CellData& cell = intern->getContainer();
+	      if (cell->getNumPoints() > 0) { // calc center
+		 cell->getPointRep() *= 1.0f/cell->getNumPoints();
+		 //cell->setNumPoints(0);
+		 slen = getNormalScale() / cell->getNormal().length();
+		 cell->getNormal() *= slen;
+	      }
+	      if ((xCode & 0x3) == 0 && (yCode & 0x3) == 0 && (zCode & 0x3) == 0) {
+		 intern = intern->getParent();
+		 CellData& cell = intern->getContainer();
+		 if (cell->getNumPoints() > 0) { // calc center
+		    cell->getPointRep() *= 1.0f/cell->getNumPoints();
+		    //cell->setNumPoints(0);
+		    slen = getNormalScale() / cell->getNormal().length();
+		    cell->getNormal() *= slen;
+		 }
+	      }
+	   }
+	 }
+      }
+   }
 #endif
 }
-const SetUnion& GeometryClustered::getPoolEntry (UInt32 i) const
+
+void GeometryClustered::fillGridFile (std::istream& is)
 {
-#ifdef GV_CLUSTERED_ADAPTIVE
-   assert(getPool(0) != NULL);
-   return (*getPool(0))[i];
+   fillDataElemMap();
+#ifndef GV_CLUSTERED_ADAPTIVE
+   if (is) {
+      Real32 x,y,z;
+      DataElem dataElem;
+      Char8 strBuf[8192], *token, *nextToken;
+      Int32 strBufSize = sizeof(strBuf)/sizeof(Char8);
+      Int32 index, posIndex, indexType;
+      Int32 i, j, n, primCount[3];
+      Int32 tri[3];
+      std::string elem;
+      std::map<std::string, DataElem>::const_iterator elemI;
+
+      for (is >> elem; !is.eof(); is >> elem) {
+         if (elem[0] == '#' || elem[0] == '$') {
+           is.ignore(INT_MAX, '\n');
+	 } else {
+	   elemI    = _dataElemMap.find(elem);
+	   dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	   switch (dataElem) {
+              case OBJECT_DE:
+              case GROUP_DE:
+              case SMOOTHING_GROUP_DE:
+                is.ignore(INT_MAX, '\n');
+                break;
+              case VERTEX_DE:
+                primCount[0]++;
+                is >> x >> y >> z;
+                break;
+              case VERTEX_TEXTURECOORD_DE:
+                primCount[1]++;
+                is >> x >> y;
+                break;
+              case VERTEX_NORMAL_DE:
+                primCount[2]++;
+                is >> x >> y >> z;
+                break;
+              case LIB_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case USE_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case FACE_DE:
+                is.get(strBuf,strBufSize);
+                
+                indexType=0; n=0;
+                for (token = strBuf; token && *token; token = nextToken) {
+                    for (; *token == '/'; token++)
+                      indexType++;
+                    for (; isspace(*token); token++)
+                      indexType = 0;
+                    index = strtol(token, &nextToken, 10);
+                    if (token == nextToken)
+                      break;
+
+                    if (index > 0)
+                      index--;
+                    else
+                      index =  primCount[indexType] + index;
+
+                    if (indexType == 0) { // position index
+	 	       tri[n++] = index;
+		       if (n == 3) {
+			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(
+				     getPositions()->getValue(tri[1]))+getPositions()->getValue(tri[1]).subZero().cross(
+				     getPositions()->getValue(tri[2]))+getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]));
+			  // fetch grid cells
+			  CellData& cell0 = getGrid()->primitives(getPositions()->getValue(tri[0]));
+			  CellData& cell1 = getGrid()->primitives(getPositions()->getValue(tri[1]));
+			  CellData& cell2 = getGrid()->primitives(getPositions()->getValue(tri[2]));
+			  // update cell data
+			  cell0->getNormal() += n2;
+			  if (&cell0 != &cell1) {
+			    cell1->getNormal() += n2;
+			  }
+			  if (&cell0 != &cell2 && &cell1 != &cell2) {
+			    cell2->getNormal() += n2;
+			  }
+			  cell0->setNumPoints(cell0->getNumPoints() + 1);
+			  cell0->getPointRep() += getPositions()->getValue(tri[0]);
+			  cell1->setNumPoints(cell1->getNumPoints() + 1);
+			  cell1->getPointRep() += getPositions()->getValue(tri[1]);
+			  cell2->setNumPoints(cell2->getNumPoints() + 1);
+			  cell2->getPointRep() += getPositions()->getValue(tri[2]);
+			  n = 0;
+		       }
+		    }
+		}
+                break;
+              case UNKNOWN_DE:
+              default:
+                FWARNING (( "fillGridFile: Unknown obj data elem: %s\n", elem.c_str()));
+                is.ignore(INT_MAX, '\n');
+                break;
+              }
+	 }
+      }
+      // traverse all grid cells
+      Real32 slen;
+      for (i64 i=0; i<getGrid()->getNumVoxels(); ++i) {
+	 CellData& cell = getGrid()->primitives(i);
+	 if (cell->getNumPoints() > 0) { // calc center
+	   cell->getPointRep() *= 1.0f/cell->getNumPoints();
+	   slen = getNormalScale() / cell->getNormal().length();
+	   cell->getNormal() *= slen;
+	 }
+      }
+   }
 #else
-   assert(getPool() != NULL);
-   return (*getPool())[i];
+   if (is) {
+      Real32 x,y,z;
+      DataElem dataElem;
+      Char8 strBuf[8192], *token, *nextToken;
+      Int32 strBufSize = sizeof(strBuf)/sizeof(Char8);
+      Int32 index, posIndex, indexType;
+      Int32 i, j, n, primCount[3];
+      Int32 tri[3];
+      std::string elem;
+      std::map<std::string, DataElem>::const_iterator elemI;
+
+      for (is >> elem; !is.eof(); is >> elem) {
+         if (elem[0] == '#' || elem[0] == '$') {
+           is.ignore(INT_MAX, '\n');
+	 } else {
+	   elemI    = _dataElemMap.find(elem);
+	   dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	   switch (dataElem) {
+              case OBJECT_DE:
+              case GROUP_DE:
+              case SMOOTHING_GROUP_DE:
+                is.ignore(INT_MAX, '\n');
+                break;
+              case VERTEX_DE:
+                primCount[0]++;
+                is >> x >> y >> z;
+                break;
+              case VERTEX_TEXTURECOORD_DE:
+                primCount[1]++;
+                is >> x >> y;
+                break;
+              case VERTEX_NORMAL_DE:
+                primCount[2]++;
+                is >> x >> y >> z;
+                break;
+              case LIB_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case USE_MTL_DE:
+                is >> elem;
+                is.ignore(INT_MAX, '\n');
+                break;
+              case FACE_DE:
+                is.get(strBuf,strBufSize);
+                
+                indexType=0; n=0;
+                for (token = strBuf; token && *token; token = nextToken) {
+                    for (; *token == '/'; token++)
+                      indexType++;
+                    for (; isspace(*token); token++)
+                      indexType = 0;
+                    index = strtol(token, &nextToken, 10);
+                    if (token == nextToken)
+                      break;
+
+                    if (index > 0)
+                      index--;
+                    else
+                      index =  primCount[indexType] + index;
+
+                    if (indexType == 0) { // position index
+		       if (index >= getPositions()->getSize()) {
+			  SWARNING << "read " << is.tellg() << ": index out of range!" << std::endl;
+			  continue;
+		       }
+	 	       tri[n++] = index;
+		       if (n == 3) {
+			  Vec3f n2 = getPositions()->getValue(tri[0]).subZero().cross(
+				     getPositions()->getValue(tri[1]))+getPositions()->getValue(tri[1]).subZero().cross(
+				     getPositions()->getValue(tri[2]))+getPositions()->getValue(tri[2]).subZero().cross(getPositions()->getValue(tri[0]));
+			  // fetch grid cells
+			  SetUnionGrid::CellType* intern0 = getGrid()->getLeafCell(getPositions()->getValue(tri[0]));
+			  // sort into lowest three levels
+			  for (j=0; j<3 && intern0 != NULL; intern0 = intern0->getParent(), ++j) {
+			    // create new set element
+			    CellData& cell = intern0->getContainer();
+			    // update cell data
+			    cell->setNumPoints(cell->getNumPoints() + 1);
+			    cell->getPointRep() += getPositions()->getValue(tri[0]);
+			    cell->getNormal()   += n2;
+			  } 
+			  SetUnionGrid::CellType* intern1 = getGrid()->getLeafCell(getPositions()->getValue(tri[1]));
+			  for (j=0; j<3 && intern1 != NULL; intern1 = intern1->getParent(), ++j) {
+			    // create new set element
+			    CellData& cell = intern1->getContainer();
+			    // update cell data
+			    cell->setNumPoints(cell->getNumPoints() + 1);
+			    cell->getPointRep() += getPositions()->getValue(tri[1]);
+			    cell->getNormal()   += n2;
+			  } 
+			  SetUnionGrid::CellType* intern2 = getGrid()->getLeafCell(getPositions()->getValue(tri[2]));
+			  for (j=0; j<3 && intern2 != NULL; intern2 = intern2->getParent(), ++j) {
+			    // create new set element
+			    CellData& cell = intern2->getContainer();
+			    // update cell data
+			    cell->setNumPoints(cell->getNumPoints() + 1);
+			    cell->getPointRep() += getPositions()->getValue(tri[2]);
+			    cell->getNormal()   += n2;
+			  } 
+			  n = 0;
+		       }
+		    }
+		}
+                break;
+              case UNKNOWN_DE:
+              default:
+                FWARNING (( "fillGridFile: Unknown obj data elem: %s\n", elem.c_str()));
+                is.ignore(INT_MAX, '\n');
+                break;
+              }
+	 }
+      }
+      Real32 slen;
+      // traverse all grid cells
+      // CF could be done recursively
+      u32 maxCode  = getGrid()->getMaxCode();
+      for (u32 xCode=0; xCode<maxCode; ++xCode) {
+	 for (u32 yCode=0; yCode<maxCode; ++yCode) {
+	    for (u32 zCode=0; zCode<maxCode; ++zCode) {
+	       SetUnionGrid::CellType* intern = getGrid()->getCell(xCode, yCode, zCode, 0);
+	       CellData& cell = intern->getContainer();
+	       if (cell->getNumPoints() > 0) { // calc center
+		  cell->getPointRep() *= 1.0f/cell->getNumPoints();
+		  //cell->setNumPoints(0);
+		  slen = getNormalScale() / cell->getNormal().length();
+		  cell->getNormal() *= slen;
+	       } 
+	       if ((xCode & 0x1) == 0 && (yCode & 0x1) == 0 && (zCode & 0x1) == 0) {
+		  intern = intern->getParent();
+		  CellData& cell = intern->getContainer();
+		  if (cell->getNumPoints() > 0) { // calc center
+		     cell->getPointRep() *= 1.0f/cell->getNumPoints();
+		     //cell->setNumPoints(0);
+		     slen = getNormalScale() / cell->getNormal().length();
+		     cell->getNormal() *= slen;
+		  }
+		  if ((xCode & 0x3) == 0 && (yCode & 0x3) == 0 && (zCode & 0x3) == 0) {
+		     intern = intern->getParent();
+		     CellData& cell = intern->getContainer();
+		     if (cell->getNumPoints() > 0) { // calc center
+		       cell->getPointRep() *= 1.0f/cell->getNumPoints();
+		       //cell->setNumPoints(0);
+		       slen = getNormalScale() / cell->getNormal().length();
+		       cell->getNormal() *= slen;
+		     }
+		  }
+	       }
+	    }
+	 }
+      }
+   }
 #endif
 }
-SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye, 
+
+
+// GV_CLUSTERED_ADAPTIVE: always use pool 0
+CellData* GeometryClustered::getPoolEntry (UInt32 i, bool omit)
+{
+#ifdef GV_CLUSTERED_ADAPTIVE
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   CellData& cell = intern->getContainer();
+   return &cell;
+#else
+   CellData& cell = getGrid()->primitives(getPositions()->getValue(i));
+   return &cell;
+#endif
+}
+// GV_CLUSTERED_ADAPTIVE: always use pool 0
+const CellData* GeometryClustered::getPoolEntry (UInt32 i) const
+{
+#ifdef GV_CLUSTERED_ADAPTIVE
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   return &(intern->getContainer());
+#else
+   const CellData& cell = getGrid()->primitives(getPositions()->getValue(i));
+   return &cell;
+#endif
+}
+// GV_CLUSTERED_ADAPTIVE: choose pool by distance from eye
+CellData* GeometryClustered::getPoolEntry (const Pnt3f& eye, 
 					   Real32 minDist, Real32 maxDist, 
-					   UInt32 i)
+					   UInt32 i, 
+					   bool omit)
 {
 #ifdef GV_CLUSTERED_ADAPTIVE
+# if 1
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   //SLOG << intern->getContainer()->getNumPoints() << "/" << intern->getParent()->getContainer()->getNumPoints() << "/" << intern->getParent()->getParent()->getContainer()->getNumPoints() << std::endl;
+   if (intern->getContainer()->getNumPoints() < 8*intern->getParent()->getContainer()->getNumPoints()) {
+      CellData& cell = intern->getContainer();
+      return &cell;
+   }
+   intern = intern->getParent();
+   if (intern->getContainer()->getNumPoints() < 8*intern->getParent()->getContainer()->getNumPoints()) {
+      CellData& cell = intern->getContainer();
+      return &cell;
+   }
+   intern = intern->getParent();
+   CellData& cell = intern->getContainer();
+   return &cell;
+# else
    Int32 pindex;
 #if 0
-   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   Real32 dist = (getPositions()->getValue(i)-eye).squareLength();
    pindex = Int32(log10(dist))-Int32(log10(maxDist-minDist));
    if (pindex < 0) {
      pindex = 0;
@@ -175,24 +809,50 @@ SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye,
      pindex = sizePool-1;
    }
 #else
-   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   Real32 dist = (getPositions()->getValue(i)-eye).squareLength();
    pindex = Int32(sizePool*(dist-minDist)/(maxDist-minDist));
 #endif
    assert(pindex < 3);
-   return (*getPool(pindex))[i];
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   if (pindex >= 1) {
+      intern = intern->getParent();
+   }
+   if (pindex >= 2) {
+      intern = intern->getParent();
+   }
+   CellData& cell = intern->getContainer();
+   return &cell;
+# endif
 #else
-   assert(getPool() != NULL);
-   return (*getPool())[i];
+   CellData& cell = getGrid()->primitives(getPositions()->getValue(i));
+   return &cell;
 #endif
 }
-const SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye, 
+// GV_CLUSTERED_ADAPTIVE: choose pool by distance from eye
+const CellData* GeometryClustered::getPoolEntry (const Pnt3f& eye, 
 						 Real32 minDist, Real32 maxDist, 
 						 UInt32 i) const
 {
 #ifdef GV_CLUSTERED_ADAPTIVE
+# if 1
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   //SLOG << intern->getContainer()->getNumPoints() << "/" << intern->getParent()->getContainer()->getNumPoints() << "/" << intern->getParent()->getParent()->getContainer()->getNumPoints() << std::endl;
+   if (intern->getContainer()->getNumPoints() < 8*intern->getParent()->getContainer()->getNumPoints()) {
+      CellData& cell = intern->getContainer();
+      return &cell;
+   }
+   intern = intern->getParent();
+   if (intern->getContainer()->getNumPoints() < 8*intern->getParent()->getContainer()->getNumPoints()) {
+      CellData& cell = intern->getContainer();
+      return &cell;
+   }
+   intern = intern->getParent();
+   CellData& cell = intern->getContainer();
+   return &cell;
+# else
    Int32 pindex;
 #if 0
-   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   Real32 dist = (getPositions()->getValue(i)-eye).squareLength();
    pindex = Int32(log10(dist))-Int32(log10(maxDist-minDist));
    if (pindex < 0) {
      pindex = 0;
@@ -201,14 +861,22 @@ const SetUnion& GeometryClustered::getPoolEntry (const Pnt3f& eye,
      pindex = sizePool-1;
    }
 #else
-   Real32 dist = (getPositions()->getValue(i)-eye).length();
+   Real32 dist = (getPositions()->getValue(i)-eye).squareLength();
    pindex = Int32(sizePool*(dist-minDist)/(maxDist-minDist));
 #endif
    assert(pindex < 3);
-   return (*getPool(pindex))[i];
+   SetUnionGrid::CellType* intern = getGrid()->getLeafCell(getPositions()->getValue(i));
+   if (pindex >= 1) {
+      intern = intern->getParent();
+   }
+   if (pindex >= 2) {
+      intern = intern->getParent();
+   }
+   return &(intern->getContainer());
+# endif
 #else
-   assert(getPool() != NULL);
-   return (*getPool())[i];
+   CellData& cell = getGrid()->primitives(getPositions()->getValue(i));
+   return &cell;
 #endif
 }
 
@@ -576,7 +1244,341 @@ static UInt32 TexCoords1IDs[numFormats][4];
         name##Stride = 0;                                                   \
     }
 
-static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo, 
+
+// CF temporary
+static Int32  geoBeginFaces = -1;
+
+static void fileGeoPump (std::istream& is, UInt32& ntri,
+			 Window* win, Viewport* port, GeometryClustered* geo, 
+			 Matrix wcMatrix, const Pnt3f& minBound, const Pnt3f& maxBound)
+{
+   fillDataElemMap();
+
+   CameraPtr cam = port->getCamera();
+   wcMatrix.invert();
+   wcMatrix.mult(cam->getBeacon()->getToWorld());
+   // calc eye point and center point
+   Int32 tri[3];
+   Pnt3f  eye (wcMatrix[3][0], wcMatrix[3][1], wcMatrix[3][2]); 
+   Vec3f  diff = maxBound-minBound;
+   Pnt3f  center = minBound + 0.5f*diff;
+   Real32 d = 2*diff.squareLength();
+   Real32 minDist = (center-eye).squareLength();
+   Real32 maxDist = minDist + d;
+   minDist = (minDist > d ? minDist - d : 0);
+   // Setup: get all the data
+   pumpGLSetup        ( Position,   GeoPositionsPtr, getPositions      );
+   Real32 nlen = 0.05f*diff.length();
+
+   // set triangle count zero
+   ntri = 0;
+
+   // if it's not empty we need positions
+   if (!PositionData) {
+        SWARNING << "fileGeoPump: Geometry " << geo << " has no positions!?!"
+                 << std::endl;
+        return;
+   }
+
+   bool omit = true;
+   const CellData* set[3];
+   // store color on entry
+   srand(4711);
+   GLfloat current[4];
+   glGetFloatv(GL_CURRENT_COLOR, current);
+
+   if (is) {
+      Real32 x,y,z;
+      DataElem dataElem;
+      Char8 strBuf[8192], *token, *nextToken;
+      Int32 strBufSize = sizeof(strBuf)/sizeof(Char8);
+      Int32 index, posIndex, indexType;
+      Int32 i, j, n;
+      Int32 primCount[3];
+      std::string elem;
+      std::map<std::string, DataElem>::const_iterator elemI;
+
+      CellData::firstFrame();
+      if (geo->getNumCells() < 2) {
+	 glBegin(GL_TRIANGLES);
+	 for (is >> elem; !is.eof(); is >> elem) {
+	   if (elem[0] == '#' || elem[0] == '$') {
+	     is.ignore(INT_MAX, '\n');
+	   } else {
+	     elemI    = _dataElemMap.find(elem);
+	     dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	     switch (dataElem) {
+	     case OBJECT_DE:
+	     case GROUP_DE:
+	     case SMOOTHING_GROUP_DE:
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case VERTEX_DE:
+	       primCount[0]++;
+	       is >> x >> y >> z;
+	       break;
+	     case VERTEX_TEXTURECOORD_DE:
+	       primCount[1]++;
+	       is >> x >> y;
+	       break;
+	     case VERTEX_NORMAL_DE:
+	       primCount[2]++;
+	       is >> x >> y >> z;
+	       break;
+	     case LIB_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case USE_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case FACE_DE:
+	       is.get(strBuf,strBufSize);
+	       CellData::nextFrame ();
+#ifdef GV_COLORPRIMITIVES
+	       glColor3f(GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX);
+#endif
+	       indexType = 0; n = 0;
+	       for (token = strBuf; token && *token; token = nextToken) {
+		 for (; *token == '/'; token++)
+		   indexType++;
+		 for (; isspace(*token); token++)
+		   indexType = 0;
+		 index = strtol(token, &nextToken, 10);
+		 if (token == nextToken)
+		   break;
+		 
+		 if (index > 0)
+		   index--;
+		 else
+		   index =  primCount[indexType] + index;
+
+		 if (indexType == 0) { // position index
+		   if (index >= geo->getPositions()->getSize()) {
+		     SWARNING << "read " << is.tellg() << ": index out of range!" << std::endl;
+		     continue;
+		   }
+		   tri[n++] = index;
+		   if (n == 3) {
+		      ntri++; 
+		      Vec3f normal((geo->getPositions()->getValue(tri[1])-geo->getPositions()->getValue(tri[0]))
+				   .cross(geo->getPositions()->getValue(tri[2])-geo->getPositions()->getValue(tri[0])));
+		      glNormal3fv(normal.getValues());
+		      glVertex3fv(geo->getPositions()->getValue(tri[0]).getValues());
+		      glVertex3fv(geo->getPositions()->getValue(tri[1]).getValues());
+		      glVertex3fv(geo->getPositions()->getValue(tri[2]).getValues());
+		      n = 0;
+		   }
+		 }
+	       }
+	       break;
+	     case UNKNOWN_DE:
+	     default:
+	       FWARNING (( "fileGeoPump: Unknown obj data elem: %s\n", elem.c_str()));
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     }
+	   }
+	 }
+	 glEnd();
+      } else {
+	 glBegin(GL_TRIANGLES);
+	 for (is >> elem; !is.eof(); is >> elem) {
+	   if (elem[0] == '#' || elem[0] == '$') {
+	     is.ignore(INT_MAX, '\n');
+	   } else {
+	     elemI    = _dataElemMap.find(elem);
+	     dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	     switch (dataElem) {
+	     case OBJECT_DE:
+	     case GROUP_DE:
+	     case SMOOTHING_GROUP_DE:
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case VERTEX_DE:
+	       primCount[0]++;
+	       is >> x >> y >> z;
+	       break;
+	     case VERTEX_TEXTURECOORD_DE:
+	       primCount[1]++;
+	       is >> x >> y;
+	       break;
+	     case VERTEX_NORMAL_DE:
+	       primCount[2]++;
+	       is >> x >> y >> z;
+	       break;
+	     case LIB_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case USE_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case FACE_DE:
+	       is.get(strBuf,strBufSize);
+	       CellData::nextFrame ();
+#ifdef GV_COLORPRIMITIVES
+	       glColor3f(GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX);
+#endif
+	       indexType = 0; n = 0;
+	       for (token = strBuf; token && *token; token = nextToken) {
+		 for (; *token == '/'; token++)
+		   indexType++;
+		 for (; isspace(*token); token++)
+		   indexType = 0;
+		 index = strtol(token, &nextToken, 10);
+		 if (token == nextToken)
+		   break;
+		 
+		 if (index > 0)
+		   index--;
+		 else
+		   index =  primCount[indexType] + index;
+
+		 if (indexType == 0) { // position index
+		   if (index >= geo->getPositions()->getSize()) {
+		     SWARNING << "read " << is.tellg() << ": index out of range!" << std::endl;
+		     continue;
+		   }
+		   const CellData* s = geo->getPoolEntry(eye,minDist,maxDist, index, omit);
+		   if (!omit || s->isValid()) {
+		      set[n++] = s;
+		   }
+		   if (n == 3) {
+		     ntri++; 
+		     glNormal3fv((*(set[0]))->getNormal().getValues());
+		     glVertex3fv((*(set[0]))->getPointRep().getValues());
+		     glNormal3fv((*(set[1]))->getNormal().getValues());
+		     glVertex3fv((*(set[1]))->getPointRep().getValues());
+		     glNormal3fv((*(set[2]))->getNormal().getValues());
+		     glVertex3fv((*(set[2]))->getPointRep().getValues());
+		     n = 0;
+		   }
+		 }
+	       }
+	       break;
+	     case UNKNOWN_DE:
+	     default:
+	       FWARNING (( "fileGeoPump: Unknown obj data elem: %s\n", elem.c_str()));
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     }
+	   }
+	 }
+	 glEnd();
+
+#if 0
+	 is.clear();
+	 is.seekg(geoBeginFaces);
+	 glColor3f(0.0f, 1.0f, 0.0f);
+	 CellData::firstFrame();
+	 glBegin(GL_LINES);
+	 for (is >> elem; !is.eof(); is >> elem) {
+	   if (elem[0] == '#' || elem[0] == '$') {
+	     is.ignore(INT_MAX, '\n');
+	   } else {
+	     elemI    = _dataElemMap.find(elem);
+	     dataElem = ((elemI == _dataElemMap.end()) ? UNKNOWN_DE : elemI->second );
+	     switch (dataElem) {
+	     case OBJECT_DE:
+	     case GROUP_DE:
+	     case SMOOTHING_GROUP_DE:
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case VERTEX_DE:
+	       primCount[0]++;
+	       is >> x >> y >> z;
+	       break;
+	     case VERTEX_TEXTURECOORD_DE:
+	       primCount[1]++;
+	       is >> x >> y;
+	       break;
+	     case VERTEX_NORMAL_DE:
+	       primCount[2]++;
+	       is >> x >> y >> z;
+	       break;
+	     case LIB_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case USE_MTL_DE:
+	       is >> elem;
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     case FACE_DE:
+	       is.get(strBuf,strBufSize);
+	       CellData::nextFrame ();
+#ifdef GV_COLORPRIMITIVES
+	       glColor3f(GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX, 
+			 GLfloat(rand())/RAND_MAX);
+#endif
+	       indexType = 0; n = 0;
+	       for (token = strBuf; token && *token; token = nextToken) {
+		 for (; *token == '/'; token++)
+		   indexType++;
+		 for (; isspace(*token); token++)
+		   indexType = 0;
+		 index = strtol(token, &nextToken, 10);
+		 if (token == nextToken)
+		   break;
+		 
+		 if (index > 0)
+		   index--;
+		 else
+		   index =  primCount[indexType] + index;
+
+		 if (indexType == 0) { // position index
+		   if (index >= geo->getPositions()->getSize()) {
+		     SWARNING << "read " << is.tellg() << ": index out of range!" << std::endl;
+		     continue;
+		   }
+		   const CellData* s = geo->getPoolEntry(eye,minDist,maxDist, index, omit);
+		   if (!omit || s->isValid()) {
+		      set[n++] = s;
+		   }
+		   if (n == 3) {
+		     Pnt3f p = (*(set[0]))->getPointRep();
+		     glVertex3fv(p.getValues());
+		     p += nlen*(*(set[0]))->getNormal();
+		     glVertex3fv(p.getValues());
+		     p = (*(set[1]))->getPointRep();
+		     glVertex3fv(p.getValues());
+		     p += nlen*(*(set[1]))->getNormal();
+		     glVertex3fv(p.getValues());
+		     p = (*(set[2]))->getPointRep();
+		     glVertex3fv(p.getValues());
+		     p += nlen*(*(set[2]))->getNormal();
+		     glVertex3fv(p.getValues());
+		     n = 0;
+		   }
+		 }
+	       }
+	       break;
+	     case UNKNOWN_DE:
+	     default:
+	       FWARNING (( "fileGeoPump: Unknown obj data elem: %s\n", elem.c_str()));
+	       is.ignore(INT_MAX, '\n');
+	       break;
+	     }
+	   }
+	 }
+	 glEnd();
+#endif
+      }
+      // restore color on exit
+      glColor3fv(current);
+   }
+}
+
+static void masterGeoPump (UInt32& ntri,
+			   Window* win, Viewport* port, GeometryClustered* geo, 
 			   Matrix wcMatrix, const Pnt3f& minBound, const Pnt3f& maxBound)
 {
     static const Real32 sqrt2 = 1.0f/sqrt(2.0f);
@@ -588,11 +1590,10 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
     Pnt3f  eye (wcMatrix[3][0], wcMatrix[3][1], wcMatrix[3][2]); 
     Vec3f  diff = maxBound-minBound;
     Pnt3f  center = minBound + 0.5f*diff;
-    Real32 d = sqrt2*diff.length();
-    Real32 minDist = (center-eye).length();
+    Real32 d = 2*diff.squareLength();
+    Real32 minDist = (center-eye).squareLength();
     Real32 maxDist = minDist + d;
     minDist = (minDist > d ? minDist - d : 0);
-    SLOG << "distance=[" << minDist << "," << maxDist << "]" << std::endl;
     // Setup: get all the data
     pumpInternalSetup( Type,   GeoPTypesPtr,   getTypes,   true  );
     pumpInternalSetup( Length, GeoPLengthsPtr, getLengths, false );
@@ -606,6 +1607,9 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
     pumpMultiGLExtSetup( TexCoords1, GeoTexCoordsPtr, getTexCoords1     );
     pumpMultiGLExtSetup( TexCoords2, GeoTexCoordsPtr, getTexCoords2     );
     pumpMultiGLExtSetup( TexCoords3, GeoTexCoordsPtr, getTexCoords3     );
+
+    // set triangle count zero
+    ntri = 0;
 
     // check if the node is empty
     if (!TypeData || TypePtr->getSize() == 0) {
@@ -673,7 +1677,7 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
     }
 
     bool omit;
-    SetUnion* set = NULL;
+    CellData* set = NULL;
     UInt32    index;
     UInt32*   vind;
     // store color on entry
@@ -689,51 +1693,51 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
         GLuint type = *(TypeData + TypeInd++ * TypeStride);
 	switch (type) {
 	case GL_QUADS: 
-	   SINFO << "GL_QUADS" << std::endl;
+	   ntri += 2;
  	   omit = true;
 	   glBegin(GL_TRIANGLE_FAN);
 	   break;
 	case GL_QUAD_STRIP:
-	   SINFO << "GL_QUAD_STRIP" << std::endl;
+	   if (*(UInt32*)(LengthData + LengthInd * LengthStride) >= 4) {
+	      ntri += *(UInt32*)(LengthData + LengthInd * LengthStride)-2;
+	   }
  	   omit = false;
 	   glBegin(type);
 	   break;
 	case GL_TRIANGLES: {
-	   SINFO << "GL_TRIANGLES" << std::endl;
-	   SetUnion* setArray[3];
+	   CellData* setArray[3];
 	   glBegin(type);
 	   for (UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); l+=3) {
-	     SetUnion::nextFrame ();
+	     CellData::nextFrame ();
 	     // test if triangle collapses then omit OpenGL commands
 	     if (IndexData) {
- 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex))).getSet(true);
- 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex))).getSet(true);
- 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex + nmappings))).getSet(true);
+ 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + PositionIndex)), true);
+ 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex)), true);
+ 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,*(UInt32*)(IndexData + IndexStride * (IndexInd + nmappings + PositionIndex + nmappings)), true);
 		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   IndexInd += 3*nmappings;
 		   continue;
 		}
 	     } else {
- 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
- 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,index+1).getSet(true);
- 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,index+2).getSet(true);
+ 	        setArray[0] = geo->getPoolEntry(eye,minDist,maxDist,index, true);
+ 	        setArray[1] = geo->getPoolEntry(eye,minDist,maxDist,index+1, true);
+ 	        setArray[2] = geo->getPoolEntry(eye,minDist,maxDist,index+2, true);
 		if (setArray[0] == NULL || setArray[1] == NULL || setArray[2] == NULL) { 
 		   index += 3;
 		   continue;
 		}
 	     }
+	     ++ntri;
 	     for (UInt32 ll=0; ll<3; ++ll) {
 	        // perform lookup
 	        if (IndexData) {
 		   vind = (UInt32*)(IndexData + IndexStride * IndexInd);
 		   IndexInd += nmappings;
 		   set = setArray[ll];
-		   SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
 		} else {
 		   vind = &index;
 		   ++index;
 		   set = setArray[ll];
-		   SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
 		}
 		// pump data
 		if (ColorData) {
@@ -743,8 +1747,9 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 		   SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
 		}
 		if (NormalData) {
-		   NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+		   //NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
 		}
+		glNormal3fv((*set)->getNormal().getValues());
 		if (TexCoordsData) {
 		   TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
 		}
@@ -760,15 +1765,17 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 		   TexCoords3Func(GL_TEXTURE3_ARB,
 				  TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
 		}
-		PositionFunc(PositionData + PositionStride * set->getIdentifier());
+		glVertex3fv((*set)->getPointRep().getValues());
 	     }
 	   }
 	   glEnd();
 	   continue;
 	}
 	case GL_TRIANGLE_STRIP: {
-	   SINFO << "GL_TRIANGLE_STRIP" << std::endl;
-	   SetUnion::nextFrame ();
+	   CellData::nextFrame ();
+	   if (*(UInt32*)(LengthData + LengthInd * LengthStride) >= 3) {
+	      ntri += *(UInt32*)(LengthData + LengthInd * LengthStride)-2;
+	   }
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
 	     // perform lookup
@@ -777,31 +1784,27 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
                 IndexInd += nmappings;
 		// always use the first two vertices
 		if (l > 2) {
-		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(true);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex], true);
 		} else {
-		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(false);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex], false);
 		}
 		if (set == NULL) { // omit vertex
-		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
 		  continue; 
 		}
-		SetUnion::nextFrame ();
-		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
+		CellData::nextFrame ();
 	    } else {
 	        vind = &index;
                 ++index;
 		// always use the first two vertices
 		if (l > 2) {
-		  set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,index, true);
 		} else {
-		  set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(false);
+		  set = geo->getPoolEntry(eye,minDist,maxDist,index, false);
 		}
 		if (set == NULL) { // omit vertex
-		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
-		SetUnion::nextFrame ();
-		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
+		CellData::nextFrame ();
 	    }
 	    // pump data
 	    if (ColorData) {
@@ -811,8 +1814,9 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 	      SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
 	    }
 	    if (NormalData) {
-	      NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+	       //NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
 	    }
+	    glNormal3fv((*set)->getNormal().getValues());
 	    if (TexCoordsData) {
 	      TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
 	    }
@@ -828,35 +1832,33 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 	      TexCoords3Func(GL_TEXTURE3_ARB,
 			     TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
 	    }
-	    PositionFunc(PositionData + PositionStride * set->getIdentifier());
+	    glVertex3fv((*set)->getPointRep().getValues());
 	   }
 	   glEnd();
 	   continue;
 	}
 	case GL_TRIANGLE_FAN: {
-	   SINFO << "GL_TRIANGLE_FAN" << std::endl;
-	   SetUnion::nextFrame ();
+	   CellData::nextFrame ();
+	   if (*(UInt32*)(LengthData + LengthInd * LengthStride) >= 3) {
+	      ntri += *(UInt32*)(LengthData + LengthInd * LengthStride)-2;
+	   }
 	   glBegin(type);
 	   for(UInt32 l=0; l<*(UInt32*)(LengthData + LengthInd * LengthStride); ++l) {
 	      // perform lookup
 	      if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(true);
+		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex], true);
 		if (set == NULL) { 
-		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
-		  continue; 
+		   continue; 
 		}
-		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
 	      } else {
                 vind = &index;
                 ++index;
-		set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(true);
+		set = geo->getPoolEntry(eye,minDist,maxDist,index, true);
 		if (set == NULL) {
-		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
-		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
 	      }
 	      // perform lookup
 	      if (ColorData) {
@@ -866,8 +1868,9 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 		SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
 	      }
 	      if (NormalData) {
-		NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+		 //NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
 	      }
+	      glNormal3fv((*set)->getNormal().getValues());   
 	      if (TexCoordsData) {
 		TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
 	      }
@@ -883,20 +1886,24 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 		TexCoords3Func(GL_TEXTURE3_ARB,
 			       TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
 	      }
-	      PositionFunc(PositionData + PositionStride * vind[PositionIndex]);
+	      glVertex3fv((*set)->getPointRep().getValues());
 	   }
 	   glEnd();
 	   continue;
 	}
 	case GL_POLYGON:
-	   SINFO << "GL_POLYGON" << std::endl;
-	   SetUnion::nextFrame ();
+	   CellData::nextFrame ();
+	   if (*(UInt32*)(LengthData + LengthInd * LengthStride) >= 3) {
+	      ntri += *(UInt32*)(LengthData + LengthInd * LengthStride)-2;
+	   }
 	   omit = true;
 	   glBegin(type);
 	   break;
 	default:
- 	   SINFO << "other " << type << std::endl;
-	   SetUnion::nextFrame ();
+	   CellData::nextFrame ();
+	   if (*(UInt32*)(LengthData + LengthInd * LengthStride) >= 3) {
+	      ntri += *(UInt32*)(LengthData + LengthInd * LengthStride)-2;
+	   }
 	   omit = true;
 	   glBegin(type);
 	   break;
@@ -906,21 +1913,17 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 	   if (IndexData) {
                 vind = (UInt32*)(IndexData + IndexStride * IndexInd);
                 IndexInd += nmappings;
-		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex]).getSet(omit);
+		set = geo->getPoolEntry(eye,minDist,maxDist,vind[PositionIndex], omit);
 		if (set == NULL) { 
-		  SINFO << vind[PositionIndex] << " omitted!" << std::endl;
-		  continue; 
+		   continue; 
 		}
-		SINFO << vind[PositionIndex] << " replaced by " << set->getIdentifier() << std::endl;
 	   } else {
                 vind = &index;
                 ++index;
-		set = geo->getPoolEntry(eye,minDist,maxDist,index).getSet(omit);
+		set = geo->getPoolEntry(eye,minDist,maxDist,index, omit);
 		if (set == NULL) {
-		   SINFO << index << " omitted!" << std::endl;
 		   continue; 
 		}
-		SINFO << index << " replaced by " << set->getIdentifier() << std::endl;
 	   }
 	   // pump data
 	   if (ColorData) {
@@ -930,8 +1933,9 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 	      SecColorFunc(SecColorData + SecColorStride * vind[SecColorIndex]);
 	   }
 	   if (NormalData) {
-	      NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
+	      //NormalFunc(NormalData + NormalStride * vind[NormalIndex]);
 	   }
+	   glNormal3fv((*set)->getNormal().getValues());
 	   if (TexCoordsData) {
 	      TexCoordsFunc(TexCoordsData + TexCoordsStride * vind[TexCoordsIndex]);
 	   }
@@ -947,7 +1951,7 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
 	      TexCoords3Func(GL_TEXTURE3_ARB,
 			     TexCoords3Data + TexCoords3Stride * vind[TexCoords3Index]);
 	   }
-	   PositionFunc(PositionData + PositionStride * set->getIdentifier());
+	   glVertex3fv((*set)->getPointRep().getValues());
 	}
         glEnd();
     }
@@ -955,132 +1959,180 @@ static void masterGeoPump (Window* win, Viewport* port, GeometryClustered* geo,
     glColor3fv(current);
 }
 
-void GeometryClustered::fillGrid (GeoPositionsPtr pos)
+void GeometryClustered::handleGL (Window* win, UInt32 idstatus)
 {
+   Window::GLObjectStatusE mode;
+   UInt32 id;
+
+   if (getPositions() == NullFC) {
+      return;
+   }
+
+   Window::unpackIdStatus(idstatus, id, mode);
+
+   if (mode == Window::initialize || mode == Window::needrefresh || mode == Window::reinitialize) {
+      Pnt3f minBound, maxBound;
+      getParents()[0]->getVolume().getBounds(minBound, maxBound);
+      glNewList(id, GL_COMPILE);
+      if (getGrid() == NULL) {
 #ifndef GV_CLUSTERED_ADAPTIVE
-   getPool()->clear();
-   getPool()->reserve(pos->getSize());
-   for (UInt32 i=0; i<pos->getSize(); ++i) {
-      std::vector<SetUnion*>& cell = getGrid()->primitives(pos->getValue(i));
-      getPool()->push_back(SetUnion()); SetUnion* set = &(getPool()->back());
-      if (cell.size() == 0) {
-	 set->init(i, NULL);
- 	 cell.push_back(set);
-      } else {
-	 set->init(i, cell[0]);
- 	 cell[0] = set;
-      }
-   }
-   for (i64 i=0; i<getGrid()->getNumVoxels(); ++i) {
-      if (getGrid()->getVoxel()[i].size() > 0) {
-	 getGrid()->getVoxel()[i][0]->optimize();
-      }
-   }
-#else
-   UInt32 i;
-   for (i=0; i<sizePool; ++i) {
-      getPool(i)->clear();
-      getPool(i)->reserve(pos->getSize());
-   }
-   for (i=0; i<pos->getSize(); ++i) {
-      SetUnionGrid::CellType* intern = getGrid()->getLeafCell(pos->getValue(i));
-      UInt32 j=0; 
-      while (j<3 && intern != NULL) {
-	 getPool(j)->push_back(SetUnion()); SetUnion* set = &(getPool(j)->back());
-	 std::vector<SetUnion*>& cell = intern->getContainer();
-	 if (cell.size() == 0) {
-	    set->init(i, NULL);
-	    cell.push_back(set);
-	 } else {
-	    set->init(i, cell[0]);
-	    cell[0] = set;
-	 }
-	 intern = intern->getParent(); ++j;
-      } 
-   }
-   for (u32 xCode=0; xCode<getGrid()->getMaxCode(); ++xCode) {
-      for (u32 yCode=0; yCode<getGrid()->getMaxCode(); ++yCode) {
-	 for (u32 zCode=0; zCode<getGrid()->getMaxCode(); ++zCode) {
-	   SetUnionGrid::CellType* intern = getGrid()->getCell(xCode, yCode, zCode);
-	   std::vector<SetUnion*>& cell = intern->getContainer();
-	   if (cell.size() > 0) {
-	      cell[0]->optimize();
+	 if (getNumCells() > 1) {
+	   setGrid(new SetUnionGrid());
+	   // init grid
+	   CellData::firstFrame ();
+	   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+			   getNumCells(), 
+			   RegularGridBase::MinVoxelsPerDim);
+	   if (_fileStream.is_open()) {
+	     _fileStream.clear();
+	     // set back to face indices section
+	     _fileStream.seekg(getOffsetFaces());
+	     fillGridFile(_fileStream);
+	   } else {
+	     fillGrid();
 	   }
+	   SNOTICE << "RegularGrid created: " << std::endl;
+	 }
+#else
+	 if (getNumCells() > 1) {
+	   setGrid(new SetUnionGrid());
+	   // init grid
+	   CellData::firstFrame ();
+	   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+			   getNumCells(), 
+			   RegularGridBase::MaxVoxels);
+	   if (_fileStream.is_open()) {
+	     _fileStream.clear();
+	     // set back to face indices section
+	     _fileStream.seekg(getOffsetFaces());
+	     fillGridFile(_fileStream);
+	   } else {
+	     fillGrid();
+	   }
+	   SNOTICE << "AdaptiveGrid created: " << std::endl;
+	 }
+#endif
+      }
+      if (win != NULL) {
+ 	 if (_fileStream.is_open()) {
+	    _fileStream.clear();
+	    // set back to face indices section
+	    _fileStream.seekg(getOffsetFaces());
+	    //geoBeginFaces = getOffsetFaces();
+	    fileGeoPump  (_fileStream, getNumTriangles(), 
+			  win, win->getPort(0).getCPtr(), this, getParents()[0]->getToWorld(), minBound, maxBound);
+	 } else {
+	    masterGeoPump(getNumTriangles(), 
+			  win, win->getPort(0).getCPtr(), this, getParents()[0]->getToWorld(), minBound, maxBound);
 	 }
       }
+      glEndList();
+   } else if (mode == Window::destroy) {
+      SWARNING << "Delete display list" << std::endl;
+      glDeleteLists(id, 1);
+   } else if (mode == Window::finaldestroy) {
+      SWARNING << "Last geometry user destroyed" << std::endl;
+   } else {
+      SWARNING << "GeometryClustered(" << this << ")::handleGL: Illegal mode: "
+	       << mode << " for id " << id << std::endl;
    }
-#endif
 }
 
 Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
 {
-   // call the pump
-   NodePtr node = action->getActNode();
+   if (getDlistCache()) {
+      action->getWindow()->validateGLObject(getGLId());
+      glCallList(getGLId());
+   } else {
+      // get bounding volume
+      NodePtr node = action->getActNode();
+      Pnt3f minBound, maxBound;
+      node->getVolume().getBounds(minBound, maxBound);
 
-   Pnt3f minBound, maxBound;
-   node->getVolume().getBounds(minBound, maxBound);
-
-   // create datastructures
+      if (getGrid() == NULL) {
 #ifndef GV_CLUSTERED_ADAPTIVE
-   if (getGrid() == NULL) {
-      setGrid(new SetUnionGrid());
-   }
-   if (getPool() == NULL) {
-      setPool(new SetUnionPool());
-   }
-   // init grid
-   SetUnion::firstFrame ();
-   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
-		   getNumCells(), 
-		   RegularGridBase::MinVoxelsPerDim);
-   fillGrid(getPositions());
-   SLOG << "RegularGrid created: " << std::endl;
+	 if (getNumCells() > 1) {
+	   setGrid(new SetUnionGrid());
+	   // init grid
+	   CellData::firstFrame ();
+	   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+			   getNumCells(), 
+			   RegularGridBase::MinVoxelsPerDim);
+	   if (_fileStream.is_open()) {
+	     _fileStream.clear();
+	     // set back to face indices section
+	     _fileStream.seekg(getOffsetFaces());
+	     fillGridFile(_fileStream);
+	   } else {
+	    fillGrid();
+	   }
+	   SNOTICE << "RegularGrid created: " << std::endl;
+	 }
 #else
-   while (getPool().size() < sizePool) {
-      getPool().addValue(new SetUnionPool());
-   }
-   if (getGrid() == NULL) {
-      setGrid(new SetUnionGrid());
-      // init grid
-      SetUnion::firstFrame ();
-      getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
-		      getNumCells(), 
-		      RegularGridBase::MaxVoxels);
-      fillGrid(getPositions());
-      SLOG << "RegularGrid created: " << std::endl;
-   }
+	 if (getNumCells() > 1) {
+	   setGrid(new SetUnionGrid());
+	   // init grid
+	   CellData::firstFrame ();
+	   getGrid()->init(K6Dop(minBound.getValues(), maxBound.getValues()),
+			   getNumCells(), 
+			   RegularGridBase::MaxVoxels);
+	   if (_fileStream.is_open()) {
+	     _fileStream.clear();
+	     // set back to face indices section
+	     _fileStream.seekg(getOffsetFaces());
+	     fillGridFile(_fileStream);
+	   } else {
+	     fillGrid();
+	   }
+	   SNOTICE << "AdaptiveGrid created: " << std::endl;
+	 }
 #endif
+      }
+      // call the pump
+      if (_fileStream.is_open()) {
+	 _fileStream.clear();
+	 // set back to face indices section
+	 _fileStream.seekg(getOffsetFaces());
+	 fileGeoPump(_fileStream, getNumTriangles(),
+		     action->getWindow(), action->getViewport(), this, node->getToWorld(), minBound, maxBound);
+      } else {
+	 masterGeoPump(getNumTriangles(),
+		       action->getWindow(), action->getViewport(), this, node->getToWorld(), minBound, maxBound);
+      }
+   }
 
-   masterGeoPump(action->getWindow(), action->getViewport(), this, 
-		 node->getToWorld(), minBound, maxBound);
+   StatCollector* coll = action->getStatistics();
+   if (coll != NULL) {
+        StatIntElem* el = coll->getElem(Drawable::statNTriangles,false);
+        if (el) {
+            el->add(getNumTriangles());
 
-   StatCollector *coll = action->getStatistics();
-   if(coll != NULL) {
-      StatIntElem *el = coll->getElem(Drawable::statNTriangles,false);
-      if (el != NULL) {
-	 GeometryPtr geo(this);
-	 UInt32 ntri,nl,np,is;
-            
-	 calcPrimitiveCount(geo, ntri, nl, np);
-	 el->add(ntri);
-	 coll->getElem(Drawable::statNLines)->add(nl);
-	 coll->getElem(Drawable::statNLines)->add(np);
-	 
-	 if(getIndices() == NullFC) {
-	    if(getPositions() != NullFC) {
+	    UInt32 is;
+	    if (getPositions() != NullFC) {
 	       is = getPositions()->getSize();
 	    } else {
 	       is = 0;
 	    }
-	 } else {
-	    is = getIndexMapping().size();
-	    is = getIndices()->getSize() /(is ? is : 1);
-	 }
-	 coll->getElem(Drawable::statNVertices)->add(is);
-      }
+            coll->getElem(Drawable::statNVertices)->add(is);
+        }
    }
     
    return Action::Continue;
+}
+
+void GeometryClustered::adjustVolume (Volume& volume)
+{
+    GeoPositionsPtr pos = getPositions();
+
+    volume.setValid();
+    volume.setEmpty();
+
+    if(pos == NullFC)
+        return;                  // Node has no points, no volume
+
+    for (UInt32 v=0; v < getPositions()->getSize(); ++v) {
+       volume.extendBy(getPositions()->getValue(v));
+    }
 }
 
 /*------------------------------------------------------------------------*/
@@ -1096,7 +2148,7 @@ Action::ResultE GeometryClustered::drawPrimitives (DrawActionBase* action)
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGeometryClustered.cpp,v 1.5 2004/12/20 15:54:29 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGEOMETRYCLUSTEREDBASE_INLINE_CVSID;
 
@@ -1106,4 +2158,5 @@ namespace
 #ifdef __sgi
 #pragma reset woff 1174
 #endif
+
 

@@ -57,15 +57,21 @@
 #pragma once
 #endif
 
-#define GV_CLUSTERED_ADAPTIVE
 
-#include "OSGGVBase.h"
+#include <fstream>
+#include <OSGConfig.h>
+#include <OSGGVBase.h>
+
 #include <OSGBaseTypes.h>
 
 #include <OSGGeometry.h> // Parent
+
 #include <OSGReal32Fields.h> // NumCells type
-#include <OSGGeometryPositionCluster.h> // Pool type
 #include <OSGGeometryPositionCluster.h> // Grid type
+#include <OSGStringFields.h> // ModelFilename type
+#include <OSGReal32Fields.h> // NormalScale type
+#include <OSGUInt32Fields.h> // NumTriangles type
+#include <OSGInt32Fields.h> // OffsetFaces type
 
 #include <OSGGeometryClusteredFields.h>
 
@@ -75,26 +81,37 @@ class GeometryClustered;
 class BinaryDataHandler;
 
 //! \brief GeometryClustered Base Class.
+
 class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
 {
   private:
 
-    typedef Geometry Inherited;
+    typedef Geometry    Inherited;
 
     /*==========================  PUBLIC  =================================*/
   public:
 
+    typedef GeometryClusteredPtr  Ptr;
+
     enum
     {
-        NumCellsFieldId     = Inherited::NextFieldId,
-        PoolFieldId         = NumCellsFieldId + 1,
-        GridFieldId         = PoolFieldId     + 1,
-	NextFieldId         = GridFieldId     + 1
+        NumCellsFieldId      = Inherited::NextFieldId,
+        GridFieldId          = NumCellsFieldId      + 1,
+        ModelFilenameFieldId = GridFieldId          + 1,
+        NormalScaleFieldId   = ModelFilenameFieldId + 1,
+        NumTrianglesFieldId  = NormalScaleFieldId   + 1,
+        OffsetFacesFieldId   = NumTrianglesFieldId  + 1,
+        NextFieldId          = OffsetFacesFieldId   + 1
     };
 
     static const OSG::BitVector NumCellsFieldMask;
-    static const OSG::BitVector PoolFieldMask;
     static const OSG::BitVector GridFieldMask;
+    static const OSG::BitVector ModelFilenameFieldMask;
+    static const OSG::BitVector NormalScaleFieldMask;
+    static const OSG::BitVector NumTrianglesFieldMask;
+    static const OSG::BitVector OffsetFacesFieldMask;
+
+
     static const OSG::BitVector MTInfluenceMask;
 
     /*---------------------------------------------------------------------*/
@@ -119,34 +136,29 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \name                    Field Get                                 */
     /*! \{                                                                 */
 
-           SFReal32            *getSFNumCells (void);
-           Real32              &getNumCells   (void);
-     const Real32              &getNumCells   (void) const;
+           SFReal32            *getSFNumCells       (void);
+           SFSetUnionGridP     *getSFGrid           (void);
+           SFString            *getSFModelFilename  (void);
+           SFReal32            *getSFNormalScale    (void);
 
-           SFSetUnionGridP     *getSFGrid (void);
-    SetUnionGridP&              getGrid   (void);
-    const SetUnionGridP&        getGrid   (void) const;
-
-#ifdef GV_CLUSTERED_ADAPTIVE
-       MFSetUnionPoolP         *getMFPool (void);
-    SetUnionPoolP&              getPool   (const UInt32 index);
-    const SetUnionPoolP&        getPool   (const UInt32 index) const;
-    MFSetUnionPoolP&            getPool   (void);
-    const MFSetUnionPoolP&      getPool   (void) const;
-#else
-       SFSetUnionPoolP         *getSFPool (void);
-    SetUnionPoolP&              getPool   (void);
-    const SetUnionPoolP&        getPool   (void) const;
-#endif
+           Real32              &getNumCells       (void);
+     const Real32              &getNumCells       (void) const;
+           SetUnionGridP       &getGrid           (void);
+     const SetUnionGridP       &getGrid           (void) const;
+           std::string         &getModelFilename  (void);
+     const std::string         &getModelFilename  (void) const;
+           Real32              &getNormalScale    (void);
+     const Real32              &getNormalScale    (void) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
-     void                       setNumCells ( const Real32 &value );
-     void                       setGrid     (const SetUnionGridP& value);
-     void                       setPool     (const SetUnionPoolP& value);
+     void setNumCells       ( const Real32 &value );
+     void setGrid           ( const SetUnionGridP &value );
+     void setModelFilename  ( const std::string &value );
+     void setNormalScale    ( const Real32 &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -187,18 +199,20 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
   protected:
+
     /*---------------------------------------------------------------------*/
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
     SFReal32            _sfNumCells;
-#ifdef GV_CLUSTERED_ADAPTIVE
-    MFSetUnionPoolP     _sfPool;
-#else
-    SFSetUnionPoolP     _sfPool;
-#endif
     SFSetUnionGridP     _sfGrid;
+    SFString            _sfModelFilename;
+    SFReal32            _sfNormalScale;
+    SFUInt32            _sfNumTriangles;
+    SFInt32             _sfOffsetFaces;
+    std::ifstream       _fileStream;
 
+    /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                   Constructors                               */
     /*! \{                                                                 */
@@ -212,6 +226,27 @@ class OSG_GENVISLIB_DLLMAPPING GeometryClusteredBase : public Geometry
     /*! \{                                                                 */
 
     virtual ~GeometryClusteredBase(void); 
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Get                                 */
+    /*! \{                                                                 */
+
+           SFUInt32            *getSFNumTriangles   (void);
+           SFInt32             *getSFOffsetFaces    (void);
+
+           UInt32              &getNumTriangles   (void);
+     const UInt32              &getNumTriangles   (void) const;
+           Int32               &getOffsetFaces    (void);
+     const Int32               &getOffsetFaces    (void) const;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Field Set                                 */
+    /*! \{                                                                 */
+
+     void setNumTriangles   (const UInt32 &value);
+     void setOffsetFaces    (const Int32 &value);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -244,6 +279,6 @@ typedef GeometryClusteredBase *GeometryClusteredBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.4 2004/03/12 13:37:26 fuenfzig Exp $"
+#define OSGGEOMETRYCLUSTEREDBASE_HEADER_CVSID "@(#)$Id: OSGGeometryClusteredBase.h,v 1.5 2004/12/20 15:54:30 fuenfzig Exp $"
 
 #endif /* _OSGGEOMETRYCLUSTEREDBASE_H_ */
