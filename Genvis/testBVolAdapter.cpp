@@ -1,12 +1,9 @@
 #include "OSGGVBVolAdapter.h"
 #include "OSGGVBVolAdapterExt.h"
-#include "OSGGVTriangleAdapterExt.h"
 #include "OSGGVTriangleAdapterAligned.h"
 USING_GENVIS_NAMESPACE
 
-typedef K14Dop BVOL;
-
-void main (int, char**) 
+int main (int, char**) 
 {
   std::cout << "Sizes" 
 	    << std::endl
@@ -64,4 +61,5 @@ void main (int, char**)
 	    << std::endl
 	    << "OpenSGTriangleAdapterAligned, 14-Dop " << sizeof(OpenSGTriangleAligned<OpenSGTraits,K14Dop>)
 	    << std::endl;
+   return 0;
 }

@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 		  << ")"
 		  << std::endl;
 	positions->setValue(trav.getData().getHitPoint(), 1);
-	in.clearData(NULL);
+	in.clearData();
       } else {
 	std::cout << "bvol-hierarchy: no hit found" << std::endl; 
 	positions->setValue(ray.getOrigin()+infinity*ray.getDirection(), 1);
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
 		  << ", point="  << ray.getOrigin()+in.getDist()*ray.getDirection()
 		  << ")"
 		  << std::endl;
-	in.clearData(NULL);
+	in.clearData();
       } else {
 	std::cout << "regular-grid: no hit found" << std::endl; 
       }

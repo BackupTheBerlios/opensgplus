@@ -12,6 +12,19 @@
 USING_GENVIS_NAMESPACE
 OSG_USING_NAMESPACE
 
+void stdSleep (u32 msec)
+{
+#ifdef WIN32
+   Sleep(msec);
+#else
+    if( (msec * 1000) > 1000000) {
+        ::sleep(msec / 1000);
+    } else {
+        ::usleep(msec * 1000);
+    }
+#endif
+}
+
 int main(int argc, char* argv[])
 {
    // We must call Reset() at the start of each frame
@@ -22,7 +35,7 @@ int main(int argc, char* argv[])
    {
      Profiler::the().StartProfile("InnerLoop0");
      {
-       Sleep(8);
+       stdSleep(8);
      }
      Profiler::the().EndProfile("InnerLoop0");
 
@@ -33,7 +46,7 @@ int main(int argc, char* argv[])
        {
 	 Profiler::the().StartProfile("More stuff");
 	 { 
-	   Sleep(2);
+	   stdSleep(2);
 	 }
 	 Profiler::the().EndProfile("More stuff");
        }
@@ -41,7 +54,7 @@ int main(int argc, char* argv[])
 
        Profiler::the().StartProfile("Stuff1");
        {
-	 Sleep(2);
+	 stdSleep(2);
        }
        Profiler::the().EndProfile("Stuff1");
      }
@@ -50,7 +63,7 @@ int main(int argc, char* argv[])
 
      Profiler::the().StartProfile("InnerLoop2");
      {
-       Sleep(4);
+       stdSleep(4);
      }
      Profiler::the().EndProfile("InnerLoop2");
    }

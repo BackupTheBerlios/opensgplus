@@ -24,16 +24,8 @@
 #include "OSGGVGenvisPreprocAction.h"
 #include "OSGGVSingleBVolHierarchy.h"
 #include "OSGGVDoubleTraverserBinary.h"
-#include "OSGGVDoubleTraverserBinaryCoherent.h"
-#include "OSGGVDoubleTraverserCoherent.h"
-#include "OSGGVDoubleTraverserFixed.h"
-#include "OSGGVAllTraverser.h"
+#include "OSGGVPruningTraverser.h"
 #include "OSGGVBVolCollision.h"
-#include "OSGGVDynAlignCollision.h"
-#include "OSGGVPrecompAlignCollision.h"
-#include "OSGGVMinimumDistanceCalc.h"
-#include "OSGGVMinimumDistanceBVol.h"
-#include "OSGGVContactDistanceCalc.h"
 
 
 // Activate the OpenSG namespace

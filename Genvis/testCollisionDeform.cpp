@@ -94,7 +94,6 @@ inline void DeformSphere::moveSphere   (const Matrix& t)
 inline void DeformSphere::deformSphere ()
 {
    const Real32 stdDeviation = 0.1f;
-   static srand(4711);
 
    GeometryPtr geom = GeometryPtr::dcast(m_sphere->getCore());
    GeoPositionsPtr points = geom->getPositions();

@@ -57,8 +57,6 @@ static NodePtr makePerturbedAll (UInt16 numSubdiv,
 				 Real32 radius,
 				 Real32 stdDeviation = 0.1f)
 {
-   static srand(4711);
-
    NodePtr         sphereNode = makeSphere(numSubdiv, radius);
    GeometryPtr     sphere = GeometryPtr::dcast(sphereNode->getCore());
    GeoPositionsPtr points = sphere->getPositions();
@@ -75,7 +73,6 @@ static NodePtr makePerturbedUniform (UInt16 numSubdiv,
 				     Real32 rate = 0.1f)
 {
    static Real32 factor = 1.1f;
-   static srand(4711);
 
    NodePtr         sphereNode = makeSphere(numSubdiv, radius);
    GeometryPtr     sphere = GeometryPtr::dcast(sphereNode->getCore());
@@ -93,7 +90,6 @@ static NodePtr makePerturbedUniform (UInt16 numSubdiv,
 
 void randomTransform (Matrix& m)
 {
-  static srand(4711);
   Vec3f p(rand(), rand(), rand());
   Real32 len = p.length();
   p /= len;
