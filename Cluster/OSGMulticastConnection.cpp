@@ -58,11 +58,19 @@ using std::set;
 
 OSG_USING_NAMESPACE
 
+#ifdef __sgi
+#pragma set woff 1174
+#endif
+
 namespace 
 {
     char cvsid_cpp[] = "@(#)$Id:$";
     char cvsid_hpp[] = OSG_MULTICASTCONNECTIONHEADER_CVSID;
 }
+
+#ifdef __sgi
+#pragma reset woff 1174
+#endif
 
 /** \class osg::MulticastConnection
  *  \ingroup ClusterLib

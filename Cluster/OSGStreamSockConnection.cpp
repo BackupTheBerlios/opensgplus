@@ -155,7 +155,6 @@ void StreamSockConnection::read(MemoryHandle mem,UInt32 size)
 
 void StreamSockConnection::readBuffer()
 {
-    BuffersT::iterator buffer;
     int size;
     int len;
 
@@ -331,7 +330,6 @@ void StreamSockConnection::selectChannel(void)
     Int32 maxnread=0,nread;
     SocketsT::iterator socket;
     Selection selection,result;
-    bool ready=false;
 
     // only one socket?
     if(_sockets.size()==1)

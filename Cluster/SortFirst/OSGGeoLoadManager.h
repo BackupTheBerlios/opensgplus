@@ -98,16 +98,6 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     void balance     (ViewportPtr     vp,
                       UInt32          servers,
                       ResultT        &result);
-    void splitRegion (UInt32          servers,
-                      Int32           min[2],
-                      Int32           max[2],
-                      ResultT        &result);
-    void findBestCut (Int32           min[2],
-                      Int32           max[2],
-                      UInt32          a,
-                      UInt32          b,
-                      Int32          &cut,
-                      Real32         &load);
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -129,6 +119,20 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
   protected:
 
     /*---------------------------------------------------------------------*/
+    /*! \name                      Types                                   */
+    /*! \{                                                                 */
+
+    class RegionLoad {
+    public:
+        RegionLoad(GeoLoad *g=NULL);
+        void update(Int32 amin[2],Int32 amax[2]);
+        Real32   rendering;
+        GeoLoad *geometry;
+    };
+    typedef std::vector<RegionLoad>   RegionLoadVecT;
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
@@ -139,6 +143,17 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
+    void splitRegion (UInt32          servers,
+                      RegionLoadVecT &visible,
+                      Int32           amin[2],
+                      Int32           amax[2],
+                      ResultT        &result);
+    Real32 findBestCut (RegionLoadVecT &visible,
+                        Int32           amin[2],
+                        Int32           amax[2],
+                        Int32          &bestAxis,
+                        Int32          &bestCut);
+
     /*! \}                                                                 */
 
     /*==========================  PRIVATE  ================================*/
@@ -148,7 +163,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.1 2002/02/10 12:51:34 marcus Exp $"
+#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.2 2002/02/11 17:00:09 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
 

@@ -518,7 +518,7 @@ int main(int argc,char **argv)
 
         // create client window
         clientWindow=GLUTWindow::create();
-        clientWindow->setWinID(winid);
+        clientWindow->setId(winid);
 
         // init scene graph
         init(filenames);

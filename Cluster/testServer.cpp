@@ -90,7 +90,7 @@ int main(int argc,char **argv)
         glEnable( GL_NORMALIZE );
         ract=RenderAction::create();
         window     = GLUTWindow::create();
-        window->setWinID(winid);
+        window->setId(winid);
         window->init();
         server     = new ClusterServer(window,
                                        name,

@@ -398,10 +398,6 @@ void SortFirstWindow::traverseGeometry(NodePtr np,ViewportPtr port)
     NodeCorePtr core;
     GeometryPtr geom;
     Vec3f min,max;
-    Pnt3f pnt[8];
-    int i;
-    Real32 minx,miny;
-    Real32 maxx,maxy;
 
     core=np->getCore();
     if(core!=NullFC)
