@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/16 16:22:18 $
 //                                                                            
 //=============================================================================
 
@@ -208,8 +208,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Accessing the cache data.                                    */
    /*! \{                                                                 */ 
-   inline EntryIterator begin () const;
-   inline EntryIterator end   () const;
+   inline EntryIterator begin ();
+   inline EntryIterator end   ();
    CacheData&       getNode  (const EntryValue&   n);
    const CacheData& getNode  (const EntryValue&   n) const;
    CacheData&       getNode  (const OSG::NodePtr& n);
@@ -261,7 +261,6 @@ private:
    OSG::Matrix      m_currentMatrix;
    OSGStaticInput*  m_hierarchy;
 
-   //static HashFunctor s_hasher;
    Entry              m_data;
 };
 
@@ -296,11 +295,11 @@ inline const Matrix& OpenSGCache::getCurrentMatrix () const
    return m_currentMatrix;
 }
 
-inline OpenSGCache::EntryIterator OpenSGCache::begin () const
+inline OpenSGCache::EntryIterator OpenSGCache::begin ()
 {
    return m_data.begin();
 }
-inline OpenSGCache::EntryIterator OpenSGCache::end   () const
+inline OpenSGCache::EntryIterator OpenSGCache::end   ()
 {
    return m_data.end();
 }
@@ -363,7 +362,7 @@ public:
    typedef OpenSGCache                                    Cache;
    typedef GenvisCache                                    CacheData;
    typedef std::map<OSG::NodePtr,OSG::NodePtr,EntryLess>  Entry;
-   typedef Entry::const_iterator                          EntryIterator;
+   typedef Entry::iterator                                EntryIterator;
    typedef std::vector<BVolAdapterBaseP>                  AdapterVector;
    typedef MFNodePtr::StorageType                         ChildContainer;
 
@@ -436,8 +435,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Accessing the cache data.                                    */
    /*! \{                                                                 */
-   inline EntryIterator    begin () const;
-   inline EntryIterator    end   () const;
+   inline EntryIterator    begin ();
+   inline EntryIterator    end   ();
    inline CacheData&       getNode    (const OSG::NodePtr& node) const;
    inline CacheData&       getNode    (const Entry::value_type& node) const;
    inline CacheData&       operator[] (const OSG::NodePtr& node) const;
@@ -543,11 +542,11 @@ inline const Matrix& OpenSGCache::getCurrentMatrix () const
    return m_currentMatrix;
 }
 
-inline OpenSGCache::EntryIterator OpenSGCache::begin () const
+inline OpenSGCache::EntryIterator OpenSGCache::begin ()
 {
    return m_all.begin();
 }
-inline OpenSGCache::EntryIterator OpenSGCache::end   () const
+inline OpenSGCache::EntryIterator OpenSGCache::end   ()
 {
    return m_all.end();
 }
