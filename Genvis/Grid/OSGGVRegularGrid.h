@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/16 16:27:48 $
+//   $Revision: 1.3 $
+//   $Date: 2003/09/19 21:45:59 $
 //                                                                            
 //=============================================================================
 
@@ -82,12 +82,14 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
+   /*! Returns object array of voxel with given index. */
+   inline ContainerType& primitives (const i64& index);
    /*! Returns object array of voxel which corresponds to the iterator state. */
    inline ContainerType& primitives (const RegularGridIter& iter);
    /*! Returns object array of voxel which contains point p. */
    inline ContainerType& primitives (PointClass p);
    /*! Read object array of voxel with index (x, y, z). */
-   inline ContainerType& primitives (unsigned x, unsigned y, unsigned z);
+   inline ContainerType& primitives (u32 x, u32 y, u32 z);
    /*! Read object array of voxel with index (x, y, z). */
    inline ContainerType& primitives (const VectorClass3i& index);
    /*! \}                                                                 */

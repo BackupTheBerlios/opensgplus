@@ -6,15 +6,15 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/16 16:27:48 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:45:59 $
 //                                                                            
 //=============================================================================
 
 
 template <class ADAPTER,class CONTAINER>
 inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
-						    Real   voxels, 
+						    Real     voxels, 
 						    InitMode mode)
   : RegularGridBase(), m_voxel(NULL)
 {
@@ -22,14 +22,20 @@ inline RegularGrid<ADAPTER,CONTAINER>::RegularGrid (const AABox& box,
 }
 
 template <class ADAPTER,class CONTAINER>
+inline RegularGrid<ADAPTER,CONTAINER>::ContainerType& 
+RegularGrid<ADAPTER,CONTAINER>::primitives (const i64& index)
+{
+   return m_voxel[index];
+}
+template <class ADAPTER,class CONTAINER>
 inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
-RegularGrid<ADAPTER,CONTAINER>::primitives(const RegularGridIter& iter)
+RegularGrid<ADAPTER,CONTAINER>::primitives (const RegularGridIter& iter)
 {
    return m_voxel[iter.getIndex()];
 }
 template <class ADAPTER,class CONTAINER>
 inline RegularGrid<ADAPTER,CONTAINER>::ContainerType&
-RegularGrid<ADAPTER,CONTAINER>::primitives (unsigned x, unsigned y, unsigned z)
+RegularGrid<ADAPTER,CONTAINER>::primitives (u32 x, u32 y, u32 z)
 {
    assert(x < getNumVoxelsDim()[0]);
    assert(y < getNumVoxelsDim()[1]);
