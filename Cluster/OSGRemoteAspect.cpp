@@ -553,6 +553,11 @@ bool RemoteAspect::callChanged( FieldContainerPtr &fcp )
  -  private                                                                -
 \*-------------------------------------------------------------------------*/
 
+#ifdef __sgi
+/* fcp is used only if the FDEBUG macro is not removed by the
+   proprocessor. Switch off error for unused fcp parameter. */
+#pragma set woff 3201
+#endif
 
 /** \brief Default create functor
  */
@@ -586,6 +591,10 @@ bool RemoteAspect::_defaultChangedFunction(FieldContainerPtr& fcp,
               fcp.getFieldContainerId() ))
     return true;
 }
+
+#ifdef __sgi
+#pragma reset woff 3201
+#endif
 
 /** \brief Field contayner id mapper
  *

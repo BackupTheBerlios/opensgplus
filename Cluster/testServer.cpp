@@ -6,6 +6,8 @@
 #include <OSGClusterServer.h>
 #include <OSGGLUTWindow.h>
 #include <OSGRenderAction.h>
+#include <OSGOSGWriter.h>
+#include <OSGViewport.h>
 
 OSG_USING_NAMESPACE
 
@@ -30,10 +32,33 @@ void display()
         exit(0);
     }
 }
+
 void reshape( int width, int height )
 {
     cout << "reshape " << width << " " << height << endl;
 	window->resize( width, height );
+}
+
+void key(unsigned char key, int /*x*/, int /*y*/)
+{
+	switch ( key )
+	{
+        case 'd':
+            window->getPort()[0]->getRoot()->dump();
+            break;
+        case 's':
+            ofstream outFileStream( "server.osg" );
+            if( !outFileStream )
+            {
+                SLOG << "Can not open output stream to file: server.osg" << endl;
+            }
+            else
+            {
+                OSGWriter writer( outFileStream, 4 );
+                writer.write( window->getPort()[0]->getRoot() );
+            }
+            break;
+	}
 }
 
 int main(int argc,char **argv)
@@ -83,11 +108,12 @@ int main(int argc,char **argv)
         if(fullscreen)
             glutFullScreen();
         else
-            glutReshapeWindow(500,500);
+            glutReshapeWindow(300,300);
 
         glutPopWindow();
         glutDisplayFunc(display);       
         glutIdleFunc(display);       
+        glutKeyboardFunc(key);
         glutReshapeFunc(reshape);       
         glutSetWindowTitle(name);
         // switch off cursor

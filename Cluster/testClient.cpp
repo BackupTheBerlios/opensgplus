@@ -423,6 +423,9 @@ int main(int argc,char **argv)
                     case 'C':
                         type='C';
                         break;
+                    case 'P':
+                        type='P';
+                        break;
                     case 'M':
                         type='M';
                         break;
@@ -495,6 +498,13 @@ int main(int argc,char **argv)
                 sortfirst=SortFirstWindow::create();
                 beginEditCP(sortfirst);
 //                sortfirst->setCompose(false);
+                endEditCP(sortfirst);
+                clusterWindow=sortfirst;
+                break;
+            case 'P':
+                sortfirst=SortFirstWindow::create();
+                beginEditCP(sortfirst);
+                sortfirst->setCompose(false);
                 endEditCP(sortfirst);
                 clusterWindow=sortfirst;
                 break;

@@ -247,7 +247,6 @@ void SortFirstWindow::serverSwap( WindowPtr window,
     if(getCompose())
     {
         ViewportPtr vp=window->getPort()[0];
-        TileCameraDecoratorPtr deco=TileCameraDecoratorPtr::dcast(vp->getCamera());
         // send image
         _bufferHandler.send(
             *_connection,
@@ -333,6 +332,19 @@ void SortFirstWindow::clientPreSync( void )
                       Window::HeightFieldMask);
         }
     }
+    else
+    {
+        beginEditCP(ptr,
+                    Window::WidthFieldMask|
+                    Window::HeightFieldMask);
+        {
+            setSize(1280,
+                    1024);
+        }
+        endEditCP(ptr,
+                  Window::WidthFieldMask|
+                  Window::HeightFieldMask);
+    }
 
     if(_loadManager==NULL)
     {
@@ -348,7 +360,6 @@ void SortFirstWindow::clientPreSync( void )
     // distribute work
     // replace with load balancing algorithm !!!!!
     int i;
-    int num=getServers().size()+1;
     beginEditCP(ptr,
                 SortFirstWindow::LeftFieldMask|
                 SortFirstWindow::RightFieldMask|
@@ -377,7 +388,7 @@ void SortFirstWindow::clientPreSync( void )
  *  one tile is rendered by the client
  */
 
-void SortFirstWindow::clientRender( RenderAction *action )
+void SortFirstWindow::clientRender( RenderAction *  /* action */ )
 {
 //    Inherited::clientRender(action);
 }

@@ -72,7 +72,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.5 2002/02/16 04:28:10 vossg Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.6 2002/02/27 15:36:10 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGERHEADER_CVSID;
 }
 
@@ -273,10 +273,9 @@ void GeoLoadManager::splitRegion(UInt32          regions,
     RegionLoadVecT visibleA;
     RegionLoadVecT visibleB;
     RegionLoadVecT::iterator vi;
-    Real32 load;
 
     // search for best cut
-    load=findBestCut(visible,amin,amax,axis,cut);
+    findBestCut(visible,amin,amax,axis,cut);
     // create new regions
     maxA[axis  ]=cut;
     maxA[axis^1]=amax[axis^1];
