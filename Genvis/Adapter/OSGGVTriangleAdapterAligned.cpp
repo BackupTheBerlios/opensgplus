@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:33:57 $
 //                                                                            
 //=============================================================================
 
@@ -578,7 +578,7 @@ u8* BVolGroupAligned<BVOL>::texTable (const OccTableType& mask)
 //(x)*(x)+(y)*(y)+(z)*(z)
 void BVolGroupAligned<AABox>::draw ()
 {
-   static GLfloat denom  = acosf(BVOL::unitDopAngle());
+   static GLfloat denom  = acos(BVol::unitDopAngle());
    static GLfloat factor = 1.25f*RAND_MAX;
 
    glEnable(GL_TEXTURE_1D);
@@ -706,7 +706,7 @@ void BVolGroupAligned<AABox>::draw ()
    glBegin(GL_TRIANGLE_FAN);
    m1 = 0.5f*(getBVol().maxVector()[0]-getBVol().minVector()[0]);
    m2 = 0.5f*(getBVol().maxVector()[2]-getBVol().minVector()[2]);
-   //radius = 0.5f*(getBVol().maxVector()[1]-getBVol().minVector()[1])/BVOL::unitDopRadius();
+   //radius = 0.5f*(getBVol().maxVector()[1]-getBVol().minVector()[1])/BVol::unitDopRadius();
    //tm1 = radius*m2; tm2 = radius*m1;
    radius = 0.5f*(getBVol().maxVector()[1]-getBVol().minVector()[1]);
    tm1 = atanf(m2/radius)/denom; tm2 = atanf(m1/radius)/denom;

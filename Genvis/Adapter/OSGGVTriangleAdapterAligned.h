@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:33:57 $
 //                                                                            
 //=============================================================================
 
@@ -154,7 +154,7 @@ public:
    typedef BVolAdapter<BVOL>                           Inherited;
    typedef OpenSGTriangleAligned<BasicTraits,BVOL>     Self;
    typedef FactoryHeap<Self>                           FactoryType;
-   typedef typename DataAligned<Real,BVOL::Size>       Data;
+   typedef DataAligned<Real,BVOL::Size>                Data;
    enum { OccTableHighestBit = Data::OccTableHighestBit, 
 	  OccTableBits       = Data::OccTableBits };
    typedef Data::OccTableType                          OccTableType;
@@ -206,8 +206,8 @@ protected:
    void setPoint (unsigned k, Real len, VectorClass local);
    /*---------------------------------------------------------------------*/
 
-   BVOL                         m_bvol;
-   DataAligned<Real,BVOL::Size> m_data;
+   BVOL m_bvol;
+   Data m_data;
 };
 
 template <class BasicTraits, class BVOL>
@@ -304,7 +304,7 @@ protected:
    static u8* texTable (const OccTableType& mask);
    /*---------------------------------------------------------------------*/
 
-   DataAligned<Real,BVOL::Size> m_data;
+   Data m_data;
 };
 
 template <class BVOL>
