@@ -310,7 +310,7 @@ void SortFirstWindow::clientInit( void )
 void SortFirstWindow::clientPreSync( void )
 {
     SortFirstWindowPtr ptr=SortFirstWindowPtr(this);
-    if(getCompose())
+//    if(getCompose())
     {
         if(getClientWindow() == NullFC)
         {
@@ -332,6 +332,7 @@ void SortFirstWindow::clientPreSync( void )
                       Window::HeightFieldMask);
         }
     }
+#if 0
     else
     {
         beginEditCP(ptr,
@@ -345,13 +346,14 @@ void SortFirstWindow::clientPreSync( void )
                   Window::WidthFieldMask|
                   Window::HeightFieldMask);
     }
-
+#endif
     if(_loadManager==NULL)
     {
         _loadManager=new GeoLoadManager();
-        _loadManager->add( getPort()[0]->getRoot() );
+        _loadManager->estimatePerformace();
     }
     GeoLoadManager::ResultT region;
+    _loadManager->update( getPort()[0]->getRoot() );
     _loadManager->balance(getPort()[0],
                           getServers().size(),
                           false,
@@ -375,6 +377,13 @@ void SortFirstWindow::clientPreSync( void )
         getBottom() [i]=region[4*i + 1];
         getRight()  [i]=region[4*i + 2];
         getTop()    [i]=region[4*i + 3];
+
+        cout << region[4*i + 0] << " ";
+        cout << region[4*i + 1] << " ";
+        cout << region[4*i + 2] << " ";
+        cout << region[4*i + 3] << endl;
+
+
     }
     endEditCP(ptr,
               SortFirstWindow::LeftFieldMask|

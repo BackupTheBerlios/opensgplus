@@ -50,13 +50,16 @@
 
 OSG_BEGIN_NAMESPACE
 
+class Action;
+
 class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
 {
     /*==========================  PUBLIC  =================================*/
   public:
 
-    typedef std::vector<GeoLoad>        GeoLoadVecT;
-    typedef std::vector<Int32>          ResultT;
+    typedef std::vector<GeoLoad>                   GeoLoadLstT;
+    typedef std::map<UInt32,GeoLoadLstT::iterator> GeoLoadMapT;
+    typedef std::vector<Int32>                     ResultT;
 
     /*---------------------------------------------------------------------*/
     /*! \name                      dcast                                   */
@@ -94,11 +97,12 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                 Load balancing functions                     */
     /*! \{                                                                 */
 
-    void add         (NodePtr node);
+    void update      (NodePtr node);
     void balance     (ViewportPtr     vp,
                       UInt32          regions,
                       bool            shrink,
                       ResultT        &result);
+    void estimatePerformace();
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -123,12 +127,16 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                      Types                                   */
     /*! \{                                                                 */
 
-    class RegionLoad {
-    public:
-        RegionLoad(GeoLoad *g=NULL);
-        void update(Int32 amin[2],Int32 amax[2]);
-        Real32   rendering;
-        GeoLoad *geometry;
+    class RegionLoad 
+    {
+      public:
+        RegionLoad      ( GeoLoad *load=NULL );
+        Real32   getCost( void               );
+        GeoLoad *getLoad( void               );
+        void     setCost( Real32 cost        );
+      private:
+        Real32   _cost;
+        GeoLoad *_load;
     };
     typedef std::vector<RegionLoad>   RegionLoadVecT;
 
@@ -137,14 +145,18 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    GeoLoadVecT           _geoLoad;
-    FrustumVolume         _frustum;
+    GeoLoadLstT           _geoLoad;
+    Real64                _faceCostInvisible;
+    Real64                _faceCostVisible;
+    Real64                _faceCostVisibleArea;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Member                                  */
     /*! \{                                                                 */
 
+    double runFaceBench(GLuint dlist,UInt32 size,Real32 visible);
+    void updateSubtree (NodePtr &node,GeoLoadMapT &loadMap);
     void splitRegion   (UInt32          regions,
                         RegionLoadVecT &visible,
                         Int32           amin[2],
@@ -155,17 +167,24 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoadManager
                         Int32           amax[2],
                         Int32          &bestAxis,
                         Int32          &bestCut);
+    double calcFaceRenderingCost(GeoLoad *load,
+                                 Int32 amin[2],Int32 amax[2]);
 
     /*! \}                                                                 */
 
     /*==========================  PRIVATE  ================================*/
   private:
-
+    friend class RegionLoad;
 };
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADMANAGERHEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.3 2002/02/15 17:45:04 marcus Exp $"
+#include "OSGGeoLoadManager.inl"
+
+#define OSG_GEOLOADMANAGER_HEADER_CVSID "@(#)$Id: OSGGeoLoadManager.h,v 1.4 2002/04/12 12:02:44 marcus Exp $"
 
 #endif /* _GEOLOADMANAGER_H_ */
+
+
+
 

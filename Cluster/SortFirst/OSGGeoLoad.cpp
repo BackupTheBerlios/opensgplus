@@ -42,6 +42,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "OSGConfig.h"
 #include "OSGBaseFunctions.h"
@@ -56,7 +57,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.7 2002/02/16 04:28:10 vossg Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.8 2002/04/12 12:02:44 marcus Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -70,12 +71,6 @@ namespace
  *
  **/
 
-// how to estimate ? 
-Real32 GeoLoad::_primTransformPerSec=10000000;
-Real32 GeoLoad::_primRenderPerSec   =1000000;
-Real32 GeoLoad::_pixelWritePerSec   =2500000;
-Real32 GeoLoad::_pixelReadPerSec    =2500000;
-
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
@@ -86,6 +81,7 @@ GeoLoad::GeoLoad(NodePtr node):
     _node(node),
     _faces(0)
 {
+    _faceDistribution.resize(FACE_DISTRIBUTION_SAMPLING_COUNT);
     updateGeometry();
 } 
 
@@ -95,12 +91,13 @@ GeoLoad::GeoLoad(NodePtr node):
 GeoLoad::GeoLoad(const GeoLoad &source):
     _node(source._node)
 {
-    _min[0]  = source._min[0];
-    _min[1]  = source._min[1];
-    _max[0]  = source._max[0];
-    _max[1]  = source._max[1];
-    _faces   = source._faces;
-    _visible = source._visible;
+    _min[0]           = source._min[0];
+    _min[1]           = source._min[1];
+    _max[0]           = source._max[0];
+    _max[1]           = source._max[1];
+    _faces            = source._faces;
+    _visible          = source._visible;
+    _faceDistribution = source._faceDistribution;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -110,35 +107,6 @@ GeoLoad::GeoLoad(const GeoLoad &source):
  **/
 GeoLoad::~GeoLoad(void)
 {
-}
-
-
-/** line clipping 
- *  
- * Clip lines of the bounding volume at the front clipping plane
- * The points in pnt are sorted so that the invertation of one
- * bit of the "from" index results in a valid "to" index of en edge
- * 
- **/
-
-void GeoLoad::clipLine(int from,
-                       Real32 rNear,
-                       vector<Pnt3f> &pnt,
-                       vector<Pnt3f> &clip) 
-{
-    int to;
-    Real32 l;
-    for(int i=1;i<8;i<<=1)
-    {
-        to=from^i;
-        // different sides ?
-        if( (pnt[from][2] < rNear) !=
-            (pnt[to][2]   < rNear) )
-        {
-            l=(rNear - pnt[from][2]) / (pnt[to][2] - pnt[from][2]);
-            clip.push_back(Pnt3f( pnt[from] + ( pnt[to] - pnt[from] ) * l ));
-        }
-    }
 }
 
 /** Update the view dependend load parameters
@@ -214,14 +182,37 @@ void GeoLoad::updateView(Matrix &viewing,
         _max[0]=(Int32)(width * ( maxx + 1.0 ) / 2.0);
         _min[1]=(Int32)(height * ( miny + 1.0 ) / 2.0);
         _max[1]=(Int32)(height * ( maxy + 1.0 ) / 2.0);
+        if(_min[0]<0) _min[0]=0;
+        if(_min[1]<0) _min[1]=0;
+        if(_max[0]>=width ) _max[0]=width-1;
+        if(_max[1]>=height) _max[1]=height-1;
+
         _visible = true;
     }
 }
 
+/** Update geometry dependend load parameters
+ * 
+ * This funciton should only be called when geometies have changed.
+ *
+ * \todo Use a simple cost estimation mechanism for rapidly changeing
+ *       geometries.
+ *
+ **/
 void GeoLoad::updateGeometry()
 {
-    NodeCorePtr core;
-    GeometryPtr geo;
+    const OSG::Volume *volume = &(_node->getVolume().getInstance());
+    FaceIterator       f;
+    int                p,i;
+    Vec3f              vmin,vmax;
+    Pnt3f              pos;
+    Real32             min,max;
+    PrimitiveIterator  it;
+    Real32             sum;
+    UInt32             faceStart[FACE_DISTRIBUTION_SAMPLING_COUNT];
+    UInt32             faceCount=0;
+    NodeCorePtr        core;
+    GeometryPtr        geo;
 
     _faces = 0;
     core=_node->getCore();
@@ -230,10 +221,66 @@ void GeoLoad::updateGeometry()
     geo=GeometryPtr::dcast(core);
     if(geo == NullFC)
         return;
+
     // count faces
     for(FaceIterator f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
     {
         ++_faces;
+    }
+
+    // get face distribution
+    Plane plane[6]={
+        Plane(Vec3f( 1, 0, 0)            ,Pnt3f(0,0,0)),
+        Plane(Vec3f( 0, 1, 0)            ,Pnt3f(0,0,0)),
+        Plane(Vec3f( 0, 0, 1)            ,Pnt3f(0,0,0)),
+        Plane(Vec3f( 1, 1, 1)*(1/sqrt(3.0)),Pnt3f(0,0,0)),
+        Plane(Vec3f(-1, 1, 1)*(1/sqrt(3.0)),Pnt3f(1,0,0)),
+        Plane(Vec3f( 1,-1, 1)*(1/sqrt(3.0)),Pnt3f(0,1,0))
+    };
+    // clear tab
+    for(i=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
+        faceStart[i]=0;
+    // get volume min,max
+    volume->getBounds(vmin,vmax);
+    // get distribution for x,y,z axis and the three main diagonals
+    for(f=geo->beginFaces() ; f!=geo->endFaces() ; ++f)
+    {
+        for(i=0;i<6;i++)
+        {
+            for(p=0;p<f.getLength();p++)
+            {
+                pos=f.getPosition(p) - vmin;
+                pos[0]/=vmax[0]-vmin[0];
+                pos[1]/=vmax[1]-vmin[1];
+                pos[2]/=vmax[2]-vmin[2];
+                if(p==0)
+                {
+                    max=min=plane[i].distance(pos);
+                }
+                else
+                {
+                    max=osgMax(max,plane[i].distance(pos));
+                    min=osgMin(min,plane[i].distance(pos));
+                }
+                //
+            }
+            if(i>=3)
+            {
+                min/=sqrt(3.0);
+                max/=sqrt(3.0);
+            }
+            faceStart[ (int)(ceil(min*
+                                  (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
+            faceStart[ (int)(ceil((1-max)*
+                                  (FACE_DISTRIBUTION_SAMPLING_COUNT-1)))]++;
+            faceCount+=2;
+        }
+    }
+    // cummulate distribution
+    for(i=0,sum=0;i<FACE_DISTRIBUTION_SAMPLING_COUNT;i++)
+    {
+        sum+=(faceStart[i]/(float)faceCount);
+        _faceDistribution[i]=sum;
     }
 }
     
@@ -246,12 +293,13 @@ GeoLoad& GeoLoad::operator = (const GeoLoad &source)
 {
     if(this == &source)
         return *this;
-    _min[0]  = source._min[0];
-    _min[1]  = source._min[1];
-    _max[0]  = source._max[0];
-    _max[1]  = source._max[1];
-    _faces   = source._faces;
-    _visible = source._visible;
+    _min[0]           = source._min[0];
+    _min[1]           = source._min[1];
+    _max[0]           = source._max[0];
+    _max[1]           = source._max[1];
+    _faces            = source._faces;
+    _visible          = source._visible;
+    _faceDistribution = source._faceDistribution;
     _node = source._node;
     return *this;
 }
@@ -272,75 +320,10 @@ void GeoLoad::dump(void)
         SLOG << "invisible " << endl; 
     }
     SLOG << "Faces       :" << _faces << endl;
-    SLOG << "Server load :" << getServerLoad(_min,_max,false) << endl;
-    SLOG << "Client load :" << getClientLoad(_min,_max,false) << endl;
 }
 
 /*-------------------------------------------------------------------------*/
 /*                             get                                         */
-
-Real32 GeoLoad::getServerLoad(Int32 min[2],
-                              Int32 max[2],
-                              bool clientRendering)
-{
-    if(clientRendering || _visible==false)
-        return 0;
-
-    Int32 pixMin[2];
-    Int32 pixMax[2];
-
-    pixMin[0] = osgMax(min[0],_min[0]);
-    pixMin[1] = osgMax(min[1],_min[1]);
-    pixMax[0] = osgMin(max[0],_max[0]);
-    pixMax[1] = osgMin(max[1],_max[1]);
-
-    if(pixMin[0] > pixMax[0] ||
-       pixMin[1] > pixMax[1])
-    {
-        // no overlap. should cause no load
-        return 0;
-    }
-
-    Real32 pixels=(pixMax[0] - pixMin[0] + 1) * (pixMax[1] - pixMin[1] + 1);
-    Real32 size=pixels / ((_max[0] - _min[0] + 1) * (_max[1] - _min[1] + 1));
-
-    Real32 t = 
-        pixels / _pixelWritePerSec +
-        _faces / _primTransformPerSec +
-        _faces * size / _primRenderPerSec;
-
-    return t;
-}
-
-Real32 GeoLoad::getClientLoad(Int32 min[2],
-                              Int32 max[2],
-                              bool clientRendering)
-{
-    Int32 pixMin[2];
-    Int32 pixMax[2];
-
-    if(_visible==false)
-        return 0;
-
-    pixMin[0] = osgMax(min[0],_min[0]);
-    pixMin[1] = osgMax(min[1],_min[1]);
-    pixMax[0] = osgMin(max[0],_max[0]);
-    pixMax[1] = osgMin(max[1],_max[1]);
-    Real32 pixels=(pixMax[0] - pixMin[0] + 1) * (pixMax[1] - pixMin[1] + 1);
-
-    Real32 t,size;
-    if(clientRendering)
-    {
-        size=pixels / ((_max[0] - _min[0] + 1) * (_max[1] - _min[1] + 1));
-        t = _faces / _primTransformPerSec +
-            _faces * size / _primRenderPerSec;
-    }
-    else
-    {
-        t=pixels / _pixelReadPerSec;
-    }
-    return t;
-}
 
 /** Return min valuse in window coordinates
  **/
@@ -358,9 +341,82 @@ const Int32 *GeoLoad::getMax()
 
 /** Is the geometry visible in the current viewport
  **/
-bool GeoLoad::isVisible()
+bool GeoLoad::isVisible() const
 {
     return _visible;
+}
+
+/** Get Node ptr
+ **/
+NodePtr GeoLoad::getNode() const
+{
+    return _node;
+}
+
+/** Get number of faces in the geometry
+ **/
+UInt32 GeoLoad::getFaces()
+{
+    return _faces;
+}
+
+/** Which part of the faces are visible
+ **/
+Real32 GeoLoad::getVisibleFraction( const Int32 wmin[2],
+                                    const Int32 wmax[2] )
+{
+    Int32 viswmin[2];
+    Int32 viswmax[2];
+    Real32 faceFraction,x,y;
+
+    if(_visible==false)
+        return 0;
+
+    // get visible area
+    if(!getVisibleArea(wmin,wmax,viswmin,viswmax))
+    {
+        // not in region
+        return 0;
+    }
+    // geometry complete in region?
+    if(viswmin[0] == _min[0] &&
+       viswmin[1] == _min[1] &&
+       viswmax[0] == _min[0] &&
+       viswmax[1] == _min[1])
+    {
+        faceFraction=1;
+    }
+    else
+    {
+        x=1.0/(_max[0]-_min[0]+1);
+        y=1.0/(_max[1]-_min[1]+1);
+        faceFraction =
+            (getFaceDistribution(1.0 - (viswmin[0] - _min[0]    ) * x) +
+             getFaceDistribution(      (viswmax[0] - _min[0] + 1) * x) - 1) *
+            (getFaceDistribution(1.0 - (viswmin[1] - _min[1]    ) * y) +
+             getFaceDistribution(      (viswmax[1] - _min[1] + 1) * y) - 1);
+    }
+
+    return faceFraction;
+}
+
+/** Which area overlaps the given region
+ **/
+bool GeoLoad::getVisibleArea    ( const Int32 wmin[2],
+                                  const Int32 wmax[2],
+                                  Int32 viswmin[2],
+                                  Int32 viswmax[2]      )
+{
+    viswmin[0] = osgMax(wmin[0],_min[0]);
+    viswmin[1] = osgMax(wmin[1],_min[1]);
+    viswmax[0] = osgMin(wmax[0],_max[0]);
+    viswmax[1] = osgMin(wmax[1],_max[1]);
+    // not in region
+    if(viswmin[0] > viswmax[0] ||
+       viswmin[1] > viswmax[1])
+        return false;
+    else
+        return true;
 }
 
 /** Check if one part of the geometry lays in the given region
@@ -381,37 +437,23 @@ bool GeoLoad::checkRegion( Int32 min[2],
         return true;
 }
 
-
-Real32 GeoLoad::getRenderingLoad( Int32 min[2],
-                                  Int32 max[2] )
+Real32 GeoLoad::getFaceDistribution(Real32 cut)
 {
-    Real32 load,a,b,s;
-    Int32 pixMin[2];
-    Int32 pixMax[2];
+    if(cut<=0)
+    {
+        return 0.0;
+    }
+    if(cut >=1.0)
+    {
+        return 1.0;
+    }
+    cut*=FACE_DISTRIBUTION_SAMPLING_COUNT-1;
+    
+    UInt32 a=(UInt32)(floor(cut));
+    Real32 f=cut-a;
 
-    if(_visible==false)
-        return 0;
-
-    pixMin[0] = osgMax(min[0],_min[0]);
-    pixMin[1] = osgMax(min[1],_min[1]);
-    pixMax[0] = osgMin(max[0],_max[0]);
-    pixMax[1] = osgMin(max[1],_max[1]);
-    // not in region
-    if(pixMin[0] > pixMax[0] ||
-       pixMin[1] > pixMax[1])
-        return 0;
-    load=_faces;
-    s = _max[0] - _min[0] + 1;
-    a = (pixMin[0] - _min[0]    ) / s;
-    b = (pixMax[0] - _min[0] + 1) / s;
-    load *= 2*b - b*b - a*a;
-
-    s = _max[1] - _min[1] + 1;
-    a = (pixMin[1] - _min[1]    ) / s;
-    b = (pixMax[1] - _min[1] + 1) / s;
-    load *= 2*b - b*b - a*a;
-
-    return load;
+    return _faceDistribution[a] +
+        (_faceDistribution[a+1] - _faceDistribution[a]) * f;
 }
 
 

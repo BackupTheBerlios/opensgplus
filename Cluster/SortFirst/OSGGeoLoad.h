@@ -50,6 +50,8 @@
 
 OSG_BEGIN_NAMESPACE
 
+#define FACE_DISTRIBUTION_SAMPLING_COUNT 16
+
 class OSG_CLUSTERLIB_DLLMAPPING GeoLoad 
 {
     /*==========================  PUBLIC  =================================*/
@@ -80,16 +82,9 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
                              UInt32 width,
                              UInt32 height                );
     void updateGeometry    (                              );
-    Real32 getServerLoad   ( Int32 min[2],
-                             Int32 max[2],
-                             bool clientRendering         );
-    Real32 getClientLoad   ( Int32 min[2],
-                             Int32 max[2],
-                             bool clientRendering         );
     bool checkRegion       ( Int32 min[2],
                              Int32 max[2]                 );
-    Real32 getRenderingLoad( Int32 min[2],
-                             Int32 max[2]                 );
+    bool isVisible         (                              ) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -101,9 +96,16 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                      Get                                     */
     /*! \{                                                                 */
 
+    NodePtr           getNode() const;
     const Int32 *     getMin();
     const Int32 *     getMax();
-    bool              isVisible();
+    UInt32            getFaces();
+    Real32            getVisibleFraction( const Int32 wmin[2],
+                                          const Int32 wmax[2] );
+    bool              getVisibleArea    ( const Int32 wmin[2],
+                                          const Int32 wmax[2],
+                                                Int32 viswmin[2],
+                                                Int32 viswmax[2]      );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -141,10 +143,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*! \name                     utilities                                */
     /*! \{                                                                 */
 
-    void clipLine(         int from,
-                           Real32 near,
-                           vector<Pnt3f> &pnt,
-                           vector<Pnt3f> &clip);
+    Real32 getFaceDistribution(Real32 cut);
 
     /*! \}                                                                 */
 
@@ -157,6 +156,7 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     UInt32                _faces;
     Int32                 _min[2];
     Int32                 _max[2];
+    vector<Real32>        _faceDistribution;
     bool                  _visible;
 
     /*! \}                                                                 */
@@ -164,20 +164,10 @@ class OSG_CLUSTERLIB_DLLMAPPING GeoLoad
     /*==========================  PRIVATE  ================================*/
   private:
 
-    /*---------------------------------------------------------------------*/
-    /*! \name                static configuration                          */
-    /*! \{                                                                 */
-
-    static Real32        _primRenderPerSec;
-    static Real32        _primTransformPerSec;
-    static Real32        _pixelReadPerSec;
-    static Real32        _pixelWritePerSec;
-
-    /*! \}                                                                 */
 };
 
 OSG_END_NAMESPACE
 
-#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.5 2002/02/15 17:45:04 marcus Exp $"
+#define OSG_GEOLOADHEADER_CVSID "@(#)$Id: OSGGeoLoad.h,v 1.6 2002/04/12 12:02:44 marcus Exp $"
 
 #endif /* _GEOLOAD_H_ */

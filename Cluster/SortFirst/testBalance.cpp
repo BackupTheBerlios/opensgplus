@@ -12,13 +12,17 @@
 // Activate the OpenSG namespace
 OSG_USING_NAMESPACE
 
+bool           doSave=false;
 GeoLoadManager loadManager;
+char          *dumpImage="balance";
+int            dumpImageNr=0;
 
 class MySceneManager:public SimpleSceneManager
 {
 public:
     MySceneManager(){}
     virtual void redraw( void ) {
+        static bool first=true;
         int i;
         GeoLoadManager::ResultT region;
         if (_internalRoot == NullFC)
@@ -30,8 +34,13 @@ public:
         updateHighlight();
         _win->activate();
         _win->frameInit();
-
-        loadManager.balance(_win->getPort()[0],16,false,region);
+        if(first)
+        {
+            loadManager.estimatePerformace();
+            first=false;
+        }
+        loadManager.update(_win->getPort()[0]->getRoot());
+        loadManager.balance(_win->getPort()[0],4,false,region);
         _win->renderAllViewports( _action );
         glPushMatrix();
         glLoadIdentity();
@@ -44,12 +53,13 @@ public:
         glEnable(GL_COLOR_MATERIAL);
         for(i=0;i<region.size();i+=4)
         {
-/*
+#if 0
+            cout << "Region: ";
             cout << region[i+0] << " ";
             cout << region[i+1] << " ";
             cout << region[i+2] << " ";
             cout << region[i+3] << endl;
-*/
+#endif
             glBegin(GL_LINE_LOOP);
             glColor3f(1, 1, 0);
             glVertex3f(region[i+0],region[i+1],0);
@@ -63,7 +73,31 @@ public:
         glPopMatrix();
         glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
-        
+
+        if(doSave)
+        {
+            Int32 w,h;
+            w=_win->getPort(0)->getPixelWidth();
+            h=_win->getPort(0)->getPixelHeight();
+            Image image(Image::OSG_RGB_PF,
+                        w,h,1,
+                        1,1,0.0,
+                        NULL,true);
+            ImageFileType *imgTransType=ImageFileHandler::the().getFileType("JPEG");
+            char filename[256];
+            if(imgTransType==NULL)
+            {
+                cerr << "Unknown image trans type" << endl;
+                return;
+            }
+            sprintf(filename,"%s_%d.jpg",dumpImage,dumpImageNr++);
+            // read buffer data into image
+            glPixelStorei(GL_PACK_ALIGNMENT,1);
+            glReadPixels(0,0,w,h,
+                         GL_RGB,GL_UNSIGNED_BYTE,
+                         image.getData());
+            imgTransType->write(image,filename);
+        }
         _win->swap();
         _win->frameExit();
     }
@@ -104,6 +138,8 @@ void key(unsigned char key, int , int )
     switch(key)
     {
     case 27:    exit(1);
+    case 'm':   doSave=!doSave;
+                break;
     case 'a':   mgr->setHighlight(scene);
                 break;
     case 's':   mgr->setHighlight(NullFC);
@@ -208,9 +244,8 @@ int main (int argc, char **argv)
 
     mgr->showAll();
 
-    loadManager.add(scene);
-
     // GLUT main loop
+    glutReshapeWindow(720,576);
     glutMainLoop();
 
     return 0;

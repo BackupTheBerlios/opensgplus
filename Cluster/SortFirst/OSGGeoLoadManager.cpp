@@ -42,9 +42,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <GL/glu.h>
 
-#include "algorithm"
-#include "OSGConfig.h"
+#include <algorithm>
+#include <OSGConfig.h>
+#include <OSGDrawAction.h>
+#include <OSGGeometry.h>
+#include <OSGSimpleGeometry.h>
 
 #include "OSGGeoLoadManager.h"
 
@@ -72,23 +76,14 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.6 2002/02/27 15:36:10 marcus Exp $";
-    static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGERHEADER_CVSID;
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.7 2002/04/12 12:02:44 marcus Exp $";
+    static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGER_HEADER_CVSID;
+    static Char8 cvsid_inl[] = OSG_GEOLOADMANAGER_INLINE_CVSID;
 }
 
 #ifdef __sgi
 #pragma reset woff 1174
 #endif
-
-GeoLoadManager::RegionLoad::RegionLoad(GeoLoad *g):
-    geometry(g),
-    rendering(0)
-{
-}
-void GeoLoadManager::RegionLoad::update(Int32 amin[2],Int32 amax[2])
-{
-    rendering = geometry->getRenderingLoad(amin,amax);
-}
 
 double sort_t=0;
 double sortrow_t=0;
@@ -100,9 +95,19 @@ double bestcutB_t=0;
 /*-------------------------------------------------------------------------*/
 /*                            Constructors                                 */
 
-/*! Constructor documentation
+/*! Constructor
  */
 GeoLoadManager::GeoLoadManager(void) 
+{
+}
+
+/*! Copy Constructor
+ */
+GeoLoadManager::GeoLoadManager(const GeoLoadManager &source):
+    _geoLoad(source._geoLoad),
+    _faceCostInvisible(source._faceCostInvisible),
+    _faceCostVisible(source._faceCostVisible),
+    _faceCostVisibleArea(source._faceCostVisibleArea)
 {
 }
 
@@ -124,32 +129,30 @@ GeoLoadManager& GeoLoadManager::operator = (const GeoLoadManager &source)
 {
     if(this == &source)
         return *this;
-
-    // free mem alloced by members of 'this'
-
-    // alloc new mem for members
-
-    // copy
+    _geoLoad = source._geoLoad;
+    _faceCostInvisible = source._faceCostInvisible;
+    _faceCostVisible = source._faceCostVisible;
+    _faceCostVisibleArea = source._faceCostVisibleArea;
     return *this;
 }
 
 
-/** Add all geometry nodes in the given tree
+/** Update the load balancing information
  **/
-void GeoLoadManager::add(NodePtr node)
+void GeoLoadManager::update(NodePtr node)
 {
-    // is nodecore a geometry?
-    if(node->getCore() != NullFC &&
-       GeometryPtr::dcast(node->getCore()) != NullFC)
+    GeoLoadMapT loadMap;
+
+    // collect old load obects
+    for(GeoLoadLstT::iterator gI=_geoLoad.begin();gI!=_geoLoad.end();++gI)
     {
-        _geoLoad.push_back(GeoLoad(node));
+        loadMap[gI->getNode().getFieldContainerId()] = gI;
     }
-    // handle all childs
-    for(MFNodePtr::iterator n=node->getMFChildren()->begin();
-        n!=node->getMFChildren()->end();
-        ++n)
+    updateSubtree(node,loadMap);
+    // remove unused load objects
+    for(GeoLoadMapT::iterator mI=loadMap.begin();mI!=loadMap.end();++mI)
     {
-        add(*n);
+        _geoLoad.erase(mI->second);
     }
 }
 
@@ -188,7 +191,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     vp->getCamera()->getViewing   ( viewing   ,width,height );
     vp->getCamera()->getProjection( projection,width,height );
     visible.reserve(_geoLoad.size());
-    for(GeoLoadVecT::iterator l=_geoLoad.begin() ; l!=_geoLoad.end() ; ++l)
+    for(GeoLoadLstT::iterator l=_geoLoad.begin() ; l!=_geoLoad.end() ; ++l)
     {
         // update view dependent values
         l->updateView(viewing,
@@ -240,10 +243,15 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     // calculate region cost
     for(vi=visible.begin();vi!=visible.end();vi++)
     {
-        vi->update(wmin,wmax);
+        vi->setCost(
+            calcFaceRenderingCost(
+                vi->getLoad(),wmin,wmax));
     }
     if(regions>1)
+    {
         splitRegion(regions,visible,wmin,wmax,result);
+    }
+    else
     {
         result.insert(result.end(),wmin,wmin+2);
         result.insert(result.end(),wmax,wmax+2);
@@ -256,6 +264,168 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     printf("Best cutA: %10.8f\n",bestcutA_t);
     printf("Best cutB: %10.8f\n",bestcutB_t);
     printf("\n");
+}
+
+
+/** check face rendering performance
+ * 
+ * This method will render a display list with vertices in x,y range [0.1].
+ * size specifies the viewport size. The vertices will be scaled to fit
+ * exactly in to the viewport. The parameter visible defines which share
+ * of the geometry should be visible. 1: all is visible, 0.5 half of the
+ * geometry is visible.
+ *
+ * \param dlist     display list
+ * \param size      viewport size
+ * \param visible   visible portion of the geometry
+ *
+ **/
+double GeoLoadManager::runFaceBench(GLuint dlist,UInt32 size,Real32 visible)
+{
+    glViewport(0, 0, size, size);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef(1.0-visible,0,0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glPushMatrix();
+    gluOrtho2D(0,1,0,1);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glFinish();
+    // start bench
+    Time t=-getSystemTime();
+    glCallList(dlist);
+    glFinish();
+    t+=getSystemTime();
+    // end bench
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    return t;
+}
+
+void GeoLoadManager::estimatePerformace()
+{
+    double faces=0;
+
+    // create display list
+    GLuint dList1 = glGenLists(1);
+    glNewList(dList1, GL_COMPILE);
+    float step = .1;
+    int count  = 500;
+    glBegin(GL_TRIANGLE_STRIP);
+    for(float y=0;y<1;y+=step)
+    {        
+        glVertex3f(0,y     ,-1);
+        glVertex3f(0,y+step,-1);
+        for(float x=0;x<1;x+=step)
+        {
+            glVertex3f(x,y     ,-1);
+            glVertex3f(x,y+step,-1);
+            faces+=2;
+        }
+    }
+    glEnd();
+    glEndList();
+    glFinish();
+    GLuint dList2 = glGenLists(1);
+    glNewList(dList2, GL_COMPILE);
+    for(int c=0;c<count;++c)
+    {
+        glCallList(dList1);
+    }        
+    glEndList();
+    glFlush();
+    double t=runFaceBench(dList2,256,1.0);
+    count=(int)(count/t);
+    glNewList(dList2, GL_COMPILE);
+    for(int c=0;c<count;++c)
+    {
+        glCallList(dList1);
+    }        
+    glEndList();
+
+    faces*=count;
+    glCallList(dList2);
+    glFinish();
+
+    UInt32 aSize=256;
+    UInt32 bSize= 16;
+    Real32 aVisible=1.0;
+    Real32 cVisible= .1;
+    
+    // do the benchmarks
+    double A=runFaceBench(dList2,aSize,aVisible)/faces;
+    double B=runFaceBench(dList2,bSize,aVisible)/faces;
+    double C=runFaceBench(dList2,aSize,cVisible)/faces;
+
+    // cost = (1-visible)*i + (j + size^2 * k)*visible;
+    // i:  only if invisible
+    // j:  only if visible, but not size dependent
+    // k:  only if visible, and size dependent
+
+    _faceCostVisibleArea = 
+        (A-B) / 
+        (aSize*(double)aSize-bSize*(double)bSize );
+    
+    _faceCostVisible     = A - _faceCostVisibleArea*aSize*aSize;
+    
+    _faceCostInvisible       = 
+        (C - 
+         _faceCostVisible    *cVisible - 
+         _faceCostVisibleArea*cVisible*aSize*aSize)/(1-cVisible);
+    
+#if 0
+    cout << _faceCostInvisible << endl;
+    cout << _faceCostVisible << endl;
+    cout << _faceCostVisibleArea << endl;
+
+    printf("Max invisible faces         : %12.2f\n",
+           1.0/_faceCostInvisible);
+    printf("Max visible faces           : %12.2f\n",
+           1.0/_faceCostVisible);
+
+    printf("A  %12.2f\n",1.0/A);
+    printf("A  %12.2f\n",1.0/calcFaceRenderingCost(1,aSize*aSize,1.0));
+   
+    printf("B  %12.2f\n",1.0/B);
+    printf("B  %12.2f\n",1.0/calcFaceRenderingCost(1,bSize*bSize,1.0));
+
+    printf("C  %12.2f\n",1.0/C);
+    printf("C  %12.2f\n",1.0/calcFaceRenderingCost(1,aSize*aSize,cVisible));
+#endif
+    glDeleteLists(dList2,1);
+    glDeleteLists(dList1,1);
+}
+
+/** Add all geometry nodes in the given tree
+ **/
+void GeoLoadManager::updateSubtree(NodePtr &node,GeoLoadMapT &loadMap)
+{
+    // is nodecore a geometry?
+    if(node->getCore() != NullFC &&
+       GeometryPtr::dcast(node->getCore()) != NullFC)
+    {
+        // is this a new node
+        GeoLoadMapT::iterator mI=loadMap.find(node.getFieldContainerId());
+        if(mI==loadMap.end())
+        {
+            _geoLoad.push_back(GeoLoad(node));
+        }
+        else
+        {
+            loadMap.erase(mI);
+        }
+    }
+    // handle all childs
+    for(MFNodePtr::iterator n=node->getMFChildren()->begin();
+        n!=node->getMFChildren()->end();
+        ++n)
+    {
+        updateSubtree(*n,loadMap);
+    }
 }
 
 /** Splitupt region
@@ -275,7 +445,7 @@ void GeoLoadManager::splitRegion(UInt32          regions,
     RegionLoadVecT::iterator vi;
 
     // search for best cut
-    findBestCut(visible,amin,amax,axis,cut);
+    Real32 cost=findBestCut(visible,amin,amax,axis,cut);
     // create new regions
     maxA[axis  ]=cut;
     maxA[axis^1]=amax[axis^1];
@@ -292,17 +462,21 @@ void GeoLoadManager::splitRegion(UInt32          regions,
         // split visible regions
         for(vi=visible.begin();vi!=visible.end();vi++)
         {
-            if(vi->geometry->getMax()[axis] <= cut)
+            if(vi->getLoad()->getMax()[axis] <= cut)
                 visibleA.push_back(*vi);
             else
-                if(vi->geometry->getMin()[axis] > cut)
+                if(vi->getLoad()->getMin()[axis] > cut)
                     visibleB.push_back(*vi);
                 else
                 {
                     visibleA.push_back(*vi);
                     visibleB.push_back(*vi);
-                    visibleA.rbegin()->update(amin,maxA);
-                    visibleB.rbegin()->update(minB,amax);
+                    visibleA.rbegin()->setCost(
+                        calcFaceRenderingCost(
+                            visibleA.rbegin()->getLoad(),amin,maxA));
+                    visibleB.rbegin()->setCost(
+                        calcFaceRenderingCost(
+                            visibleA.rbegin()->getLoad(),minB,amax));
                 }
         }
     }
@@ -312,11 +486,6 @@ void GeoLoadManager::splitRegion(UInt32          regions,
     {
         result.insert(result.end(),amin,amin+2);
         result.insert(result.end(),maxA,maxA+2);
-/*
-        cout << "Cut: " 
-             << amin[0] << "," << amin[1] << " "
-             << maxA[0] << "," << maxA[1] << " " << load << endl;
-*/
     }
     if(regionsB>1)
         splitRegion(regionsB,visibleB,minB,amax,result);
@@ -324,11 +493,6 @@ void GeoLoadManager::splitRegion(UInt32          regions,
     {
         result.insert(result.end(),minB,minB+2);
         result.insert(result.end(),amax,amax+2);
-/*
-        cout << "Cut: " 
-             << minB[0] << "," << minB[1] << " "
-             << amax[0] << "," << amax[1] << " " << load << endl;
-*/
     }
 }
 
@@ -366,15 +530,17 @@ Real32 GeoLoadManager::findBestCut (RegionLoadVecT &visible,
             costA=costB=0;
             for(vi=visible.begin();vi!=visible.end();vi++)
             {
-                if(vi->geometry->getMax()[a] <= newCut)
-                    costA+=vi->rendering;
+                if(vi->getLoad()->getMax()[a] <= newCut)
+                    costA+=vi->getCost();
                 else
-                    if(vi->geometry->getMin()[a] > newCut)
-                        costB+=vi->rendering;
+                    if(vi->getLoad()->getMin()[a] > newCut)
+                        costB+=vi->getCost();
                     else
                     {
-                        costA+=vi->geometry->getRenderingLoad(amin ,maxA);
-                        costB+=vi->geometry->getRenderingLoad(minB ,amax);
+                        costA+=calcFaceRenderingCost(
+                            vi->getLoad(),amin,maxA);
+                        costB+=calcFaceRenderingCost(
+                            vi->getLoad(),minB,amax);
                     }
                 
             }
@@ -385,7 +551,7 @@ Real32 GeoLoadManager::findBestCut (RegionLoadVecT &visible,
                 bestCost=newCost;
                 bestAxis=a;
             }
-            // go into direction of inbalance
+            // walk into direction of inbalance
             if(costA>costB)
                 t=newCut;
             else
@@ -396,4 +562,29 @@ Real32 GeoLoadManager::findBestCut (RegionLoadVecT &visible,
     bestcut_t+=getSystemTime();
     return bestCost;
 }    
-   
+
+double GeoLoadManager::calcFaceRenderingCost(GeoLoad *load,
+                                             Int32 wmin[2],Int32 wmax[2])
+{
+    Real64 area=0;
+
+    Real64 visible=load->getVisibleFraction(wmin,wmax);
+    if(visible)
+    {
+        area =
+            (load->getMax()[0] - load->getMin()[0] + 1)*
+            (load->getMax()[1] - load->getMin()[1] + 1);
+        UInt32 faces  =load->getFaces();
+        return 
+            (double)faces*( 
+                (1-visible)*_faceCostInvisible +
+                visible*(_faceCostVisible +
+                         area*_faceCostVisibleArea));
+    }
+    else
+    {
+        // should be culled by scenegraph renderer
+        return 0;
+    }
+}
+
