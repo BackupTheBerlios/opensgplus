@@ -55,7 +55,7 @@
 #include <OSGFieldContainerFactory.h>
 #include <OSGChangeList.h>
 #include <OSGConnection.h>
-#include <OSGFunctors.h>
+#include <OSGTypedFunctors.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -75,7 +75,13 @@ class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
         SUBREFED  =7
     };
     /** functor called for changed containers **/
-    typedef Functor2Base<bool,    FieldContainerPtr &, RemoteAspect *> Functor;
+
+    typedef ArgsCollector<RemoteAspect *> FunctorArgs;
+
+    typedef TypedFunctor2Base<bool, 
+                              CPtrRefCallArg<FieldContainerPtr>, 
+                              FunctorArgs                      > Functor;
+
     /** Map of received containers **/
     typedef map<UInt32,UInt32>    ReceivedFCT;
     /** Map of received types **/

@@ -172,10 +172,12 @@ void ClusterServer::init()
         fct=OSG::FieldContainerFactory::the()->findType(i);
         if(fct && fct->isDerivedFrom(ClusterWindow::getClassType()))
         {
+#ifdef CHECKCHECK
             _aspect.registerChanged(
                 *fct,
                 osgMethodFunctor2Ptr(this,
                                      &ClusterServer::configChanged));
+#endif
         }
     }
     // accept incomming connections

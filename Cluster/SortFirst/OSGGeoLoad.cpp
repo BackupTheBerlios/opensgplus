@@ -56,7 +56,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.6 2002/02/15 17:45:04 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoad.cpp,v 1.7 2002/02/16 04:28:10 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADHEADER_CVSID;
 }
 
@@ -146,7 +146,7 @@ void GeoLoad::clipLine(int from,
 
 void GeoLoad::updateView(Matrix &viewing,
                          Matrix &projection,
-                         Real32 near,
+                         Real32 rNear,
                          UInt32 width,
                          UInt32 height)
 {
@@ -172,15 +172,15 @@ void GeoLoad::updateView(Matrix &viewing,
     volume.transform(m);
     // get min,max
     volume.getBounds(vol[0], vol[1]);
-    // min < near
-    if(vol[0][2] > -near)
+    // min < rNear
+    if(vol[0][2] > -rNear)
     {
         _visible=false;
         return;
     }
-    if(vol[1][2] > -near)
+    if(vol[1][2] > -rNear)
     {
-        vol[1][2] = -near;
+        vol[1][2] = -rNear;
     }
     // create corners of a bounding box
     for(int i=0;i<8;++i)

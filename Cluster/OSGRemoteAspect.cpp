@@ -437,7 +437,10 @@ void RemoteAspect::registerCreated(const FieldContainerType &type,
     while ( type.getId() >= _createdFunctors.size() )
     {
         _createdFunctors.push_back(
-             osgFunctionFunctor2(&_defaultCreatedFunction));
+             osgTypedFunctionFunctor2CPtrRef<bool,
+                                             FieldContainerPtr,
+                                             RemoteAspect     *>(
+                                                 &_defaultCreatedFunction));
     }
     _createdFunctors[ type.getId() ] = func;
 }
@@ -458,7 +461,10 @@ void RemoteAspect::registerDestroyed(const FieldContainerType &type,
     while ( type.getId() >= _destroyedFunctors.size() )
     {
         _destroyedFunctors.push_back(
-            osgFunctionFunctor2(&_defaultDestroyedFunction));
+            osgTypedFunctionFunctor2CPtrRef<bool,
+                                            FieldContainerPtr,
+                                            RemoteAspect     *>(
+                                                &_defaultDestroyedFunction));
     }
     _destroyedFunctors[ type.getId() ] = func;
 }
@@ -479,7 +485,10 @@ void RemoteAspect::registerChanged(const FieldContainerType &type,
     while ( type.getId() >= _changedFunctors.size() )
     {
         _changedFunctors.push_back(
-            osgFunctionFunctor2(&_defaultChangedFunction));
+            osgTypedFunctionFunctor2CPtrRef<bool,
+                                            FieldContainerPtr,
+                                            RemoteAspect     *>(
+                                                &_defaultChangedFunction));
     }
     _changedFunctors[ type.getId() ] = func;
 }

@@ -72,7 +72,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.4 2002/02/15 17:45:04 marcus Exp $";
+    static Char8 cvsid_cpp[] = "@(#)$Id: OSGGeoLoadManager.cpp,v 1.5 2002/02/16 04:28:10 vossg Exp $";
     static Char8 cvsid_hpp[] = OSG_GEOLOADMANAGERHEADER_CVSID;
 }
 
@@ -181,7 +181,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
     Int32                    height=vp->getPixelHeight();
     Int32                    wmin[2]={width,height};
     Int32                    wmax[2]={0    ,0     };
-    Real32                   near=vp->getCamera()->getNear();
+    Real32                   rNear=vp->getCamera()->getNear();
 
     sortrow_t-=getSystemTime();
 
@@ -193,7 +193,7 @@ void GeoLoadManager::balance(ViewportPtr    vp,
         // update view dependent values
         l->updateView(viewing,
                       projection,
-                      near,
+                      rNear,
                       width,
                       height);
         // sort by min values
