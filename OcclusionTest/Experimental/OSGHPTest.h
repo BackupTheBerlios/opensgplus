@@ -93,7 +93,7 @@ class OSG_SYSTEMLIB_DLLMAPPING HPTest
     void perform(const UInt16&, const OCTestNode*);
     UInt32 result(const UInt16&);
     void exit(void);
-    vois visualize(void);
+    void visualize(void);
     
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/

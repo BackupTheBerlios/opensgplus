@@ -130,6 +130,12 @@ void OcclusionTest<octest, ocstatistics>::frameExit(void)
 	}
 };
 
+template<typename octest, typename ocstatistics>
+inline 
+void OcclusionTest<octest, ocstatistics>::setVisualize(bool v){
+	_stats.setVisualize(v);
+}
+
 /**
  Setups the corresponding occlusion culling approach,
  called only once to configure occlusion culling.

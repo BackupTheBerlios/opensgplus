@@ -100,6 +100,7 @@ class OSG_SYSTEMLIB_DLLMAPPING OcclusionTest
     void perform(const UInt16&, const OCTestNode*);
     UInt32 result(const UInt16&);
     void exit(void);
+    void setVisualize(bool v);
     
     /*! \}                                                                 */
     /*=========================  PROTECTED  ===============================*/
