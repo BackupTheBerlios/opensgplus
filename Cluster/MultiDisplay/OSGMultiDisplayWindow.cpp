@@ -199,12 +199,12 @@ void MultiDisplayWindow::serverRender( WindowPtr serverWindow,
         endEditCP(serverPort);
         // calculate tile parameters
         beginEditCP(deco);
-        deco->setFullWidth ( width  * getHServers() );
-        deco->setFullHeight( height * getVServers() );
-        deco->setSize( 1.0/getHServers() * column,
-                       1.0/getVServers() * row,
-                       1.0/getHServers() * (column+1),
-                       1.0/getVServers() * (row   +1) );
+        deco->setFullWidth ( cright-cleft );
+        deco->setFullHeight( ctop-cbottom );
+        deco->setSize( ( l+left-cleft     ) / (float)( cright-cleft ),
+                       ( b+bottom-cbottom ) / (float)( ctop-cbottom ),
+                       ( r+left-cleft     ) / (float)( cright-cleft ),
+                       ( t+bottom-cbottom ) / (float)( ctop-cbottom ) );
         deco->setDecoratee( clientPort->getCamera() );
         endEditCP(deco);
         sv++;
