@@ -272,9 +272,6 @@ void createSceneGraph(int argc,char **argv)
         {
             pWindowAtt->setServerId(i);
             pWindowAtt->setComposite(composite);
-            pWindowAtt->setX(width/nhserv * i);
-            pWindowAtt->setY(0);
-            
         }
         endEditCP(pWindowAtt);
 

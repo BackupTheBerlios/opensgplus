@@ -20,24 +20,6 @@ The base class for all windows.
 	Which server is responsible for the attached Window
 	</Field>
 	<Field
-		name="x"
-		type="UInt32"
-		cardinality="single"
-		visibility="external"
-		access="public"
-	>
-	X Position in client window
-	</Field>
-	<Field
-		name="y"
-		type="UInt32"
-		cardinality="single"
-		visibility="external"
-		access="public"
-	>
-	Y Position in client window
-	</Field>
-	<Field
 		name="composite"
 		type="Bool"
 		cardinality="single"
