@@ -58,7 +58,7 @@ OSG_USING_NAMESPACE
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.2 2002/01/02 17:34:06 marcus Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGStereoCamera.cpp,v 1.3 2002/01/04 13:18:34 marcus Exp $";
     static char cvsid_hpp[] = OSGSTEREOCAMERA_HEADER_CVSID;
     static char cvsid_inl[] = OSGSTEREOCAMERA_INLINE_CVSID;
 }
@@ -125,7 +125,7 @@ void StereoCamera::getProjection( Matrix& result, UInt32 width, UInt32 height)
         fov = osgdegree2rad( fov );
     MatrixStereoPerspective(result,
                             modelview,
-                            fov/2.0,
+                            fov,
                             (double)width/(double)height,
                             getNear(),
                             getFar(),
