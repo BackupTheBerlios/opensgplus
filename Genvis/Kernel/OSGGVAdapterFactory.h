@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:51:24 $
 //                                                                            
 //=============================================================================
 
@@ -161,7 +161,7 @@ inline AdapterType* FactorySTL<AdapterType>::newObject    ()
 template<class AdapterType> 
 inline void         FactorySTL<AdapterType>::deleteObject (AdapterType* obj)
 {
-   m_empty.push_front((Container::iterator)obj);
+   m_empty.push_front(obj);
 }
 template<class AdapterType> 
 inline FactorySTL<AdapterType>::Self& FactorySTL<AdapterType>::the ()
