@@ -402,5 +402,5 @@ void DynamicSubdivisionCCBase<MESH>::setAutoUpdate(const bool &value)
 
 OSG_END_NAMESPACE
 
-#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.8 2004/07/09 08:57:03 fuenfzig Exp $"
+#define OSGDYNAMICSUBDIVISIONCCBASE_INLINE_CVSID "@(#)$Id: OSGDynamicSubdivisionCCBase.inl,v 1.9 2004/07/09 09:00:18 fuenfzig Exp $"
 

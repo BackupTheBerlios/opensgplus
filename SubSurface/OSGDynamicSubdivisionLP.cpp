@@ -399,7 +399,7 @@ void DynamicSubdivisionLP<MESH>::adjustVolume    (Volume &volume)
 #if 0
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.7 2004/07/09 08:57:03 fuenfzig Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDynamicSubdivisionLP.cpp,v 1.8 2004/07/09 09:00:18 fuenfzig Exp $";
     static char cvsid_hpp[] = OSGDYNAMICSUBDIVISIONLP_HEADER_CVSID;
     static char cvsid_inl[] = OSGDYNAMICSUBDIVISIONLP_INLINE_CVSID;
 }

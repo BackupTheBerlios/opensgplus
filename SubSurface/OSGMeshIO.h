@@ -41,7 +41,6 @@ public:
    // OpenMesh Output
    inline void writeOpenMesh(BinaryDataHandler &pMem) {
 
-      SLOG << "writeOpenMesh executed" << std::endl;
       OpenMesh::IO::ExporterT<Mesh> _be(mesh_);
         
   
@@ -122,8 +121,6 @@ public:
      // OpenMesh Input
    inline void readOpenMesh(BinaryDataHandler &pMem) {
    
-      SLOG << "readOpenMesh executed" << std::endl;
-      
       mesh_.clear();
       OpenMesh::IO::ImporterT<Mesh> _bi(mesh_);
     
