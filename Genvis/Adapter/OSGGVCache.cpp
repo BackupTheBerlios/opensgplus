@@ -6,15 +6,18 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
 #include "OSGGVCache.h"
 #include "OSGGVStaticInput.h"
+
 #include "OSGMaterialGroup.h"
+#include "OSGComponentTransform.h"
 #include "OSGTransform.h"
+#include "OSGSwitch.h"
 
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
@@ -22,27 +25,113 @@ USING_GENVIS_NAMESPACE
 
 #ifdef GV_CACHE_HASHMAP
 
-//OpenSGCache::HashFunctor OpenSGCache::s_hasher;
+OpenSGCache::CacheData&
+OpenSGCache::getShare (const NodePtr& node)
+{
+   SharesContainer::iterator it = m_shares.find(node->getCore());
+   if (it == m_shares.end()) {
+      CacheData& data = getNode(node);
+      m_shares.insert(std::make_pair(node->getCore(), &data));
+   }
+   return *(m_shares[node->getCore()]);
+}
+OpenSGCache::CacheData*
+OpenSGCache::findShare (const NodePtr& node)
+{
+   SharesContainer::iterator it = m_shares.find(node->getCore());
+   if (it == m_shares.end()) {
+      return NULL;
+   }
+   return it->second;
+}
+
+genvis::OSGStaticInput* OpenSGCache::getHierarchy () const
+{
+   return m_hierarchy;
+}
+
+OSG::NodePtr OpenSGCache::getCurrentNode () const
+{
+   return m_currentNode;
+}
+void         OpenSGCache::setCurrentNode (const OSG::NodePtr& node)
+{
+   m_currentNode = node;
+}
+OSG::MaterialPtr OpenSGCache::getCurrentMaterial () const
+{
+   if (m_materials.empty()) {
+      return NullFC;
+   }
+   return m_materials.top();
+}
+void OpenSGCache::pushMaterial (const OSG::MaterialPtr& mat)
+{
+   m_materials.push(mat);
+}
+void OpenSGCache::popMaterial ()
+{
+   m_materials.pop();
+}
+Matrix& OpenSGCache::getCurrentMatrix ()
+{
+   return m_currentMatrix;
+}
+const Matrix& OpenSGCache::getCurrentMatrix () const
+{
+   return m_currentMatrix;
+}
+
+OpenSGCache::EntryIterator OpenSGCache::begin ()
+{
+   return m_data.begin();
+}
+OpenSGCache::EntryIterator OpenSGCache::end   ()
+{
+   return m_data.end();
+}
+OpenSGCache::Entry& OpenSGCache::getHashTable ()
+{
+   return m_data;
+}
+const OpenSGCache::Entry& OpenSGCache::getHashTable () const
+{
+   return m_data;
+}
+
+OpenSGCache::CacheData& OpenSGCache::operator[] (EntryValue& n)
+{
+   return n.second;
+}
+const OpenSGCache::CacheData& OpenSGCache::operator[] (const EntryValue& n) const
+{
+   return n.second;
+}
+
 
 void OpenSGCache::setHierarchy (genvis::OSGStaticInput* hier)
 {
    m_hierarchy = hier;
-   m_hierarchy->registerFunctors();
+   if (m_hierarchy != NULL) {
+      m_hierarchy->registerFunctors();
+   } else {
+      registerFunctors();
+   }
 }
 
 OpenSGCache::OpenSGCache ()
   : m_data(),
-    m_currentNode(NullFC),
     m_hierarchy(NULL)
 {
+   SLOG << "OpenSGCache (version with hash_map) created!" << std::endl;
    m_data[NullFC] = CacheData(NullFC, Matrix::identity());
    registerFunctors();
 }
 
 OpenSGCache& OpenSGCache::the ()
 {
-  static OpenSGCache theInstance;
-  return theInstance;
+   static OpenSGCache theInstance;
+   return theInstance;
 }
 
 void       OpenSGCache::clear ()
@@ -72,11 +161,6 @@ void OpenSGCache::addNode    (const NodePtr& n)
    if (it == m_data.end()) {
       m_data[n] = CacheData(n, n->getToWorld());
    }
-}
-void OpenSGCache::updateNode (const NodePtr& n)
-{
-   // CF: not complete yet
-   addNode(n);
 }
 
 OpenSGCache::CacheData&       
@@ -133,7 +217,7 @@ OpenSGCache::operator[] (const osg::NodePtr& n) const
 }
 
 OpenSGCache::CacheData&       
-OpenSGCache::getParent (const osg::NodePtr& n, int i)
+OpenSGCache::getParent (const osg::NodePtr& n, i32 i)
 {
    NodePtr p = n;
    while (i-- > 0) {
@@ -143,7 +227,7 @@ OpenSGCache::getParent (const osg::NodePtr& n, int i)
    return operator[](p);
 }
 const OpenSGCache::CacheData& 
-OpenSGCache::getParent (const osg::NodePtr& n, int i) const
+OpenSGCache::getParent (const osg::NodePtr& n, i32 i) const
 {
    NodePtr p = n;
    while (i-- > 0) {
@@ -168,55 +252,62 @@ std::ostream&    OpenSGCache::dump (std::ostream& os) const
       << m_data.max_size() << " size)"
       << std::flush;
 #endif
-#if 0
-   unsigned empty, deleted, free;
-   m_data.statusInformation(empty, deleted, free);
-   os << "OpenSGCache::dump(" 
-      << empty << " empty entries, "
-      << deleted << " deleted entries, "
-      << free << " free entries)" 
-      << std::flush;
-#endif
    return os;
 }
 
-void OpenSGCache::callEnterFunctor ( NodePtr node )
+bool OpenSGCache::callEnterFunctor (const NodePtr& node )
 {
    assert(node != NullFC);
    if (node->getCore() == NullFC) {
-      return;
+      return false;
    }
-   UInt32 uiFunctorIndex = node->getCore()->getType().getId();
+   u32 uiFunctorIndex = node->getCore()->getType().getId();
    CNodePtr cnode(node);
-   
-   if ( uiFunctorIndex < m_enterFunctors.size() ) {
-      m_enterFunctors[uiFunctorIndex].call(cnode, getHierarchy());
-   } else { // unknown field container
-      defaultFunction(cnode, getHierarchy());
+
+   if (uiFunctorIndex < m_enterFunctors.size()) {
+      return m_enterFunctors[uiFunctorIndex].call(cnode, getHierarchy());
    }
+   // unknown field container
+   return defaultFunction(cnode, getHierarchy());
 }
-void OpenSGCache::callLeaveFunctor ( NodePtr node )
+bool OpenSGCache::callLeaveFunctor (const NodePtr& node )
 {
    assert(node != NullFC);
    if (node->getCore() == NullFC) {
-      return;
+      return false;
    }
-   UInt32 uiFunctorIndex = node->getCore()->getType().getId();
+   u32 uiFunctorIndex = node->getCore()->getType().getId();
    CNodePtr cnode(node);
    
    if ( uiFunctorIndex < m_leaveFunctors.size() ) {
-      m_leaveFunctors[uiFunctorIndex].call(cnode, getHierarchy());
-   } else { // unknown field container
-      defaultFunction(cnode, getHierarchy());
-   }
+      return m_leaveFunctors[uiFunctorIndex].call(cnode, getHierarchy());
+   } 
+   // unknown field container
+   return defaultFunction(cnode, getHierarchy());
 }
 
 void OpenSGCache::apply (const NodePtr& node)
 {
+  //setStartNode(node);
    getCurrentMatrix().setIdentity();
-   OSG::TransformPtr trf = OSG::TransformPtr::dcast(node->getCore());
+   addNode(node);
+
+   TransformPtr trf = TransformPtr::dcast(node->getCore());
    if (trf == NullFC) {
-      applyIntern(node);
+      setCurrentNode(node);
+      if (callEnterFunctor(node)) {
+	 Entry::iterator it = m_data.find(node);
+	 if (it != m_data.end()) {
+	    CacheData& data = it->second;
+	    for (ChildContainer::iterator it2 = data.getChildren().begin();
+		 it2 != data.getChildren().end();
+		 ++it2) {
+	      applyIntern(*it2);
+	    }
+	 }
+	 setCurrentNode(node);
+	 callLeaveFunctor(node);
+      }
    } else {
       setCurrentNode(node);
       Entry::iterator it = m_data.find(node);
@@ -229,27 +320,35 @@ void OpenSGCache::apply (const NodePtr& node)
 	 }
       }
    }
+
+   if (getHierarchy() != NULL) {
+      getHierarchy()->process(node);
+   }
 }
 
 void OpenSGCache::applyIntern (const NodePtr& node)
 {
+   addNode(node);
+
    setCurrentNode(node);
-   callEnterFunctor(node);
-   Entry::iterator it = m_data.find(node);
-   if (it != m_data.end()) {
-      CacheData& data = it->second;
-      for (ChildContainer::iterator it2 = data.getChildren().begin();
-	   it2 != data.getChildren().end();
-	   ++it2) {
-	 applyIntern(*it2);
+   if (callEnterFunctor(node)) {
+      Entry::iterator it = m_data.find(node);
+      if (it != m_data.end()) {
+	 CacheData& data = it->second;
+	 for (ChildContainer::iterator it2 = data.getChildren().begin();
+	      it2 != data.getChildren().end();
+	      ++it2) {
+	   applyIntern(*it2);
+	 }
       }
+      setCurrentNode(node);
+      callLeaveFunctor(node);
    }
-   setCurrentNode(node);
-   callLeaveFunctor(node);
 }
 
-void OpenSGCache::defaultFunction(CNodePtr&, OSGStaticInput*)
+bool OpenSGCache::defaultFunction(CNodePtr&, OSGStaticInput*)
 {
+   return true;
 }
 
 void OpenSGCache::registerEnterFunctor (const FieldContainerType& type, 
@@ -263,7 +362,7 @@ void OpenSGCache::registerEnterFunctor (const FieldContainerType& type,
       if (derived != NULL && derived->isDerivedFrom(type)) {
 	 while(tit->first >= m_enterFunctors.size()) {
 	   m_enterFunctors.push_back( 
-	   osgTypedFunctionVoidFunctor2CPtrRef<CNodePtr, OSGStaticInput*>
+	   osgTypedFunctionFunctor2CPtrRef<bool, CNodePtr, OSGStaticInput*>
 	   (&Cache::defaultFunction));
 	 }
 	 m_enterFunctors[tit->first] = func;
@@ -282,7 +381,7 @@ void OpenSGCache::registerLeaveFunctor (const FieldContainerType& type,
       if (derived != NULL && derived->isDerivedFrom(type)) {
 	 while(tit->first >= m_leaveFunctors.size()) {
 	   m_leaveFunctors.push_back( 
-	   osgTypedFunctionVoidFunctor2CPtrRef<CNodePtr, OSGStaticInput*>
+	   osgTypedFunctionFunctor2CPtrRef<bool, CNodePtr, OSGStaticInput*>
 	   (&Cache::defaultFunction));
 	 }
 	 m_leaveFunctors[tit->first] = func;
@@ -291,27 +390,33 @@ void OpenSGCache::registerLeaveFunctor (const FieldContainerType& type,
 }
 
 #ifndef OSG_NOFUNCTORS
-void OpenSGCache::functorEnterMaterialGroup (CNodePtr& cnode, 
-							     OSGStaticInput* input)
+bool OpenSGCache::functorEnterMaterialGroup (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterMaterialGroup(cnode, getHierarchy()); 
+   return staticEnterMaterialGroup(cnode, input); 
 }
 
-void OpenSGCache::functorLeaveMaterialGroup (CNodePtr& cnode, 
-							     OSGStaticInput* input)
+bool OpenSGCache::functorLeaveMaterialGroup (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticLeaveMaterialGroup(cnode, getHierarchy()); 
+   return staticLeaveMaterialGroup(cnode, input); 
 }
-void OpenSGCache::functorEnterTransform (CNodePtr& cnode, 
-							     OSGStaticInput* input)
+bool OpenSGCache::functorEnterTransform (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterTransform(cnode, getHierarchy()); 
+   return staticEnterTransform(cnode, input); 
 }
 
-void OpenSGCache::functorLeaveTransform (CNodePtr& cnode, 
-							     OSGStaticInput* input)
+bool OpenSGCache::functorLeaveTransform (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticLeaveTransform(cnode, getHierarchy()); 
+   return staticLeaveTransform(cnode, input); 
+}
+
+bool OpenSGCache::functorEnterGeometry (CNodePtr& cnode, OSGStaticInput* input)
+{
+   return staticEnterGeometry (cnode, input); 
+}
+
+bool OpenSGCache::functorEnterSwitch (CNodePtr& cnode, OSGStaticInput* input)
+{
+   return staticEnterSwitch (cnode, input); 
 }
 #endif
 
@@ -319,33 +424,61 @@ void    OpenSGCache::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
    registerEnterFunctor(MaterialGroup::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorEnterMaterialGroup));
    registerLeaveFunctor(MaterialGroup::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorLeaveMaterialGroup));
    registerEnterFunctor(Transform::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorEnterTransform));
    registerLeaveFunctor(Transform::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorLeaveTransform));
+   registerEnterFunctor(ComponentTransform::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterTransform));
+   registerLeaveFunctor(ComponentTransform::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorLeaveTransform));
+   registerEnterFunctor(Geometry::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterGeometry));
+   registerEnterFunctor(Switch::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterSwitch));
 #else
    registerEnterFunction(MaterialGroup::getClassType(),
    cacheFunctionFunctor2(Cache::staticEnterMaterialGroup));
@@ -355,51 +488,68 @@ void    OpenSGCache::registerFunctors (void)
    cacheFunctionFunctor2(Cache::staticEnterTransform));
    registerLeaveFunction(Transform::getClassType(),
    cacheFunctionFunctor2(Cache::staticLeaveTransform));
+   registerEnterFunction(ComponentTransform::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterTransform));
+   registerLeaveFunction(ComponentTransform::getClassType(),
+   cacheFunctionFunctor2(Cache::staticLeaveTransform));
+   registerEnterFunction(Geometry::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterGeometry));
+   registerEnterFunction(Switch::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterSwitch));
 #endif
 }
 
-void OpenSGCache::staticEnterMaterialGroup (CNodePtr& cnode, 
-					    OSGStaticInput* input)
+bool OpenSGCache::staticEnterGeometry (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
+   if (the().getCurrentMaterial() != NullFC) {
+      GeometryPtr arg = GeometryPtr::dcast(cnode);
+      arg->setMaterial(the().getCurrentMaterial());
    }
-   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
-   input->getCache().setCurrentMaterial(arg->getMaterial());
+   return true;
 }
 
-void OpenSGCache::staticLeaveMaterialGroup (CNodePtr& cnode, 
-					    OSGStaticInput* input)
+bool OpenSGCache::staticEnterSwitch (CNodePtr&, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
-   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
-   input->getCache().setCurrentMaterial(NullFC);
+   return false;
 }
-void OpenSGCache::staticEnterTransform (CNodePtr& cnode, 
-					OSGStaticInput* input)
+
+bool OpenSGCache::staticEnterMaterialGroup (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
+   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
+   the().pushMaterial(arg->getMaterial());
+   return true;
+}
+
+bool OpenSGCache::staticLeaveMaterialGroup (CNodePtr& cnode, OSGStaticInput*)
+{
+   the().popMaterial();
+   return true;
+}
+bool OpenSGCache::staticEnterTransform (CNodePtr& cnode, OSGStaticInput*)
+{
    TransformPtr arg = TransformPtr::dcast(cnode);
-   input->getCache().getCurrentMatrix().mult(arg->getMatrix());
+   the().getCurrentMatrix().mult(arg->getMatrix());
+   return true;
 }
 
-void OpenSGCache::staticLeaveTransform (CNodePtr& cnode, 
-					OSGStaticInput* input)
+bool OpenSGCache::staticLeaveTransform (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
    TransformPtr arg = TransformPtr::dcast(cnode);
    Matrix inv; inv.invertFrom(arg->getMatrix());
-   input->getCache().getCurrentMatrix().mult(inv);
+   the().getCurrentMatrix().mult(inv);
+   return true;
 }
 
-void OpenSGCache::clearAdapter (unsigned id, 
-				unsigned len)
+void OpenSGCache::clearColCache ()
+{
+   for (Entry::iterator it = m_data.begin();
+	it != m_data.end();
+	++it) {
+      CacheData& data = it->second;
+      data.clearColCache();
+   }
+}
+void OpenSGCache::clearAdapter (u32 id, u32 len)
 {
    for (Entry::iterator it = m_data.begin();
 	it != m_data.end();
@@ -408,45 +558,56 @@ void OpenSGCache::clearAdapter (unsigned id,
       data.clearAdapter(id, len);
    }
 }
-void OpenSGCache::destroyAdapter (unsigned id,
-				  unsigned len)
+
+void OpenSGCache::collectLeaves (std::vector<CacheData*>& all, const NodePtr& node)
 {
-   for (Entry::iterator it = m_data.begin();
-	it != m_data.end();
-	++it) {
-      Cache::CacheData& data = it->second;
-      data.destroyAdapter(id, len);
+   Entry::iterator it = m_data.find(node);
+   if (it != m_data.end()) {
+      CacheData& data = it->second;
+      if (data.getNumChildren() > 0) {
+	 for (ChildContainer::iterator it2 = data.getChildren().begin();
+	      it2 != data.getChildren().end();
+	      ++it2) {
+	    collectLeaves(all, *it2);
+	 }
+      } else {
+	 all.push_back(&data);
+      }
    }
 }
 
-void OpenSGCache::collectAdapter (unsigned       id,
-				  AdapterVector& all)
+void OpenSGCache::collectAdapter (u32       id,
+				  AdapterVector& all,
+				  bool           del)
 {
    for (Entry::iterator it = m_data.begin();
 	it != m_data.end();
 	++it) {
       Cache::CacheData& data = it->second;
       all.insert(all.end(), 
-		 data.getAdapter(id).begin(),
-		 data.getAdapter(id).end());
+		 data.getAdapter(id).begin(), data.getAdapter(id).end());
+      if (del) {
+	 data.getAdapter(id).clear();
+      }
    }
 }
-void OpenSGCache::collectAdapter (unsigned       id,
+void OpenSGCache::collectAdapter (u32       id,
 				  AdapterVector& all,
-				  NodePtr        node)
+				  const NodePtr& node,
+				  bool           del)
 {
    Entry::iterator it = m_data.find(node);
    if (it != m_data.end()) {
       CacheData& data = it->second;
-      AdapterVector& array = data.getAdapter(id);
-      all.insert(all.end(), array.begin(), array.end());
-      if (&all != &array) {
-	 array.erase(array.begin(), array.end());
+      all.insert(all.end(), 
+		 data.getAdapter(id).begin(), data.getAdapter(id).end());
+      if (del) {
+	 data.getAdapter(id).clear();
       }
       for (ChildContainer::iterator it2 = data.getChildren().begin();
 	   it2 != data.getChildren().end();
 	   ++it2) {
-	 collectAdapter(id, all, *it2);
+	 collectAdapter(id, all, *it2, del);
       }
    }
 }
@@ -454,18 +615,144 @@ void OpenSGCache::collectAdapter (unsigned       id,
 
 #else
 
-
 GenvisCachePtr OpenSGCache::s_dummy;
+
+OpenSGCache::CacheData&
+OpenSGCache::getShare (const NodePtr& node)
+{
+   SharesContainer::iterator it = m_shares.find(node->getCore());
+   if (it == m_shares.end()) {
+      CacheData& data = getNode(node);
+      m_shares.insert(std::make_pair(node->getCore(), &data));
+   }
+   return *(m_shares[node->getCore()]);
+}
+OpenSGCache::CacheData*
+OpenSGCache::findShare (const NodePtr& node)
+{
+   SharesContainer::iterator it = m_shares.find(node->getCore());
+   if (it == m_shares.end()) {
+      return NULL;
+   }
+   return it->second;
+}
+
+OSGStaticInput* OpenSGCache::getHierarchy () const
+{
+   return m_hierarchy;
+}
+
+OSG::NodePtr OpenSGCache::getCurrentNode () const
+{
+   return m_currentNode;
+}
+void OpenSGCache::setCurrentNode (const OSG::NodePtr& node)
+{
+   m_currentNode = node;
+}
+
+OSG::MaterialPtr OpenSGCache::getCurrentMaterial () const
+{
+   if (m_materials.empty()) {
+      return NullFC;
+   }
+   return m_materials.top();
+}
+void OpenSGCache::pushMaterial (const OSG::MaterialPtr& mat)
+{
+   m_materials.push(mat);
+}
+void OpenSGCache::popMaterial ()
+{
+   m_materials.pop();
+}
+Matrix& OpenSGCache::getCurrentMatrix ()
+{
+   return m_currentMatrix;
+}
+const Matrix& OpenSGCache::getCurrentMatrix () const
+{
+   return m_currentMatrix;
+}
+
+OpenSGCache::EntryIterator OpenSGCache::begin ()
+{
+   return m_all.begin();
+}
+OpenSGCache::EntryIterator OpenSGCache::end   ()
+{
+   return m_all.end();
+}
+
+
+void OpenSGCache::clear ()
+{
+   for (Entry::iterator it=m_all.begin(); 
+	it != m_all.end(); 
+	++it) {
+      GenvisCachePtr nc =
+	GenvisCachePtr::dcast(it->first->findAttachment(GenvisCache::getClassType(), 0));
+      // clear current node
+      beginEditCP(it->first, Node::AttachmentsFieldMask);
+      it->first->subAttachment(nc);
+      endEditCP(it->first, Node::AttachmentsFieldMask);
+      subRefCP(nc);
+   }
+}
+
+GenvisCachePtr OpenSGCache::findNode (const NodePtr& node) const
+{
+   assert(node != NullFC);
+   GenvisCachePtr nc =
+     GenvisCachePtr::dcast(node->findAttachment(GenvisCache::getClassType(), 0));
+   if (nc == NullFC) {
+      return s_dummy;
+   }
+   return nc;
+}
+OpenSGCache::CacheData& OpenSGCache::getNode    (const NodePtr& n) const
+{
+   GenvisCachePtr nc = findNode(n);
+   return *nc;
+}
+OpenSGCache::CacheData& OpenSGCache::getNode    (const Entry::value_type& n) const
+{
+   return getNode(n.first);
+}
+OpenSGCache::CacheData& OpenSGCache::operator[] (const osg::NodePtr& n) const
+{
+   return getNode(n);
+}
+OpenSGCache::CacheData& OpenSGCache::operator[] (const Entry::value_type& n) const
+{
+   return getNode(n.first);
+}
+OpenSGCache::CacheData& OpenSGCache::getParent (const osg::NodePtr& node, i32 i) const
+{
+   NodePtr p = node;
+   while (i > 0) {
+      p = node->getParent();
+      --i;
+   }
+   return getNode(p);
+}
+
+
 
 void OpenSGCache::setHierarchy (genvis::OSGStaticInput* hier)
 {
    m_hierarchy = hier;
-   m_hierarchy->registerFunctors();
+   if (m_hierarchy != NULL) {
+      m_hierarchy->registerFunctors();
+   } else {
+      registerFunctors();
+   }
 }
 
 OpenSGCache::OpenSGCache ()
   : m_hierarchy(NULL)
 {
+   SLOG << "OpenSGCache (version with Attachments) created!" << std::endl;
    registerFunctors();
    if (s_dummy == NullFC) {
       s_dummy = GenvisCache::create();
@@ -479,8 +766,8 @@ OpenSGCache::~OpenSGCache ()
 
 OpenSGCache& OpenSGCache::the ()
 {
-  static OpenSGCache theInstance;
-  return theInstance;
+   static OpenSGCache theInstance;
+   return theInstance;
 }
 
 
@@ -489,35 +776,35 @@ std::ostream& OpenSGCache::dump (std::ostream& os) const
    return os;
 }
 
-void OpenSGCache::callEnterFunctor (const NodePtr& node)
+bool OpenSGCache::callEnterFunctor (const NodePtr& node)
 {
    assert(node != NullFC);
    if (node->getCore() == NullFC) {
-      return;
+      return false;
    }
-   UInt32 uiFunctorIndex = node->getCore()->getType().getId();
+   u32 uiFunctorIndex = node->getCore()->getType().getId();
    CNodePtr cnode(node);
    
    if ( uiFunctorIndex < m_enterFunctors.size() ) {
-      m_enterFunctors[uiFunctorIndex].call(cnode, getHierarchy());
-   } else { // unknown field container
-      defaultFunction(cnode, getHierarchy());
-   }
+      return m_enterFunctors[uiFunctorIndex].call(cnode, getHierarchy());
+   } 
+   // unknown field container
+   return defaultFunction(cnode, getHierarchy());
 }
-void OpenSGCache::callLeaveFunctor (const NodePtr& node)
+bool OpenSGCache::callLeaveFunctor (const NodePtr& node)
 {
    assert(node != NullFC);
    if (node->getCore() == NullFC) {
-      return;
+      return false;
    }
-   UInt32 uiFunctorIndex = node->getCore()->getType().getId();
+   u32 uiFunctorIndex = node->getCore()->getType().getId();
    CNodePtr cnode(node);
    
    if ( uiFunctorIndex < m_leaveFunctors.size() ) {
-      m_leaveFunctors[uiFunctorIndex].call(cnode, getHierarchy());
-   } else { // unknown field container
-      defaultFunction(cnode, getHierarchy());
+      return m_leaveFunctors[uiFunctorIndex].call(cnode, getHierarchy());
    }
+   // unknown field container
+   return defaultFunction(cnode, getHierarchy());
 }
 
 void OpenSGCache::addNode    (const NodePtr& node)
@@ -525,15 +812,11 @@ void OpenSGCache::addNode    (const NodePtr& node)
    GenvisCachePtr nc = findNode(node);
    if (nc == s_dummy) {
       nc = GenvisCache::create();
+      addRefCP(nc);
       beginEditCP(node, Node::AttachmentsFieldMask);
       node->addAttachment(nc);
       endEditCP(node, Node::AttachmentsFieldMask);
    }
-}
-void OpenSGCache::updateNode (const NodePtr& node)
-{
-   // CF: not complete yet
-   addNode(node);
 }
 
 void OpenSGCache::clear (const NodePtr& node)
@@ -543,8 +826,8 @@ void OpenSGCache::clear (const NodePtr& node)
    Entry::iterator nodeEntry = m_all.find(node);
    m_all.erase(nodeEntry);
 
-   // clear current node
    GenvisCachePtr nc = findNode(node);
+   // clear current node
    beginEditCP(node, Node::AttachmentsFieldMask);
    node->subAttachment(nc);
    endEditCP(node, Node::AttachmentsFieldMask);
@@ -555,47 +838,65 @@ void OpenSGCache::clear (const NodePtr& node)
 	++it2) {
       clear(*it2);
    }
+   // nc not used anymore
+   subRefCP(nc);
 }
 
 void OpenSGCache::apply (const NodePtr& node)
 {
-   m_root = node;
+  //setStartNode(node);
    getCurrentMatrix().setIdentity();
+   addNode(node);
+   m_all.insert(Entry::value_type(node,node));
+
    OSG::TransformPtr trf = OSG::TransformPtr::dcast(node->getCore());
    if (trf == NullFC) {
-      applyIntern(node);
+      setCurrentNode(node);
+      if (callEnterFunctor(node)) {
+	 CacheData& data = getNode(node);
+	 for (ChildContainer::iterator it2 = data.getChildren().begin();
+	      it2 != data.getChildren().end();
+	      ++it2) {
+	    applyIntern(*it2);
+	 }
+	 setCurrentNode(node);
+	 callLeaveFunctor(node);
+      }
    } else {
-      m_all.insert(Entry::value_type(node,node));
       CacheData& data = getNode(node);
       for (ChildContainer::iterator it2 = data.getChildren().begin();
 	   it2 != data.getChildren().end();
 	   ++it2) {
-	 applyIntern(*it2);
+	  applyIntern(*it2);
       }
+   }
+
+   if (getHierarchy() != NULL) {
+      getHierarchy()->process(node);
    }
 }
 
 void OpenSGCache::applyIntern (const NodePtr& node)
 {
+   addNode(node);
    m_all.insert(Entry::value_type(node,node));
-   //m_all.push_back(node);
 
    setCurrentNode(node);
-   callEnterFunctor(node);
-
-   CacheData& data = getNode(node);
-   for (ChildContainer::iterator it2 = data.getChildren().begin();
-	it2 != data.getChildren().end();
-	++it2) {
-      applyIntern(*it2);
+   if (callEnterFunctor(node)) {
+      CacheData& data = getNode(node);
+      for (ChildContainer::iterator it2 = data.getChildren().begin();
+	   it2 != data.getChildren().end();
+	   ++it2) {
+	applyIntern(*it2);
+      }
+      setCurrentNode(node);
+      callLeaveFunctor(node);
    }
-
-   setCurrentNode(node);
-   callLeaveFunctor(node);
 }
 
-void OpenSGCache::defaultFunction(CNodePtr&, OSGStaticInput*)
+bool OpenSGCache::defaultFunction(CNodePtr&, OSGStaticInput*)
 {
+   return true;
 }
 
 void OpenSGCache::registerEnterFunctor (const FieldContainerType& type, 
@@ -609,7 +910,7 @@ void OpenSGCache::registerEnterFunctor (const FieldContainerType& type,
       if (derived != NULL && derived->isDerivedFrom(type)) {
 	 while(tit->first >= m_enterFunctors.size()) {
 	   m_enterFunctors.push_back( 
-	   osgTypedFunctionVoidFunctor2CPtrRef<CNodePtr, OSGStaticInput*>
+	   osgTypedFunctionFunctor2CPtrRef<bool, CNodePtr, OSGStaticInput*>
 	   (&Cache::defaultFunction));
 	 }
 	 m_enterFunctors[tit->first] = func;
@@ -628,7 +929,7 @@ void OpenSGCache::registerLeaveFunctor (const FieldContainerType& type,
       if (derived != NULL && derived->isDerivedFrom(type)) {
 	 while(tit->first >= m_leaveFunctors.size()) {
 	   m_leaveFunctors.push_back( 
-	   osgTypedFunctionVoidFunctor2CPtrRef<CNodePtr, OSGStaticInput*>
+	   osgTypedFunctionFunctor2CPtrRef<bool, CNodePtr, OSGStaticInput*>
 	   (&Cache::defaultFunction));
 	 }
 	 m_leaveFunctors[tit->first] = func;
@@ -637,27 +938,33 @@ void OpenSGCache::registerLeaveFunctor (const FieldContainerType& type,
 }
 
 #ifndef OSG_NOFUNCTORS
-void OpenSGCache::functorEnterMaterialGroup (CNodePtr& cnode, 
-					      OSGStaticInput* input)
+bool OpenSGCache::functorEnterMaterialGroup (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterMaterialGroup(cnode, getHierarchy()); 
+   return staticEnterMaterialGroup(cnode, input); 
 }
 
-void OpenSGCache::functorLeaveMaterialGroup (CNodePtr& cnode, 
-					     OSGStaticInput* input)
+bool OpenSGCache::functorLeaveMaterialGroup (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticLeaveMaterialGroup(cnode, getHierarchy()); 
+   return staticLeaveMaterialGroup(cnode, input); 
 }
-void OpenSGCache::functorEnterTransform (CNodePtr& cnode, 
-					 OSGStaticInput* input)
+bool OpenSGCache::functorEnterTransform (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticEnterTransform(cnode, getHierarchy()); 
+   return staticEnterTransform(cnode, input); 
 }
 
-void OpenSGCache::functorLeaveTransform (CNodePtr& cnode, 
-					 OSGStaticInput* input)
+bool OpenSGCache::functorLeaveTransform (CNodePtr& cnode, OSGStaticInput* input)
 {
-   staticLeaveTransform(cnode, getHierarchy()); 
+   return staticLeaveTransform(cnode, input); 
+}
+
+bool OpenSGCache::functorEnterGeometry (CNodePtr& cnode, OSGStaticInput* input)
+{
+   return staticEnterGeometry(cnode, input); 
+}
+
+bool OpenSGCache::functorEnterSwitch (CNodePtr& cnode, OSGStaticInput* input)
+{
+   return staticEnterSwitch(cnode, input); 
 }
 #endif
 
@@ -665,33 +972,61 @@ void    OpenSGCache::registerFunctors (void)
 {
 #ifndef OSG_NOFUNCTORS
    registerEnterFunctor(MaterialGroup::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorEnterMaterialGroup));
    registerLeaveFunctor(MaterialGroup::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorLeaveMaterialGroup));
    registerEnterFunctor(Transform::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorEnterTransform));
    registerLeaveFunctor(Transform::getClassType(), 
-			osgTypedMethodVoidFunctor2ObjPtrCPtrRef<
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
 			Cache, 
 			CNodePtr, 
 			OSGStaticInput*>
 			(this,
 			 &Cache::functorLeaveTransform));
+   registerEnterFunctor(ComponentTransform::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterTransform));
+   registerLeaveFunctor(ComponentTransform::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorLeaveTransform));
+   registerEnterFunctor(Geometry::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterGeometry));
+   registerEnterFunctor(Switch::getClassType(), 
+			osgTypedMethodFunctor2ObjPtrCPtrRef<bool,
+			Cache, 
+			CNodePtr, 
+			OSGStaticInput*>
+			(this,
+			 &Cache::functorEnterSwitch));
 #else
    registerEnterFunction(MaterialGroup::getClassType(),
    cacheFunctionFunctor2(Cache::staticEnterMaterialGroup));
@@ -701,75 +1036,111 @@ void    OpenSGCache::registerFunctors (void)
    cacheFunctionFunctor2(Cache::staticEnterTransform));
    registerLeaveFunction(Transform::getClassType(),
    cacheFunctionFunctor2(Cache::staticLeaveTransform));
+   registerEnterFunction(ComponentTransform::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterTransform));
+   registerLeaveFunction(ComponentTransform::getClassType(),
+   cacheFunctionFunctor2(Cache::staticLeaveTransform));
+   registerEnterFunction(Geometry::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterGeometry));
+   registerEnterFunction(Switch::getClassType(),
+   cacheFunctionFunctor2(Cache::staticEnterSwitch));
 #endif
 }
 
-void OpenSGCache::staticEnterMaterialGroup (CNodePtr& cnode, 
-					    OSGStaticInput* input)
+bool OpenSGCache::staticEnterGeometry (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
+   if (the().getCurrentMaterial() != NullFC) {
+      GeometryPtr arg = GeometryPtr::dcast(cnode);
+      arg->setMaterial(the().getCurrentMaterial());
    }
-   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
-   input->getCache().setCurrentMaterial(arg->getMaterial());
+   return true;
 }
 
-void OpenSGCache::staticLeaveMaterialGroup (CNodePtr& cnode, 
-					    OSGStaticInput* input)
+bool OpenSGCache::staticEnterSwitch (CNodePtr&, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
-   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
-   input->getCache().setCurrentMaterial(NullFC);
+   return false;
 }
-void OpenSGCache::staticEnterTransform (CNodePtr& cnode, 
-					OSGStaticInput* input)
+
+bool OpenSGCache::staticEnterMaterialGroup (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
+   MaterialGroupPtr arg = MaterialGroupPtr::dcast(cnode);
+   the().pushMaterial(arg->getMaterial());
+   return true;
+}
+
+bool OpenSGCache::staticLeaveMaterialGroup (CNodePtr& cnode, OSGStaticInput*)
+{
+   the().popMaterial();
+   return true;
+}
+bool OpenSGCache::staticEnterTransform (CNodePtr& cnode, OSGStaticInput*)
+{
    TransformPtr arg = TransformPtr::dcast(cnode);
-   input->getCache().getCurrentMatrix().mult(arg->getMatrix());
+   the().getCurrentMatrix().mult(arg->getMatrix());
+   return true;
 }
 
-void OpenSGCache::staticLeaveTransform (CNodePtr& cnode, 
-					OSGStaticInput* input)
+bool OpenSGCache::staticLeaveTransform (CNodePtr& cnode, OSGStaticInput*)
 {
-   if (input == NULL) {
-      return;
-   }
    TransformPtr arg = TransformPtr::dcast(cnode);
    Matrix inv; inv.invertFrom(arg->getMatrix());
-   input->getCache().getCurrentMatrix().mult(inv);
+   the().getCurrentMatrix().mult(inv);
+   return true;
 }
 
-void OpenSGCache::clearAdapter (unsigned id, unsigned len)
+void OpenSGCache::clearColCache ()
 {
-   for (EntryIterator it = begin(); it != end(); ++it) {
-      Cache::CacheData& data = getNode(*it);
+   for (Entry::iterator it = begin(); it != end(); ++it) {
+      CacheData& data = getNode(*it);
+      data.clearColCache();
+   }
+}
+void OpenSGCache::clearAdapter (u32 id, u32 len)
+{
+   for (Entry::iterator it = begin(); it != end(); ++it) {
+      CacheData& data = getNode(*it);
       data.clearAdapter(id, len);
    }
 }
-void OpenSGCache::destroyAdapter (unsigned id, unsigned len)
+
+void OpenSGCache::collectLeaves (std::vector<CacheData*>& all, const NodePtr& node)
 {
-   for (EntryIterator it = begin(); it != end(); ++it) {
-      Cache::CacheData& data = getNode(*it);
-      data.destroyAdapter(id, len);
+   CacheData& data = getNode(node);
+   if (data.getNumChildren() > 0) {
+      for (ChildContainer::iterator it = data.getChildren().begin();
+	   it != data.getChildren().end();
+	   ++it) {
+	collectLeaves(all, *it);
+      }
+   } else {
+      all.push_back(&data);
    }
 }
 
-void OpenSGCache::collectAdapter (unsigned id, AdapterVector& all)
+void OpenSGCache::collectAdapter (u32 id, 
+				  AdapterVector& all,
+				  bool           del)
 {
-   for (EntryIterator it = begin(); it != end(); ++it) {
-      Cache::CacheData& data = getNode(*it);
-      all.insert(all.end(), data.getAdapter(id).begin(), data.getAdapter(id).end());
+   for (Entry::iterator it = begin(); it != end(); ++it) {
+      CacheData& data = getNode(*it);
+      all.insert(all.end(), 
+		 data.getAdapter(id).begin(), data.getAdapter(id).end());
+      if (del) {
+	 data.getAdapter(id).clear();
+      }
    }
 }
-void OpenSGCache::collectAdapter (unsigned id, AdapterVector& all, NodePtr node)
+void OpenSGCache::collectAdapter (u32 id, 
+				  AdapterVector& all, 
+				  const NodePtr& node,
+				  bool           del)
 {
-   Cache::CacheData& data = getNode(node);
-   all.insert(all.end(), data.getAdapter(id).begin(), data.getAdapter(id).end());
+   CacheData& data = getNode(node);
+   all.insert(all.end(), 
+	      data.getAdapter(id).begin(), data.getAdapter(id).end());
+   if (del) {
+      data.getAdapter(id).clear();
+   }
    for (ChildContainer::iterator it = data.getChildren().begin();
 	it != data.getChildren().end();
 	++it) {

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:33:57 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -95,7 +95,7 @@ DataAligned<REAL,SIZE>::getOuterMost (unsigned i) const
    return m_outerMost[i];
 }
 template <class REAL, int SIZE>
-inline const DataAligned<REAL,SIZE>::OccTableType*
+inline const typename DataAligned<REAL,SIZE>::OccTableType*
 DataAligned<REAL,SIZE>::getOccupancy (unsigned i) const
 {
    return m_occupancy[i];
@@ -127,13 +127,13 @@ DataAligned<REAL,SIZE>::setCenterInternal (const REAL* value)
    }
 }
 template <class REAL, int SIZE>
-inline DataAligned<REAL,SIZE>::OccTable*
+inline typename DataAligned<REAL,SIZE>::OccTable*
 DataAligned<REAL,SIZE>::getOccupancyInternal ()
 {
    return m_occupancy;
 }
 template <class REAL, int SIZE>
-inline DataAligned<REAL,SIZE>::OuterMost*
+inline typename DataAligned<REAL,SIZE>::OuterMost*
 DataAligned<REAL,SIZE>::getOuterMostInternal ()
 {
    return m_outerMost;
@@ -151,13 +151,21 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
+   typedef OpenSGTriangleBase<BasicTraits>             InheritedData;
    typedef BVolAdapter<BVOL>                           Inherited;
    typedef OpenSGTriangleAligned<BasicTraits,BVOL>     Self;
    typedef FactoryHeap<Self>                           FactoryType;
    typedef DataAligned<Real,BVOL::Size>                Data;
    enum { OccTableHighestBit = Data::OccTableHighestBit, 
 	  OccTableBits       = Data::OccTableBits };
-   typedef Data::OccTableType                          OccTableType;
+   typedef typename Data::OccTableType                 OccTableType;
+
+   typedef typename InheritedData::Cache               Cache;
+   typedef typename InheritedData::CacheData           CacheData;
+   typedef typename InheritedData::TransformType       TransformType;
+   typedef typename InheritedData::GeomTriangleType    GeomTriangleType;
+   typedef typename InheritedData::ObjectAdapterType   ObjectAdapterType;
+   typedef typename Inherited::BVol                    BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructor.                                                 */
@@ -211,13 +219,13 @@ protected:
 };
 
 template <class BasicTraits, class BVOL>
-inline OpenSGTriangleAligned<BasicTraits,BVOL>::Data&
+inline typename OpenSGTriangleAligned<BasicTraits,BVOL>::Data&
 OpenSGTriangleAligned<BasicTraits,BVOL>::getData () 
 {
    return m_data;
 }
 template <class BasicTraits, class BVOL>
-inline const OpenSGTriangleAligned<BasicTraits,BVOL>::Data&
+inline const typename OpenSGTriangleAligned<BasicTraits,BVOL>::Data&
 OpenSGTriangleAligned<BasicTraits,BVOL>::getData () const
 {
    return m_data;
@@ -253,6 +261,8 @@ public:
    typedef BVolGroup<BVOL>                             Inherited;
    typedef BVolGroupAligned<BVOL>                      Self;
    typedef FactoryHeap<Self>                           FactoryType;
+   typedef typename Inherited::BVol                    BVol;
+
    typedef DataAligned<Real,BVOL::Size>                Data;
    enum { OccTableHighestBit = Data::OccTableHighestBit, 
 	  OccTableBits       = Data::OccTableBits };
@@ -312,7 +322,7 @@ inline BVolGroupAligned<BVOL>::BVolGroupAligned ()
 {
 }
 template <class BVOL>
-inline BVolGroupAligned<BVOL>::Data&
+inline typename BVolGroupAligned<BVOL>::Data&
 BVolGroupAligned<BVOL>::getData ()
 {
    return m_data;

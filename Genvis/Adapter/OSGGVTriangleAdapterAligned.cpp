@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.2 $
-//   $Date: 2003/09/19 21:33:57 $
+//   $Revision: 1.3 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -172,7 +172,7 @@ void  OpenSGTriangleAligned<BasicTraits,BVOL>::init (const PointClass& p0,
    // center point
    PointClass center(0.33f*(VectorClass(p0)+VectorClass(p1)+VectorClass(p2)));
 
-   unsigned    k, kk, i;
+   u32 k, kk;
    // first round: calc k-dop as usual
    VectorClass local(p0 - center); 
    m_bvol.unify(local);
@@ -239,7 +239,7 @@ void  OpenSGTriangleAligned<BasicTraits,BVOL>::init (const PointClass& p0,
 template <class BasicTraits, class BVOL>
 void  OpenSGTriangleAligned<BasicTraits,BVOL>::init (const GeomTriangleType& obj)
 {
-   m_originalId = obj.getIndex();
+   setOriginal(obj);
    m_point[0] = obj.getPosition(0);
    m_point[1] = obj.getPosition(1);
    m_point[2] = obj.getPosition(2);
@@ -250,21 +250,66 @@ template <class BasicTraits, class BVOL>
 void  OpenSGTriangleAligned<BasicTraits,BVOL>::init (const TransformType&    m2w,
 						     const GeomTriangleType& obj)
 {
-   m_originalId = obj.getIndex();
-
+   setOriginal(obj);
    m2w.mult(obj.getPosition(0), m_point[0]);
    m2w.mult(obj.getPosition(1), m_point[1]);
    m2w.mult(obj.getPosition(2), m_point[2]);
    init(m_point[0], m_point[1], m_point[2]);
 }
 
+#ifdef WIN32
+static void APIENTRY ConstantColor (const GLfloat* )
+{
+   glColor3f(1.0f, 0.0f, 0.0f);
+}
+static void APIENTRY Void (const GLfloat* )
+{
+}
+#else
+static void ConstantColor (const GLfloat* )
+{
+   glColor3f(1.0f, 0.0f, 0.0f);
+}
+static void Void (const GLfloat* )
+{
+}
+#endif
+
 template <class BasicTraits, class BVOL>
 void OpenSGTriangleAligned<BasicTraits,BVOL>::draw ()
 {
+   GeomTriangleType it(getOriginal());
+#ifdef WIN32
+   typedef void (APIENTRY*ColorFunction)  (const GLfloat*);
+   typedef void (APIENTRY*NormalFunction) (const GLfloat*);
+#else
+   typedef void (*ColorFunction)  (const GLfloat*);
+   typedef void (*NormalFunction) (const GLfloat*);
+#endif
+   ColorFunction color;
+   if (true || it.getColorIndex(0) < 0) {
+      color = (ColorFunction)&Void;
+   } else {
+      color = (ColorFunction)&glColor3fv;
+   }
+   NormalFunction normal;
+   if (it.getNormalIndex(0) < 0) {
+      normal = (NormalFunction)&Void;
+   } else {
+      normal = (NormalFunction)&glNormal3fv;
+   }
+
+   //glColor3f(0.5f, 0.5f, 0.5f);
+   //glColor3f(1.0f, 0.0f, 0.0f);
    const PointClass* coord = getPosition(); 
    glBegin(GL_TRIANGLES);
+   color(it.getColor(0).getValuesRGB());
    glVertex3fv(coord[0].getValues());
+
+   color(it.getColor(1).getValuesRGB());
    glVertex3fv(coord[1].getValues());
+
+   color(it.getColor(2).getValuesRGB());
    glVertex3fv(coord[2].getValues());
    glEnd();
 }
@@ -273,7 +318,7 @@ void OpenSGTriangleAligned<BasicTraits,BVOL>::drawWireframe ()
 {
    GLfloat current[4];
    glGetFloatv(GL_CURRENT_COLOR, current);
-   glColor3f(0.8f, 0.8f, 0.8f);
+   glColor3f(0.8f*current[0], 0.8f*current[1], 0.8f*current[2]);
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
    draw();
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -283,10 +328,9 @@ template <class BasicTraits, class BVOL>
 bool OpenSGTriangleAligned<BasicTraits,BVOL>::calcIntersect (Intersection& hit)
 {
    Real t;
-   Vec3f normal;
-   //GeomTriangleType it(getOriginal());
+   VectorClass normal;
    if (hit.getRay().calcIntersect(getPosition(0), getPosition(1), getPosition(2), 
-				  t, normal)) { // intersection case
+				  t, &normal)) { // intersection case
       if (hit.updateDist(t)) {
 	 hit.setTo(this);
 	 // additional intersection data
@@ -426,7 +470,7 @@ void BVolGroupAligned<BVOL>::updateBoundingVolume (unsigned first,
 						   const std::vector< std::vector<unsigned> >& index,
 						   const std::vector<Adapter*>&                nodes)
 {  
-   unsigned i, k, kk;
+   u32 k, kk;
 
    std::vector<unsigned>::const_iterator iter; 
    std::vector<unsigned>::const_iterator end = index[0].begin()+last; 
@@ -554,14 +598,14 @@ u8* BVolGroupAligned<BVOL>::texTable (const OccTableType& mask)
    static const u8 half(one/2);
    static const u8 quarter(one/4);
 
-   unsigned i, j;
+   u32 i;
    if (tex[0] == one && tex[1] == one) {
       for (i=1; i<2*res; i+=2) {
 	 tex[i] = quarter;
       }
    }
-   unsigned angle = 0;
-   u8       value = ((mask & (1<<angle)) ? one : half);
+   u32 angle = 0;
+   u8  value = ((mask & (1<<angle)) ? one : half);
    for (i=0; i<2*res; i+=4) {
       tex[i]   = value;
       tex[i+2] = zero;

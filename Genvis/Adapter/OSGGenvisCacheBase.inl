@@ -118,12 +118,6 @@ MFBVolAdapterBaseP *GenvisCacheBase::getMFAdapter3(void)
     return &_mfAdapter3;
 }
 
-inline
-MFBVolAdapterBaseP *GenvisCacheBase::getMFCollisionCache(void)
-{
-    return &_mfCollisionCache;
-}
-
 
 
 inline
@@ -142,6 +136,24 @@ inline
 const MFMatrix &GenvisCacheBase::getAdapterMatrix(void) const
 {
     return _mfAdapterMatrix;
+}
+
+inline
+SFMatrix *GenvisCacheBase::getSFFrameMatrix(void)
+{
+    return &_sfFrameMatrix;
+}
+
+inline
+Matrix &GenvisCacheBase::getFrameMatrix(void)
+{
+    return _sfFrameMatrix.getValue();
+}
+
+inline
+const Matrix &GenvisCacheBase::getFrameMatrix(void) const
+{
+    return _sfFrameMatrix.getValue();
 }
 
 inline
@@ -199,24 +211,32 @@ const MFBVolAdapterBaseP &GenvisCacheBase::getAdapter3(void) const
 }
 
 inline
-BVolAdapterBaseP &GenvisCacheBase::getCollisionCache(const UInt32 index)
+GenvisCacheBase::ColCacheContainer& GenvisCacheBase::getColCache ()
 {
-    return _mfCollisionCache[index];
+    return _collisionCache;
+}
+inline
+GenvisCacheBase::AdapterContainer& 
+GenvisCacheBase::getColCache (Self& data)
+{
+    return _collisionCache[&data];
+}
+inline
+const GenvisCacheBase::AdapterContainer& 
+GenvisCacheBase::getColCache (Self& data) const
+{
+    SelfP             nonconstThis = (SelfP)this;
+    AdapterContainer& result = nonconstThis->_collisionCache[&data];
+    return result;
 }
 
 inline
-MFBVolAdapterBaseP &GenvisCacheBase::getCollisionCache(void)
+void GenvisCacheBase::setFrameMatrix(const Matrix &value)
 {
-    return _mfCollisionCache;
-}
-
-inline
-const MFBVolAdapterBaseP &GenvisCacheBase::getCollisionCache(void) const
-{
-    return _mfCollisionCache;
+    _sfFrameMatrix.setValue(value);
 }
 
 OSG_END_NAMESPACE
 
-#define OSGGENVISCACHEBASE_INLINE_CVSID "@(#)$Id: OSGGenvisCacheBase.inl,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $"
+#define OSGGENVISCACHEBASE_INLINE_CVSID "@(#)$Id: OSGGenvisCacheBase.inl,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
 

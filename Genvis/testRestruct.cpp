@@ -36,7 +36,7 @@ USING_GENVIS_NAMESPACE
 // The SimpleSceneManager to manage simple applications
 static NodePtr scene;
 static NodePtr scene2;    
-static SimpleSceneManager* mgr;
+static SimpleSceneManager* mgr  = NULL;
 static OSGBVolHierarchy*   hier = NULL;
 
 // forward declaration so we can have the interesting stuff upfront
@@ -97,8 +97,8 @@ int main(int argc, char **argv)
 
     // restructure
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     std::cout << "cache filled." << std::endl;
 
     // GLUT main loop
@@ -172,16 +172,15 @@ void keyboard(unsigned char k, int x, int y)
 	 delete hier;
       }
       hier = new FaceBVolHierarchy<OpenSGTraits,OpenSGFaceInput<K18Dop> >();
+      hier->setParameter("LongestSideMedian", 50, 10);
       OSGCache::the().setHierarchy(hier);
       OSGCache::the().apply(scene);
       std::cout << "adapters with 18DOPs created.." << std::endl;
-      hier->setParameter(OSGStaticInput::LongestSideMedianId, 50, 10);
-      hier->hierarchy();
       BVolGroupBase* root = hier->getRoot();
       std::cout << "18DOP-hierarchy (max depth 50, min num primitives 10) build...." << std::endl;
       // * restructure with face hierarchy up to level 4
       SingleEnterLeaveTraverser<OpenSGTraits,FaceSpatializeTraits<OpenSGTraits> > trav;
-      trav.getData().setLevel(4);
+      trav.getData().setDepth(4);
       OSGCache::CacheData& data = OSGCache::the()[scene];
       trav.apply(data, root, data.getAdapterMatrix(0));
       setRefdCP(scene2, trav.getData().getRoot());
@@ -202,13 +201,13 @@ void keyboard(unsigned char k, int x, int y)
       OSGCache::the().setHierarchy(hier);
       OSGCache::the().apply(scene);
       std::cout << "adapters with 18DOPs created.." << std::endl;
-      hier->setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
+      hier->setParameter("LongestSideMedian", 50, 2);
       hier->hierarchy();
       BVolGroupBase* root = hier->getRoot();
       std::cout << "18DOP-hierarchy (max depth 50, min num primitives 10) build...." << std::endl;
       // * restructure with object hierarchy up to level 4
       SingleEnterLeaveTraverser<OpenSGTraits,SpatializeTraits<OpenSGTraits> > trav;
-      trav.getData().setLevel(4);
+      trav.getData().setDepth(4);
       OSGCache::CacheData& data = OSGCache::the()[scene];
       trav.apply(data, root, data.getAdapterMatrix(0));
       setRefdCP(scene2, trav.getData().getRoot());
@@ -226,8 +225,7 @@ void keyboard(unsigned char k, int x, int y)
 	 delete hier;
 	 hier = NULL;
       }
-      LongestSideMean<K6Dop> oracle;
-      setRefdCP(scene2, objectSpatialize<K6Dop>(scene, 50, 2, &oracle, 1));
+      setRefdCP(scene2, objectSpatialize<K6Dop>(scene, 50, 2, "LongestSideMean", 1));
       std::cout << "scene restructured....." << std::endl;
 
       mgr->setRoot(scene2);
@@ -242,8 +240,22 @@ void keyboard(unsigned char k, int x, int y)
 	 delete hier;
 	 hier = NULL;
       }
-      LongestSideMean<K6Dop> oracle;
-      setRefdCP(scene2, faceSpatialize<K6Dop>(scene, 50, 10, &oracle, 1));
+      setRefdCP(scene2, faceSpatialize<K6Dop>(scene, 50, 10, "LongestSideMean", 1));
+      std::cout << "scene restructured....." << std::endl;
+
+      mgr->setRoot(scene2);
+      std::cout << "restructured scene" << std::endl;
+      glutPostRedisplay();
+      break;
+    }
+    case '6': {
+      // utility function faceSpatialize
+      if (hier != NULL) { 
+	 hier->destroy();
+	 delete hier;
+	 hier = NULL;
+      }
+      setRefdCP(scene2, spatialize<K6Dop>(scene, 50, 10, "LongestSideMean", 1));
       std::cout << "scene restructured....." << std::endl;
 
       mgr->setRoot(scene2);

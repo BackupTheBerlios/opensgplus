@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -74,6 +74,9 @@ public:
     //   types                                                               
     //-----------------------------------------------------------------------
 
+    typedef DrawAction        Inherited;
+    typedef AdapterDrawAction Self;
+
     //-----------------------------------------------------------------------
     //   class functions                                                     
     //-----------------------------------------------------------------------
@@ -85,7 +88,7 @@ public:
     
     // prototype access
     // after setting the prototype all new AdapterDrawActions are clones of it
-    static void                   setPrototype( AdapterDrawAction * proto );
+    static void               setPrototype( AdapterDrawAction* proto);
     static AdapterDrawAction* getPrototype( void );
 
     //-----------------------------------------------------------------------
@@ -96,7 +99,8 @@ public:
 
     /*------------------------- your_category -------------------------------*/
 
-    inline genvis::OSGCache& getCache () const;
+    inline bool getLocalMode () const;
+    inline void setLocalMode (bool flag=true);
 
     /*------------------------- your_operators ------------------------------*/
 
@@ -131,12 +135,19 @@ protected:
     //   instance variables                                                  
     //-----------------------------------------------------------------------
 
+    bool m_mode;
+
     //-----------------------------------------------------------------------
     //   instance functions                                                  
     //-----------------------------------------------------------------------
     
     // select all visible nodes
-    UInt32  selectVisibles( void );
+    virtual UInt32  selectVisibles       (void);
+    UInt32          selectVisiblesLocal  (void);
+    UInt32          selectVisiblesGlobal (void);
+
+    typedef UInt32 (Self::*SelectVisiblesFunc)(void);
+    SelectVisiblesFunc f_selectVisibles;
 
 private:
 
@@ -147,8 +158,6 @@ private:
     //-----------------------------------------------------------------------
     //   types                                                               
     //-----------------------------------------------------------------------
-
-    typedef DrawAction Inherited;
 
     //-----------------------------------------------------------------------
     //   friend classes                                                      
@@ -165,12 +174,12 @@ private:
     static char cvsid[];
 
     // the prototype which is copied to create new actions
-    static AdapterDrawAction * _prototype;
+    static AdapterDrawAction* _prototype;
 
 #if 0
     // default functors for instantiation
-    static vector<Functor> *_defaultEnterFunctors;
-    static vector<Functor> *_defaultLeaveFunctors;
+    static vector<Functor>* _defaultEnterFunctors;
+    static vector<Functor>* _defaultLeaveFunctors;
 #endif
     
     //-----------------------------------------------------------------------

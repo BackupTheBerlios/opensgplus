@@ -15,6 +15,7 @@
 #include "OSGSimpleSceneManager.h"
 #include "OSGAction.h"
 #include "OSGSceneFileHandler.h"
+#include "OSGComponentTransform.h"
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
 #include "OSGSFSysTypes.h"
@@ -27,9 +28,10 @@ USING_GENVIS_NAMESPACE
 
 // The SimpleSceneManager to manage simple applications
 static NodePtr scene;
+static NodePtr sceneOrg;
 static SimpleSceneManager*   mgr;
 
-static Real32 numCells = 10;
+static Real32 numCells = 5;
 struct AssignGridParameter
 {
    AssignGridParameter (const Real32& value) 
@@ -38,13 +40,42 @@ struct AssignGridParameter
    Action::ResultE enter (NodePtr& n) {
      GeometryClusteredPtr core = GeometryClusteredPtr::dcast(n->getCore());
      if (core != NullFC) {
+     beginEditCP(core);
         core->setNumCells(m_value);
+     endEditCP(core);
      }
      return Action::Continue;
    }
 
 private:
    Real32 m_value;
+};
+struct ChangeGeometry2GeometryClustered
+{
+   ChangeGeometry2GeometryClustered () 
+   {}
+   Action::ResultE enter (NodePtr& n) {
+     GeometryPtr core = GeometryPtr::dcast(n->getCore());
+     if (core != NullFC) {
+        GeometryClusteredPtr geom = GeometryClustered::create();
+        beginEditCP(geom);
+        geom->setMaterial(core->getMaterial());
+        geom->setIndices(core->getIndices());
+        geom->setPositions(core->getPositions());
+        geom->setNormals(core->getNormals());
+        geom->setTexCoords(core->getTexCoords());
+        geom->setColors(core->getColors());
+        geom->setSecondaryColors(core->getSecondaryColors());
+        geom->setTypes(core->getTypes());
+        geom->setLengths(core->getLengths());
+        geom->getIndexMapping() = core->getIndexMapping();
+	endEditCP(geom);
+        beginEditCP(n);
+	n->setCore(geom);
+        beginEditCP(n);
+     }
+     return Action::Continue;
+   }
 };
 
 
@@ -57,7 +88,7 @@ int main(int argc, char **argv)
     // OSG init
     osgInit(argc,argv);
 
-#if 1
+#if 0
     // replace Geometry prototype by GeometryClustered prototype
     GeometryClusteredPtr 
       protoGeometryClustered = GeometryClustered::create();
@@ -100,6 +131,42 @@ int main(int argc, char **argv)
     }
     addRefCP(scene);
 
+    // clone original scene
+    sceneOrg = cloneTree(scene);
+    addRefCP(sceneOrg);
+
+    Vec3f minBound, maxBound;
+    const DynamicVolume& vol = sceneOrg->getVolume(true);
+    vol.getBounds(minBound, maxBound);
+
+    NodePtr trfNode = Node::create();
+    ComponentTransformPtr trf = ComponentTransform::create();
+    beginEditCP(trf);
+    trf->setTranslation(Vec3f((maxBound[0]-minBound[0]),0,0));
+    endEditCP(trf);
+    beginEditCP(trfNode);
+    trfNode->setCore(trf);
+    trfNode->addChild(sceneOrg);
+    endEditCP(trfNode);
+    sceneOrg = trfNode;
+
+    // make group of scene and sceneOrg
+    NodePtr groupNode = Node::create();
+    beginEditCP(groupNode);
+    groupNode->setCore(Group::create());
+    groupNode->addChild(scene);
+    groupNode->addChild(sceneOrg);
+    endEditCP(groupNode);
+
+    // change to GeometryClustered
+    {
+       ChangeGeometry2GeometryClustered actor;
+       traverse(scene, 
+		osgTypedMethodFunctor1ObjPtrCPtrRef<
+		Action::ResultE,
+		ChangeGeometry2GeometryClustered,
+		NodePtr        >(&actor, &ChangeGeometry2GeometryClustered::enter));    
+    }
     // set grid parameters
     {
        AssignGridParameter actor(numCells);
@@ -115,7 +182,7 @@ int main(int argc, char **argv)
 
     // tell the manager what to manage
     mgr->setWindow(gwin );
-    mgr->setRoot  (scene);
+    mgr->setRoot  (groupNode);
 
     // show the whole scene
     mgr->showAll();
@@ -215,7 +282,7 @@ int setupGLUT(int *argc, char *argv[])
     
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-    glutIdleFunc(display);
+    //glutIdleFunc(display);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
     glutKeyboardFunc(keyboard);

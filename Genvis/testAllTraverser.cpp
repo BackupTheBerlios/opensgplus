@@ -42,9 +42,9 @@ USING_GENVIS_NAMESPACE
 // The SimpleSceneManager to manage simple applications
 static NodePtr scene;
 static NodePtr        first;
-static const unsigned numFirst = 100;
+static const UInt32 numFirst = 100;
 static NodePtr        second;
-static const unsigned numSecond= 100;
+static const UInt32 numSecond= 100;
 typedef SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleInput<K18Dop> > Hierarchy;
 static Hierarchy                hier;
 static genvis::OSGAllTraverser* all = NULL;
@@ -105,13 +105,22 @@ NodePtr makeTransformedCube (Real32 xsize,
 			     Real32 zsize,
 			     UInt16 hor,
 			     UInt16 vert,
-			     UInt16 depth)
+			     UInt16 depth,
+			     const Color3f&)
 {
+   GeometryPtr box = makeBoxGeo(xsize, ysize, zsize, hor, vert, depth);
+
+   NodePtr boxNode = Node::create();
+   beginEditCP(boxNode);
+   boxNode->setCore(box);
+   endEditCP(boxNode);
+
    NodePtr node = Node::create();
    beginEditCP(node);
    node->setCore(Transform::create());
-   node->addChild(makeBox(xsize, ysize, zsize, hor, vert, depth));
+   node->addChild(boxNode);
    endEditCP(node);
+
    return node;
 }
 
@@ -133,16 +142,16 @@ int main(int argc, char **argv)
     first = Node::create ();
     beginEditCP(first);
     first->setCore(Group::create());
-    unsigned i;
+    UInt32 i;
     for (i=0; i<numFirst; ++i) {
-       first->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1));
+       first->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(1,0,0)));
     }
     endEditCP(first);
     second = Node::create ();
     beginEditCP(second);
     second->setCore(Group::create());
     for (i=0; i<numSecond; ++i) {
-       second->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1));
+       second->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(0,1,0)));
     }
     endEditCP(second);
 
@@ -178,31 +187,35 @@ int main(int argc, char **argv)
     // show the whole scene
     mgr->showAll();
 
-    // restructure
+    // prepare collision query
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     SLOG << "cache filled." << std::endl;
     // * build hierarchy
-    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalCoordSystem);
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::Local);
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     SLOG << "adapters with 18DOPs created.." << std::endl;
-    hier.hierarchy();
-    SLOG << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
-    // * create double traverser for collision detection
-    OSGDoubleTraverser* traverser = new DoubleTraverserBinary<OpenSGTraits,BVolCollisionTraits<OpenSGTraits,K18Dop> >();
-    traverser->setUseCoherency(false);
-   ((OSGBVolCollision&)traverser->getData()).setStopFirst(false);
-   all = new AllTraverser<OpenSGTraits>();
-   all->setDoubleTraverser(traverser);
+    SLOG << "hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
 
-   // GLUT main loop
-   Profiler::the().Reset();
-   glutMainLoop();
+    // * create double traverser for pairwise collision detection
+    DoubleTraverserBinary<OpenSGTraits,BVolCollisionTraits<OpenSGTraits,K18Dop> >* 
+      traverser = new DoubleTraverserBinary<OpenSGTraits,BVolCollisionTraits<OpenSGTraits,K18Dop> >();
+    traverser->setUseCoherency(false);              // do not use generalized front cache for frame coherency
+    traverser->getDataTyped().setStopFirst(false);  // do not stop on first colliding primitive-pair
 
-   return 0;
+    // * create all traverser for allpairs collision detection
+    all = new AllTraverser<OpenSGTraits>();
+    all->setDoubleTraverser(traverser);
+
+
+    // GLUT main loop
+    Profiler::the().Reset();
+    glutMainLoop();
+
+    return 0;
 }
 
 //
@@ -213,7 +226,7 @@ int main(int argc, char **argv)
 void display(void)
 {
    Profiler::the().StartProfile("Frame");
-   unsigned i;
+   UInt32 i;
    for (i=0; i<numFirst; ++i) {
      TransformPtr trf = TransformPtr::dcast(first->getChild(i)->getCore());
      beginEditCP(trf);

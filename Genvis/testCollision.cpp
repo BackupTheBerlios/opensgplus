@@ -38,8 +38,9 @@ static NodePtr               first;
 static ComponentTransformPtr firstTrf;
 static NodePtr               second;
 static ComponentTransformPtr secondTrf;
-static genvis::OSGAllTraverser*    all = NULL;
-static genvis::OSGDoubleTraverser* traverser = NULL;
+static genvis::OSGAllTraverser* all = NULL;
+typedef DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K18Dop> > Traverser;
+static Traverser*            traverser = NULL;
 static Vec3f                 velocity(0,0,-0.01f);
 static SimpleSceneManager*   mgr;
 
@@ -95,28 +96,28 @@ int main(int argc, char **argv)
     // show the whole scene
     mgr->showAll();
 
-    // restructure
+    // prepare collision query
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     std::cout << "cache filled." << std::endl;
     // * build hierarchy
     SingleBVolHierarchy<OpenSGTraits,OpenSGTriangleInput<K18Dop> > hier;
-    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalCoordSystem);
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::Local);
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     std::cout << "adapters with 18DOPs created.." << std::endl;
+    std::cout << "hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
 
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
-    hier.hierarchy();
-    std::cout << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
     // * create double traverser for collision detection
-    // realignemnt with DynamicRealign
-    traverser = new DoubleTraverserBinary<OpenSGTraits,DynamicAlignCollisionTraits<OpenSGTraits,K18Dop> >();
-    traverser->setUseCoherency(false);
-   ((OSGBVolCollision&)traverser->getData()).setStopFirst(false);
-   all = new PruningTraverser<OpenSGTraits>();
-   all->setDoubleTraverser(traverser);
+    // realignemnt with DynamicAlign
+    traverser = new Traverser();
+    traverser->setUseCoherency(false);             // do not use generalized front cache for frame coherency
+    traverser->getDataTyped().setStopFirst(false); // do not stop on first colliding primitive-pair
+
+    all = new PruningTraverser<OpenSGTraits>();
+    all->setDoubleTraverser(traverser);
 
     // GLUT main loop
     glutMainLoop();
@@ -142,6 +143,7 @@ void display(void)
 	      << col.getNumMixedTests() << " MixedTests/"
 	      << col.getNumPrimTests() << " TriTests  " 
 	      << std::endl;
+
     if (result && col.getNumContacts() > 0) { // collision
        velocity *= -1;
        beginEditCP(secondTrf);

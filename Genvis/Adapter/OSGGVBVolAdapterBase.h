@@ -1,8 +1,32 @@
-// For Copyright and Legal Information see file license_vrroom.doc
-// ---------------------------------------------------------------
-// File:    $Id: OSGGVBVolAdapterBase.h,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $
-// Author:  Gordon Mueller, <gordon@vrroom.de>
-// ---------------------------------------------------------------
+//=============================================================================
+//                                                                            
+//                               Genvis                                     
+//        Copyright (C) 2001 by Institute of Computer Graphics, TU Braunschweig
+//                           graphics.tu-bs.de                                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//                                License                                     
+//                                                                            
+//   This library is free software; you can redistribute it and/or modify it 
+//   under the terms of the GNU Library General Public License as published  
+//   by the Free Software Foundation, version 2.                             
+//                                                                             
+//   This library is distributed in the hope that it will be useful, but       
+//   WITHOUT ANY WARRANTY; without even the implied warranty of                
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU         
+//   Library General Public License for more details.                          
+//                                                                            
+//   You should have received a copy of the GNU Library General Public         
+//   License along with this library; if not, write to the Free Software       
+//   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                 
+//                                                                            
+//-----------------------------------------------------------------------------
+//                                                                            
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
+//                                                                            
+//=============================================================================
 
 #ifndef OSGGVBVOLADAPTERBASE_H
 #define OSGGVBVOLADAPTERBASE_H
@@ -35,8 +59,8 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolAdapterBase      Self;
    typedef Adapter              Inherited;
+   typedef BVolAdapterBase      Self;
    typedef BoundingVolume<Real> BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -48,7 +72,7 @@ public:
    /*! \name Category in hierarchy.                                       */
    /*! \{                                                                 */
    virtual inline bool              isLeaf  () const;
-   inline  bool                     isInner () const;
+   virtual inline  bool             isInner () const;
    virtual inline bool              isSibling (BVolAdapterBase* sib) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -56,6 +80,7 @@ public:
    /*! \{                                                                 */
    inline  void                     setParent (BVolAdapterBase* parent);
    virtual inline  BVolAdapterBase* getParent () const;
+   inline  u32                      getDepth() const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Update after deformation.                                    */
@@ -72,7 +97,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Ray intersection.                                            */
    /*! \{                                                                 */
-   virtual bool    checkIntersect   (const Ray& ray);
+   virtual bool    checkIntersect   (const Intersection& in);
    virtual bool    calcIntersect    (Intersection& hit);
    virtual VectorClass getSurfaceNormal (const Intersection& hit);
    /*! \}                                                                 */
@@ -90,7 +115,7 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Identifier.                                                  */
    /*! \{                                                                 */
-   static  inline unsigned getAdapterId ();
+   static u32 getAdapterId ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -127,11 +152,17 @@ inline bool      BVolAdapterBase::isSibling (BVolAdapterBase* sib) const
    assert(sib != NULL);
    return (getParent() != NULL) && (getParent() == sib->getParent());
 }
-inline unsigned BVolAdapterBase::getAdapterId ()
+inline u32 BVolAdapterBase::getDepth () const
 {
-   static unsigned id = getNextId();
-   return id;
+   u32 depth = 0;
+   BVolAdapterBase* parent = getParent();
+   while (parent != NULL && parent->isInner()) {
+      ++depth;
+      parent = parent->getParent();
+   }
+   return depth;
 }
+
 
 /*! Base class for adapters used in a bounding volume hierarchy.
     Interface is augmented for bounding volume actually used.
@@ -164,6 +195,7 @@ template <class BVOL>
 inline BVolAdapter<BVOL>::BVolAdapter () 
 {
 }
+
 template <class BVOL>
 inline const BVOL& BVolAdapter<BVOL>::getBVol () const
 {

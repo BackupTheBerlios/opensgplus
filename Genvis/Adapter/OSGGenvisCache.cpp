@@ -104,17 +104,17 @@ const GenvisCache::ChildContainer& GenvisCache::getChildren () const
 {
    return getNode()->getMFChildren()->getValues();
 }
-int  GenvisCache::getNumChildren () const
+Int32  GenvisCache::getNumChildren () const
 {
    return getNode()->getNChildren();
 }
 
-const Matrix& GenvisCache::getAdapterMatrix (unsigned id) const
+const Matrix& GenvisCache::getAdapterMatrix (UInt32 id) const
 {
    assert(id < GV_MAX_NUM_ADAPTER);
    return Inherited::getAdapterMatrix().getValue(id);
 }
-void GenvisCache::setAdapterMatrix (unsigned id, const OSG::Matrix& matrix)
+void GenvisCache::setAdapterMatrix (UInt32 id, const OSG::Matrix& matrix)
 {
    assert(id < GV_MAX_NUM_ADAPTER);
    beginEditCP(GenvisCachePtr(this));
@@ -122,7 +122,7 @@ void GenvisCache::setAdapterMatrix (unsigned id, const OSG::Matrix& matrix)
    endEditCP(GenvisCachePtr(this));
 }
 
-GenvisCache::AdapterContainer& GenvisCache::getAdapter(unsigned id)
+GenvisCache::AdapterContainer& GenvisCache::getAdapter(UInt32 id)
 {
    switch (id) {
    default:
@@ -134,7 +134,7 @@ GenvisCache::AdapterContainer& GenvisCache::getAdapter(unsigned id)
      return Inherited::getAdapter3().getValues();
    }
 }
-BVolAdapterBaseP& GenvisCache::getAdapter(unsigned id, unsigned num)
+BVolAdapterBaseP& GenvisCache::getAdapter(UInt32 id, UInt32 num)
 {
    switch (id) {
    default:
@@ -149,7 +149,7 @@ BVolAdapterBaseP& GenvisCache::getAdapter(unsigned id, unsigned num)
      return *(Inherited::getAdapter3().end()-num);
    }
 }
-const GenvisCache::AdapterContainer& GenvisCache::getAdapter(unsigned id) const
+const GenvisCache::AdapterContainer& GenvisCache::getAdapter(UInt32 id) const
 {
    switch (id) {
    default:
@@ -161,7 +161,7 @@ const GenvisCache::AdapterContainer& GenvisCache::getAdapter(unsigned id) const
      return Inherited::getAdapter3().getValues();
    }
 }
-const BVolAdapterBaseP& GenvisCache::getAdapter(unsigned id, unsigned num) const
+const BVolAdapterBaseP& GenvisCache::getAdapter(UInt32 id, UInt32 num) const
 {
    switch (id) {
    default:
@@ -177,7 +177,7 @@ const BVolAdapterBaseP& GenvisCache::getAdapter(unsigned id, unsigned num) const
    }
 }
 
-void           GenvisCache::setAdapter(unsigned id, BVolAdapterBaseP a) 
+void           GenvisCache::setAdapter(UInt32 id, BVolAdapterBaseP a) 
 {
    switch (id) {
    default:
@@ -198,7 +198,7 @@ void           GenvisCache::setAdapter(unsigned id, BVolAdapterBaseP a)
      break;
    }
 }
-void           GenvisCache::setAdapter(unsigned id, const AdapterVector& a) 
+void           GenvisCache::setAdapter(UInt32 id, const AdapterVector& a) 
 {
    switch (id) {
    default:
@@ -223,31 +223,16 @@ void           GenvisCache::setAdapter(unsigned id, const AdapterVector& a)
    }
 }
 
-GenvisCache::AdapterContainer& GenvisCache::getColCache ()
+void GenvisCache::clearColCache ()
 {
-   return Inherited::getCollisionCache().getValues();
-}
-BVolAdapterBaseP& GenvisCache::getColCache (unsigned num)
-{
-   assert(num <= Inherited::getCollisionCache().size());
-   return *(Inherited::getCollisionCache().end()-num);
-}
-const GenvisCache::AdapterContainer& GenvisCache::getColCache () const
-{
-   return Inherited::getCollisionCache().getValues();
-}
-const BVolAdapterBaseP& GenvisCache::getColCache (unsigned num) const
-{
-   assert(num <= Inherited::getCollisionCache().size());
-   return *(Inherited::getCollisionCache().end()-num);
+   Inherited::getColCache().clear();
 }
 
-
-void GenvisCache::destroyAdapter (unsigned id, unsigned len)
+void GenvisCache::destroyAdapter (UInt32 id, UInt32 len)
 {
    clearAdapter(id, len);
 }
-void GenvisCache::clearAdapter (unsigned id, unsigned len)
+void GenvisCache::clearAdapter (UInt32 id, UInt32 len)
 {
    switch (id) {
    default:
@@ -314,11 +299,6 @@ void GenvisCache::dump(UInt32 in, const BitVector ) const
       SLOG << " " << Inherited::getAdapter3().getValue(i);
    }
    SLOG << std::endl;
-   SLOG << " CollisionCache " << Inherited::getCollisionCache().getSize() << std::endl;
-   for (i=0; i<Inherited::getCollisionCache().getSize(); ++i) {
-      SLOG << " " << Inherited::getCollisionCache().getValue(i);
-   }
-   SLOG << std::endl << " }" << std::endl;
 }
 
 
@@ -335,7 +315,7 @@ void GenvisCache::dump(UInt32 in, const BitVector ) const
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGenvisCache.cpp,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGenvisCache.cpp,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGENVISCACHEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGENVISCACHEBASE_INLINE_CVSID;
 

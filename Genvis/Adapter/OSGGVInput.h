@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -39,23 +39,6 @@
 #include "OSGGVGroup.h"
 
 BEGIN_GENVIS_NAMESPACE
-
-#if 0
-template <class BVOL>
-class OSG_GENVISLIB_DLLMAPPING OpenSGInput
-{
-public:
-   typedef BVOL                                     BVol;
-   typedef OpenSGObjectBase<OpenSGTraits>           ObjectBase;
-   typedef OpenSGObject2BVol<OpenSGTraits,BVOL>     Object2BVolAdapter;
-   typedef OpenSGFaceBase<OpenSGTraits>             FaceBase;
-   typedef OpenSGFace2BVol<OpenSGTraits,BVOL>       Face2BVolAdapter;
-   typedef BVolGroup<BVOL>                          Group;
-   typedef OpenSGTriangleBase<OpenSGTraits>         TriangleBase;
-   typedef OpenSGTriangle2BVol<OpenSGTraits,BVOL>   Triangle2BVolAdapter;
-   typedef BVolGroup<BVOL>                          TriangleGroup;
-};
-#endif
 
 template <class BVOL>
 class OSG_GENVISLIB_DLLMAPPING OpenSGInput

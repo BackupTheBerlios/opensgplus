@@ -23,28 +23,29 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2003/09/19 21:35:22 $
+//   $Revision: 1.4 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
 #ifndef OSGGVCACHE_H
 #define OSGGVCACHE_H
 
-#include <vector>
 #include "OSGGVBase.h"
 #include "OSGGVBVolAdapterBase.h"
+#include <stack>
+#include <vector>
 #ifdef GV_CACHE_HASHMAP
 //# include "OSGGVHashMap.h"
 //# include "OSGGVPtrHasher.h"
 # ifdef OSG_STL_HAS_HASH_MAP
 #  ifdef OSG_HASH_MAP_AS_EXT
-#   include <ext/hash_map>
+#   include "ext/hash_map"
 #  else
-#   include <hash_map>
+#   include "hash_map"
 #  endif
 # else
-#  include <map>
+#  include "map"
 # endif
 # include "OSGGVCacheData.h"
 #else
@@ -66,52 +67,69 @@ class OpenSGTraits;
 template <class BasicTraits> class StaticInput;
 typedef StaticInput<OpenSGTraits> OSGStaticInput;
 
-#ifdef GV_CACHE_HASHMAP
-
-struct NodePtrHasher 
-{
-   typedef NodePtr                   PtrType;
-   typedef PtrType::StoredObjectType StoredObjectType;
-   /*! Hash value used by hash_map. */
-   size_t operator() (const PtrType& key) const 
-   { 
+template <class FCPTR>
+struct FCPtrLess {
+   typedef FCPTR                              PtrType;
+   typedef typename PtrType::StoredObjectType StoredObjectType;
+   static size_t value (const PtrType& key) {
 #ifdef WIN32
-    union Caster {
-      StoredObjectType* pointer;
-      size_t            address;
-    };
-    Caster result;
-    result.pointer = key.getCPtr();
-    return result.address;
+      union Caster {
+	StoredObjectType* pointer;
+	size_t            address;
+      };
+      Caster result;
+      result.pointer = key.getCPtr();
+      return result.address;
 #else
-    return reinterpret_cast<size_t>(key.getCPtr()); 
+      return reinterpret_cast<size_t>(key.getCPtr()); 
 #endif
    }
-   /*! Less functor used by map. */
-   bool   operator() (const PtrType& a, const PtrType& b) const 
-   { 
-#ifdef WIN32
-    union Caster {
-      StoredObjectType* pointer;
-      size_t            address;
-    };
-    Caster ra, rb;
-    ra.pointer = a.getCPtr();
-    rb.pointer = b.getCPtr();
-    return ra.address < rb.address;
-#else
-    return reinterpret_cast<size_t>(a.getCPtr()) 
-      < reinterpret_cast<size_t>(b.getCPtr()); 
-#endif
-   }
+   bool operator() (const PtrType& a, const PtrType& b) const {
+      return value(a) < value(b);
+   } 
 };
+
+#ifdef GV_CACHE_HASHMAP
 
 class OSG_GENVISLIB_DLLMAPPING OpenSGCache
 {
 public:
+   struct NodePtrHasher 
+   {
+     typedef NodePtr                   PtrType;
+     typedef PtrType::StoredObjectType StoredObjectType;
+     static size_t value (const PtrType& key) {
+#ifdef WIN32
+	 union Caster {
+	   StoredObjectType* pointer;
+	   size_t            address;
+	 };
+	 Caster result;
+	 result.pointer = key.getCPtr();
+	 return result.address;
+#else
+	 return reinterpret_cast<size_t>(key.getCPtr()); 
+#endif
+     }
+     /*! Hash functor used by hash_map. */
+     size_t operator() (const PtrType& key) const 
+     { 
+       return value(key); 
+     }
+     /*! Less functor used by map. */
+     bool   operator() (const PtrType& a, const PtrType& b) const 
+     { 
+       return value(a) < value(b); 
+     }
+   };
+
    typedef OpenSGCache                                       Cache;
    typedef OpenSGData                                        CacheData;
    typedef NodePtrHasher                                     HashFunctor;
+   typedef std::stack<OSG::MaterialPtr>                      MaterialStack;
+   typedef std::stack<OSG::Matrix>                           MatrixStack;
+   typedef std::map<OSG::NodeCorePtr,CacheData*,FCPtrLess<OSG::NodeCorePtr> >
+           SharesContainer;
 #ifdef OSG_STL_HAS_HASH_MAP
    typedef OSG_STDEXTENSION_NAMESPACE::hash_map<OSG::NodePtr, 
                                                 CacheData, 
@@ -119,19 +137,18 @@ public:
 #else
    typedef std::map<OSG::NodePtr, CacheData, HashFunctor>    Entry;
 #endif
-   //typedef my_hash_map<OSG::NodePtr, CacheData, HashFunctor> Entry;
    typedef Entry::iterator                                   EntryIterator;
    typedef Entry::value_type                                 EntryValue;
    typedef std::vector<BVolAdapterBaseP>                     AdapterVector;
    typedef MFNodePtr                                         ChildContainer;
 
 #ifdef OSG_NOFUNCTORS
-   typedef void (*FunctorFunc) (OSG::CNodePtr&, OSGStaticInput*);
+   typedef bool (*FunctorFunc) (OSG::CNodePtr&, OSGStaticInput*);
    struct Functor
    {
    public:
       FunctorFunc _func;
-      virtual ResultE call(OSG::CNodePtr& cnode, OSGStaticInput* input) {
+      virtual bool call(OSG::CNodePtr& cnode, OSGStaticInput* input) {
 	return _func(cnode, input);
       }
    };
@@ -140,12 +157,10 @@ public:
       Functor result;
       result._func = func;
       return result;
-    }
+   }
 #else
-    typedef OSG::ArgsCollector<OSGStaticInput*>          FunctorArgs;
-
-    typedef OSG::TypedVoidFunctor2Base<OSG::CPtrRefCallArg<OSG::CNodePtr>, 
-                                       FunctorArgs              > Functor;
+   typedef OSG::ArgsCollector<OSGStaticInput*>                                           FunctorArgs;
+   typedef OSG::TypedFunctor2Base<bool, OSG::CPtrRefCallArg<OSG::CNodePtr>, FunctorArgs> Functor;
 #endif
 
    /*---------------------------------------------------------------------*/
@@ -156,8 +171,9 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline const Entry&  getHashTable () const;
-   inline OSGStaticInput* getHierarchy () const;
+   Entry&          getHashTable ();
+   const Entry&    getHashTable () const;
+   OSGStaticInput* getHierarchy () const;
    void                   setHierarchy (OSGStaticInput* hier);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -169,19 +185,20 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Preparing the cache from the OpenSG scenegraph.              */
    /*! \{                                                                 */
-   void   apply      (const OSG::NodePtr& node);
-   void   addNode    (const OSG::NodePtr& node);
-   void   updateNode (const OSG::NodePtr& node);
+   void   apply         (const OSG::NodePtr& node);
+   void   addNode       (const OSG::NodePtr& node);
+   void   collectLeaves (std::vector<CacheData*>& all, const NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members valid during preparation.                            */
    /*! \{                                                                 */   
-   inline OSG::NodePtr     getCurrentNode() const;
-   inline void             setCurrentNode(const OSG::NodePtr& node);
-   inline OSG::MaterialPtr getCurrentMaterial () const;
-   inline void             setCurrentMaterial (const OSG::MaterialPtr& node);
-   inline OSG::Matrix&       getCurrentMatrix ();
-   inline const OSG::Matrix& getCurrentMatrix () const;
+   OSG::NodePtr     getCurrentNode() const;
+   void             setCurrentNode(const OSG::NodePtr& node);
+   OSG::MaterialPtr getCurrentMaterial () const;
+   void             pushMaterial (const OSG::MaterialPtr& node);
+   void             popMaterial  ();
+   OSG::Matrix&       getCurrentMatrix ();
+   const OSG::Matrix& getCurrentMatrix () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Functor management                                           */
@@ -194,42 +211,50 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Functors.                                                    */
    /*! \{                                                                 */   
-   static void staticEnterMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticLeaveMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticEnterTransform (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticLeaveTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticLeaveMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticLeaveTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry  (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterSwitch    (OSG::CNodePtr&, OSGStaticInput*);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterMaterialGroup       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorLeaveMaterialGroup       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorEnterTransform       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorLeaveTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterMaterialGroup   (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorLeaveMaterialGroup   (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorLeaveTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry        (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterSwitch          (OSG::CNodePtr&, OSGStaticInput*);
 #endif
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Accessing the cache data.                                    */
    /*! \{                                                                 */ 
-   inline EntryIterator begin ();
-   inline EntryIterator end   ();
-   CacheData&       getNode  (const EntryValue&   n);
-   const CacheData& getNode  (const EntryValue&   n) const;
-   CacheData&       getNode  (const OSG::NodePtr& n);
-   const CacheData& getNode  (const OSG::NodePtr& n) const;
-   CacheData&       operator[]  (const OSG::NodePtr& n);
-   const CacheData& operator[]  (const OSG::NodePtr& n) const;
-   inline CacheData&       operator[]  (EntryValue& n);
-   inline const CacheData& operator[]  (const EntryValue& n) const;
-   CacheData&       getParent  (const OSG::NodePtr& n, int i=0);
-   const CacheData& getParent  (const OSG::NodePtr& n, int i=0) const;
+   EntryIterator begin ();
+   EntryIterator end   ();
+   CacheData*           findShare(const OSG::NodePtr& node);
+   CacheData&           getShare (const OSG::NodePtr& node);
+   CacheData&           getNode  (const EntryValue&   n);
+   const CacheData&     getNode  (const EntryValue&   n) const;
+   CacheData&           getNode  (const OSG::NodePtr& n);
+   const CacheData&     getNode  (const OSG::NodePtr& n) const;
+   CacheData&           operator[]  (const OSG::NodePtr& n);
+   const CacheData&     operator[]  (const OSG::NodePtr& n) const;
+   CacheData&       operator[]  (EntryValue& n);
+   const CacheData& operator[]  (const EntryValue& n) const;
+   CacheData&           getParent  (const OSG::NodePtr& n, int i=0);
+   const CacheData&     getParent  (const OSG::NodePtr& n, int i=0) const;
 
-   void             destroyAdapter (unsigned id, unsigned len=0);
+   void             clearColCache  ();
    void             clearAdapter   (unsigned id, unsigned len=0);
-   void             collectAdapter (unsigned id, AdapterVector& all);
-   void             collectAdapter (unsigned id, AdapterVector& all, NodePtr node);
+   void             collectAdapter (unsigned id, 
+				    AdapterVector& all, bool del=false);
+   void             collectAdapter (unsigned id, 
+				    AdapterVector& all, const NodePtr& node, bool del=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Class methods.                                               */
    /*! \{                                                                 */   
-   static OpenSGCache& the ();
+   static OpenSGCache&     the ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Debugging output                                             */
@@ -241,90 +266,29 @@ public:
 private:
    /*! \name Calling functors.                                            */
    /*! \{                                                                 */   
-   void callEnterFunctor (OSG::NodePtr node);
-   void callLeaveFunctor (OSG::NodePtr node);
+   bool callEnterFunctor (const OSG::NodePtr& node);
+   bool callLeaveFunctor (const OSG::NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Functors.                                                    */
+   /*! \name Internal methods.                                            */
    /*! \{                                                                 */   
-   void registerFunctors (void);
-   static void defaultFunction  (OSG::CNodePtr&, OSGStaticInput*);
+   void        registerFunctors (void);
+   static bool defaultFunction  (OSG::CNodePtr&, OSGStaticInput*);
+   void        applyIntern (const OSG::NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   void applyIntern (const OSG::NodePtr& node);
 
    std::vector<Functor>  m_enterFunctors;
    std::vector<Functor>  m_leaveFunctors;
 
    OSG::NodePtr     m_currentNode;
-   OSG::MaterialPtr m_currentMaterial;
+   MaterialStack    m_materials;
    OSG::Matrix      m_currentMatrix;
    OSGStaticInput*  m_hierarchy;
 
-   //static HashFunctor s_hasher;
-   Entry              m_data;
+   Entry            m_data;
+   SharesContainer  m_shares;
 };
-
-
-inline genvis::OSGStaticInput* OpenSGCache::getHierarchy () const
-{
-   return m_hierarchy;
-}
-
-inline OSG::NodePtr OpenSGCache::getCurrentNode() const
-{
-   return m_currentNode;
-}
-inline void         OpenSGCache::setCurrentNode(const OSG::NodePtr& node)
-{
-   m_currentNode = node;
-}
-inline OSG::MaterialPtr OpenSGCache::getCurrentMaterial () const
-{
-   return m_currentMaterial;
-}
-inline void OpenSGCache::setCurrentMaterial (const OSG::MaterialPtr& mat)
-{
-   m_currentMaterial = mat;
-}
-inline Matrix& OpenSGCache::getCurrentMatrix ()
-{
-   return m_currentMatrix;
-}
-inline const Matrix& OpenSGCache::getCurrentMatrix () const
-{
-   return m_currentMatrix;
-}
-
-inline OpenSGCache::EntryIterator OpenSGCache::begin ()
-{
-   return m_data.begin();
-}
-inline OpenSGCache::EntryIterator OpenSGCache::end   ()
-{
-   return m_data.end();
-}
-inline const OpenSGCache::Entry& OpenSGCache::getHashTable () const
-{
-   return m_data;
-}
-
-inline OpenSGCache::CacheData&       
-OpenSGCache::operator[] (EntryValue& n)
-{
-   return n.second;
-}
-inline const OpenSGCache::CacheData& 
-OpenSGCache::operator[] (const EntryValue& n) const
-{
-   return n.second;
-}
-
-inline std::ostream& operator<< (std::ostream& os, const OpenSGCache& cache)
-{
-   return os;
-}
-
 
 #else
 
@@ -336,58 +300,62 @@ inline std::ostream& operator<< (std::ostream& os, const OpenSGCache& cache)
     \item Create secondary structure for an OpenSG subgraph with OSGCache::the().apply(subgraph);
     \item Use secondary structure
     \item Memory management is done by the secondary structure: inst.clear()/inst.destroy(). Do not
-    use OSGCache::the().clearAdapter(..)/OSGCache::the().destroyAdapter(..) directly!
+    use OSGCache::the().clearAdapter(..) directly!
     \end{itemize} 
  */
 class OSG_GENVISLIB_DLLMAPPING OpenSGCache
 {
 public:
-   struct EntryLess {
-      static unsigned value (const OSG::NodePtr& key) {
+   struct NodePtrLess {
+      typedef NodePtr                   PtrType;
+      typedef PtrType::StoredObjectType StoredObjectType;
+      static size_t value (const PtrType& key) {
 #ifdef WIN32
 	 union Caster {
-	   OSG::Node* pointer;
-	   unsigned   address;
+	   StoredObjectType* pointer;
+	   size_t            address;
 	 };
 	 Caster result;
 	 result.pointer = key.getCPtr();
 	 return result.address;
 #else
-	 return reinterpret_cast<unsigned>(key.getCPtr()); 
+	 return reinterpret_cast<size_t>(key.getCPtr()); 
 #endif
       }
-      bool operator() (const OSG::NodePtr& a, const NodePtr& b) const {
+      bool operator() (const PtrType& a, const PtrType& b) const {
 	 return value(a) < value(b);
       } 
    };
-   typedef OpenSGCache                                    Cache;
-   typedef GenvisCache                                    CacheData;
-   typedef std::map<OSG::NodePtr,OSG::NodePtr,EntryLess>  Entry;
-   typedef Entry::iterator                                EntryIterator;
-   typedef std::vector<BVolAdapterBaseP>                  AdapterVector;
-   typedef MFNodePtr::StorageType                         ChildContainer;
+   typedef OpenSGCache                                     Cache;
+   typedef GenvisCache                                     CacheData;
+   typedef std::stack<OSG::MaterialPtr>                    MaterialStack;
+   typedef std::stack<OSG::Matrix>                         MatrixStack;
+   typedef std::map<OSG::NodeCorePtr,CacheData*,FCPtrLess<OSG::NodeCorePtr> >
+           SharesContainer;
+   typedef std::map<OSG::NodePtr,OSG::NodePtr,NodePtrLess> Entry;
+   typedef Entry::iterator                                 EntryIterator;
+   typedef std::vector<BVolAdapterBaseP>                   AdapterVector;
+   typedef MFNodePtr::StorageType                          ChildContainer;
 
 #ifdef OSG_NOFUNCTORS
-   typedef void (*FunctorFunc) (OSG::CNodePtr&, OSGStaticInput*);
+   typedef bool (*FunctorFunc) (OSG::CNodePtr&, OSGStaticInput*);
    struct Functor
    {
    public:
       FunctorFunc _func;
-      virtual ResultE call(OSG::CNodePtr& cnode, OSGStaticInput* input) {
+      virtual bool call (OSG::CNodePtr& cnode, OSGStaticInput* input) {
 	return _func(cnode, input);
       }
    };
-   static Functor cacheFunctionFunctor2(FunctorFunc func)
+   static Functor cacheFunctionFunctor2 (FunctorFunc func)
    {
       Functor result;
       result._func = func;
       return result;
    }
 #else
-    typedef OSG::ArgsCollector<OSGStaticInput*>          FunctorArgs;
-
-    typedef OSG::TypedVoidFunctor2Base<OSG::CPtrRefCallArg<OSG::CNodePtr>, 
-                                       FunctorArgs              > Functor;
+    typedef OSG::ArgsCollector<OSGStaticInput*>                                           FunctorArgs;
+    typedef OSG::TypedFunctor2Base<bool, OSG::CPtrRefCallArg<OSG::CNodePtr>, FunctorArgs> Functor;
 #endif
 
    /*---------------------------------------------------------------------*/
@@ -399,31 +367,32 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline OSGStaticInput*  getHierarchy () const;
-   void                    setHierarchy (OSGStaticInput* hier);
+   OSGStaticInput*  getHierarchy () const;
+   void             setHierarchy (OSGStaticInput* hier);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Clearing the cache.                                          */
    /*! \{                                                                 */   
-   inline void             clear ();
-   void                    clear (const OSG::NodePtr& node);
+   void             clear ();
+   void             clear (const OSG::NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Preparing the cache from the OpenSG scenegraph.              */
    /*! \{                                                                 */
-   void                    apply (const OSG::NodePtr& node);
-   void                    addNode    (const OSG::NodePtr& node);
-   void                    updateNode (const OSG::NodePtr& node);
+   void             apply         (const OSG::NodePtr& node);
+   void             addNode       (const OSG::NodePtr& node);
+   void             collectLeaves (std::vector<CacheData*>& all, const NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Members valid during preparation.                            */
    /*! \{                                                                 */   
-   inline OSG::NodePtr     getCurrentNode () const;
-   inline void             setCurrentNode (const OSG::NodePtr& node);
-   inline OSG::MaterialPtr getCurrentMaterial () const;
-   inline void             setCurrentMaterial (const OSG::MaterialPtr& node);
-   inline OSG::Matrix&       getCurrentMatrix ();
-   inline const OSG::Matrix& getCurrentMatrix () const;
+   OSG::NodePtr       getCurrentNode () const;
+   void               setCurrentNode (const OSG::NodePtr& node);
+   OSG::MaterialPtr   getCurrentMaterial () const;
+   void               pushMaterial (const OSG::MaterialPtr& node);
+   void               popMaterial  ();
+   OSG::Matrix&       getCurrentMatrix ();
+   const OSG::Matrix& getCurrentMatrix () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Functor management.                                          */
@@ -436,40 +405,48 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Accessing the cache data.                                    */
    /*! \{                                                                 */
-   inline EntryIterator    begin ();
-   inline EntryIterator    end   ();
-   inline CacheData&       getNode    (const OSG::NodePtr& node) const;
-   inline CacheData&       getNode    (const Entry::value_type& node) const;
-   inline CacheData&       operator[] (const OSG::NodePtr& node) const;
-   inline CacheData&       operator[] (const Entry::value_type& node) const;
-   inline CacheData&       getParent  (const OSG::NodePtr& node, int i=0) const;
+   EntryIterator    begin ();
+   EntryIterator    end   ();
+   CacheData*       findShare  (const OSG::NodePtr& node);
+   CacheData&       getShare   (const OSG::NodePtr& node);
+   CacheData&       getNode    (const OSG::NodePtr& node) const;
+   CacheData&       getNode    (const Entry::value_type& node) const;
+   CacheData&       operator[] (const OSG::NodePtr& node) const;
+   CacheData&       operator[] (const Entry::value_type& node) const;
+   CacheData&       getParent  (const OSG::NodePtr& node, int i=0) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Internal methods for memory management.                      */
    /*! \{                                                                 */
-   void                    destroyAdapter (unsigned id, unsigned len=0);
-   void                    clearAdapter   (unsigned id, unsigned len=0);
-   void                    collectAdapter (unsigned id, AdapterVector& all);
-   void                    collectAdapter (unsigned id, AdapterVector& all, NodePtr node);
+   void              clearColCache  ();
+   void              clearAdapter   (unsigned id, unsigned len=0);
+   void              collectAdapter (unsigned id, 
+				     AdapterVector& all, bool del=false);
+   void              collectAdapter (unsigned id, 
+				     AdapterVector& all, const NodePtr& node, bool del=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Functors.                                                    */
    /*! \{                                                                 */   
-   static void staticEnterMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticLeaveMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticEnterTransform (OSG::CNodePtr&, OSGStaticInput*);
-   static void staticLeaveTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticLeaveMaterialGroup (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticLeaveTransform (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterGeometry  (OSG::CNodePtr&, OSGStaticInput*);
+   static bool staticEnterSwitch    (OSG::CNodePtr&, OSGStaticInput*);
 #ifndef OSG_NOFUNCTORS
-   void functorEnterMaterialGroup       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorLeaveMaterialGroup       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorEnterTransform       (OSG::CNodePtr&, OSGStaticInput*);
-   void functorLeaveTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterMaterialGroup   (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorLeaveMaterialGroup   (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorLeaveTransform       (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterGeometry        (OSG::CNodePtr&, OSGStaticInput*);
+   bool functorEnterSwitch          (OSG::CNodePtr&, OSGStaticInput*);
 #endif
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Singleton.                                                   */
+   /*! \name Class methods.                                               */
    /*! \{                                                                 */   
-   static OpenSGCache&     the ();
+   static OpenSGCache& the ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Dump.                                                        */
@@ -482,131 +459,36 @@ private:
    /*---------------------------------------------------------------------*/
    /*! \name Accessing the cache data.                                    */
    /*! \{                                                                 */   
-   inline OSG::GenvisCachePtr findNode (const OSG::NodePtr& node) const;
+   OSG::GenvisCachePtr findNode (const OSG::NodePtr& node) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Calling functors.                                            */
    /*! \{                                                                 */   
-   void callEnterFunctor (const OSG::NodePtr& node);
-   void callLeaveFunctor (const OSG::NodePtr& node);
+   bool callEnterFunctor (const OSG::NodePtr& node);
+   bool callLeaveFunctor (const OSG::NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Functors.                                                    */
+   /*! \name Internal methods.                                            */
    /*! \{                                                                 */   
-   void registerFunctors (void);
-   static void defaultFunction  (OSG::CNodePtr&, OSGStaticInput*);
+   void        registerFunctors (void);
+   static bool defaultFunction  (OSG::CNodePtr&, OSGStaticInput*);
+   void        applyIntern (const OSG::NodePtr& node);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   void  applyIntern (const OSG::NodePtr& node);
 
    std::vector<Functor>  m_enterFunctors;
    std::vector<Functor>  m_leaveFunctors;
 
-   OSG::NodePtr     m_root;
    OSG::NodePtr     m_currentNode;
-   OSG::MaterialPtr m_currentMaterial;
+   MaterialStack    m_materials;
    OSG::Matrix      m_currentMatrix;
    OSGStaticInput*  m_hierarchy;
    Entry            m_all;
+   SharesContainer  m_shares;
    static GenvisCachePtr s_dummy;
 };
 
-
-inline genvis::OSGStaticInput* OpenSGCache::getHierarchy () const
-{
-   return m_hierarchy;
-}
-
-inline OSG::NodePtr OpenSGCache::getCurrentNode() const
-{
-   return m_currentNode;
-}
-inline void OpenSGCache::setCurrentNode(const OSG::NodePtr& node)
-{
-   m_currentNode = node;
-}
-
-inline OSG::MaterialPtr OpenSGCache::getCurrentMaterial () const
-{
-   return m_currentMaterial;
-}
-inline void OpenSGCache::setCurrentMaterial (const OSG::MaterialPtr& mat)
-{
-   m_currentMaterial = mat;
-}
-inline Matrix& OpenSGCache::getCurrentMatrix ()
-{
-   return m_currentMatrix;
-}
-inline const Matrix& OpenSGCache::getCurrentMatrix () const
-{
-   return m_currentMatrix;
-}
-
-inline OpenSGCache::EntryIterator OpenSGCache::begin ()
-{
-   return m_all.begin();
-}
-inline OpenSGCache::EntryIterator OpenSGCache::end   ()
-{
-   return m_all.end();
-}
-
-
-inline void OpenSGCache::clear ()
-{
-   if (m_root != NullFC) {
-      clear(m_root);
-   }
-}
-
-inline GenvisCachePtr OpenSGCache::findNode (const NodePtr& node) const
-{
-   assert(node != NullFC);
-   GenvisCachePtr nc =
-     GenvisCachePtr::dcast(node->findAttachment(GenvisCache::getClassType(), 0));
-   if (nc == NullFC) {
-      return s_dummy;
-   }
-   return nc;
-}
-inline OpenSGCache::CacheData& OpenSGCache::getNode    (const NodePtr& n) const
-{
-   GenvisCachePtr nc = findNode(n);
-   return *nc;
-}
-inline OpenSGCache::CacheData& OpenSGCache::getNode    (const Entry::value_type& n) const
-{
-   return getNode(n.first);
-}
-inline OpenSGCache::CacheData& OpenSGCache::operator[] (const osg::NodePtr& n) const
-{
-   return getNode(n);
-}
-inline OpenSGCache::CacheData& OpenSGCache::operator[] (const Entry::value_type& n) const
-{
-   return getNode(n.first);
-}
-inline OpenSGCache::CacheData& OpenSGCache::getParent (const osg::NodePtr& node, int i) const
-{
-   NodePtr p = node;
-   while (i > 0) {
-      p = node->getParent();
-      --i;
-   }
-   return getNode(p);
-}
-
-
-inline std::ostream& operator<< (std::ostream& os, const OpenSGCache& )
-{
-   return os;
-}
-
-
 #endif
-
-
 
 /** \brief OSGCache.
  */

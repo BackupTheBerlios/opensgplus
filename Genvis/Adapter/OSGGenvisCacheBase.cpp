@@ -66,7 +66,8 @@ OSG_USING_NAMESPACE
 
 const OSG::BitVector  GenvisCacheBase::AdapterMatrixFieldMask = 
     (1 << GenvisCacheBase::AdapterMatrixFieldId);
-
+const OSG::BitVector  GenvisCacheBase::FrameMatrixFieldMask = 
+    (1 << GenvisCacheBase::FrameMatrixFieldId);
 const OSG::BitVector  GenvisCacheBase::BVolAdapterFieldMask = 
     (1 << GenvisCacheBase::BVolAdapterFieldId);
 const OSG::BitVector  GenvisCacheBase::Adapter2FieldMask = 
@@ -74,15 +75,15 @@ const OSG::BitVector  GenvisCacheBase::Adapter2FieldMask =
 const OSG::BitVector  GenvisCacheBase::Adapter3FieldMask = 
     (1 << GenvisCacheBase::Adapter3FieldId);
 
-const OSG::BitVector  GenvisCacheBase::CollisionCacheFieldMask = 
-    (1 << GenvisCacheBase::CollisionCacheFieldId);
-
 
 
 // Field descriptions
 
 /*! \var Matrix          GenvisCacheBase::_mfAdapterMatrix
     matrices for adapter construction
+*/
+/*! \var Matrix          GenvisCacheBase::_sfFrameMatrix
+    matrix for transformation between frame times (dynamic collision detection)
 */
 /*! \var BVolAdapterBaseP GenvisCacheBase::_mfBVolAdapter
     bvol adapters constructed in the current scenegraph
@@ -100,6 +101,11 @@ FieldDescription *GenvisCacheBase::_desc[] =
                      AdapterMatrixFieldId, AdapterMatrixFieldMask,
                      false,
                      (FieldAccessMethod) &GenvisCacheBase::getMFAdapterMatrix),
+    new FieldDescription(SFMatrix::getClassType(), 
+                     "FrameMatrix", 
+                     FrameMatrixFieldId, FrameMatrixFieldMask,
+                     false,
+                     (FieldAccessMethod) &GenvisCacheBase::getSFFrameMatrix),
     new FieldDescription(MFBVolAdapterBaseP::getClassType(), 
                      "BVolAdapter", 
                      BVolAdapterFieldId, BVolAdapterFieldMask,
@@ -115,11 +121,13 @@ FieldDescription *GenvisCacheBase::_desc[] =
                      Adapter3FieldId, Adapter3FieldMask,
                      false,
                      (FieldAccessMethod) &GenvisCacheBase::getMFAdapter3),
+#if 0
     new FieldDescription(MFBVolAdapterBaseP::getClassType(), 
                      "CollisionCache", 
                      CollisionCacheFieldId, CollisionCacheFieldMask,
                      false,
                      (FieldAccessMethod) &GenvisCacheBase::getMFCollisionCache)
+#endif
 };
 
 
@@ -175,11 +183,12 @@ void GenvisCacheBase::executeSync(      FieldContainer &other,
 #endif
 
 GenvisCacheBase::GenvisCacheBase(void) :
-    _mfAdapterMatrix          (), 
-    _mfBVolAdapter            (), 
+    _mfAdapterMatrix       (), 
+    _sfFrameMatrix         (),
+    _mfBVolAdapter         (), 
     _mfAdapter2            (), 
     _mfAdapter3            (), 
-    _mfCollisionCache         (), 
+    _collisionCache        (), 
     Inherited() 
 {
 }
@@ -189,12 +198,13 @@ GenvisCacheBase::GenvisCacheBase(void) :
 #endif
 
 GenvisCacheBase::GenvisCacheBase(const GenvisCacheBase &source) :
-    _mfAdapterMatrix          (source._mfAdapterMatrix          ), 
-    _mfBVolAdapter            (source._mfBVolAdapter            ), 
+    _mfAdapterMatrix       (source._mfAdapterMatrix       ), 
+    _sfFrameMatrix         (source._sfFrameMatrix         ), 
+    _mfBVolAdapter         (source._mfBVolAdapter         ), 
     _mfAdapter2            (source._mfAdapter2            ), 
     _mfAdapter3            (source._mfAdapter3            ), 
-    _mfCollisionCache         (source._mfCollisionCache         ), 
-    Inherited                 (source)
+    _collisionCache        (source._collisionCache        ), 
+    Inherited              (source)
 {
 }
 
@@ -214,7 +224,10 @@ UInt32 GenvisCacheBase::getBinSize(const BitVector &whichField)
     {
         returnValue += _mfAdapterMatrix.getBinSize();
     }
-
+    if(FieldBits::NoField != (FrameMatrixFieldMask & whichField))
+    {
+        returnValue += _sfFrameMatrix.getBinSize();
+    }
     if(FieldBits::NoField != (BVolAdapterFieldMask & whichField))
     {
         returnValue += _mfBVolAdapter.getBinSize();
@@ -228,17 +241,11 @@ UInt32 GenvisCacheBase::getBinSize(const BitVector &whichField)
         returnValue += _mfAdapter3.getBinSize();
     }
 
-    if(FieldBits::NoField != (CollisionCacheFieldMask & whichField))
-    {
-        returnValue += _mfCollisionCache.getBinSize();
-    }
-
-
     return returnValue;
 }
 
 void GenvisCacheBase::copyToBin(      BinaryDataHandler &pMem,
-                                  const BitVector         &whichField)
+                                const BitVector         &whichField)
 {
     Inherited::copyToBin(pMem, whichField);
 
@@ -246,7 +253,10 @@ void GenvisCacheBase::copyToBin(      BinaryDataHandler &pMem,
     {
         _mfAdapterMatrix.copyToBin(pMem);
     }
-
+    if(FieldBits::NoField != (FrameMatrixFieldMask & whichField))
+    {
+        _sfFrameMatrix.copyToBin(pMem);
+    }
     if(FieldBits::NoField != (BVolAdapterFieldMask & whichField))
     {
         _mfBVolAdapter.copyToBin(pMem);
@@ -260,12 +270,6 @@ void GenvisCacheBase::copyToBin(      BinaryDataHandler &pMem,
         _mfAdapter3.copyToBin(pMem);
     }
 
-    if(FieldBits::NoField != (CollisionCacheFieldMask & whichField))
-    {
-        _mfCollisionCache.copyToBin(pMem);
-    }
-
-
 }
 
 void GenvisCacheBase::copyFromBin(      BinaryDataHandler &pMem,
@@ -277,7 +281,10 @@ void GenvisCacheBase::copyFromBin(      BinaryDataHandler &pMem,
     {
         _mfAdapterMatrix.copyFromBin(pMem);
     }
-
+    if(FieldBits::NoField != (FrameMatrixFieldMask & whichField))
+    {
+        _sfFrameMatrix.copyFromBin(pMem);
+    }
     if(FieldBits::NoField != (BVolAdapterFieldMask & whichField))
     {
         _mfBVolAdapter.copyFromBin(pMem);
@@ -291,12 +298,6 @@ void GenvisCacheBase::copyFromBin(      BinaryDataHandler &pMem,
         _mfAdapter3.copyFromBin(pMem);
     }
 
-    if(FieldBits::NoField != (CollisionCacheFieldMask & whichField))
-    {
-        _mfCollisionCache.copyFromBin(pMem);
-    }
-
-
 }
 
 void GenvisCacheBase::executeSyncImpl(      GenvisCacheBase *pOther,
@@ -307,17 +308,14 @@ void GenvisCacheBase::executeSyncImpl(      GenvisCacheBase *pOther,
 
     if(FieldBits::NoField != (AdapterMatrixFieldMask & whichField))
         _mfAdapterMatrix.syncWith(pOther->_mfAdapterMatrix);
-
+    if(FieldBits::NoField != (FrameMatrixFieldMask & whichField))
+        _sfFrameMatrix.syncWith(pOther->_sfFrameMatrix);
     if(FieldBits::NoField != (BVolAdapterFieldMask & whichField))
         _mfBVolAdapter.syncWith(pOther->_mfBVolAdapter);
     if(FieldBits::NoField != (Adapter2FieldMask & whichField))
         _mfAdapter2.syncWith(pOther->_mfAdapter2);
     if(FieldBits::NoField != (Adapter3FieldMask & whichField))
         _mfAdapter3.syncWith(pOther->_mfAdapter3);
-
-    if(FieldBits::NoField != (CollisionCacheFieldMask & whichField))
-        _mfCollisionCache.syncWith(pOther->_mfCollisionCache);
-
 
 }
 
@@ -351,7 +349,7 @@ OSG_END_NAMESPACE
 
 namespace
 {
-    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGenvisCacheBase.cpp,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $";
+    static Char8 cvsid_cpp       [] = "@(#)$Id: OSGGenvisCacheBase.cpp,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $";
     static Char8 cvsid_hpp       [] = OSGGENVISCACHEBASE_HEADER_CVSID;
     static Char8 cvsid_inl       [] = OSGGENVISCACHEBASE_INLINE_CVSID;
 

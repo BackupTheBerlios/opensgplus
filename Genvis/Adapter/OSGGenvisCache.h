@@ -55,14 +55,12 @@ OSG_BEGIN_NAMESPACE
 class OSG_GENVISLIB_DLLMAPPING GenvisCache : public GenvisCacheBase
 {
   private:
-
-    typedef GenvisCacheBase Inherited;
+    typedef GenvisCacheBase         Inherited;
+    typedef GenvisCache             Self;
 
     /*==========================  PUBLIC  =================================*/
   public:
-    typedef MFNodePtr::StorageType          ChildContainer;
-    typedef std::vector<BVolAdapterBaseP>   AdapterVector;
-    typedef MFBVolAdapterBaseP::StorageType AdapterContainer;
+    typedef MFNodePtr::StorageType  ChildContainer;
 
     /*---------------------------------------------------------------------*/
     /*! \name Data of referenced scenegraph Node.                          */
@@ -71,37 +69,32 @@ class OSG_GENVISLIB_DLLMAPPING GenvisCache : public GenvisCacheBase
     NodePtr         getOriginal() const;
     NodePtr         getNode   () const;
     NodePtr         getParent () const;
-    int             getNumChildren () const;
+    Int32           getNumChildren () const;
     ChildContainer&       getChildren ();
     const ChildContainer& getChildren () const;
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name Adapter matrices.                                            */
     /*! \{                                                                 */
-    const Matrix&   getAdapterMatrix (unsigned id) const;
-    void            setAdapterMatrix (unsigned id, const Matrix& m);
+    const Matrix&   getAdapterMatrix (UInt32 id) const;
+    void            setAdapterMatrix (UInt32 id, const Matrix& m);
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name Adapter vector.                                              */
     /*! \{                                                                 */   
-    void                     destroyAdapter (unsigned id, unsigned len = 0);
-    void                     clearAdapter   (unsigned id, unsigned len = 0);
-    AdapterContainer& getAdapter     (unsigned id);
-    BVolAdapterBaseP& getAdapter     (unsigned id, unsigned num);
-    const AdapterContainer& getAdapter (unsigned id) const;
-    const BVolAdapterBaseP& getAdapter (unsigned id, unsigned num) const;
-    void              setAdapter     (unsigned id, BVolAdapterBaseP a);
-    void              setAdapter     (unsigned id, const AdapterVector&  a);
+    void                     destroyAdapter (UInt32 id, UInt32 len = 0);
+    void                     clearAdapter   (UInt32 id, UInt32 len = 0);
+    AdapterContainer& getAdapter     (UInt32 id);
+    BVolAdapterBaseP& getAdapter     (UInt32 id, UInt32 num);
+    const AdapterContainer& getAdapter (UInt32 id) const;
+    const BVolAdapterBaseP& getAdapter (UInt32 id, UInt32 num) const;
+    void              setAdapter     (UInt32 id, BVolAdapterBaseP a);
+    void              setAdapter     (UInt32 id, const AdapterVector& a);
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name Collision cache.                                             */
     /*! \{                                                                 */
-
-    AdapterContainer&       getColCache ();
-    BVolAdapterBaseP&       getColCache (unsigned num);
-    const AdapterContainer& getColCache () const;
-    const BVolAdapterBaseP& getColCache (unsigned num) const;
-
+    void clearColCache ();
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                      Sync                                    */
@@ -160,6 +153,6 @@ OSG_END_NAMESPACE
 #include <OSGGenvisCacheBase.inl>
 #include <OSGGenvisCache.inl>
 
-#define OSGGENVISCACHE_HEADER_CVSID "@(#)$Id: OSGGenvisCache.h,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $"
+#define OSGGENVISCACHE_HEADER_CVSID "@(#)$Id: OSGGenvisCache.h,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
 
 #endif /* _OSGGENVISCACHE_H_ */

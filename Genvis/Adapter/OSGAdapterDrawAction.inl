@@ -100,10 +100,20 @@ OSG_BEGIN_NAMESPACE
 
 /*---------------------------- properties ---------------------------------*/
 
-inline genvis::OSGCache& AdapterDrawAction::getCache () const
+inline bool AdapterDrawAction::getLocalMode () const
 {
-   return genvis::OSGCache::the();
+   return m_mode;
 }
+inline void AdapterDrawAction::setLocalMode (bool flag)
+{
+   m_mode = flag;
+   if (m_mode) {
+      f_selectVisibles = &Self::selectVisiblesLocal;
+   } else {
+      f_selectVisibles = &Self::selectVisiblesGlobal;
+   }
+}
+
 
 /*-------------------------- your_category---------------------------------*/
 

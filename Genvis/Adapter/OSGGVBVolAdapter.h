@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -60,33 +60,31 @@ public:
    OpenSGObjectBase (const OpenSGObjectBase& src);
    OpenSGObjectBase (const GeomObjectType& obj);
    OpenSGObjectBase (const TransformType&  m2w, 
-		     const GeomObjectType& obj);
+		     const GeomObjectType& obj,
+		     u32 id);
    virtual ~OpenSGObjectBase ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */
-   static inline Cache&  getCache ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Associated scenegraph object.                                */
    /*! \{                                                                 */
-   inline GeomObjectType getOriginal  () const;
-   void                  setOriginal  (const GeomObjectType& obj);
+   inline GeomObjectType     getOriginal  () const;
+   inline void               setOriginal  (const GeomObjectType& obj);
    inline ObjectAdapterType& getObjectAdapter () const;
    inline void               setObjectAdapter (ObjectAdapterType* adapter);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Adapter transformation.                                      */
    /*! \{                                                                 */
-   inline const TransformType& getTransform () const;
-   inline void                 setTransform (const TransformType& trf);
+   inline const TransformType& getTransform (u32 id) const;
+   inline void                 setTransform (const TransformType& trf, u32 id);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Transformed geometry fields.                                 */
    /*! \{                                                                 */
-   OSG::GeoPositionsPtr  getPositions () const; 
-   OSG::GeoNormalsPtr    getNormals   () const;
+   OSG::GeoPositionsPtr  getPositions (u32 id=BVolAdapterBase::getAdapterId()) const; 
+   OSG::GeoNormalsPtr    getNormals   (u32 id=BVolAdapterBase::getAdapterId()) const;
+   OSG::GeoColorsPtr     getColors    (u32 id=BVolAdapterBase::getAdapterId()) const; 
+   OSG::GeoTexCoordsPtr  getTexCoords (u32 id=BVolAdapterBase::getAdapterId()) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -96,7 +94,7 @@ protected:
 typedef OpenSGObjectBase<OpenSGTraits> OSGObjectBase;
 
 template <class BasicTraits>
-inline OpenSGObjectBase<BasicTraits>::ObjectAdapterType& 
+inline typename OpenSGObjectBase<BasicTraits>::ObjectAdapterType& 
 OpenSGObjectBase<BasicTraits>::getObjectAdapter () const
 {
    assert(m_original != NULL);
@@ -107,29 +105,31 @@ inline void OpenSGObjectBase<BasicTraits>::setObjectAdapter (ObjectAdapterType* 
 {
    m_original = original;
 }
-template <class BasicTraits>
-inline OpenSGObjectBase<BasicTraits>::Cache& OpenSGObjectBase<BasicTraits>::getCache ()
-{
-   return Cache::the();
-}
 
 template <class BasicTraits>
-inline OpenSGObjectBase<BasicTraits>::GeomObjectType 
+inline typename OpenSGObjectBase<BasicTraits>::GeomObjectType 
 OpenSGObjectBase<BasicTraits>::getOriginal () const
 {
    return getObjectAdapter().getNode();
 }
 template <class BasicTraits>
-inline const OpenSGObjectBase<BasicTraits>::TransformType&
-OpenSGObjectBase<BasicTraits>::getTransform () const
+inline void OpenSGObjectBase<BasicTraits>::setOriginal (const GeomObjectType& obj)
 {
-   return getObjectAdapter().getAdapterMatrix(BVolAdapterBase::getAdapterId());
+   // original is derived from object adapter
+   CacheData& data = Cache::the()[obj];
+   setObjectAdapter(&data);
+}
+template <class BasicTraits>
+inline const typename OpenSGObjectBase<BasicTraits>::TransformType&
+OpenSGObjectBase<BasicTraits>::getTransform (u32 id) const
+{
+   return getObjectAdapter().getAdapterMatrix(id);
 }
 template <class BasicTraits>
 inline void
-OpenSGObjectBase<BasicTraits>::setTransform (const TransformType& trf)
+OpenSGObjectBase<BasicTraits>::setTransform (const TransformType& trf, u32 id)
 {
-   getObjectAdapter().setAdapterMatrix(BVolAdapterBase::getAdapterId(), trf);
+   getObjectAdapter().setAdapterMatrix(id, trf);
 }
 
 
@@ -143,24 +143,30 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef OpenSGObject2BVol<BasicTraits,BVOL> Self;
-   typedef FactoryHeap<Self>                   FactoryType;
+   typedef OpenSGObjectBase<BasicTraits>             InheritedData;
+   typedef BVolAdapter<BVOL>                         Inherited;
+   typedef OpenSGObject2BVol<BasicTraits,BVOL>       Self;
+   typedef FactoryHeap<Self>                         FactoryType;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomObjectType    GeomObjectType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+   typedef typename Inherited::BVol                  BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    OpenSGObject2BVol ();
    OpenSGObject2BVol (const GeomObjectType& obj);
-   OpenSGObject2BVol (const TransformType& m2w,
-		       const GeomObjectType& obj);
+   OpenSGObject2BVol (const TransformType& m2w, const GeomObjectType& obj);
    virtual ~OpenSGObject2BVol ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */
    void  init (const GeomObjectType& obj);
-   void  init (const TransformType& m2w,
-	       const GeomObjectType& obj);
+   void  init (const TransformType& m2w, const GeomObjectType& obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Interface of BVolAdapterBase.                                */
@@ -204,23 +210,18 @@ public:
    virtual inline ~OpenSGFaceBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */
-   static inline Cache& getCache ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
    inline GeomFaceType             getOriginal () const;
-   inline const TransformType&     getTransform () const;
+   inline const TransformType&     getTransform (u32 id) const;
    inline ObjectAdapterType& getObjectAdapter () const;
    inline void               setObjectAdapter (ObjectAdapterType* adapter);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Transformed geometry fields.                                 */
    /*! \{                                                                 */
-   OSG::GeoPositionsPtr getPositions () const; 
-   OSG::GeoNormalsPtr   getNormals   () const;
+   OSG::GeoPositionsPtr getPositions (u32 id=BVolAdapterBase::getAdapterId()) const; 
+   OSG::GeoNormalsPtr   getNormals   (u32 id=BVolAdapterBase::getAdapterId()) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -246,7 +247,7 @@ inline OpenSGFaceBase<BasicTraits>::~OpenSGFaceBase ()
 }
 
 template <class BasicTraits>
-inline OpenSGFaceBase<BasicTraits>::ObjectAdapterType&
+inline typename OpenSGFaceBase<BasicTraits>::ObjectAdapterType&
 OpenSGFaceBase<BasicTraits>::getObjectAdapter () const
 {
    assert(m_original != NULL);
@@ -259,35 +260,16 @@ OpenSGFaceBase<BasicTraits>::setObjectAdapter (ObjectAdapterType* adapter)
    m_original = adapter;
 }
 template <class BasicTraits>
-inline OpenSGFaceBase<BasicTraits>::GeomFaceType 
+inline typename OpenSGFaceBase<BasicTraits>::GeomFaceType 
 OpenSGFaceBase<BasicTraits>::getOriginal () const
 {
-#if 0
-   // getObjectAdapter().getOriginal() is a NodePtr
-   // need the NodeCorePtr here!
-   GeometryPtr geom(GeometryPtr::dcast(getObjectAdapter().getOriginal()->getCore()));
-   if (m_originalFace.getGeometry() != geom) {
-      Self* nonconstThis = (Self*)this;
-      nonconstThis->m_originalFace.setGeo(geom);  
-      nonconstThis->m_originalFace.seek(m_originalId);
-   }
    return m_originalFace;
-#else
-   return m_originalFace;
-#endif
 }
 template <class BasicTraits>
-inline const OpenSGFaceBase<BasicTraits>::TransformType&
-OpenSGFaceBase<BasicTraits>::getTransform () const
+inline const typename OpenSGFaceBase<BasicTraits>::TransformType&
+OpenSGFaceBase<BasicTraits>::getTransform (u32 id) const
 {
-   // CF to be checked
-   return getObjectAdapter().getAdapterMatrix(BVolAdapterBase::getAdapterId());
-}
-
-template <class BasicTraits>
-inline OpenSGFaceBase<BasicTraits>::Cache& OpenSGFaceBase<BasicTraits>::getCache ()
-{
-   return Cache::the();
+   return getObjectAdapter().getAdapterMatrix(id);
 }
 
 
@@ -301,29 +283,35 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef OpenSGFace2BVol<BasicTraits,BVOL> Self;
-   typedef FactoryHeap<Self>                 FactoryType;
+   typedef OpenSGFaceBase<BasicTraits>               InheritedData;
+   typedef BVolAdapter<BVOL>                         Inherited;
+   typedef OpenSGFace2BVol<BasicTraits,BVOL>         Self;
+   typedef FactoryHeap<Self>                         FactoryType;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomFaceType      GeomFaceType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+   typedef typename Inherited::BVol                  BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    OpenSGFace2BVol ();
    OpenSGFace2BVol (const GeomFaceType& obj);
-   OpenSGFace2BVol (const TransformType& m2w,
-		    const GeomFaceType&  obj);
+   OpenSGFace2BVol (const TransformType& m2w, const GeomFaceType&  obj);
    virtual ~OpenSGFace2BVol ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */
    void  init (const GeomFaceType& obj);
-   void  init (const TransformType& m2w,
-	       const GeomFaceType&  obj);
+   void  init (const TransformType& m2w, const GeomFaceType&  obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Interface of BVolAdapterBase.                                */
    /*! \{                                                                 */
-   virtual PointClass                   getCenter ();
+   virtual PointClass                  getCenter ();
    virtual const BoundingVolume<Real>& getBoundingVolume () const;
    virtual bool  calcIntersect     (Intersection& hit);
    virtual void  draw          ();
@@ -350,12 +338,15 @@ template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING OpenSGPrimitiveBase
 {
 public:
-   typedef typename BasicTraits::Cache          Cache;
-   typedef typename BasicTraits::CacheData      CacheData;
-   typedef typename BasicTraits::TransformType  TransformType;
-   typedef typename BasicTraits::GeomPrimitiveType   GeomPrimitiveType;
-   typedef CacheData                            ObjectAdapterType;
-
+   /*---------------------------------------------------------------------*/
+   /*! \name Types.                                                       */
+   /*! \{                                                                 */
+   typedef typename BasicTraits::Cache             Cache;
+   typedef typename BasicTraits::CacheData         CacheData;
+   typedef typename BasicTraits::TransformType     TransformType;
+   typedef typename BasicTraits::GeomPrimitiveType GeomPrimitiveType;
+   typedef CacheData                               ObjectAdapterType;
+   /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
@@ -363,23 +354,18 @@ public:
    virtual inline ~OpenSGPrimitiveBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */   
-   static inline Cache& getCache ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
    inline GeomPrimitiveType    getOriginal () const;
-   inline const TransformType& getTransform () const;
+   inline const TransformType& getTransform (u32 id) const;
    inline ObjectAdapterType&   getObjectAdapter () const;
    inline void                 setObjectAdapter (ObjectAdapterType* adapter);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Transformed geometry fields.                                 */
    /*! \{                                                                 */
-   OSG::GeoPositionsPtr getPositions () const; 
-   OSG::GeoNormalsPtr   getNormals   () const;
+   OSG::GeoPositionsPtr getPositions (u32 id=BVolAdapterBase::getAdapterId()) const; 
+   OSG::GeoNormalsPtr   getNormals   (u32 id=BVolAdapterBase::getAdapterId()) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
@@ -405,7 +391,7 @@ inline OpenSGPrimitiveBase<BasicTraits>::~OpenSGPrimitiveBase ()
 }
 
 template <class BasicTraits>
-inline OpenSGPrimitiveBase<BasicTraits>::ObjectAdapterType&
+inline typename OpenSGPrimitiveBase<BasicTraits>::ObjectAdapterType&
 OpenSGPrimitiveBase<BasicTraits>::getObjectAdapter () const
 {
    assert(m_original != NULL);
@@ -418,35 +404,16 @@ OpenSGPrimitiveBase<BasicTraits>::setObjectAdapter (ObjectAdapterType* adapter)
    m_original = adapter;
 }
 template <class BasicTraits>
-inline OpenSGPrimitiveBase<BasicTraits>::GeomPrimitiveType 
+inline typename OpenSGPrimitiveBase<BasicTraits>::GeomPrimitiveType 
 OpenSGPrimitiveBase<BasicTraits>::getOriginal () const
 {
-#if 0
-   // getObjectAdapter().getOriginal() is a NodePtr
-   // need the NodeCorePtr here!
-   GeometryPtr geom(GeometryPtr::dcast(getObjectAdapter().getOriginal()->getCore()));
-   if (m_originalPrimitive.getGeometry() != geom) {
-      Self* nonconstThis = (Self*)this;
-      nonconstThis->m_originalPrimitive.setGeo(geom);  
-      nonconstThis->m_originalPrimitive.seek(m_originalId);
-   }
    return m_originalPrimitive;
-#else
-   return m_originalPrimitive;
-#endif
 }
 template <class BasicTraits>
-inline const OpenSGPrimitiveBase<BasicTraits>::TransformType&
-OpenSGPrimitiveBase<BasicTraits>::getTransform () const
+inline const typename OpenSGPrimitiveBase<BasicTraits>::TransformType&
+OpenSGPrimitiveBase<BasicTraits>::getTransform (u32 id) const
 {
-   // CF to be checked
-   return getObjectAdapter().getAdapterMatrix(BVolAdapterBase::getAdapterId());
-}
-
-template <class BasicTraits>
-inline OpenSGPrimitiveBase<BasicTraits>::Cache& OpenSGPrimitiveBase<BasicTraits>::getCache ()
-{
-   return Cache::the();
+   return getObjectAdapter().getAdapterMatrix(id);
 }
 
 
@@ -460,24 +427,30 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef OpenSGPrimitive2BVol<BasicTraits,BVOL> Self;
-   typedef FactoryHeap<Self>                      FactoryType;
+   typedef OpenSGPrimitiveBase<BasicTraits>          InheritedData;
+   typedef BVolAdapter<BVOL>                         Inherited;
+   typedef OpenSGPrimitive2BVol<BasicTraits,BVOL>    Self;
+   typedef FactoryHeap<Self>                         FactoryType;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomPrimitiveType GeomPrimitiveType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+   typedef typename Inherited::BVol                  BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    OpenSGPrimitive2BVol ();
    OpenSGPrimitive2BVol (const GeomPrimitiveType& obj);
-   OpenSGPrimitive2BVol (const TransformType& m2w,
-		    const GeomPrimitiveType&  obj);
+   OpenSGPrimitive2BVol (const TransformType& m2w, const GeomPrimitiveType&  obj);
    virtual ~OpenSGPrimitive2BVol ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */   
    void  init (const GeomPrimitiveType& obj);
-   void  init (const TransformType& m2w,
-	       const GeomPrimitiveType&  obj);
+   void  init (const TransformType& m2w, const GeomPrimitiveType&  obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Interface of BVolAdapterBase.                                */

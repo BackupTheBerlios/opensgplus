@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -60,40 +60,39 @@ public:
    virtual ~OpenSGTriangleBase ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Cache.                                                       */
-   /*! \{                                                                 */
-   static inline Cache& getCache ();
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
    /*! \name Members.                                                     */
    /*! \{                                                                 */
-   inline GeomTriangleType         getOriginal () const;
+   inline GeomTriangleType         getOriginal      () const;
+   inline const i32*               getColorIndices  () const;
    inline ObjectAdapterType&       getObjectAdapter () const;
    inline void                     setObjectAdapter (ObjectAdapterType* adapter);
-   inline TransformType            getTransform () const;
+   inline TransformType            getTransform (u32 id) const;
    inline const PointClass*        getPosition  () const; 
-   inline const PointClass&        getPosition  (unsigned i) const; 
-   inline VectorClass              getNormal    (unsigned i) const; 
+   inline const PointClass&        getPosition  (u32 i) const; 
+   inline VectorClass              getNormal    (u32 i, 
+						 u32 id=BVolAdapterBase::getAdapterId()) const; 
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Internal Members.                                            */
+   /*! \{                                                                 */
+   /*! Set triangle index.                                                */
+   inline void                     setOriginal   (const GeomTriangleType& org);
+   inline void                     setOriginalId (i32 id);
+   /*! Get triangle index.                                                */
+   inline i32                      getOriginalId () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Transformed geometry fields.                                 */
    /*! \{                                                                 */
-   OSG::GeoPositionsPtr            getPositions () const; 
-   OSG::GeoNormalsPtr              getNormals () const;
+   OSG::GeoPositionsPtr            getPositions (u32 id=BVolAdapterBase::getAdapterId()) const; 
+   OSG::GeoNormalsPtr              getNormals (u32 id=BVolAdapterBase::getAdapterId()) const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 protected:
-   /*---------------------------------------------------------------------*/
-   /*! \name Triangle index.                                              */
-   /*! \{                                                                 */
-   inline void                     setOriginalId (int id);
-   inline int                      getOriginalId () const;
-   /*! \}                                                                 */
-   /*---------------------------------------------------------------------*/
-
    ObjectAdapterType*           m_original;
-   OSG::Int32                   m_originalId;
+   i32                          m_originalId;
+   i32                          m_color[3];
    PointClass                   m_point[3];
 #ifdef GV_STOREDCOORDS_TRIANGLE
    OSG::GeoPositionsPtr m_coord; 
@@ -103,7 +102,7 @@ protected:
 typedef OpenSGTriangleBase<OpenSGTraits> OSGTriangleBase;
 
 template <class BasicTraits>
-inline OpenSGTriangleBase<BasicTraits>::ObjectAdapterType&
+inline typename OpenSGTriangleBase<BasicTraits>::ObjectAdapterType&
 OpenSGTriangleBase<BasicTraits>::getObjectAdapter () const
 {
    assert(m_original != NULL);
@@ -116,47 +115,67 @@ OpenSGTriangleBase<BasicTraits>::setObjectAdapter (ObjectAdapterType* adapter)
    m_original = adapter;
 }
 template <class BasicTraits>
-inline void OpenSGTriangleBase<BasicTraits>::setOriginalId (int id)
-{
-   m_originalId = id;
-}
-template <class BasicTraits>
-inline int OpenSGTriangleBase<BasicTraits>::getOriginalId () const
+inline i32 OpenSGTriangleBase<BasicTraits>::getOriginalId () const
 {
    return m_originalId;
 }
 template <class BasicTraits>
-inline OpenSGTriangleBase<BasicTraits>::GeomTriangleType 
+inline typename OpenSGTriangleBase<BasicTraits>::GeomTriangleType 
 OpenSGTriangleBase<BasicTraits>::getOriginal () const
 {
    // getObjectAdapter().getOriginal() is a NodePtr
    // need the NodeCorePtr here!
-   GeomTriangleType it(GeometryPtr((Geometry*)(getObjectAdapter().getOriginal()->getCore().getCPtr())));  
+   GeomTriangleType it(GeometryPtr((Geometry*)(getObjectAdapter().getOriginal()->getCore().getCPtr()))); 
    it.seek(m_originalId);
    return it;
 }
 template <class BasicTraits>
-inline OpenSGTriangleBase<BasicTraits>::TransformType 
-OpenSGTriangleBase<BasicTraits>::getTransform () const
+inline const i32* OpenSGTriangleBase<BasicTraits>::getColorIndices () const
 {
-   return getObjectAdapter().getAdapterMatrix(BVolAdapterBase::getAdapterId());
+   return m_color;
 }
 template <class BasicTraits>
-inline const PointClass* OpenSGTriangleBase<BasicTraits>::getPosition  () const
+inline void OpenSGTriangleBase<BasicTraits>::setOriginal (const GeomTriangleType& org)
+{
+   m_originalId = org.getIndex();
+   m_color[0] = org.getColorIndex(0);
+   m_color[1] = org.getColorIndex(1);
+   m_color[2] = org.getColorIndex(2);
+}
+template <class BasicTraits>
+inline void OpenSGTriangleBase<BasicTraits>::setOriginalId (i32 id)
+{
+   m_originalId = id;
+   GeomTriangleType tri = getOriginal();
+   m_color[0] = tri.getColorIndex(0);
+   m_color[1] = tri.getColorIndex(1);
+   m_color[2] = tri.getColorIndex(2);
+}
+template <class BasicTraits>
+inline typename OpenSGTriangleBase<BasicTraits>::TransformType 
+OpenSGTriangleBase<BasicTraits>::getTransform (u32 id) const
+{
+   return getObjectAdapter().getAdapterMatrix(id);
+}
+template <class BasicTraits>
+inline const PointClass* 
+OpenSGTriangleBase<BasicTraits>::getPosition  () const
 {
    return m_point;
 }
 template <class BasicTraits>
-inline const PointClass& OpenSGTriangleBase<BasicTraits>::getPosition (unsigned i) const
+inline const PointClass& 
+OpenSGTriangleBase<BasicTraits>::getPosition (u32 i) const
 {
    assert (i < 3);
    return m_point[i];
 }
 template <class BasicTraits>
-inline VectorClass OpenSGTriangleBase<BasicTraits>::getNormal (unsigned i) const
+inline VectorClass 
+OpenSGTriangleBase<BasicTraits>::getNormal (u32 i, u32 id) const
 {
    assert (i < 3);
-   TransformType trf = getTransform();
+   TransformType trf = getTransform(id);
    if (trf == Matrix::identity()) {
       return getOriginal().getNormal(i);
    }
@@ -165,12 +184,6 @@ inline VectorClass OpenSGTriangleBase<BasicTraits>::getNormal (unsigned i) const
    return normal;
 }
 
-template <class BasicTraits>
-inline OpenSGTriangleBase<BasicTraits>::Cache& 
-OpenSGTriangleBase<BasicTraits>::getCache ()
-{
-   return Cache::the();
-}
 
 /*! Adapter class for triangles using in a bounding volume hierarchy.
 */
@@ -182,25 +195,29 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
-   typedef BVolAdapter<BVOL>                     Inherited;
-   typedef OpenSGTriangle2BVol<BasicTraits,BVOL> Self;
-   typedef FactoryHeap<Self>                     FactoryType;
-   typedef BVOL                                  BVol;
+   typedef OpenSGTriangleBase<BasicTraits>           InheritedData;
+   typedef BVolAdapter<BVOL>                         Inherited;
+   typedef OpenSGTriangle2BVol<BasicTraits,BVOL>     Self;
+   typedef FactoryHeap<Self>                         FactoryType;
+   typedef typename InheritedData::Cache             Cache;
+   typedef typename InheritedData::CacheData         CacheData;
+   typedef typename InheritedData::TransformType     TransformType;
+   typedef typename InheritedData::GeomTriangleType  GeomTriangleType;
+   typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
+   typedef typename Inherited::BVol                  BVol;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
    /*! \{                                                                 */
    OpenSGTriangle2BVol ();
    OpenSGTriangle2BVol (const GeomTriangleType& obj);
-   OpenSGTriangle2BVol (const TransformType&    m2w,
-			const GeomTriangleType& obj);
+   OpenSGTriangle2BVol (const TransformType& m2w, const GeomTriangleType& obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */
    void  init (const GeomTriangleType& obj);
-   void  init (const TransformType& m2w,
-	       const GeomTriangleType&  obj);
+   void  init (const TransformType& m2w, const GeomTriangleType& obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Interface of BVolAdapterBase.                                */

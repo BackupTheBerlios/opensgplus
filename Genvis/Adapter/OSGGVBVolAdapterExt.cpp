@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -49,7 +49,7 @@ OpenSGTriangleBase<BasicTraits>::~OpenSGTriangleBase ()
 }
 
 template <class BasicTraits>
-GeoPositionsPtr OpenSGTriangleBase<BasicTraits>::getPositions () const
+GeoPositionsPtr OpenSGTriangleBase<BasicTraits>::getPositions (u32 id) const
 {
 #ifdef GV_STOREDCOORDS_TRIANGLE
    if (m_coord == NullFC) {
@@ -59,7 +59,7 @@ GeoPositionsPtr OpenSGTriangleBase<BasicTraits>::getPositions () const
       addRefCP(coord);
       GeoPositions3f::StoredFieldType* c = coord->getFieldPtr();
       GeomTriangleType it = getOriginal();
-      TransformType trf = getTransform();
+      TransformType trf = getTransform(id);
       if (trf == Matrix::identity()) {
 	 beginEditCP(coord);
 	 c->addValue(it.getPosition(0));
@@ -82,7 +82,7 @@ GeoPositionsPtr OpenSGTriangleBase<BasicTraits>::getPositions () const
    GeoPositions3fPtr coord  = GeoPositions3f::create();
    GeoPositions3f::StoredFieldType* c = coord->getFieldPtr();
    GeomTriangleType it = getOriginal();
-   TransformType  trf = getTransform();
+   TransformType  trf = getTransform(id);
    if (trf == Matrix::identity()) {
       beginEditCP(coord);
       c->addValue(it.getPosition(0));
@@ -104,7 +104,7 @@ GeoPositionsPtr OpenSGTriangleBase<BasicTraits>::getPositions () const
 }
 
 template <class BasicTraits>
-GeoNormalsPtr   OpenSGTriangleBase<BasicTraits>::getNormals () const
+GeoNormalsPtr   OpenSGTriangleBase<BasicTraits>::getNormals (u32 id) const
 {
 #ifdef GV_STOREDCOORDS_TRIANGLE
    if (m_normal == NullFC) {
@@ -114,7 +114,7 @@ GeoNormalsPtr   OpenSGTriangleBase<BasicTraits>::getNormals () const
       addRefCP(normal);
       GeoNormals3f::StoredFieldType* n = normal->getFieldPtr();
       GeomTriangleType it = getOriginal();
-      TransformType  trf = getTransform();
+      TransformType  trf = getTransform(id);
       if (trf == Matrix::identity()) {
 	 beginEditCP(normal);
 	 n->addValue(it.getNormal(0));
@@ -137,7 +137,7 @@ GeoNormalsPtr   OpenSGTriangleBase<BasicTraits>::getNormals () const
    GeoNormals3fPtr normal = GeoNormals3f::create();
    GeoNormals3f::StoredFieldType* n = normal->getFieldPtr();
    GeomTriangleType it = getOriginal();
-   TransformType trf = getTransform();
+   TransformType trf = getTransform(id);
    if (trf == Matrix::identity()) {
       beginEditCP(normal);
       n->addValue(it.getNormal(0));
@@ -180,14 +180,14 @@ template <class BasicTraits, class BVOL>
 void OpenSGTriangle2BVol<BasicTraits,BVOL>::update ()
 {
    m_bvol.setEmpty(true);
-   init(getTransform(), getOriginal());
+   init(getTransform(Self::getAdapterId()), getOriginal());
 }
 
 
 template <class BasicTraits, class BVOL>
 void  OpenSGTriangle2BVol<BasicTraits,BVOL>::init (const GeomTriangleType& obj)
 {
-   m_originalId = obj.getIndex();
+   setOriginal(obj);
    m_point[0] = obj.getPosition(0);
    m_point[1] = obj.getPosition(1);
    m_point[2] = obj.getPosition(2);
@@ -201,9 +201,12 @@ void  OpenSGTriangle2BVol<BasicTraits,BVOL>::init (const GeomTriangleType& obj)
 }
 template <class BasicTraits, class BVOL>
 void  OpenSGTriangle2BVol<BasicTraits,BVOL>::init (const TransformType&    m2w,
-						    const GeomTriangleType& obj)
+						   const GeomTriangleType& obj)
 {
-   m_originalId = obj.getIndex();
+   setOriginal(obj);
+   m_color[0] = obj.getColorIndex(0);
+   m_color[1] = obj.getColorIndex(1);
+   m_color[2] = obj.getColorIndex(2);
 
    m2w.mult(obj.getPosition(0), m_point[0]);
    m_bvol.unify(m_point[0]);
@@ -223,6 +226,15 @@ OpenSGTriangle2BVol<BasicTraits,BVOL>::getBoundingVolume () const
    return m_bvol;
 }
 
+#ifdef WIN32
+static void APIENTRY ConstantColor (const GLfloat* )
+{
+   glColor3f(1.0f, 0.0f, 0.0f);
+}
+static void APIENTRY Void (const GLfloat* )
+{
+}
+#else
 static void ConstantColor (const GLfloat* )
 {
    glColor3f(1.0f, 0.0f, 0.0f);
@@ -230,52 +242,19 @@ static void ConstantColor (const GLfloat* )
 static void Void (const GLfloat* )
 {
 }
+#endif
 
 template <class BasicTraits, class BVOL>
 void OpenSGTriangle2BVol<BasicTraits,BVOL>::draw ()
 {
-#if 0
    GeomTriangleType it(getOriginal());
-   typedef void (*ColorFunction)  (const GLfloat*);
-   typedef void (*NormalFunction) (const GLfloat*);
-   ColorFunction color;
-   if (it.getColorIndex(0) < 0) {
-      color = (ColorFunction)&ConstantColor;
-   } else {
-      color = (ColorFunction)&glColor3fv;
-   }
-   NormalFunction normal;
-   if (it.getNormalIndex(0) < 0) {
-      normal = (NormalFunction)&Void;
-   } else {
-      normal = (NormalFunction)&glNormal3fv;
-   }
-
-   //glColor3f(0.5f, 0.5f, 0.5f);
-   GeoPositionsPtr coord = getPositions();
-   GeoNormalsPtr   norm  = getNormals();
-   glBegin(GL_TRIANGLES);
-   Color3f col = it.getColor(0);
-   color(col.getValuesRGB());
-   normal(norm->getValue(0).getValues());
-   glVertex3fv(coord->getValue(0).getValues());
-
-   col = it.getColor(1);
-   color(col.getValuesRGB());
-   normal(norm->getValue(1).getValues());
-   glVertex3fv(coord->getValue(1).getValues());
-
-   col = it.getColor(2);
-   color(col.getValuesRGB());
-   normal(norm->getValue(2).getValues());
-   glVertex3fv(coord->getValue(2).getValues());
-   glEnd();
-   subRefCP(coord);
-   subRefCP(norm);
+#ifdef WIN32
+   typedef void (APIENTRY*ColorFunction)  (const GLfloat*);
+   typedef void (APIENTRY*NormalFunction) (const GLfloat*);
 #else
-   GeomTriangleType it(getOriginal());
    typedef void (*ColorFunction)  (const GLfloat*);
    typedef void (*NormalFunction) (const GLfloat*);
+#endif
    ColorFunction color;
    if (true || it.getColorIndex(0) < 0) {
       color = (ColorFunction)&Void;
@@ -302,27 +281,11 @@ void OpenSGTriangle2BVol<BasicTraits,BVOL>::draw ()
    color(it.getColor(2).getValuesRGB());
    glVertex3fv(coord[2].getValues());
    glEnd();
-#endif
 }
 
 template <class BasicTraits, class BVOL>
 void OpenSGTriangle2BVol<BasicTraits,BVOL>::drawWireframe ()
 {
-#if 0
-   GLfloat current[4];
-   glGetFloatv(GL_CURRENT_COLOR, current);
-   //glColor3f(0.8f, 0.8f, 0.8f);
-   glColor3f(0.6f, 0.0f, 0.0f);
-   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-   const PointClass* coord = getPosition(); 
-   glBegin(GL_TRIANGLES);
-   glVertex3fv(coord[0].getValues());
-   glVertex3fv(coord[1].getValues());
-   glVertex3fv(coord[2].getValues());
-   glEnd();
-   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-   glColor3fv(current);
-#else
    GLfloat current[4];
    glGetFloatv(GL_CURRENT_COLOR, current);
    glColor3f(0.8f*current[0], 0.8f*current[1], 0.8f*current[2]);
@@ -330,7 +293,6 @@ void OpenSGTriangle2BVol<BasicTraits,BVOL>::drawWireframe ()
    draw();
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    glColor3fv(current);
-#endif
 }
 
 template <class BasicTraits, class BVOL>
@@ -339,7 +301,7 @@ inline bool OpenSGTriangle2BVol<BasicTraits,BVOL>::calcIntersect (Intersection& 
    Real t;
    VectorClass normal;
    if (hit.getRay().calcIntersect(getPosition(0), getPosition(1), getPosition(2), 
-				  t, normal)) { // intersection case
+				  t, &normal)) { // intersection case
       if (hit.updateDist(t)) {
 	 hit.setTo(this);
 	 // additional intersection data

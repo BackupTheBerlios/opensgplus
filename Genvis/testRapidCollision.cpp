@@ -77,14 +77,14 @@ static NodePtr makePerturbedUniform (UInt16 numSubdiv,
 
 void randomTransform (Matrix& m)
 {
-  Vec3f p(rand(), rand(), rand());
-  Real32 len = p.length();
-  p /= len;
-  Quaternion q;
-  q.setValueAsAxisRad(p, len);
-  m.setRotate(q);
-  Vec3f t(10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX));
-  m.setTranslate(t);
+   Vec3f p(rand(), rand(), rand());
+   Real32 len = p.length();
+   p /= len;
+   Quaternion q;
+   q.setValueAsAxisRad(p, len);
+   m.setRotate(q);
+   Vec3f t(10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX));
+   m.setTranslate(t);
 }
 
 NodePtr makeTransformedCube (Real32 xsize,
@@ -180,16 +180,19 @@ int main(int argc, char **argv)
 
     // prepare for collision detection
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     SLOG << "cache filled." << std::endl;
     // * build hierarchy
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
-    hier.hierarchy();
     SLOG << "adapters created.." << std::endl;
     // * create all traverser
     //   double traverser not necessary
+#ifndef GV_WITH_RAPID
+    SWARNING << "For RAPID support you have to define GV_WITH_RAPID (see Kernel/OSGGVBase.h)" 
+	     << std::endl;
+#endif
     all = new OSGRAPIDTraverser();
 
     // GLUT main loop
@@ -229,11 +232,11 @@ void display(void)
 
    OSGRAPIDCollision& col = all->getDataTyped();     
    SLOG << col.getNumContacts() << " contacts with " 
-	     << col.getNumBVolTests() << " BVolTests/"
-	     << col.getNumMixedTests() << " MixedTests/"
-	     << col.getNumPrimTests() << " TriTests  " 
-	     << std::endl;
-
+	<< col.getNumBVolTests() << " BVolTests/"
+	<< col.getNumMixedTests() << " MixedTests/"
+	<< col.getNumPrimTests() << " TriTests  " 
+	<< std::endl;
+   
    Profiler::the().EndProfile("Frame");
    mgr->redraw();
 }

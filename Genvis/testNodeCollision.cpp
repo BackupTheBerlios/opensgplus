@@ -29,9 +29,9 @@ USING_GENVIS_NAMESPACE
 // The SimpleSceneManager to manage simple applications
 static NodePtr scene;
 static NodePtr        first;
-static const unsigned numFirst = 100;
+static const UInt32 numFirst = 100;
 static NodePtr        second;
-static const unsigned numSecond= 100;
+static const UInt32 numSecond= 100;
 typedef OSGNodeHierarchy Hierarchy;
 static Hierarchy                 hier;
 static genvis::OSGNodeTraverser* all = NULL;
@@ -77,14 +77,14 @@ static NodePtr makePerturbedUniform (UInt16 numSubdiv,
 
 void randomTransform (Matrix& m)
 {
-  Vec3f p(rand(), rand(), rand());
-  Real32 len = p.length();
-  p /= len;
-  Quaternion q;
-  q.setValueAsAxisRad(p, len);
-  m.setRotate(q);
-  Vec3f t(10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX));
-  m.setTranslate(t);
+   Vec3f p(rand(), rand(), rand());
+   Real32 len = p.length();
+   p /= len;
+   Quaternion q;
+   q.setValueAsAxisRad(p, len);
+   m.setRotate(q);
+   Vec3f t(10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX), 10.0f*rand()/Real32(RAND_MAX));
+   m.setTranslate(t);
 }
 
 NodePtr makeTransformedCube (Real32 xsize,
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
     first = Node::create ();
     beginEditCP(first);
     first->setCore(Group::create());
-    unsigned i;
+    UInt32 i;
     for (i=0; i<numFirst; ++i) {
        first->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(1,0,0)));
     }
@@ -180,15 +180,15 @@ int main(int argc, char **argv)
 
     // prepare for collision detection
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     SLOG << "cache filled." << std::endl;
     // * build hierarchy
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
-    hier.hierarchy();
     SLOG << "adapters created.." << std::endl;
-    // * double traverser not necessary
+    // * create all traverser
+    //   double traverser not necessary
     all = new OSGNodeTraverser();
 
     // GLUT main loop
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
 void display(void)
 {
    Profiler::the().StartProfile("Frame");
-   unsigned i;
+   UInt32 i;
    for (i=0; i<numFirst; ++i) {
      TransformPtr trf = TransformPtr::dcast(first->getChild(i)->getCore());
      beginEditCP(trf);

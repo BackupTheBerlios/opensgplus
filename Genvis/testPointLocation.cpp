@@ -130,18 +130,15 @@ int main(int argc, char **argv)
 
     // do point location
     // * fill cache
-    {
-      GenvisPreprocAction prep;
-      prep.apply(scene);
-    }
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     std::cout << "cache filled." << std::endl;
 
     // * build hierarchy
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     std::cout << "adapters with 18DOPs created.." << std::endl;
-
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
     hier.hierarchy();
     std::cout << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
     const BoundingVolume<Real>& rootBVol = hier.getRoot()->getBoundingVolume();
@@ -175,7 +172,7 @@ void display(void)
 
       Hierarchy::GroupType* root = hier.getRoot();
       OSGCache::CacheData& data = OSGCache::the()[scene];
-      trav.apply(data, root, data.getAdapterMatrix(0));
+      trav.apply(data, root);
       if (trav.getData().getHitTyped() != NULL) {
 	std::cout << "bvol-hierarchy: hit found (" 
 		  << *trav.getData().getHitTyped()

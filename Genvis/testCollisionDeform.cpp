@@ -156,23 +156,23 @@ int main(int argc, char **argv)
     // show the whole scene
     mgr->showAll();
 
-    // restructure
+    // prepare collision query
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     SLOG << "cache filled." << std::endl;
     // * build hierarchy
-    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalCoordSystem);
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::Local);
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     SLOG << "adapters with 18DOPs created.." << std::endl;
+    SLOG << "hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
 
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
-    hier.hierarchy();
-    SLOG << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
-    // * create double traverser for collision detection
-    traverser.setUseCoherency(false);
-    traverser.getDataTyped().setStopFirst(false);
+    // * create double traverser for pairwise collision detection
+    traverser.setUseCoherency(false);             // do not use generalized front cache for frame coherency
+    traverser.getDataTyped().setStopFirst(false); // do not stop on first colliding primitive-pair
+    // * create double traverser for allpairs collision detection
     all.setDoubleTraverser(&traverser);
 
     // GLUT main loop

@@ -1,4 +1,4 @@
-#include <GL/glut.h>
+#include "OSGGLUT.h"
 #include "OSGGVBase.h"
 #include "OSGGVKDop.h"
 #include "OSGGVKDopGeometry.h"

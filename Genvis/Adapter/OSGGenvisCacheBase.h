@@ -81,28 +81,31 @@ class BinaryDataHandler;
 class OSG_GENVISLIB_DLLMAPPING GenvisCacheBase : public Attachment
 {
   private:
-
-    typedef Attachment Inherited;
+    typedef Attachment      Inherited;
+    typedef GenvisCacheBase Self;
+    typedef Self*           SelfP;
 
     /*==========================  PUBLIC  =================================*/
   public:
+    typedef std::vector<BVolAdapterBaseP>                      AdapterVector;
+    typedef MFBVolAdapterBaseP::StorageType                    AdapterContainer;
+    typedef std::map<SelfP,AdapterContainer,std::less<SelfP> > ColCacheContainer;
 
     enum
     {
         AdapterMatrixFieldId  = Inherited::NextFieldId,
-        BVolAdapterFieldId    = AdapterMatrixFieldId  + 1,
+        FrameMatrixFieldId    = AdapterMatrixFieldId  + 1,
+        BVolAdapterFieldId    = FrameMatrixFieldId  + 1,
         Adapter2FieldId       = BVolAdapterFieldId + 1,
         Adapter3FieldId       = Adapter2FieldId + 1,
-        CollisionCacheFieldId = Adapter3FieldId + 1,
-        NextFieldId           = CollisionCacheFieldId + 1
+        NextFieldId           = Adapter3FieldId + 1
     };
 
     static const osg::BitVector AdapterMatrixFieldMask;
+    static const osg::BitVector FrameMatrixFieldMask;
     static const osg::BitVector BVolAdapterFieldMask;
     static const osg::BitVector Adapter2FieldMask;
     static const osg::BitVector Adapter3FieldMask;
-    static const osg::BitVector CollisionCacheFieldMask;
-
 
     /*---------------------------------------------------------------------*/
     /*! \name                    Class Get                                 */
@@ -130,11 +133,12 @@ class OSG_GENVISLIB_DLLMAPPING GenvisCacheBase : public Attachment
            MFBVolAdapterBaseP  *getMFBVolAdapter    (void);
            MFBVolAdapterBaseP  *getMFAdapter2       (void);
            MFBVolAdapterBaseP  *getMFAdapter3       (void);
-           MFBVolAdapterBaseP  *getMFCollisionCache (void);
-
            Matrix              &getAdapterMatrix  (const UInt32 index);
            MFMatrix            &getAdapterMatrix  (void);
      const MFMatrix            &getAdapterMatrix  (void) const;
+           SFMatrix            *getSFFrameMatrix    (void);
+           Matrix              &getFrameMatrix    (void);
+     const Matrix              &getFrameMatrix    (void) const;
            BVolAdapterBaseP    &getBVolAdapter    (const UInt32 index);
            MFBVolAdapterBaseP  &getBVolAdapter    (void);
      const MFBVolAdapterBaseP  &getBVolAdapter    (void) const;
@@ -144,15 +148,16 @@ class OSG_GENVISLIB_DLLMAPPING GenvisCacheBase : public Attachment
            BVolAdapterBaseP    &getAdapter3    (const UInt32 index);
            MFBVolAdapterBaseP  &getAdapter3    (void);
      const MFBVolAdapterBaseP  &getAdapter3    (void) const;
-           BVolAdapterBaseP    &getCollisionCache (const UInt32 index);
-           MFBVolAdapterBaseP  &getCollisionCache (void);
-     const MFBVolAdapterBaseP  &getCollisionCache (void) const;
+            ColCacheContainer&  getColCache    ();
+             AdapterContainer&  getColCache    (Self& data);
+     const AdapterContainer&  getColCache    (Self& data) const;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
     /*! \name                    Field Set                                 */
     /*! \{                                                                 */
 
+     void setFrameMatrix         ( const Matrix &value );
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -198,11 +203,12 @@ class OSG_GENVISLIB_DLLMAPPING GenvisCacheBase : public Attachment
     /*! \name                      Fields                                  */
     /*! \{                                                                 */
 
-    MFMatrix            _mfAdapterMatrix;
+    MFMatrix             _mfAdapterMatrix;
+    SFMatrix             _sfFrameMatrix;
     MFBVolAdapterBaseP   _mfBVolAdapter;
     MFBVolAdapterBaseP   _mfAdapter2;
     MFBVolAdapterBaseP   _mfAdapter3;
-    MFBVolAdapterBaseP   _mfCollisionCache;
+    ColCacheContainer    _collisionCache;
 
     /*! \}                                                                 */
     /*---------------------------------------------------------------------*/
@@ -250,6 +256,6 @@ typedef GenvisCacheBase *GenvisCacheBaseP;
 
 OSG_END_NAMESPACE
 
-#define OSGGENVISCACHEBASE_HEADER_CVSID "@(#)$Id: OSGGenvisCacheBase.h,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $"
+#define OSGGENVISCACHEBASE_HEADER_CVSID "@(#)$Id: OSGGenvisCacheBase.h,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $"
 
 #endif /* _OSGGENVISCACHEBASE_H_ */

@@ -20,8 +20,10 @@
 #include <OSGGL.h>
 #include <OSGGeometry.h>
 #include <OSGVolumeDraw.h>
-#include <OSGAdapterDrawAction.h>
 #include <OSGGVBVolAdapterBase.h>
+#include "OSGGVStaticInput.h"
+#include "OSGGVInput.h"
+#include "OSGAdapterDrawAction.h"
 
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
@@ -42,7 +44,7 @@ USING_GENVIS_NAMESPACE
  *                           Class variables                               *
 \***************************************************************************/
 
-char AdapterDrawAction::cvsid[] = "@(#)$Id: OSGAdapterDrawAction.cpp,v 1.1 2003/09/11 16:20:29 fuenfzig Exp $";
+char AdapterDrawAction::cvsid[] = "@(#)$Id: OSGAdapterDrawAction.cpp,v 1.2 2004/03/12 13:12:36 fuenfzig Exp $";
 
 AdapterDrawAction* AdapterDrawAction::_prototype = NULL;
 
@@ -142,6 +144,7 @@ AdapterDrawAction::AdapterDrawAction(void)
         _leaveFunctors = *Inherited::getDefaultLeaveFunctors();
     }
 #endif
+    setLocalMode();
 }
 
 
@@ -151,6 +154,7 @@ AdapterDrawAction::AdapterDrawAction(void)
 AdapterDrawAction::AdapterDrawAction( const AdapterDrawAction & source ) 
   : Inherited (source)
 {
+   setLocalMode(source.getLocalMode());
 }
 
 /** \brief create a new action
@@ -181,17 +185,38 @@ AdapterDrawAction::~AdapterDrawAction(void)
 
 /*-------------------------- your_category---------------------------------*/
 
-UInt32 AdapterDrawAction::selectVisibles( void )
+inline OSGCache::CacheData& getCacheData (OSGCache::CacheData& data, BVolAdapterBase* group)
+{
+   if (group->getParent() == NULL) { // no parent
+      return data;
+   }
+   // triangle adapter
+   OpenSGTriangleBase<OpenSGTraits>*  tri = 
+     dynamic_cast<OpenSGTriangleBase<OpenSGTraits>*>(group->getParent());
+   if (tri != NULL) {
+      return tri->getObjectAdapter();
+   }
+   // object adapter
+   OpenSGObjectBase<OpenSGTraits>* obj = 
+     dynamic_cast<OpenSGObjectBase<OpenSGTraits>*>(group->getParent());
+   if (obj != NULL) {
+      return obj->getObjectAdapter();
+   }
+   // no adapter
+   return data;
+}
+
+UInt32 AdapterDrawAction::selectVisiblesLocal (void)
 {
    if (!getFrustumCulling()) {
         return getNNodes();
    }
 
-   bool l = false;
-   bool d = getVolumeDrawing();
+   GLint l = false;
+   bool  d = getVolumeDrawing();
    if ( d ) {
-      l = glIsEnabled( GL_LIGHTING );
-      glDisable( GL_LIGHTING );
+      l = glIsEnabled(GL_LIGHTING);
+      glDisable(GL_LIGHTING);
    }
 
    useNodeList();
@@ -203,47 +228,87 @@ UInt32 AdapterDrawAction::selectVisibles( void )
             ++count;
         }
 
-        if ( d ) {
-	   OSGCache::CacheData& dataI = 
-	     getCache()[getNode(i)];
-	   if (GeometryPtr::dcast(getNode(i)->getCore()) == NullFC) {
-	      continue;
-	   }
-	   // CF to be changed
+        if (d) {
+	   OSGCache::CacheData& data = OSGCache::the()[getNode(i)];
+
 	   OSGCache::CacheData::AdapterContainer& all = 
-	     dataI.getAdapter(BVolAdapterBase::getAdapterId());
-	   OSGCache::CacheData::AdapterContainer::const_iterator iter = 
-	     all.begin();
-	   if (iter != all.end()) {
-#if 1
-	   glColor3f(1,0,0);
+	     data.getAdapter(BVolAdapterBase::getAdapterId());
+	   // for BVolHierarchyBase there are more than one leaf nodes, then render
+	   // for SingleHierarchyBase there are more than one inner nodes, then skip
+	   if (all.size() > 1 && ((BVolAdapterBase*)all[0])->isInner()) { 
+	      continue; 
+	   }
+
+	   glColor3f(0,1,0);
+	   OSGCache::CacheData::AdapterContainer::const_iterator iter=all.begin();   
 	   for (; iter != all.end(); ++iter) {
 	      ((BVolAdapterBase*)*iter)->getBoundingVolume().drawWireframe();
-	   }
-	   glColor3f(0,1,0);
-	   drawVolume( getNode(i)->getVolume() );
-#else
-	   glPushMatrix();
-	   glLoadIdentity();
-	   getCamera()->setup(this, *getViewport());
-	   const Matrix& matrixI = dataI.getToWorldMatrix();
-	   glMultMatrixf(matrixI.getValues());
-	   glColor3f(1,0,0);
-	   for (; iter != all.end(); ++iter) {
-	      ((BVolAdapterBase*)*iter)->getBoundingVolume().drawWireframe();
-	   }
-	   glColor3f(0,1,0);
-	   drawVolume( getNode(i)->getVolume() );
-	   glPopMatrix();
-#endif
 	   }
         }
    }
-   if ( l ) { 
-      glEnable( GL_LIGHTING );
+   if (l) { 
+      glEnable(GL_LIGHTING);
    }
    
    return count;
+}
+UInt32 AdapterDrawAction::selectVisiblesGlobal (void)
+{
+   if (!getFrustumCulling()) {
+        return getNNodes();
+   }
+
+   GLint l = 0;
+   bool  d = getVolumeDrawing();
+   if ( d ) {
+      l = glIsEnabled(GL_LIGHTING);
+      glDisable(GL_LIGHTING);
+   }
+
+   useNodeList();
+   
+   UInt32 count = 0;
+   for ( UInt32 i = 0; i < getNNodes(); ++i ) {
+        if ( isVisible( getNode(i).getCPtr() ) ) {
+            addNode( getNode(i) );
+            ++count;
+        }
+
+        if (d) {
+	   OSGCache::CacheData& data = OSGCache::the()[getNode(i)];
+
+	   OSGCache::CacheData::AdapterContainer& all = 
+	     data.getAdapter(BVolAdapterBase::getAdapterId());
+	   // for BVolHierarchyBase there are more than one leaf nodes, then render
+	   // for SingleHierarchyBase there are more than one inner nodes, then skip
+	   if (all.size() > 1 && ((BVolAdapterBase*)all[0])->isInner()) { 
+	      continue; 
+	   }
+
+	   glColor3f(0,1,0);
+	   glPushMatrix();
+	   glLoadIdentity();
+	   getCamera()->setup(this, *getViewport());
+	   //const Matrix& matrixI = data.getToWorldMatrix();
+	   //glMultMatrixf(matrixI.getValues());
+	   OSGCache::CacheData::AdapterContainer::const_iterator iter=all.begin();   
+	   for (; iter != all.end(); ++iter) {
+	      ((BVolAdapterBase*)*iter)->getBoundingVolume().drawWireframe();
+	   }
+	   glPopMatrix();
+        }
+   }
+   if (l) { 
+      glEnable(GL_LIGHTING);
+   }
+   
+   return count;
+}
+
+
+UInt32 AdapterDrawAction::selectVisibles (void)
+{
+   return (this->*f_selectVisibles)();
 }
 
 /*-------------------------- assignment -----------------------------------*/

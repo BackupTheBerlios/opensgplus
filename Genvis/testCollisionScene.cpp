@@ -120,24 +120,28 @@ int main(int argc, char **argv)
     // show the whole scene
     mgr->showAll();
 
-    // restructure
+    // prepare collision query
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     SLOG << "cache filled." << std::endl;
     // * build hierarchy
-    hier.setParameter(0, 50, 2);
-    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalCoordSystem);
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
+    // first "chessboard.wrl": 
+    // we want to move chessboard pieces, so we need hierarchies for each piece
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalShared);
     OSGCache::the().apply(first);
+    // second "hand.wrl": 
+    // we do not want to animate the hand, so one hierarchy is sufficient
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::Global);
     OSGCache::the().apply(second);
     SLOG << "adapters with 18DOPs created.." << std::endl;
-
-    hier.hierarchy();
     SLOG << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
-    // * create double traverser for collision detection
-    traverser.setUseCoherency(false);
-    traverser.getDataTyped().setStopFirst(true);
+
+    // * create double traverser for pairwise collision detection
+    traverser.setUseCoherency(false);            // do not use generalized front cache for frame coherency
+    traverser.getDataTyped().setStopFirst(true); // stop on first colliding primitive-pair
     all.setDoubleTraverser(&traverser);
 
     // GLUT main loop

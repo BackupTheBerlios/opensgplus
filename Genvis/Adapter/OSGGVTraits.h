@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -47,6 +47,7 @@ class OSG_GENVISLIB_DLLMAPPING OpenSGTraits
 public:
    typedef OSG::Matrix            TransformType;
    typedef OSG::NodePtr           GeomObjectType;
+   typedef OSG::NodeCorePtr       GeomCoreType;
    typedef OSG::FaceIterator      GeomFaceType;
    typedef OSG::PrimitiveIterator GeomPrimitiveType;
    typedef OSG::TriangleIterator  GeomTriangleType;

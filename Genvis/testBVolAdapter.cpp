@@ -39,11 +39,7 @@ int main (int, char**)
 	    << "OpenSGTriangleBase                   " << sizeof(OpenSGTriangleBase<OpenSGTraits>)
 	    << std::endl
 	    << "(" 
-#ifdef GV_LAZY_ITERATOR 
-	    << sizeof(OSG::Int32)+sizeof(OSG::GeometryPtr) 
-#else
-	    << sizeof(OSG::TriangleIterator) 
-#endif
+	    << sizeof(OSG::Int32)+sizeof(OpenSGTraits::CacheData) 
 	    << "/" << sizeof(OpenSGTraits::TransformType)
 #ifdef GV_STORED_COORDS 
 	    << "/" << sizeof(OSG::GeoPositionsPtr)

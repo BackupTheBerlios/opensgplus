@@ -137,10 +137,8 @@ int main(int argc, char **argv)
 
     // do ray intersect
     // * fill cache
-    {
-      GenvisPreprocAction prep;
-      prep.apply(scene);
-    }
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     std::cout << "cache filled." << std::endl;
 
     // * build hierarchy
@@ -148,7 +146,7 @@ int main(int argc, char **argv)
     OSGCache::the().apply(scene);
     std::cout << "adapters with 18DOPs created.." << std::endl;
 
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 10);
+    hier.setParameter("LongestSideMedian", 50, 10);
     hier.hierarchy();
     BVolGroup<K18Dop>* root = hier.getRoot();
     std::cout << "18DOP-hierarchy (max depth 50, min num primitives 10) build...." << std::endl;
@@ -173,8 +171,7 @@ int main(int argc, char **argv)
       positions->setValue(ray.getOrigin(), 0);
       SingleEnterLeaveTraverser<OpenSGTraits,BVolRayIntersectTraits<OpenSGTraits> > trav;
       trav.getData().setIntersect(in);
-      OSGCache::CacheData& data = OSGCache::the()[scene];
-      trav.apply(data, root, data.getAdapterMatrix(0));
+      trav.apply(OSGCache::the()[scene], root);
       if (trav.getData().getHit()) {
 	std::cout << "bvol-hierarchy: hit found (" 
 		  << "distance=" << trav.getData().getHitDist() 

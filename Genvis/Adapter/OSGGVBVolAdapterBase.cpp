@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2004/03/12 13:12:36 $
 //                                                                            
 //=============================================================================
 
@@ -22,6 +22,12 @@ template class BVolAdapter<K26Dop>;
 template class BVolAdapter<K12Dop>;
 template class BVolAdapter<K20Dop>;
 
+
+u32 BVolAdapterBase::getAdapterId ()
+{
+   static u32 id = getNextId();
+   return id;
+}
 
 Real BVolAdapterBase::getSurfaceArea ()
 {
@@ -39,29 +45,26 @@ std::ostream& BVolAdapterBase::dump (std::ostream& os) const
    return os;
 }
 
-bool BVolAdapterBase::calcIntersect (Intersection& hit)
+bool BVolAdapterBase::calcIntersect (Intersection& in)
 {
-   const Ray& ray = hit.getRay();
-   Real t = hit.getDist();
-   if (getBoundingVolume().testIntersect(ray.getOrigin(), ray.getDirection(), t)) { 
+   const Ray& ray = in.getRay();
+   if (getBoundingVolume().calcIntersect(ray.getOrigin(), ray.getDirection(), in.getDist())) { 
       // intersection on this object
-      hit.setDist(t);
-      hit.setTo(this);
-      hit.setData(NULL);
+      in.setTo(this);
+      in.setData(NULL);
       return true;
    }
    return false;
 
 }
-bool BVolAdapterBase::checkIntersect (const Ray& ray)
+bool BVolAdapterBase::checkIntersect (const Intersection& in)
 {
-   Real t = -1;
-   return getBoundingVolume().testIntersect(ray.getOrigin(), ray.getDirection(), t);
+   return getBoundingVolume()
+     .checkIntersect(in.getRay().getOrigin(), in.getRay().getDirection(), in.getDist());
 }
-VectorClass BVolAdapterBase::getSurfaceNormal (const Intersection& hit)
+VectorClass BVolAdapterBase::getSurfaceNormal (const Intersection& in)
 {
-   IntersectionNormal* data 
-     = dynamic_cast<IntersectionNormal*>(hit.getData());
+   IntersectionNormal* data = dynamic_cast<IntersectionNormal*>(in.getData());
    assert(data != NULL);
    return data->getSurfaceNormal();
 }
@@ -77,3 +80,4 @@ void BVolAdapterBase::draw          ()
 void BVolAdapterBase::drawWireframe ()
 {
 }
+

@@ -143,23 +143,23 @@ int main(int argc, char **argv)
     // show the whole scene
     mgr->showAll();
 
-    // restructure
+    // prepare collision query
     // * fill cache
-    GenvisPreprocAction prep;
-    prep.apply(scene);
+    OSGCache::the().setHierarchy(NULL);
+    OSGCache::the().apply(scene);
     std::cout << "cache filled." << std::endl;
     // * build hierarchy
-    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::LocalCoordSystem);
+    hier.setCoordinateSystem(OSGSingleBVolHierarchyBase::Local);
+    hier.setParameter("LongestSideMedian", 50, 2);
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     std::cout << "adapters with 18DOPs created.." << std::endl;
-
-    hier.setParameter(OSGStaticInput::LongestSideMedianId, 50, 2);
-    hier.hierarchy();
     std::cout << "18DOP-hierarchy (max depth 50, min num primitives 2) build...." << std::endl;
+
     // * create double traverser for collision detection
-    // realignemnt with DynamicRealign
-    traverser.setUseCoherency(false);
+    // realignemnt with DynamicAlign
+    traverser.setUseCoherency(false); // do not use generalized front cache for frame coherency
+                                      // default: do not stop on first colliding primitive-pair
     traverser.getDataTyped().setLineGeometry(positions);
     all.setDoubleTraverser(&traverser);
 
