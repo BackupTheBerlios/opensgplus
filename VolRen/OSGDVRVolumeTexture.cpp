@@ -78,7 +78,6 @@ DVRVolumeTexture::~DVRVolumeTexture(void)
 {
     if (getImage() != NullFC)
     {
-        subRefCP(getImage());
         setImage(NullFC);
     }
 }
@@ -102,6 +101,23 @@ void DVRVolumeTexture::changed(BitVector whichField, UInt32 origin)
     if (whichField & ImageFieldMask) 
     {
         FINFO(("DVRVolumeTexture::changed - new Image\n"));
+
+        if(origin & ChangedOrigin::Abstract)
+        {
+            if(origin & ChangedOrigin::AbstrIncRefCount)
+            {
+                addRefCP(_sfImage.getValue());
+            }
+            else
+            {
+                ImagePtr pImage = _sfImage.getValue();
+                
+                _sfImage.setValue(NullFC);
+                
+                setImage(pImage);
+            }
+        }
+        
         _mfHistogram.resize(256);
         
         // update histogram
@@ -218,7 +234,7 @@ void DVRVolumeTexture::dump(      UInt32    ,
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRVolumeTexture.cpp,v 1.4 2004/01/21 05:05:25 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRVOLUMETEXTURE_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRVOLUMETEXTURE_INLINE_CVSID;
 }

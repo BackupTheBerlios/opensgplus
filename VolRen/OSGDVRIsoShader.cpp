@@ -57,58 +57,46 @@ OSG_USING_NAMESPACE
 
 // register extensions and initialize extension functions
 
-UInt32 DVRIsoShader::_ARB_multitexture       = 
-    Window::registerExtension("GL_ARB_multitexture"      );
-
-UInt32 DVRIsoShader::_EXT_texture3D          = 
-    Window::registerExtension("GL_EXT_texture3D"         );
-
-UInt32 DVRIsoShader::_NV_register_combiners  = 
-    Window::registerExtension("GL_NV_register_combiners" );
-
-UInt32 DVRIsoShader::_NV_register_combiners2 = 
-    Window::registerExtension("GL_NV_register_combiners2");
-
-UInt32 DVRIsoShader::_SGI_color_matrix       = 
-    Window::registerExtension("GL_SGI_color_matrix"      );
-
-UInt32 DVRIsoShader::_ARB_fragment_program   = 
-    Window::registerExtension("GL_ARB_fragment_program"  );
+UInt32 DVRIsoShader::_ARB_multitexture       = Window::invalidExtensionID;
+UInt32 DVRIsoShader::_EXT_texture3D          = Window::invalidExtensionID;
+UInt32 DVRIsoShader::_NV_register_combiners  = Window::invalidExtensionID;
+UInt32 DVRIsoShader::_NV_register_combiners2 = Window::invalidExtensionID;
+UInt32 DVRIsoShader::_SGI_color_matrix       = Window::invalidExtensionID;
+UInt32 DVRIsoShader::_ARB_fragment_program   = Window::invalidExtensionID;
 
 
 UInt32 DVRIsoShader::_funcActiveTextureARB            =  
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glActiveTextureARB"     );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcMultiTexCoord2dARB          = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB"   );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcTexImage3DEXT               = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glTexImage3DEXT"        );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcCombinerParameteriNV        = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV" );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcCombinerParameterfvNV       = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV");
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcCombinerStageParameterfvNV  = 
-    Window::registerFunction(
-        OSG_DLSYM_UNDERSCORE"glCombinerStageParameterfvNV" );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcSecondaryColor3fEXT         = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glSecondaryColor3fEXT"  );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcSecondaryColor3fvEXT        = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glSecondaryColor3fvEXT" );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcCombinerInputNV             = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerInputNV"      );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcCombinerOutputNV            = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"     );
+    Window::invalidFunctionID;
 
 UInt32 DVRIsoShader::_funcFinalCombinerInputNV        = 
-    Window::registerFunction(OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
+    Window::invalidFunctionID;
 
 /*! \class osg::DVRIsoShader
   Simple iso surface shader
@@ -124,6 +112,61 @@ DVRIsoShader::DVRIsoShader(void) :
     m_shadingMode   = SM_NONE;
     m_pFragProg     = NullFC;
     m_textureId     = -1;
+
+    // Do this here, will change in future for OpenSG as a whole
+    _ARB_multitexture       = 
+        Window::registerExtension("GL_ARB_multitexture"      );
+
+    _EXT_texture3D          = 
+        Window::registerExtension("GL_EXT_texture3D"         );
+
+    _NV_register_combiners  = 
+        Window::registerExtension("GL_NV_register_combiners" );
+
+    _NV_register_combiners2 = 
+        Window::registerExtension("GL_NV_register_combiners2");
+
+    _SGI_color_matrix       = 
+        Window::registerExtension("GL_SGI_color_matrix"      );
+
+    _ARB_fragment_program   = 
+        Window::registerExtension("GL_ARB_fragment_program"  );
+
+
+    _funcActiveTextureARB            =  
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glActiveTextureARB"     );
+
+    _funcMultiTexCoord2dARB          = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB"   );
+
+    _funcTexImage3DEXT               = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glTexImage3DEXT"        );
+
+    _funcCombinerParameteriNV        = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV" );
+    
+    _funcCombinerParameterfvNV       = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV");
+
+    _funcCombinerStageParameterfvNV  = 
+       Window::registerFunction(
+           OSG_DLSYM_UNDERSCORE"glCombinerStageParameterfvNV");
+
+    _funcSecondaryColor3fEXT         = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glSecondaryColor3fEXT"  );
+
+    _funcSecondaryColor3fvEXT        = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glSecondaryColor3fvEXT" );
+
+    _funcCombinerInputNV             = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerInputNV"      );
+
+    _funcCombinerOutputNV            = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"     );
+
+    _funcFinalCombinerInputNV        = 
+       Window::registerFunction(OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
+
 }
 
 //! Copy Constructor
@@ -852,7 +895,7 @@ bool DVRIsoShader::tryMode(DVRVolume      *volume,
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRIsoShader.cpp,v 1.3 2004/01/19 11:22:33 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRIsoShader.cpp,v 1.4 2004/01/21 05:05:25 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRISOSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRISOSHADER_INLINE_CVSID;
 }

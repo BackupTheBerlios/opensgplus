@@ -56,8 +56,7 @@ char * shaderList[] = {
     "DVRSimpleShader",
     "DVRSimpleLUTShader",
     "DVRIsoShader",
-    "DVRMtexLUTShader",
-    "Null"
+    "DVRMtexLUTShader"
 };
 
 // Number of Shader Modes
@@ -329,7 +328,7 @@ NodePtr makeVolume( const char * datFile)
     // Initialize the lookup table
     beginEditCP(lut, DVRLookupTable::DataFieldMask);
     for (int i = 0; i < 1024; i++)
-        lut->getData().setValue(lutData[i], i);
+        lut->getData()[i] = lutData[i];
     endEditCP(lut, DVRLookupTable::DataFieldMask);
 
     // Initialize the isovalue

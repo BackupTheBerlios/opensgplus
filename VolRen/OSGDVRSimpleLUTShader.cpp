@@ -44,6 +44,10 @@
 #include <stdio.h>
 
 #include <OSGConfig.h>
+
+#include <OSGGL.h>
+#include <OSGGLEXT.h>
+
 #include <OSGWindow.h>
 
 #include <OSGImage.h>
@@ -62,6 +66,46 @@ OSG_USING_NAMESPACE
  *   be stateless - NO FIELDS!!
  */
 
+UInt32 DVRSimpleLUTShader::_sgiTexColorTable         = 
+    Window::invalidExtensionID;
+
+UInt32 DVRSimpleLUTShader::_extPalettedTexture       = 
+    Window::invalidExtensionID;
+
+UInt32 DVRSimpleLUTShader::_extSharedPalettedTexture = 
+    Window::invalidExtensionID;
+
+
+UInt32 DVRSimpleLUTShader::_arbMultitexture          = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_nvTextureShader2         = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_arbFragmentProgram       = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_nvRegisterCombiners      = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcColorTableSGI        = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcColorTableEXT        = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcActiveTextureARB     = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcFinalCombinerInputNV = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcCombinerInputNV      = 
+    Window::invalidFunctionID;
+
+UInt32 DVRSimpleLUTShader::_funcCombinerOutputNV     = 
+    Window::invalidFunctionID;
+
 /*----------------------- constructors & destructors ----------------------*/
 
 //! Constructor
@@ -73,6 +117,44 @@ DVRSimpleLUTShader::DVRSimpleLUTShader(void) :
     m_pFragProg          (NullFC),
     m_pDepTexture        (NullFC)
 {
+    _sgiTexColorTable         = 
+       Window::registerExtension("GL_SGI_texture_color_table"                );
+
+    _extPalettedTexture       = 
+       Window::registerExtension("GL_EXT_paletted_texture"                   );
+
+    _extSharedPalettedTexture = 
+       Window::registerExtension("GL_EXT_shared_texture_palette"             );
+
+    _arbMultitexture          = 
+       Window::registerExtension("GL_ARB_multitexture"                       );
+
+    _nvTextureShader2         = 
+       Window::registerExtension("GL_NV_texture_shader2"                     );
+
+    _arbFragmentProgram       = 
+       Window::registerExtension("GL_ARB_fragment_program"                   );
+
+    _nvRegisterCombiners      = 
+       Window::registerExtension("GL_NV_register_combiners"                  );
+
+    _funcColorTableSGI        = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glColorTableSGI"       );
+
+    _funcColorTableEXT        = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glColorTableEXT"       );
+
+    _funcActiveTextureARB     = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glActiveTextureARB"    );
+
+    _funcFinalCombinerInputNV = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV");
+
+    _funcCombinerInputNV      = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerInputNV"     );
+
+    _funcCombinerOutputNV     = 
+       Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"    );
 }
 
 //! Copy Constructor
@@ -348,24 +430,24 @@ typedef void (OSG_APIENTRY *CombinerOutputNVFunc    )(GLenum,
 void DVRSimpleLUTShader::setupAlphaCorrectionRegisterCombiners(
     DrawActionBase *action)
 {
-    Window * win = action->getWindow();
+    Window *win = action->getWindow();
     
+    if(!win->hasExtension(_nvRegisterCombiners))
+        return;
+
     FinalCombinerInputNVFunc FinalCombinerInputNV = NULL;
     CombinerInputNVFunc      CombinerInputNV      = NULL;
     CombinerOutputNVFunc     CombinerOutputNV     = NULL;
 	
-    if(win->hasExtension(_nvRegisterCombiners)) 
-    {
-        FinalCombinerInputNV =
-            (FinalCombinerInputNVFunc) win->getFunction(
-                _funcFinalCombinerInputNV);
+    FinalCombinerInputNV =
+        (FinalCombinerInputNVFunc) win->getFunction(
+            _funcFinalCombinerInputNV);
 
-        CombinerInputNV = 
-            (CombinerInputNVFunc) win->getFunction(_funcCombinerInputNV);
-
-        CombinerOutputNV = 
-            (CombinerOutputNVFunc) win->getFunction(_funcCombinerOutputNV);
-    }
+    CombinerInputNV = 
+        (CombinerInputNVFunc) win->getFunction(_funcCombinerInputNV);
+    
+    CombinerOutputNV = 
+        (CombinerOutputNVFunc) win->getFunction(_funcCombinerOutputNV);
 	
 #if defined GL_NV_register_combiners
     //!! First general combiner: multiply result of texture stage 1 
@@ -1171,45 +1253,6 @@ char DVRSimpleLUTShader::_fragProg2DMulti[] =
 	 "MUL result.color, outColor, fragment.color;\n"
 	 "END\n";
 
-UInt32 DVRSimpleLUTShader::_sgiTexColorTable         = 
-    Window::registerExtension("GL_SGI_texture_color_table"                );
-
-UInt32 DVRSimpleLUTShader::_extPalettedTexture       = 
-    Window::registerExtension("GL_EXT_paletted_texture"                   );
-
-UInt32 DVRSimpleLUTShader::_extSharedPalettedTexture = 
-    Window::registerExtension("GL_EXT_shared_texture_palette"             );
-
-UInt32 DVRSimpleLUTShader::_arbMultitexture          = 
-    Window::registerExtension("GL_ARB_multitexture"                       );
-
-UInt32 DVRSimpleLUTShader::_nvTextureShader2         = 
-    Window::registerExtension("GL_NV_texture_shader2"                     );
-
-UInt32 DVRSimpleLUTShader::_arbFragmentProgram       = 
-    Window::registerExtension("GL_ARB_fragment_program"                   );
-
-UInt32 DVRSimpleLUTShader::_nvRegisterCombiners      = 
-    Window::registerExtension("GL_NV_register_combiners"                  );
-
-UInt32 DVRSimpleLUTShader::_funcColorTableSGI        = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glColorTableSGI"       );
-
-UInt32 DVRSimpleLUTShader::_funcColorTableEXT        = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glColorTableEXT"       );
-
-UInt32 DVRSimpleLUTShader::_funcActiveTextureARB     = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glActiveTextureARB"    );
-
-UInt32 DVRSimpleLUTShader::_funcFinalCombinerInputNV = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV");
-
-UInt32 DVRSimpleLUTShader::_funcCombinerInputNV      = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerInputNV"     );
-
-UInt32 DVRSimpleLUTShader::_funcCombinerOutputNV     = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"    );
-
 
 /*-------------------------------------------------------------------------*/
 /*                              cvs id's                                   */
@@ -1224,7 +1267,7 @@ UInt32 DVRSimpleLUTShader::_funcCombinerOutputNV     =
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.5 2004/01/19 12:06:22 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRSimpleLUTShader.cpp,v 1.6 2004/01/21 05:05:25 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRSIMPLELUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRSIMPLELUTSHADER_INLINE_CVSID;
 }

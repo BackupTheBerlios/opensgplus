@@ -45,6 +45,9 @@
 
 #include <OSGConfig.h>
 
+#include <OSGGL.h>
+#include <OSGGLEXT.h>
+
 #include <OSGDVRMtexLUTShader.h>
 
 #include <OSGDVRVolume.h>
@@ -60,6 +63,31 @@ OSG_USING_NAMESPACE
  * Abstract shader class - not to be instantiated. Is intended to be 
  * stateless - NO FIELDS!!
  */
+
+UInt32 DVRMtexLUTShader::_arbMultitexture           = 
+    Window::invalidExtensionID;
+
+UInt32 DVRMtexLUTShader::_nvRegisterCombiners       = 
+    Window::invalidExtensionID;    
+
+
+UInt32 DVRMtexLUTShader::_funcMultiTexCoord2dARB    = 
+    Window::invalidFunctionID;
+
+UInt32 DVRMtexLUTShader::_funcCombinerParameteriNV  = 
+    Window::invalidFunctionID;
+
+UInt32 DVRMtexLUTShader::_funcCombinerParameterfvNV = 
+    Window::invalidFunctionID;
+
+UInt32 DVRMtexLUTShader::_funcCombinerInputNV       = 
+    Window::invalidFunctionID;
+
+UInt32 DVRMtexLUTShader::_funcCombinerOutputNV      = 
+    Window::invalidFunctionID;
+
+UInt32 DVRMtexLUTShader::_funcFinalCombinerInputNV  = 
+    Window::invalidFunctionID;
 
 bool DVRMtexLUTShader::hasRenderCallback(void)
 {
@@ -77,6 +105,30 @@ bool DVRMtexLUTShader::useMTSlabs(void)
 DVRMtexLUTShader::DVRMtexLUTShader(void) :
     Inherited()
 {
+    _arbMultitexture           = 
+        Window::registerExtension( "GL_ARB_multitexture"     );
+
+    _nvRegisterCombiners       = 
+        Window::registerExtension( "GL_NV_register_combiners");
+    
+
+    _funcMultiTexCoord2dARB    = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB"   );
+
+    _funcCombinerParameteriNV  = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV" );
+
+    _funcCombinerParameterfvNV = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV");
+
+    _funcCombinerInputNV       = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerInputNV"      );
+
+    _funcCombinerOutputNV      = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"     );
+
+    _funcFinalCombinerInputNV  = 
+      Window::registerFunction (OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV" );
 }
 
 //! Copy Constructor
@@ -259,7 +311,6 @@ void DVRMtexLUTShader::deactivate(DVRVolume *volume, DrawActionBase *action)
     }
     
     DVRSimpleLUTShader::deactivate(volume, action);
-
 #endif // required extensions available
 }
 
@@ -297,6 +348,12 @@ void DVRMtexLUTShader::renderSlice(DVRVolume      *volume,
     vertices = vertices; values = values; 
 #else
     Window *win = action->getWindow();
+
+    if(!win->hasExtension(_nvRegisterCombiners) ||
+       !win->hasExtension(_arbMultitexture))
+    {
+        return;
+    }
 
     CombinerParameterfvNVFunc CombinerParameterfvNV = 
         (CombinerParameterfvNVFunc) win->getFunction(
@@ -375,6 +432,12 @@ void DVRMtexLUTShader::renderSlice(DVRVolume      *volume,
 #else
 
     Window *win = action->getWindow();
+
+    if(!win->hasExtension(_nvRegisterCombiners) ||
+       !win->hasExtension(_arbMultitexture))
+    {
+        return;
+    }
 
     CombinerParameterfvNVFunc CombinerParameterfvNV =
         (CombinerParameterfvNVFunc) win->getFunction(
@@ -547,7 +610,13 @@ typedef void (OSG_APIENTRY *FinalCombinerInputNVFunc)(      GLenum,
 //! set up correct register combiner state
 void DVRMtexLUTShader::initCombiners(DrawActionBase *action)
 {
-    Window * win = action->getWindow();
+    Window *win = action->getWindow();
+
+    if(!win->hasExtension(_nvRegisterCombiners) ||
+       !win->hasExtension(_arbMultitexture))
+    {
+        return;
+    }
 
     CombinerParameteriNVFunc CombinerParameteriNV = 
         (CombinerParameteriNVFunc) win->getFunction(_funcCombinerParameteriNV);
@@ -702,32 +771,6 @@ void DVRMtexLUTShader::initCombiners(DrawActionBase *action)
 #endif // required extensions
 
 
-UInt32 DVRMtexLUTShader::_arbMultitexture           = 
-    Window::registerExtension( "GL_ARB_multitexture"                        );
-
-UInt32 DVRMtexLUTShader::_nvRegisterCombiners       = 
-    Window::registerExtension( "GL_NV_register_combiners"                   );
-    
-
-UInt32 DVRMtexLUTShader::_funcMultiTexCoord2dARB    = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glMultiTexCoord2dARB"    );
-
-UInt32 DVRMtexLUTShader::_funcCombinerParameteriNV  = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerParameteriNV"  );
-
-UInt32 DVRMtexLUTShader::_funcCombinerParameterfvNV = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerParameterfvNV" );
-
-UInt32 DVRMtexLUTShader::_funcCombinerInputNV       = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerInputNV"       );
-
-UInt32 DVRMtexLUTShader::_funcCombinerOutputNV      = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glCombinerOutputNV"      );
-
-UInt32 DVRMtexLUTShader::_funcFinalCombinerInputNV  = 
-    Window::registerFunction (OSG_DLSYM_UNDERSCORE"glFinalCombinerInputNV"  );
-
-
 /*-------------------------------------------------------------------------*/
 /*                              cvs id's                                   */
 
@@ -741,7 +784,7 @@ UInt32 DVRMtexLUTShader::_funcFinalCombinerInputNV  =
 
 namespace
 {
-    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.5 2004/01/19 12:06:22 vossg Exp $";
+    static char cvsid_cpp[] = "@(#)$Id: OSGDVRMtexLUTShader.cpp,v 1.6 2004/01/21 05:05:25 vossg Exp $";
     static char cvsid_hpp[] = OSGDVRMTEXLUTSHADER_HEADER_CVSID;
     static char cvsid_inl[] = OSGDVRMTEXLUTSHADER_INLINE_CVSID;
 }
