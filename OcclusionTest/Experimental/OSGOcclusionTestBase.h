@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
- *                     OpenSG PLUS OcclusionTest Test                            *
+ *                     OpenSG PLUS Occlusion Test                            *
  *                                                                           *
  *                                                                           *
  *             Copyright (C) 2002 by the WSI/GRIS Uni Tuebingen              *
@@ -36,8 +36,8 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _OSGOCCLUSIONTYPES_H_
-#define _OSGOCCLUSIONTYPES_H_
+#ifndef _OSGOCCLUSIONTESTBASE_H_
+#define _OSGOCCLUSIONTESTBASE_H_
 
 #ifdef __sgi
 #pragma once
@@ -48,17 +48,69 @@
 
 OSG_BEGIN_NAMESPACE
 
-struct OCTestNode{
-	NodePtr _node;
-	Material* _mat;
-	State* _state;
-	Real32 _m[16];
-	Int16 _x[8];
-	Int16 _y[8];
-	Real32 _z[8];
-	char _index;
+//! Occlusion
+//! \ingroup RenderingBackendLib
+
+class OSG_SYSTEMLIB_DLLMAPPING OcclusionTestBase
+{
+    /*==========================  PUBLIC  =================================*/
+  public:
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Statistic                                  */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Constructors                               */
+    /*! \{                                                                 */
+
+    OcclusionTestBase(void);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Destructor                                 */
+    /*! \{                                                                 */
+
+    virtual ~OcclusionTestBase(void);
+    
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Access                                    */
+    /*! \{                                                                 */
+
+    void setup(void);
+
+    void frameInit(void);
+    void frameExit(void);
+
+    void init(void);
+    void perform(const UInt16&);
+    UInt32 result(const UInt16&);
+    void exit(void);
+    void visualize(void);
+    
+    /*! \}                                                                 */
+    /*=========================  PROTECTED  ===============================*/
+  protected:
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Member                                  */
+    /*! \{                                                                 */
+
+
+    /*! \}                                                                 */
+    /*==========================  PRIVATE  ================================*/
+  private:
+
+    /*! \brief prohibit default function (move to 'public' if needed) */
+    OcclusionTestBase(const OcclusionTestBase &source);
+    /*! \brief prohibit default function (move to 'public' if needed) */
+    void operator =(const OcclusionTestBase &source);
 };
 
 OSG_END_NAMESPACE
 
-#endif /* _OSGOCCLUSIONTYPES_H_ */
+#include "OSGOcclusionTestBase.inl"
+
+#endif /* _OSGOCCLUSIONTESTBASE_H_ */

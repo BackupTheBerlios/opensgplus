@@ -40,10 +40,11 @@
 //  Includes
 //---------------------------------------------------------------------------
 
+#include <OpenSG/OSGConfig.h>
+#include <OpenSG/OSGDrawAction.h>
+#include <OpenSG/OSGViewport.h>
 
-#include <OSGConfig.h>
-#include <OSGDrawAction.h>
-#include <OSGViewport.h>
+#include<stdio.h>
 
 OSG_BEGIN_NAMESPACE
 
@@ -87,177 +88,116 @@ OSG_BEGIN_NAMESPACE
 /*------------- constructors & destructors --------------------------------*/
 
 inline
-StencilTest::StencilTest(void):_stencilbuf(NULL), _w(0), _h(0), _count(1), _maxtests(0), _results(NULL)
+OcclusionPrediction::OcclusionPrediction(void):
+_frame(0),
+_maxtests(0),
+_results(NULL)
 {
 };
 
 inline
-StencilTest::~StencilTest(void)
+OcclusionPrediction::~OcclusionPrediction(void)
 {
-	if(_stencilbuf) delete[] _stencilbuf;
-	if(_results) delete[] _results;
 };
 
 /*------------------------------ access -----------------------------------*/
 
 inline
-void StencilTest::frameInit(void)
+void OcclusionPrediction::frameInit(void)
 {
+	_fdiff=2;
 };
 
 inline
-void StencilTest::frameExit(void)
+void OcclusionPrediction::frameExit(void)
 {
+	_frame++;
+	if(_frame>31)
+		_frame=0;
 };
 
 inline
-void StencilTest::setup(const UInt16& max, Viewport* port, const UInt32 maxpix)
+void OcclusionPrediction::setup(const Int32& max, Viewport* port, const UInt32& x)
 {
-	_port=port;
-	UInt16 w=_port->getPixelWidth();
-	UInt16 h=_port->getPixelHeight();
-	if(_w!=w || _h!=h || _stencilbuf==NULL){
-		_w=w;
-		_h=h;
-		if(_stencilbuf) delete _stencilbuf;
-		_stencilbuf=new GLuint[_w*_h];
-	}
-	if(_maxtests!=max){
-		if(_results) delete[] _results;
-		_results=new UInt32[max];
+	// _frame=0 ? Hmmmm... FIXME
+        if(_maxtests!=max){
+                if(_results) delete[] _results;
+		_results=new Int16[max];
 		_maxtests=max;
 	}
-	_maxpix=maxpix;
+
+	_cam=port->getCamera();
 };
 
 inline
-void StencilTest::init(void)
+void OcclusionPrediction::init(void)
 {
-	glDepthMask(GL_FALSE);
-	glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	glEnable(GL_STENCIL_TEST);
-	glReadBuffer(GL_BACK);
 };
 
 inline
-void StencilTest::perform(const UInt16& num, const OCTestNode* node)
+void OcclusionPrediction::perform(const Int32& index, const OCTestNode* ocnode)
 {
-	const DynamicVolume& vol=node->_node->getVolume();
-	/*
-	Matrix m,v;
-	_port->getCamera()->getProjection(m, _w, _h);
-	_port->getCamera()->getViewing(v, _w, _h);
-	m.mult(v);
-	*/
+	TraceMap::iterator pos=_visibilityTraces.find(ocnode->_node.getCPtr());
 
-	// FIXME
-	// UGLY, very slow implementation... :-(
-        Pnt3f min,max;
-	vol.getBounds( min, max );
-
-	Matrix transmatr,modelv;
-	GLfloat proj_f[16];
-	GLfloat modelv_f[16];
-
-	glGetFloatv(GL_MODELVIEW_MATRIX,modelv_f);
-	glGetFloatv(GL_PROJECTION_MATRIX,proj_f);
-	transmatr.setValue(proj_f);
-	modelv.setValue(modelv_f);
-	transmatr.mult(modelv);
-
-	Int16 minx=_w, maxx=0;
-	Int16 miny=_h, maxy=0;
-        for(UInt16 i=0; i<8; i++){
-		Pnt3f p1,p2;
-		p1[0]=(i&1)?min[0]:max[0];
-		p1[1]=(i&2)?min[1]:max[1];
-		p1[2]=(i&4)?min[2]:max[2];
-
-		transmatr.multFullMatrixPnt(p1,p2);
-
-		const Int16 bb_x=(Int16)((p2[0]+1)*_w*0.5);
-		const Int16 bb_y=(Int16)(_h-(p2[1]+1)*_h*0.5);
-		if(bb_x<minx) minx=bb_x;
-		if(bb_x>maxx) maxx=bb_x+1;
-		if(bb_y<miny) miny=bb_y;
-		if(bb_y>maxy) maxy=bb_y+1;
-        }
-
-	if(_count>15){		// FIXME
-		glClearStencil(0);
-		glClear(GL_STENCIL_BUFFER_BIT);
-		_count=1;
-	}else
-		_count++;
-
-	glStencilFunc(GL_ALWAYS, _count, (GLuint)(-1));
-
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glEnd();
-
-	glBegin( GL_TRIANGLE_STRIP);
-	glVertex3f( max[0], max[1], min[2]);
-	glVertex3f( max[0], max[1], max[2]);
-	glVertex3f( max[0], min[1], min[2]);
-	glVertex3f( max[0], min[1], max[2]);
-	glVertex3f( min[0], min[1], min[2]);
-	glVertex3f( min[0], min[1], max[2]);
-	glVertex3f( min[0], max[1], min[2]);
-	glVertex3f( min[0], max[1], max[2]);
-	glEnd();
-		
-	_results[num]=0;
-
-	// FIXME
-	Int16 tmp=miny;
-	miny=_h-maxy;
-	maxy=_h-tmp;
-		
-	Int16 sx=minx-minx%32;
-	Int16 sw=maxx-minx;
-	sw+=sw%32;
-
-	for(Int16 y=miny; y<maxy; y++){
-		glReadPixels(sx,y,sw,1,GL_STENCIL_INDEX,GL_INT,_stencilbuf+sx);
-		for(Int16 x=minx; x<maxx; x++){
-			if(_stencilbuf[x]==_count){
-				_results[num]++;
-				if(_results[num]>_maxpix)
-					y=maxy;
+	if(pos==_visibilityTraces.end()){
+		VisibilityTrace* trace=new VisibilityTrace();
+		trace->_frame=0;
+		trace->_visibility=-1;
+		_visibilityTraces[ocnode->_node.getCPtr()]=trace;
+		_results[index]=0;	// unknown
+	}else{
+		_results[index]=0;
+		VisibilityTrace* trace=pos->second;
+		Int16 d;
+		if(_frame>=(trace->_frame))
+			d=_frame-(trace->_frame);
+		else
+			d=31-(trace->_frame)+_frame;
+	
+		UInt32 x=1 << trace->_frame;
+		if(trace->_visibility & x){
+			if(d<_fdiff){
+				_results[index]=1;
+			}
+		}else{
+			if(d<2){
+				_results[index]=-1;
 			}
 		}
 	}
+	_fdiff++;
+	if(_fdiff>4)
+		_fdiff=2;
+}
+
+inline
+void OcclusionPrediction::update(const OCTestNode* ocnode, const Int32 visi)
+{
+	TraceMap::iterator pos=_visibilityTraces.find(ocnode->_node.getCPtr());
+	
+	if(pos==_visibilityTraces.end())
+		return;
+	
+	VisibilityTrace* trace=pos->second;
+	trace->_frame=_frame+1;
+	const UInt32 x=1 << _frame+1;
+	if(visi<0){
+		trace->_visibility&=!x;
+	}else{
+		trace->_visibility|=x;
+	}
 };
 
 inline
-UInt32 StencilTest::result(const UInt16& num)
+Int32 OcclusionPrediction::result(const Int32& num)
 {
 	return(_results[num]);
 };
 			
 inline
-void StencilTest::exit(void){
-	glDisable(GL_STENCIL_TEST);
-	glDepthMask(GL_TRUE);
-	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+void OcclusionPrediction::exit(void){
 };
 
-/**
-*/
-inline
-void StencilTest::visualize(void)
-{
-};
-			
 /*---------------------------- properties ---------------------------------*/
 
 /*-------------------------- your_category---------------------------------*/

@@ -44,6 +44,7 @@
 #include <OSGConfig.h>
 #include <OSGDrawAction.h>
 #include <OSGViewport.h>
+#include <OSGWindow.h>
 
 OSG_BEGIN_NAMESPACE
 

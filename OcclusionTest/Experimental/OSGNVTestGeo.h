@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------*\
- *                     OpenSG PLUS OcclusionTest Test                            *
+ *                     OpenSG PLUS Occlusion Test                            *
  *                                                                           *
  *                                                                           *
  *             Copyright (C) 2002 by the WSI/GRIS Uni Tuebingen              *
@@ -36,29 +36,89 @@
  *                                                                           *
 \*---------------------------------------------------------------------------*/
 
-#ifndef _OSGOCCLUSIONTYPES_H_
-#define _OSGOCCLUSIONTYPES_H_
+#ifndef _OSGNVTESTGEO_H_
+#define _OSGNVTESTGEO_H_
 
 #ifdef __sgi
 #pragma once
 #endif
 
-#include <OSGBaseTypes.h>
-#include <OSGSystemDef.h>
+#include <GL/gl.h>
+#include <OpenSG/OSGBaseTypes.h>
+#include <OpenSG/OSGSystemDef.h>
+#include <OpenSG/OSGDrawAction.h>
+#include <OpenSG/OSGDynamicVolume.h>
+
+#include <OpenSG/OSGOcclusionTestBase.h>
 
 OSG_BEGIN_NAMESPACE
 
-struct OCTestNode{
-	NodePtr _node;
-	Material* _mat;
-	State* _state;
-	Real32 _m[16];
-	Int16 _x[8];
-	Int16 _y[8];
-	Real32 _z[8];
-	char _index;
+//! NVTestGeo
+//! \ingroup RenderingBackendLib
+
+class OSG_SYSTEMLIB_DLLMAPPING NVTestGeo:public OcclusionTestBase
+{
+    /*==========================  PUBLIC  =================================*/
+  public:
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Statistic                                  */
+    /*! \{                                                                 */
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Constructors                               */
+    /*! \{                                                                 */
+
+    NVTestGeo(void);
+
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                   Destructor                                 */
+    /*! \{                                                                 */
+
+    virtual ~NVTestGeo(void);
+    
+    /*! \}                                                                 */
+    /*---------------------------------------------------------------------*/
+    /*! \name                    Access                                    */
+    /*! \{                                                                 */
+
+    void setup(const Int32&);
+
+    void frameInit(void);
+    void frameExit(void);
+
+    void init(void);
+    void start(const Int32&);
+    void end(void);
+    Int32 result(const Int32&);
+    void exit(void);
+    
+    /*! \}                                                                 */
+    /*=========================  PROTECTED  ===============================*/
+  protected:
+
+    /*---------------------------------------------------------------------*/
+    /*! \name                      Member                                  */
+    /*! \{                                                                 */
+
+
+    /*! \}                                                                 */
+    /*==========================  PRIVATE  ================================*/
+  private:
+
+    UInt32 _maxtests;
+    GLuint* _results;
+
+    /*! \brief prohibit default function (move to 'public' if needed) */
+    NVTestGeo(const NVTestGeo &source);
+    /*! \brief prohibit default function (move to 'public' if needed) */
+    void operator =(const NVTestGeo &source);
 };
 
 OSG_END_NAMESPACE
 
-#endif /* _OSGOCCLUSIONTYPES_H_ */
+#include "OpenSG/OSGNVTestGeo.inl"
+
+#endif /* _OSGNVTESTGEO_H_ */
