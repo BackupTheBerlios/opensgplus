@@ -36,7 +36,6 @@ static Traverser traverser;
 typedef PruningTraverser<OpenSGTraits> ATraverser;
 static ATraverser          all;
 static SimpleSceneManager* mgr;
-static OSGCache            cache;
 
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
