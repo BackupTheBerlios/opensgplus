@@ -113,7 +113,7 @@ inline NodePtr faceSpatialize2 (const NodePtr& orgFile,
 				unsigned levels, unsigned prims, Oracle* oracle,
 				unsigned mergeLevels=0)
 {
-   NodePtr file
+   NodePtr file;
    // fill cache
    {
      OSGCache::the().clear();
