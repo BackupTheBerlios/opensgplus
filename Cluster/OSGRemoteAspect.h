@@ -49,7 +49,7 @@
 
 #include <map>
 #include <set>
-#include <OSGCluster.h>
+#include <OSGClusterDef.h>
 #include <OSGBaseTypes.h>
 #include <OSGFieldContainerPtr.h>
 #include <OSGFieldContainerFactory.h>
@@ -77,7 +77,7 @@ OSG_BEGIN_NAMESPACE
  *  detailed
  */
 
-class OSG_CLUSTER_DLLMAPPING RemoteAspect
+class OSG_CLUSTERLIB_DLLMAPPING RemoteAspect
 { 
   public:
 
