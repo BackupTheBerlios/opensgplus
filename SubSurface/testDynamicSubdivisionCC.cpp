@@ -4,6 +4,7 @@
 // Headers
 #include <OSGMyMesh.h>
 #include <OSGDynamicSubdivisionCC.h>
+#include <OpenMesh/Core/Utils/Property.hh>
 
 #include <OSGGLUT.h>
 #include <OSGConfig.h>
@@ -24,6 +25,9 @@ SimpleSceneManager* mgr = NULL;
 MyDynamicSubdivisionCCPtr subdivCore;
 MyPolyMesh* omesh = NULL;
 
+OpenMesh::EPropHandleT<Int32> isCrease;
+
+
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
 
@@ -41,6 +45,7 @@ int main(int argc, char **argv)
 
    // OSG init
    osgInit(argc,argv);
+   OSG::Window::ignoreExtensions("GL_EXT_compiled_vertex_array");
 
    // GLUT init
    int winid = setupGLUT(&argc, argv);
@@ -52,32 +57,34 @@ int main(int argc, char **argv)
 
    // create OpenMesh object
    omesh = new MyPolyMesh();
+   // new version: property
+   omesh->add_property(isCrease,"isCrease");
    if (!OpenMesh::IO::read_mesh(*omesh,argv[1])) {
       SWARNING << "Mesh " << argv[1] << " not found!" << std::endl;
    }
     
-   //clear all edges		
+   //clear all edges    
    MyPolyMesh::EdgeIter eIt(omesh->edges_begin());
    MyPolyMesh::EdgeIter eEnd(omesh->edges_end());
    Int32 g=0;
    for (; eIt!=eEnd; ++eIt) {
-      eIt->isCrease = 0;    	  // mark edges as smooth
+      omesh->property(isCrease,eIt.handle()) = 0;
       // box.obj -> can
-      //if (g==4 || g==6 || g==8 || g==10 || g==11 || g==9 || g==1 || g==3) eIt->isCrease = 1;
+      //if (g==4 || g==6 || g==8 || g==10 || g==11 || g==9 || g==1 || g==3) omesh->property(isCrease,eIt.handle()) = 1;      
       g++;
        
-      // mark border of mesh as creases
+      // mark border of mesh as crease
       if (omesh->is_boundary(eIt.handle())) 
-	 eIt->isCrease = 1;
+      omesh->property(isCrease,eIt.handle()) = 1;
    }
 
    // create DynamicSubdivisionCC node core
    subdivCore = MyDynamicSubdivisionCC::create();
 
-	
+  
    beginEditCP(subdivCore);
    subdivCore->setMaxDepth(maxdepth);
-   subdivCore->setMesh(omesh);	
+   subdivCore->setMesh(omesh);  
    endEditCP(subdivCore);
     
    NodePtr scene = Node::create();
@@ -125,7 +132,6 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
-   // update tesselation for viewport mgr->getWindow()->getPort(0)
    subdivCore->prepareFrame(mgr->getWindow()->getPort(0));
    mgr->redraw();
 }
@@ -167,7 +173,7 @@ void keyboard(unsigned char k, int x, int y)
      break;
    case 27:
      osgExit();
-     exit(1);		
+     exit(1);    
    }
    glutPostRedisplay();
 }
@@ -208,3 +214,4 @@ int setupGLUT(int *argc, char *argv[])
 
     return winid;
 }
+

@@ -4,6 +4,7 @@
 // Headers
 #include <OSGMyMesh.h>
 #include <OSGDynamicSubdivisionLP.h>
+#include <OpenMesh/Core/Utils/Property.hh>
 
 #include <OSGGLUT.h>
 #include <OSGConfig.h>
@@ -24,6 +25,8 @@ SimpleSceneManager* mgr = NULL;
 MyDynamicSubdivisionLPPtr subdivCore;
 MyTriMesh* omesh = NULL;
 
+OpenMesh::EPropHandleT<Int32> isCrease;
+
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
 
@@ -40,6 +43,7 @@ int main(int argc, char **argv)
 
    // OSG init
    osgInit(argc,argv);
+   OSG::Window::ignoreExtensions("GL_EXT_compiled_vertex_array");
 
    // GLUT init
    int winid = setupGLUT(&argc, argv);
@@ -51,34 +55,37 @@ int main(int argc, char **argv)
 
    // create OpenMesh object
    omesh = new MyTriMesh();
+   // new version: property
+   omesh->add_property(isCrease,"isCrease");
+
    if (!OpenMesh::IO::read_mesh(*omesh,argv[1])) {
       SWARNING << "Mesh " << argv[1] << " not found!" << std::endl;
    }
     
-   //clear all edges		
+   //clear all edges    
    MyTriMesh::EdgeIter eIt(omesh->edges_begin());
    MyTriMesh::EdgeIter eEnd(omesh->edges_end());
    Int32 g=0;
    for (; eIt!=eEnd; ++eIt) {
-      eIt->isCrease = 0;    	  // mark edges as smooth
+      omesh->property(isCrease,eIt.handle()) = 0;        // mark edges as smooth
       // for crease-testing:
-      //if (g==5 || g== 6) eIt->isCrease = 1;
+      //if (g==0) omesh->property(isCrease,eIt.handle()) = 1;
       g++;
 
        
       // mark borders of mesh as creases
       if (omesh->is_boundary(eIt.handle())) 
-	    eIt->isCrease = 1;
+      omesh->property(isCrease,eIt.handle()) = 1;
    }
 
    // create DynamicSubdivisionCC node core
    subdivCore = MyDynamicSubdivisionLP::create();
 
-	
+  
    beginEditCP(subdivCore);
-   subdivCore->setMaxDepth(maxdepth);	
-   subdivCore->setMesh(omesh);	
-   subdivCore->setBackfaceCulling(true);	
+   subdivCore->setMaxDepth(maxdepth);  
+   subdivCore->setMesh(omesh);  
+   subdivCore->setBackfaceCulling(true);  
    endEditCP(subdivCore);
     
    NodePtr scene = Node::create();
@@ -126,7 +133,6 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
-   // update tesselation for viewport mgr->getWindow()->getPort(0)
    subdivCore->prepareFrame(mgr->getWindow()->getPort(0));
    mgr->redraw();
 }
@@ -168,7 +174,7 @@ void keyboard(unsigned char k, int x, int y)
      break;
    case 27:
      osgExit();
-     exit(1);		
+     exit(1);    
    }
    glutPostRedisplay();
 }
