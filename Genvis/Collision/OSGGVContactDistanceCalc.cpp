@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:43:27 $
 //                                                                            
 //=============================================================================
 
@@ -253,7 +253,8 @@ ContactDistanceCalc<BasicTraits,BVOL,Metric>::PrimPrimCollision
 	// keep track of contact pairs
 	m_contacts.push_back(CollisionPair(p0, p1));
 	m_contacts[m_contacts.size()-1].setData(new Distance());
-	CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance>(m_contacts[m_contacts.size()-1]).getData().distance = dist;
+	CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance> result(m_contacts[m_contacts.size()-1]);
+	result.getData().distance = dist;
       }
    }
    return DoubleTraverserBase<BasicTraits>::CONTINUE;

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:30 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:43:27 $
 //                                                                            
 //=============================================================================
 
@@ -60,12 +60,12 @@ public:
    typedef BVolAdapter<BVOL>                                     GeneralType;
 #ifdef GV_PRECOMPUTEDREALIGN_32BIT
    enum { OccTableHighestBit = 31, OccTableBits = 32 };
-   typedef unsigned                                              OccTableType;
+   typedef u32                                                   OccTableType;
 #else
    enum { OccTableHighestBit = 63, OccTableBits = 64 };
-   typedef unsigned __int64                                      OccTableType;
+   typedef u64                                                   OccTableType;
 #endif
-   typedef typename DataAligned<Real,BVOL::Size>                 Data;
+   typedef DataAligned<Real,BVOL::Size>                          Data;
 
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
@@ -199,7 +199,8 @@ template <class BasicTraits, class BVOL, class Metric>
 inline void MinimumDistanceBVol<BasicTraits,BVOL,Metric>::setDistance (Real dist)
 {
    Inherited::setDistance(dist);
-   CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance>(m_contacts[0]).getData().distance = (isIntersecting() ? -dist : dist);
+   CollisionInterface<OpenSGTriangleBase<BasicTraits>,Distance> collisionData(m_contacts[0]);
+   collisionData.getData().distance = (isIntersecting() ? -dist : dist);
 }
 template<class BasicTraits, class BVOL, class Metric>
 inline void MinimumDistanceBVol<BasicTraits,BVOL,Metric>::updatePoints 

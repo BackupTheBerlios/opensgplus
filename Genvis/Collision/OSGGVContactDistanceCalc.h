@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.1 $
-//   $Date: 2003/09/11 16:20:29 $
+//   $Revision: 1.2 $
+//   $Date: 2003/09/19 21:43:27 $
 //                                                                            
 //=============================================================================
 
@@ -64,7 +64,7 @@ public:
    enum { OccTableHighestBit = 63, OccTableBits = 64 };
    typedef u64                                                   OccTableType;
 #endif
-   typedef typename DataAligned<Real,BVOL::Size>                 Data;
+   typedef DataAligned<Real,BVOL::Size>                          Data;
 
    /*---------------------------------------------------------------------*/
    /*! \name Constructors.                                                */
