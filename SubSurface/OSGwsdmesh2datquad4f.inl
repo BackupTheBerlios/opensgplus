@@ -121,8 +121,7 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::insertface
 (FaceHandle f_h, FaceHandle tpair, WSDdat<VectorType, MType> *pp)
 {     
    ppatch = pp;
-   OMPoint p;  
-   Int32 vt;
+   OMPoint p;     
    HalfedgeHandle fhe_h;
    HalfedgeHandle op,test,ende;    
 //*******
@@ -297,14 +296,14 @@ void WSDmesh2dat<OSG::Vec4f, MyPolyMesh4, QUAD>::insertface
    VectorType d2 = ppatch->slateO[1][2] - ppatch->slateO[2][1];
 
    if (d1.length() > d2.length()) {
-      ppatch->radiusD = d1.length() / 2.0;
+      ppatch->radiusD = d1.length() / 2.0f;
    } else {
-      ppatch->radiusD = d2.length() / 2.0;
+      ppatch->radiusD = d2.length() / 2.0f;
    }
    ppatch->maxdepth=0;
    ppatch->currentdepth=0;
    ppatch->faceloc = (ppatch->slateO[1][1] + ppatch->slateO[2][1] +
-   ppatch->slateO[2][2] + ppatch->slateO[1][2]) * 0.25;
+   ppatch->slateO[2][2] + ppatch->slateO[1][2]) * 0.25f;
    ppatch->cvindex = 0;
    ppatch->tabsize = 0;
 }

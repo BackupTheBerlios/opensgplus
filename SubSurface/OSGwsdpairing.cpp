@@ -41,7 +41,7 @@ WSDpairing<WSDVector, Mesh>::buildPairs( void )
    prepairs.clear();
    // init priority lists
    IndexContainer s[4];
-   Int32 i=0;
+   UInt32 i=0;
    // build vector of faces
    PairFaceData *tempData;   
    typename MeshType::FaceIter f_it;
@@ -221,7 +221,7 @@ template<class WSDVector, class Mesh>
 Int32 
 WSDpairing<WSDVector, Mesh>::getIndexOfFace(FaceHandle fh)
 {
-   for (Int32 i=0; i<prepairs.size(); i++) {
+   for (UInt32 i=0; i<prepairs.size(); i++) {
       if (prepairs[i].fh == fh) return i;
    }
    return -1;

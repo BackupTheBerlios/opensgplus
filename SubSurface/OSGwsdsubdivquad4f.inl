@@ -44,9 +44,9 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::vertexpointmulti
 {
    OSG::Vec4f v4(0.0,0.0,0.0,0.0);
    OSG::Vec4f w4(0.0,0.0,0.0,0.0);
-   OSG::Real32 alpha = 1.0 - (3.0 / (2.0 * (OSG::Real32)val)) - (1.0 / (4.0 * (OSG::Real32)val));
-   OSG::Real32 beta  = 3.0 / (2.0 * (OSG::Real32)val * (OSG::Real32)val);
-   OSG::Real32 gamma = 1.0 / (4.0 * (OSG::Real32)val * (OSG::Real32)val);
+   OSG::Real32 alpha = 1.0f - (3.0f / (2.0f * (OSG::Real32)val)) - (1.0f / (4.0f * (OSG::Real32)val));
+   OSG::Real32 beta  = 3.0f / (2.0f * (OSG::Real32)val * (OSG::Real32)val);
+   OSG::Real32 gamma = 1.0f / (4.0f * (OSG::Real32)val * (OSG::Real32)val);
    for (OSG::Int32 i=0; i<(val*2); i=i+2) {
       v4 = v4 + array[i + 1];
       w4 = w4 + array[i];
@@ -97,8 +97,8 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::innernormal
    OSG::Vec4f v;
    OSG::Vec4f t1(0.0,0.0,0.0,0.0);
    OSG::Vec4f t2(0.0,0.0,0.0,0.0);
-   OSG::Real32 val = 4.0;
-   OSG::Real32 ak = 1.0 + osgcos(2.0 * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0*(9.0 + osgcos(2.0 * Pi / val)));
+   OSG::Real32 val = 4.0f;
+   OSG::Real32 ak = 1.0f + osgcos(2.0f * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0f*(9.0f + osgcos(2.0f * Pi / val)));
    OSG::Real32 b1,b2,c1,c2;
 
    //i=0
@@ -155,7 +155,7 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::innernormalmulti
    OSG::Vec4f v;
    OSG::Vec4f t1(0.0,0.0,0.0,0.0);
    OSG::Vec4f t2(0.0,0.0,0.0,0.0);
-   OSG::Real32 ak = 1.0 + osgcos(2.0 * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0*(9.0 + osgcos(2.0 * Pi / val)));
+   OSG::Real32 ak = 1.0f + osgcos(2.0f * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0f*(9.0f + osgcos(2.0f * Pi / val)));
    OSG::Real32 b1,b2,c1,c2;     
    OSG::Int32 j=0;
    for (OSG::Int32 i=0; i<val; i++, j=j+2) {
@@ -192,20 +192,20 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::creasenormal
    } else {
       OSG::Real32 k = fabs(((OSG::Real32)b-(OSG::Real32)a)/2);
       OSG::Real32 pidk = Pi / k;
-      OSG::Real32 rk = (osgcos(pidk) + 1.0) / (k * osgsin(pidk) * (3.0 + osgcos(pidk)));
-      OSG::Real32 b0 = -1.0 * rk * (1.0 + 2.0 * osgcos(pidk));
-      OSG::Real32 c = osgsin(pidk) / ((3.0 + osgcos(pidk)) * k);
+      OSG::Real32 rk = (osgcos(pidk) + 1.0f) / (k * osgsin(pidk) * (3.0f + osgcos(pidk)));
+      OSG::Real32 b0 = -1.0f * rk * (1.0f + 2.0f * osgcos(pidk));
+      OSG::Real32 c = osgsin(pidk) / ((3.0f + osgcos(pidk)) * k);
       OSG::Vec4f betat1 = array[a] * b0;
       OSG::Vec4f gammat1 = array[(a+1)%(val*2)] * c;
       for (OSG::Int32 ii=1; ii<k; ii++) {
-         OSG::Real32 bi = (4.0 * osgsin((OSG::Real32)ii * pidk)) / ((3.0 + osgcos(pidk)) * k);
+         OSG::Real32 bi = (4.0f * osgsin((OSG::Real32)ii * pidk)) / ((3.0f + osgcos(pidk)) * k);
          betat1+= array[(a+(ii*2))%(val*2)] * bi;
-         c = (1.0 * (osgsin((OSG::Real32)ii * pidk) + osgsin(((OSG::Real32)ii + 1.0) * pidk))) / ((3.0 + osgcos(pidk)) * k);
+         c = (1.0f * (osgsin((OSG::Real32)ii * pidk) + osgsin(((OSG::Real32)ii + 1.0f) * pidk))) / ((3.0f + osgcos(pidk)) * k);
          gammat1+= array[(a+(ii*2)+1)%(val*2)] * c;
       }
       betat1+= array[b%(val*2)] * b0;
       //assert(((a+(ii*2)+2)%(val*2)) == b);
-      OSG::Real32 aa = 4.0 * rk * (osgcos(pidk) - 1.0);      
+      OSG::Real32 aa = 4.0f * rk * (osgcos(pidk) - 1.0f);
       t1 = (v0 * aa) + betat1 + gammat1;
       v = t1.cross(t2);
    }
@@ -225,19 +225,19 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::regcreasenormal
    t2 = (v1 - v3);
    OSG::Real32 k = 2;
    OSG::Real32 pidk = Pi / k;
-   OSG::Real32 rk = (osgcos(pidk) + 1.0) / (k * osgsin(pidk) * (3.0 + osgcos(pidk)));
-   OSG::Real32 b0 = -1.0 * rk * (1.0 + 2.0 * osgcos(pidk));
-   OSG::Real32 c = osgsin(pidk) / ((3.0 + osgcos(pidk)) * k);
+   OSG::Real32 rk = (osgcos(pidk) + 1.0f) / (k * osgsin(pidk) * (3.0f + osgcos(pidk)));
+   OSG::Real32 b0 = -1.0f * rk * (1.0f + 2.0f * osgcos(pidk));
+   OSG::Real32 c = osgsin(pidk) / ((3.0f + osgcos(pidk)) * k);
    OSG::Vec4f betat1 = v1 * b0;
    OSG::Vec4f gammat1 = w1 * c;
    OSG::Int32 ii=1;
-   OSG::Real32 bi = (4.0 * osgsin((OSG::Real32)ii * pidk)) / ((3.0 + osgcos(pidk)) * k);
+   OSG::Real32 bi = (4.0f * osgsin((OSG::Real32)ii * pidk)) / ((3.0f + osgcos(pidk)) * k);
 
    betat1+= (v2 * bi);
-   c = (1.0 * (osgsin((OSG::Real32)ii * pidk) + osgsin(((OSG::Real32)ii + 1.0) * pidk))) / ((3.0 + osgcos(pidk)) * k);
+   c = (1.0f * (osgsin((OSG::Real32)ii * pidk) + osgsin(((OSG::Real32)ii + 1.0f) * pidk))) / ((3.0f + osgcos(pidk)) * k);
    gammat1+= (w2 * c);
    betat1+= v3 * b0;
-   OSG::Real32 a = 4.0 * rk * (osgcos(pidk) - 1.0);
+   OSG::Real32 a = 4.0f * rk * (osgcos(pidk) - 1.0f);
    t1 = (v0 * a) + betat1 + gammat1;
 
    v = t2.cross(t1);
@@ -258,8 +258,8 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::limitpoint
  VectorType& w1, VectorType& w2, VectorType& w3, VectorType& w4)
 {
    OSG::Vec4f v;
-   v= v0 * 0.4444444444444444444444444 +       
-      ( (v1 + v2 + v3 + v4) * 4.0 + w1 + w2 + w3 + w4) * 0.0277777777777777777777777;   
+   v= v0 * 0.4444444444444444444444444f +       
+      ( (v1 + v2 + v3 + v4) * 4.0f + w1 + w2 + w3 + w4) * 0.0277777777777777777777777f;   
    homogenize(v);
    ppatch->mySharedFields->limitpoints->setValue(Pnt3f(v.x(),v.y(),v.z()), lwi);   
    lwi+=zweihoch[(wsdmaxdepth - targetdepth)];   
@@ -270,8 +270,8 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::limitpointcrease
 (OSG::UInt32& lwi, VectorType& v0, VectorType& v1, VectorType& v2)
 {   
    OSG::Vec4f v;
-   v= v0 * 0.6666666666666666666666666 +       
-      ( v1 + v2 ) * 0.1666666666666666666666666;   
+   v= v0 * 0.6666666666666666666666666f +       
+      ( v1 + v2 ) * 0.1666666666666666666666666f;
    homogenize(v);
    ppatch->mySharedFields->limitpoints->setValue(Pnt3f(v.x(),v.y(),v.z()), lwi);   
    lwi+=zweihoch[(wsdmaxdepth - targetdepth)];   
@@ -281,9 +281,9 @@ template<>
 void WSDsubdiv<OSG::Vec4f, QUAD>::limitpointmulti
 (OSG::UInt32& lwi, VectorType& v0, VectorType *array, OSG::Int32 val)
 {
-   OSG::Real32 alpha = 1.0 - (5.0 / ((OSG::Real32)val + 5.0));
-   OSG::Real32 gamma = (1.0 / ((OSG::Real32)val + 5.0))/(OSG::Real32)val;
-   OSG::Real32 beta  = gamma * 4.0;
+   OSG::Real32 alpha = 1.0f - (5.0f / ((OSG::Real32)val + 5.0f));
+   OSG::Real32 gamma = (1.0f / ((OSG::Real32)val + 5.0f))/(OSG::Real32)val;
+   OSG::Real32 beta  = gamma * 4.0f;
    OSG::Vec4f v4(0.0,0.0,0.0,0.0);
    OSG::Vec4f w4(0.0,0.0,0.0,0.0); //; w4.setValues
    for (OSG::Int32 i=0; i<(val*2); i=i+2) {
@@ -422,8 +422,7 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::firstedgerow (void)
    OSG::Int32 i  = 0;
    OSG::Int32 j  = 0;
    OSG::Int32 c  = 0;
-   OSG::Int32 d  = 0;
-   OSG::Int32 weiter;
+   OSG::Int32 d  = 0;   
    OSG::Vec4f* tabA = ppatch->ptabA;
    OSG::Vec4f* tabB = ppatch->ptabB;
    VectorCAType& corA = *(ppatch->pcorA);
@@ -531,8 +530,7 @@ void WSDsubdiv<OSG::Vec4f, QUAD>::lastedgerow
   OSG::Int32 i=0;
   OSG::Int32 j=0;
   OSG::Int32 c=0;
-  OSG::Int32 d=0;
-  OSG::Int32 weiter;
+  OSG::Int32 d=0;  
   OSG::Int32 val1 = ppatch->valenz[1];
   OSG::Int32 val2 = ppatch->valenz[2];
   OSG::Vec4f* tabA = ppatch->ptabA;

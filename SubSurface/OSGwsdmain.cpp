@@ -7,6 +7,9 @@
 \*---------------------------------------------------------------------------*/
 
 #include "OSGwsdmain.h"
+
+#include "OSGDynamicVolume.h"
+
 OSG_USING_NAMESPACE
 
 // explicit instantiations
@@ -31,19 +34,19 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::simpleCreaseSubdiv
    Int32 gg=i+g;    // add i because of possible negative values!
    Int32 numface = h-g;  
    //sharp edge
-   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5; // TODO: only regular case for approx...
+   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5f; // TODO: only regular case for approx...
    gg++;
    for (Int32 si=0; si<numface-1; si++) {        
       //edge
-      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375) + 
+      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375f) + 
       ((wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.125));    
       gg++;  
    }
    //sharp edge
-   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5;
+   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5f;
    // vertex
-   Real32 alpha = 0.75; 
-   Real32 beta  = 0.125;
+   Real32 alpha = 0.75f; 
+   Real32 beta  = 0.125f;
    a = (alpha * a) + (beta * (wara_[g].p + wara_[h].p));
 }
 template<class WSDVector, class Mesh, int mtype>
@@ -54,28 +57,28 @@ void WSDmain<WSDVector, Mesh, mtype>::simpleCreaseSubdiv
    Int32 val = (i/2);  
    Int32 numface = (h-g)/2;  
    //sharp edge
-   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5;
+   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5f;
    gg++;
    //face
    waB_[(gg)%i].p = (a + wara_[(gg)%i].p + 
-    wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25;
+    wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25f;
    gg++;
    for (Int32 si=0; si<numface-1; si++) {        
       //edge
-      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375) + 
+      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375f) + 
       ((wara_[(gg+1)%i].p + wara_[(gg-1)%i].p + 
-       wara_[(gg+2)%i].p + wara_[(gg-2)%i].p) * 0.0625));    
+       wara_[(gg+2)%i].p + wara_[(gg-2)%i].p) * 0.0625f));    
       gg++;
       //face
       waB_[(gg)%i].p = (a + wara_[(gg)%i].p + 
-       wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25;    
+       wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25f;    
       gg++;
    }
    //sharp edge
-   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5;
+   waB_[gg%i].p = (a + wara_[gg%i].p) * 0.5f;
    // vertex
-   Real32 alpha = 0.75; 
-   Real32 beta  = 0.125;
+   Real32 alpha = 0.75f; 
+   Real32 beta  = 0.125f;
    a = (alpha * a) + (beta * (wara_[g].p + wara_[h].p));
 }
 
@@ -86,19 +89,19 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::simpleSubdiv
 (WorkType* wara_, WorkType* waB_, OMPoint &a, Int32 i)
 {
    Int32 gg=i;
-   Real32 val = i;
+   Real32 val = (Real32)i;
    OMPoint beta(0,0,0);
    for (Int32 si=0; si<i; si++) {        // edges    
-      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375) + 
-       ((wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.125));
+      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375f) + 
+       ((wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.125f));
       beta+=wara_[gg%i].p;
       gg++;    
    }
    // vertex  
-   Real32 ak = (1.0 / val) *
-    (0.625 - ((0.375 + 0.25 * cos((2.0 * Pi)/val)) *
-    (0.375 + 0.25 * cos((2.0 * Pi)/val))));
-   Real32 falpha = 1.0 - (val*ak);  
+   Real32 ak = (1.0f / val) *
+    (0.625f - ((0.375f + 0.25f * cos((2.0f * Pi)/val)) *
+    (0.375f + 0.25f * cos((2.0f * Pi)/val))));
+   Real32 falpha = 1.0f - (val*ak);  
    a = (falpha * a) + (ak * beta);
 }
 // CATMULL-CLARK
@@ -112,21 +115,21 @@ void WSDmain<WSDVector, Mesh, mtype>::simpleSubdiv
    OMPoint beta(0,0,0);
    for (Int32 si=0; si<val; si++) {        
       //edge
-      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375) + 
+      waB_[gg%i].p = (((a + wara_[gg%i].p) * 0.375f) + 
        ((wara_[(gg+1)%i].p + wara_[(gg-1)%i].p + 
-         wara_[(gg+2)%i].p + wara_[(gg-2)%i].p) * 0.0625));
+         wara_[(gg+2)%i].p + wara_[(gg-2)%i].p) * 0.0625f));
       beta+=wara_[gg%i].p;
       gg++;
       //face
       waB_[(gg)%i].p = (a + wara_[(gg)%i].p + 
-       wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25;
+       wara_[(gg+1)%i].p + wara_[(gg-1)%i].p) * 0.25f;
       gamma+=wara_[gg%i].p;
       gg++;
    }
    // vertex  
-   Real32 falpha = 1.0 - (3.0 / (2.0 * (Real32)val)) - (1.0 / (4.0 * (Real32)val));
-   Real32 fbeta  = 3.0 / (2.0 * (Real32)val * (Real32)val);
-   Real32 fgamma = 1.0 / (4.0 * (Real32)val * (Real32)val);
+   Real32 falpha = 1.0f - (3.0f / (2.0f * (Real32)val)) - (1.0f / (4.0f * (Real32)val));
+   Real32 fbeta  = 3.0f / (2.0f * (Real32)val * (Real32)val);
+   Real32 fgamma = 1.0f / (4.0f * (Real32)val * (Real32)val);
    a = (falpha * a) + (fbeta * beta) + (fgamma * gamma);
 }
 
@@ -142,13 +145,13 @@ WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::NormCrease
    OMPoint ret(0,0,0);
    Real32 k = (Real32)(h-g+1);        
    betat2 = wara_[g%v].p - wara_[h%v].p;
-   if (k < 3.0) {    
+   if (k < 3.0f) {    
       betat1 = (wara_[g%v].p + wara_[h%v].p);
-      t1 = (alpha_ * -2.0) + betat1;
+      t1 = (alpha_ * -2.0f) + betat1;
       t2 = betat2;
       ret = t1%t2;    
    } else {
-      if (k < 4.0) {    
+      if (k < 4.0f) {    
          betat1 = wara_[(g+1)%v].p;
          t1 = (alpha_ * -1.0) + betat1;
          t2 = betat2;
@@ -183,24 +186,24 @@ WSDmain<WSDVector, Mesh, mtype>::NormCrease
    betat2 = wara_[g%v].p - wara_[h%v].p;
    if (k < 2.0) {    
       betat1 = (wara_[g%v].p + wara_[h%v].p) * -1.0;
-      t1 = (alpha_ * 2.0) + betat1;
+      t1 = (alpha_ * 2.0f) + betat1;
       t2 = betat2;
       ret = t1%t2;    
    } else {    // k >= 2  
       Real32 pidk = Pi / k;
-      Real32 rk = (osgcos(pidk) + 1.0) / (k * osgsin(pidk) * (3.0 + osgcos(pidk)));
-      Real32 b0 = -1.0 * rk * (1.0 + 2.0 * osgcos(pidk));
-      Real32 c = osgsin(pidk) / ((3.0 + osgcos(pidk)) * k);
+      Real32 rk = (osgcos(pidk) + 1.0f) / (k * osgsin(pidk) * (3.0f + osgcos(pidk)));
+      Real32 b0 = -1.0f * rk * (1.0f + 2.0f * osgcos(pidk));
+      Real32 c = osgsin(pidk) / ((3.0f + osgcos(pidk)) * k);
       betat1 = wara_[g%v].p * b0;
       gammat1 = wara_[(g+1)%v].p * c;
       for (Int32 i=1; i<k; i++)  {
-         Real32 bi = (4.0 * osgsin((Real32)i * pidk)) / ((3.0 + osgcos(pidk)) * k);
+         Real32 bi = (4.0f * osgsin((Real32)i * pidk)) / ((3.0f + osgcos(pidk)) * k);
          betat1+= wara_[(g+(i*2))%v].p * bi;
-         c = (1.0 * (osgsin((Real32)i * pidk) + osgsin(((Real32)i + 1.0) * pidk))) / ((3.0 + osgcos(pidk)) * k);
+         c = (1.0f * (osgsin((Real32)i * pidk) + osgsin(((Real32)i + 1.0f) * pidk))) / ((3.0f + osgcos(pidk)) * k);
          gammat1+= wara_[(g+(i*2)+1)%v].p * c;
       }
       betat1+= wara_[h%v].p * b0;
-      Real32 a = 4.0 * rk * (osgcos(pidk) - 1.0);    
+      Real32 a = 4.0f * rk * (osgcos(pidk) - 1.0f);    
       t1 = (alpha_ * a) + betat1 + gammat1;
       t2 = betat2;
       ret = t2%t1;
@@ -221,8 +224,8 @@ WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::NormInner (WorkType* wara_, Int32 v)
    OMPoint betat1(0,0,0);
    OMPoint betat2(0,0,0);  
    for (Int32 j=0; j<v; j++)  {
-      b1 = osgcos((2.0*Pi*(Real32)j) / val);
-      b2 = osgsin((2.0*Pi*(Real32)j) / val);    
+      b1 = osgcos((2.0f*Pi*(Real32)j) / val);
+      b2 = osgsin((2.0f*Pi*(Real32)j) / val);    
       betat1+=wara_[j].p * b1;
       betat2+=wara_[j].p * b2;    
    }  
@@ -235,8 +238,8 @@ template<class WSDVector, class Mesh, int mtype>
 typename WSDmain<WSDVector, Mesh, mtype>::OMPoint 
 WSDmain<WSDVector, Mesh, mtype>::NormInner (WorkType* wara_, Int32 v)
 {
-   Real32 val = (Real32)v / 2.0;
-   Real32 ak = 1.0 + osgcos(2.0 * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0*(9.0 + osgcos(2.0 * Pi / val)));
+   Real32 val = (Real32)v / 2.0f;
+   Real32 ak = 1.0f + osgcos(2.0f * Pi / val) + osgcos(Pi / val) * osgsqrt(2.0f*(9.0f + osgcos(2.0f * Pi / val)));
    Real32 b1,b2,c1,c2;
    OMPoint ret;
    OMPoint betat1(0,0,0); 
@@ -245,10 +248,10 @@ WSDmain<WSDVector, Mesh, mtype>::NormInner (WorkType* wara_, Int32 v)
    OMPoint gammat2(0,0,0);
    Int32 i=0;
    for (Int32 j=0; j<v; j++)  {
-      b1 = ak * osgcos(2*Pi*(i+1) / val);
-      b2 = ak * osgcos(2*Pi*i / val);
-      c1 = osgcos(2*Pi*(i+1) / val) + osgcos(2*Pi*(i+2) / val);
-      c2 = osgcos(2*Pi*i / val) + osgcos(2*Pi*(i+1) / val);
+      b1 = ak * osgcos(2.0f*Pi*((Real32)i+1.0f) / val);
+      b2 = ak * osgcos(2.0f*Pi*(Real32)i / val);
+      c1 = osgcos(2.0f*Pi*((Real32)i+1) / val) + osgcos(2.0f*Pi*((Real32)i+2.0f) / val);
+      c2 = osgcos(2.0f*Pi*(Real32)i / val) + osgcos(2.0f*Pi*((Real32)i+1.0f) / val);
       betat1+=wara_[j].p * b1;
       betat2+=wara_[j].p * b2;
       j++;
@@ -273,7 +276,7 @@ template<>
 void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::getOptiDepth
 (MeshType *pmesh, VertexHandle v_h)
 {  
-   Real32 epsilon=1.0 - NormalConeAperture;
+   Real32 epsilon=1.0f - NormalConeAperture;
    // build workarray
    WorkArrayType WA1, WA2;  
    WorkType*    wara = &(WA1[0]);
@@ -434,7 +437,7 @@ template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::getOptiDepth
 (MeshType* pmesh, VertexHandle v_h)
 {
-   Real32 epsilon=1.0 - NormalConeAperture;
+   Real32 epsilon=1.0f - NormalConeAperture;
    // build workarray
    WorkArrayType WA1, WA2;  
    WorkType*    wara = &(WA1[0]);
@@ -660,7 +663,6 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::collectNeighbors
          pmesh->opposite_halfedge_handle(
          pmesh->next_halfedge_handle(
          fhe_h)));
-
       } else {
          fhe_h = pmesh->next_halfedge_handle(fhe_h);    
       }
@@ -691,9 +693,11 @@ WSDmain<WSDVector, Mesh, mtype>::WSDmain(MeshType *m)
 : pmesh(m), mesh2wsd(m), subdivwsd()
 {  
    patchesready = false;  
+   errorcase = false;
    isSetViewPort = false;
    isSetBFCull = true;
-   useTexture = false;  
+   useTexture = false;     
+   oldGeop = NullFC;
 #ifdef DEFINE_SHOWROOM
    useProjSize = true;
    useSilhouette = true;
@@ -793,18 +797,25 @@ void WSDmain<WSDVector, Mesh, mtype>::initOneGeo (perInstanceData *instance)
    // set up node cores
    beginEditCP(instance->onlyOneNode);
    instance->onlyOneNode->setCore(instance->onlyOneGeoP);
-   endEditCP(instance->onlyOneNode);  
+   endEditCP(instance->onlyOneNode);     
 }
 
 // initOSGStuff sets up mySharedFields
 template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
 {
+   bool recycleGeop = (oldGeop != NullFC);
+
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
    Int32 slatesize = (wsddepthindexarray[wsdmaxdepth]+2)*(wsddepthindexarray[wsdmaxdepth]+2);
    // shared data init (limitpoints -normals)
-   mySharedFields.limitpointsptr  = GeoPositions3f::create();
-   mySharedFields.limitnormalsptr = GeoNormals3f::create();   
+   if (recycleGeop) {
+      mySharedFields.limitpointsptr  = GeoPositions3fPtr::dcast(oldGeop->getPositions());
+      mySharedFields.limitnormalsptr = GeoNormals3fPtr::dcast(oldGeop->getNormals());   
+   } else {
+      mySharedFields.limitpointsptr  = GeoPositions3f::create();
+      mySharedFields.limitnormalsptr = GeoNormals3f::create();   
+   }
    // shared usage for all geometry nodes with same basis mesh
    addRefCP(mySharedFields.limitpointsptr);
    addRefCP(mySharedFields.limitnormalsptr);
@@ -813,22 +824,30 @@ void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
  
    assert(wsdmaxvarray > 0);
 
-   beginEditCP(mySharedFields.limitpointsptr);
-   beginEditCP(mySharedFields.limitnormalsptr);
-   mySharedFields.limitpoints->resize((wsdmaxvarray*fsize));
-   mySharedFields.limitnormals->resize((wsdmaxvarray*fsize));   
-   endEditCP(mySharedFields.limitnormalsptr);
-   endEditCP(mySharedFields.limitpointsptr);
+   if (!recycleGeop) {
+      beginEditCP(mySharedFields.limitpointsptr);
+      beginEditCP(mySharedFields.limitnormalsptr);
+      mySharedFields.limitpoints->resize((wsdmaxvarray*fsize));
+      mySharedFields.limitnormals->resize((wsdmaxvarray*fsize));   
+      endEditCP(mySharedFields.limitnormalsptr);
+      endEditCP(mySharedFields.limitpointsptr);
+   }
 
    // texture coords are shared too
    if (useTexture) {
-      mySharedFields.texcoordsptr = GeoTexCoords2f::create(); 
+      if (recycleGeop) {
+         mySharedFields.texcoordsptr = GeoTexCoords2fPtr::dcast(oldGeop->getTexCoords()); 
+      } else {
+         mySharedFields.texcoordsptr = GeoTexCoords2f::create(); 
+      }
       addRefCP(mySharedFields.texcoordsptr);
       mySharedFields.texcoords = mySharedFields.texcoordsptr->getFieldPtr();
 
-      beginEditCP(mySharedFields.texcoordsptr);
-      mySharedFields.texcoords->resize((wsdmaxvarray*fsize));
-      endEditCP(mySharedFields.texcoordsptr);
+      if (!recycleGeop) {
+         beginEditCP(mySharedFields.texcoordsptr);
+         mySharedFields.texcoords->resize((wsdmaxvarray*fsize));
+         endEditCP(mySharedFields.texcoordsptr);
+      }
    }
    // get memory for slates
    PatchData::slateA = new VectorType[slatesize];
@@ -838,9 +857,14 @@ void WSDmain<WSDVector, Mesh, mtype>::initOSGStuff (Int32 fsize)
 
 // initPatches: mtype = TRIANGLE
 template<>
-void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
+void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches (OSG::GeometryPtr geop)
 {
    SLOG << "start initPatches" << std::endl;
+   bool recycleGeop = (geop != NullFC);
+   oldGeop = geop;
+   if (recycleGeop) SLOG << "ok, no new geometry needed" << std::endl;
+   else SLOG << "creating new geometry" << std::endl;
+
    Int32 i=0;
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
    subdivwsd.wsdmaxdepth = this->wsdmaxdepth;
@@ -855,9 +879,11 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
    if (i==0) {
       SLOG << "no faces at all!" << std::endl;
       patchesready=false;
+      errorcase=true;
       return;
    }
 
+   // add temp property patchIndex to identify the patch for a given facehandle
    pmesh->add_property(patchIndex,"patchIndex");   
 
    // step one: pairing list
@@ -919,12 +945,14 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
       } else {
          singles.push_back(i);
       }
-      if (wsdmaxdepth > 0) {
-         temppatch->solltiefe = 1;
-         subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos        
-      } else {
-         temppatch->solltiefe = 0;
-         subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos        
+      if (!recycleGeop) {
+         if (wsdmaxdepth > 0) {
+            temppatch->solltiefe = 1;
+            subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos        
+         } else {
+            temppatch->solltiefe = 0;
+            subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos        
+         }
       }
       i++;      
       if (makeItDouble) {
@@ -945,12 +973,14 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
          }
          pmesh->property(patchIndex,p_iter->fh2)=i;
   
-         if (wsdmaxdepth > 0) {
-            temppatch->solltiefe = 1;
-            subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos        
-         } else {
-            temppatch->solltiefe = 0;
-            subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos        
+         if (!recycleGeop) {
+            if (wsdmaxdepth > 0) {
+               temppatch->solltiefe = 1;
+               subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos        
+            } else {
+               temppatch->solltiefe = 0;
+               subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos        
+            }
          }
          i++;      
       }
@@ -967,14 +997,15 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
    for (MeshType::VertexIter v_it=pmesh->vertices_begin(); v_it!=pmesh->vertices_end(); ++v_it) {
       getOptiDepth(pmesh, v_it.handle());
    }  
-  
-   for (f_it=pmesh->faces_begin(); f_it!=pmesh->faces_end(); ++f_it) {    
-      collectNeighbors(f_it.handle(), &patches[getFaceIndex(f_it.handle())]);      
-   }  
+
+   // iteration over pairinglist for collecting neighborhood information
+   for (p_iter = pairinglist.pairs.begin(); p_iter!=pairinglist.pairs.end(); ++p_iter) {
+      collectNeighbors(p_iter->fh, &patches[getFaceIndex(p_iter->fh)]);      
+   }
 
    // now for the neighbor-neighbors
    // iteration over patches
-  for (i=0; i<patches.size(); i++) {
+  for (i=0; i<(Int32)patches.size(); i++) {
     patches[i].neighbor1in0 = patches[patches[i].neighbors[0]].getneighbor(i,-1);
     patches[i].neighbor3in0 = patches[patches[i].neighbors[0]].getneighbor(i,1);
     patches[i].neighbor1in2 = patches[patches[i].neighbors[2]].getneighbor(i,1);
@@ -983,16 +1014,26 @@ void WSDmain<OSG::Vec3f, MyTriMesh, TRIANGLE>::initPatches ()
     patches[i].neighbor2in1 = patches[patches[i].neighbors[1]].getneighbor(i,-1);
     patches[i].neighbor0in3 = patches[patches[i].neighbors[3]].getneighbor(i,-1);
     patches[i].neighbor2in3 = patches[patches[i].neighbors[3]].getneighbor(i,1);      
+    if (recycleGeop) {
+       patches[i].currentdepth = wsdmaxdepth;
+       patches[i].solltiefe = wsdmaxdepth/2;
+    }
   }
   pmesh->remove_property(patchIndex);
   SLOG << "initPatches done" << std::endl;
 }
 
 template<class WSDVector, class Mesh, int mtype>
-void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
+void WSDmain<WSDVector, Mesh, mtype>::initPatches (OSG::GeometryPtr geop)
 {     
+   SLOG << "start initPatches" << std::endl;
+   bool recycleGeop = (geop != NullFC);
+   oldGeop = geop;
+   if (recycleGeop) SLOG << "ok, no new geometry needed" << std::endl;
+   else SLOG << "creating new geometry" << std::endl;
+
    PatchData *temppatch;  
-   Int32 i=0;
+   UInt32 i=0;
    Int32 wsdmaxvarray = wsddepthindexarray[wsdmaxdepth]*wsddepthindexarray[wsdmaxdepth];
    subdivwsd.wsdmaxdepth = this->wsdmaxdepth;
    // check for texture coords in pmesh
@@ -1007,6 +1048,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
    if (i==0) {
       SLOG << "no faces at all!" << std::endl;
       patchesready=false;
+      errorcase=true;
       return;
    }   
    initOSGStuff(i);
@@ -1021,6 +1063,7 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
       if (!isQuad(f_it.handle())) {
          SLOG << "Face of degree <> 4 detected!" << std::endl;
          patchesready=false;
+         errorcase=true;
          return;
       }
       patches.push_back(PatchData());      // patchdata in vector
@@ -1030,12 +1073,14 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
       mesh2wsd.insertface(f_it.handle(),f_it.handle(), temppatch);
       temppatch->varrayOffset=(i*wsdmaxvarray);      
       temppatch->isSingleTriangle = false;
-      if (wsdmaxdepth > 0) {
-         temppatch->solltiefe = 1;
-         subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos    
-      } else {
-         temppatch->solltiefe = 0;
-         subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos    
+      if (!recycleGeop) {
+         if (wsdmaxdepth > 0) {
+            temppatch->solltiefe = 1;
+            subdivwsd.subdiv(1,temppatch);      // subdiv once for corner-limpos    
+         } else {
+            temppatch->solltiefe = 0;
+            subdivwsd.subdiv(0,temppatch);      // subdiv once for corner-limpos    
+         }
       }
       pmesh->property(patchIndex,f_it.handle())=i;
       i++;
@@ -1072,6 +1117,10 @@ void WSDmain<WSDVector, Mesh, mtype>::initPatches ()
       patches[i].neighbor2in1 = patches[patches[i].neighbors[1]].getneighbor(i,-1);
       patches[i].neighbor0in3 = patches[patches[i].neighbors[3]].getneighbor(i,-1);
       patches[i].neighbor2in3 = patches[patches[i].neighbors[3]].getneighbor(i,1);
+      if (recycleGeop) {
+         patches[i].currentdepth = wsdmaxdepth;
+         patches[i].solltiefe = wsdmaxdepth/2;
+      }
    }   
    pmesh->remove_property(patchIndex);
 
@@ -1090,6 +1139,8 @@ void WSDmain<WSDVector, Mesh, mtype>::initInstance (Int32 n, NodePtr& parent)
    newInst->parentNode = parent;
    // create node
    newInst->onlyOneNode = Node::create();
+   setName(newInst->onlyOneNode,"DynSubdivNode");
+
    initOneGeo(newInst);
    // add child to parent-node
    beginEditCP(parent);
@@ -1103,8 +1154,12 @@ template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup 
 (OSG::NodePtr& parent, OSG::Vec3f eyepoint)
 {  
-   if (!patchesready) {
-      SLOG << "patches not initialized!" << std::endl; 
+   if ((!patchesready)) {
+      SLOG << "patches not initialized  - skipping perFrameSetup" << std::endl; 
+      return;
+   }
+   if (errorcase) {
+      SLOG << "an error occured - skipping perFrameSetup" << std::endl; 
       return;
    }
    if (!isSetViewPort) {
@@ -1120,7 +1175,7 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
 #endif
 
    VectorType eyep(eyepoint[0], eyepoint[1], eyepoint[2], 1.0);  
-   Int32 i;     
+   UInt32 i;     
    // check position of every vertex ( silhuette, back faces... )
    for (i=0; i<VertexListe.size(); i++) {
       VectorType lp;
@@ -1198,19 +1253,19 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
          }
          Real32 Rl = patches[i].radiusD;
          if (Rl > 0) {
-            while (a>0) { Rl = Rl * 0.5; a--; }                        
+            while (a>0) { Rl = Rl * 0.5f; a--; }                        
             if (Rl < Rmin) {
                do {
                   l--;
                   Rl = Rl *2;
-               } while (Rl < Rmin);
+               } while ((Rl < Rmin) && (l>0));
             } else {
                Real32 Rmax = d*hmax;
                if (Rl > Rmax) {
                   do {
                      l++;
-                     Rl = Rl * 0.5;
-                  } while (Rl > Rmax);
+                     Rl = Rl * 0.5f;
+                  } while ((Rl > Rmax) && (l<wsdmaxdepth+1));
                }           
             }
          } else {
@@ -1235,7 +1290,7 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
    }  // for
 
    // transfer to single triangle
-   for (i=0; i<singles.size(); i++) {
+   for (i=0; i<(Int32)singles.size(); i++) {
       patches[singles[i]].solltiefe = patches[patches[singles[i]].neighbors[2]].solltiefe;
    }
 
@@ -1364,13 +1419,126 @@ void WSDmain<WSDVector, Mesh, mtype>::perFrameSetup
 }
 
 
+
+// uniformSetup: is called after bin load to have at least uniform
+// tesselation (a depth of maxdepth/2 is used)
+template<class WSDVector, class Mesh, int mtype>
+void WSDmain<WSDVector, Mesh, mtype>::uniformSetup(void)
+{  
+   if ((!patchesready)) {
+      SLOG << "patches not initialized  - skipping uniformSetup" << std::endl; 
+      return;
+   }
+   if (errorcase) {
+      SLOG << "an error occured - skipping uniformSetup" << std::endl; 
+      return;
+   }
+
+
+   // set the depth
+   for (UInt32 i=0; i<patches.size(); i++) {        
+      patches[i].solltiefe = wsdmaxdepth/2;     
+   }  
+
+   for (UInt32 n=0; n<myInstances.size(); n++) {      
+      
+      // beginEditCP for all patches (end after the for-loop)
+      beginEditCP(myInstances[n].oneTypesPtr);
+      beginEditCP(myInstances[n].oneLengthsPtr);
+      beginEditCP(myInstances[n].oneIndicesPtr);   
+      // delete types, lengths
+      myInstances[n].oneTypes->clear();
+      myInstances[n].oneLengths->clear();
+      
+      UInt32 indisIn=0;
+      
+      //bool ongoing,allfaces;
+      // iteration over patches
+      for (UInt32 i=0; i<patches.size(); i++)    {                
+          
+         Int32 neue_tiefe = patches[i].solltiefe;         
+         
+         // do subdivision when the depth has been raised (only for manual calls)
+         if (neue_tiefe > patches[i].currentdepth) {
+            beginEditCP(myInstances[n].onlyOneGeoP->getPositions());    
+            beginEditCP(myInstances[n].onlyOneGeoP->getNormals());              
+            if (useTexture) 
+               beginEditCP(myInstances[n].onlyOneGeoP->getTexCoords());
+            subdivwsd.subdiv(neue_tiefe,&patches[i]);               
+            if (useTexture) 
+               endEditCP(myInstances[n].onlyOneGeoP->getTexCoords());            
+            endEditCP(myInstances[n].onlyOneGeoP->getNormals());    
+            endEditCP(myInstances[n].onlyOneGeoP->getPositions());
+         }       
+         // prepare everything
+         Int32 finer_l=0, finer_r=0;
+         Int32 finer_o=0, finer_u=0;
+         
+         // calculate the required steps for gap filling
+         patches[i].interstep_l = zweihoch[(wsdmaxdepth - patches[patches[i].neighbors[0]].solltiefe)];
+         patches[i].interstep_u = zweihoch[(wsdmaxdepth - patches[patches[i].neighbors[1]].solltiefe)];
+         patches[i].interstep_r = zweihoch[(wsdmaxdepth - patches[patches[i].neighbors[2]].solltiefe)];
+         patches[i].interstep_o = zweihoch[(wsdmaxdepth - patches[patches[i].neighbors[3]].solltiefe)];            
+            
+         if (patches[i].solltiefe > 0) {
+            // repair-pices in corners
+            patches[i].c0_l = 
+            ((patches[i].solltiefe == patches[patches[i].neighbors[0]].solltiefe)
+               && (patches[patches[i].neighbor3in0].solltiefe 
+               - patches[patches[i].neighbors[0]].solltiefe > 0));
+            patches[i].c0_o =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[3]].solltiefe)
+               && (patches[patches[i].neighbor0in3].solltiefe 
+               - patches[patches[i].neighbors[3]].solltiefe > 0));
+            patches[i].c1_l =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[0]].solltiefe)
+               && (patches[patches[i].neighbor1in0].solltiefe 
+               - patches[patches[i].neighbors[0]].solltiefe > 0));
+            patches[i].c1_u =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[1]].solltiefe)
+               && (patches[patches[i].neighbor0in1].solltiefe 
+               - patches[patches[i].neighbors[1]].solltiefe > 0));
+            patches[i].c2_r =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[2]].solltiefe)
+               && (patches[patches[i].neighbor1in2].solltiefe 
+               - patches[patches[i].neighbors[2]].solltiefe > 0));
+            patches[i].c2_u =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[1]].solltiefe)
+               && (patches[patches[i].neighbor2in1].solltiefe 
+               - patches[patches[i].neighbors[1]].solltiefe > 0));
+            patches[i].c3_r =
+            ((patches[i].solltiefe == patches[patches[i].neighbors[2]].solltiefe)
+               && (patches[patches[i].neighbor3in2].solltiefe 
+               - patches[patches[i].neighbors[2]].solltiefe > 0));
+            patches[i].c3_o = 
+            ((patches[i].solltiefe == patches[patches[i].neighbors[3]].solltiefe)
+               && (patches[patches[i].neighbor2in3].solltiefe 
+               - patches[patches[i].neighbors[3]].solltiefe > 0));
+         }       
+         // update the patch edges
+         patches[i].setOuterGeoP(myInstances[n], finer_l, finer_r, finer_o, finer_u, indisIn);    
+         if (patches[i].solltiefe > 1) {
+            patches[i].setInnerGeoP(myInstances[n], indisIn);
+         }
+
+      }  // for i    
+        
+      endEditCP(myInstances[n].oneIndicesPtr);
+      endEditCP(myInstances[n].oneLengthsPtr);
+      endEditCP(myInstances[n].oneTypesPtr);  
+
+   } // for n
+
+}
+
+
 // viewport dependant inits
 template<class WSDVector, class Mesh, int mtype>
 void WSDmain<WSDVector, Mesh, mtype>::initViewPortVars
 (Real32 fovy, Int32 resX, Int32 resY)
 {  
-   PminSil = 0.75 * Pmin;                 // take 3/4 of Pmin for the shiluette
-   gamma_winkel = (fovy*2)/resY;
+   PminSil = 0.75f * Pmin;                 // take 3/4 of Pmin for the shiluette
+   gamma_winkel = (fovy*2.0f)/resY;
    hmin    = tan((gamma_winkel/2)*Pmin);
    hminSil = tan((gamma_winkel/2)*PminSil);
    hmax    = tan((gamma_winkel/2)*Pmax);  
@@ -1399,6 +1567,50 @@ void WSDmain<WSDVector, Mesh, mtype>::clearInstances (void)
       }
       myInstances.clear();    
    }  
+}
+
+// clearInstances: savely delete all instances
+template<class WSDVector, class Mesh, int mtype>
+void WSDmain<WSDVector, Mesh, mtype>::preprocessInstances (void)
+{  
+   perInstanceDataContainer::iterator theIterator;
+   if (myInstances.size() > 0) {      
+      for (theIterator = myInstances.begin(); theIterator != myInstances.end();
+         theIterator++) {
+         beginEditCP(theIterator->onlyOneGeoP->getPositions());    
+         beginEditCP(theIterator->onlyOneGeoP->getNormals());              
+         if (useTexture) {
+            beginEditCP(theIterator->onlyOneGeoP->getTexCoords());
+         }
+      }
+   }
+   for (UInt32 i=0; i<patches.size(); i++)    { 
+      patches[i].solltiefe = wsdmaxdepth;      
+      if (wsdmaxdepth > patches[i].currentdepth) {         
+         subdivwsd.subdiv(wsdmaxdepth,&patches[i]);                        
+      }     
+            
+   }
+   
+   if (myInstances.size() > 0) {
+      for (theIterator = myInstances.begin(); theIterator != myInstances.end();
+         theIterator++) {
+            if (useTexture) {
+             endEditCP(theIterator->onlyOneGeoP->getTexCoords());            
+            }
+            endEditCP(theIterator->onlyOneGeoP->getNormals());    
+            endEditCP(theIterator->onlyOneGeoP->getPositions());
+
+         beginEditCP(theIterator->oneTypesPtr);
+         beginEditCP(theIterator->oneLengthsPtr);         
+         theIterator->oneTypes->clear();
+         theIterator->oneLengths->clear();         
+         endEditCP(theIterator->oneTypesPtr);
+         endEditCP(theIterator->oneLengthsPtr);
+      }      
+   }  
+   
+   
 }
 
 // helper to find the index in myInstances for parent p

@@ -168,7 +168,7 @@ public:
    //! actual depth for current frame
    Int32 currentdepth;              
    //! planed depth for the next frame
-   Int32 solltiefe;                
+   Int32 solltiefe;   //nextdepth             
 
    //! patch radius approximation for projected size
    Real32 radiusD;      

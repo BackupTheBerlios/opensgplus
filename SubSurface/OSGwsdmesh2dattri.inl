@@ -242,8 +242,7 @@ void WSDmesh2dat<OSG::Vec3f, MyTriMesh, TRIANGLE>::insertface
 (FaceHandle f_h, FaceHandle tpair, WSDdat<VectorType, MType> *pp)
 {  
    ppatch = pp;
-   OMPoint p;  
-   Int32 vt;
+   OMPoint p;     
    HalfedgeHandle fhe_h;
    HalfedgeHandle op,test,ende;  
    // init tricrease with null (default)
@@ -469,7 +468,7 @@ void WSDmesh2dat<OSG::Vec3f, MyTriMesh, TRIANGLE>::insertface
    // calculate ppatch->radiusD
    VectorType d1 = ppatch->slateO[1][1] - ppatch->slateO[2][2];
    VectorType d2 = ppatch->slateO[1][2] - ppatch->slateO[2][1];
-   ppatch->radiusD = osgMax(d1.length(),d2.length()) / 2.0;    
+   ppatch->radiusD = osgMax(d1.length(),d2.length()) / 2.0f;    
    ppatch->maxdepth=0;        
    ppatch->currentdepth=0;
    // faceloc is the avarage of all four corners

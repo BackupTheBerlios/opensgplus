@@ -17,9 +17,9 @@ OSG_USING_NAMESPACE
 // helper for loop algos
 static OSG::Real32 lp_a (OSG::Int32 k)
 {
-   OSG::Real32 ret = (1.0 / (OSG::Real32)k) *
-    (0.625 - ((0.375 + 0.25 * osgcos((2.0 * Pi)/(OSG::Real32)k)) *
-    (0.375 + 0.25 * osgcos((2.0 * Pi)/(OSG::Real32)k))));
+   OSG::Real32 ret = (1.0f / (OSG::Real32)k) *
+    (0.625f - ((0.375f + 0.25f * osgcos((2.0f * Pi)/(OSG::Real32)k)) *
+    (0.375f + 0.25f * osgcos((2.0f * Pi)/(OSG::Real32)k))));
    return ret;
 }
 
@@ -39,7 +39,7 @@ template<>
 void WSDsubdiv<OSG::Vec3f, TRIANGLE>::vertexpointmulti
 (OSG::Vec3f& v, OSG::Vec3f& v0, OSG::Vec3f* array, OSG::Int32 val)
 {
-   OSG::Real32 alpha = 1.0 - (lp_a(val) * (OSG::Real32)val);
+   OSG::Real32 alpha = 1.0f - (lp_a(val) * (OSG::Real32)val);
    OSG::Real32 beta  = lp_a(val);
    OSG::Vec3f tmp(0.0,0.0,0.0);  
    for (OSG::Int32 i=0; i<val; i++) {
@@ -131,7 +131,7 @@ void WSDsubdiv<OSG::Vec3f, TRIANGLE>::innernormal
    OSG::Vec3f t1(0.0,0.0,0.0);
    OSG::Vec3f t2(0.0,0.0,0.0);
    OSG::Real32 b1,b2,ak;
-   ak = 2.0*Pi / 6.0;
+   ak = 2.0f*Pi / 6.0f;
            //i=0
    OSG::Int32 i=0;
    b1 = osgcos(ak*(OSG::Real32)i);
@@ -176,7 +176,7 @@ void WSDsubdiv<OSG::Vec3f, TRIANGLE>::innernormalmulti
    OSG::Vec3f v;
    OSG::Vec3f t1(0.0,0.0,0.0);
    OSG::Vec3f t2(0.0,0.0,0.0);
-   OSG::Real32 ak = 2.0 * Pi / (Real32)val;
+   OSG::Real32 ak = 2.0f * Pi / (Real32)val;
    OSG::Real32 b1,b2;
    for (OSG::Int32 i=0; i<val; i++) {
       b1 = osgcos(ak*i);
@@ -439,8 +439,8 @@ template<>
 void WSDsubdiv<OSG::Vec3f, TRIANGLE>::limitpointmulti
 (OSG::UInt32& lwi, OSG::Vec3f& v0, OSG::Vec3f *array, OSG::Int32 val)
 {
-   OSG::Real32 alpha = 1.0 - ((OSG::Real32)val/((3.0 / (8.0*lp_a(val)))+(OSG::Real32)val));
-   OSG::Real32 beta = 1.0 / (3.0 /(8.0 * lp_a(val)) + (OSG::Real32)val);  
+   OSG::Real32 alpha = 1.0f - ((OSG::Real32)val/((3.0f / (8.0f*lp_a(val)))+(OSG::Real32)val));
+   OSG::Real32 beta = 1.0f / (3.0f /(8.0f * lp_a(val)) + (OSG::Real32)val);  
    OSG::Vec3f v4(0.0,0.0,0.0);  
    for (OSG::Int32 i=0; i<val; i++) {    
       v4 = v4 + array[i];

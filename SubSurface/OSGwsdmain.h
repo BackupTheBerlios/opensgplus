@@ -58,6 +58,8 @@
 #include "OSGwsdpairing.h"
 #include "OSGConfig.h"
 #include "OSGSubSurfaceDef.h"
+#include "OSGSimpleAttachments.h"
+
 
 OSG_BEGIN_NAMESPACE
 
@@ -125,12 +127,16 @@ public:
    perInstanceDataContainer  myInstances;       //!< "per parent one Instance"-data
 
    void initOSGStuff(Int32 fsize);                 //!< init OpenSG geodata and shared data
-   void initPatches();                      //!< init patches (preprocessing)
+   void initPatches(OSG::GeometryPtr geop);        //!< init patches (preprocessing)
    void initInstance(Int32 n, OSG::NodePtr& parent);  //!< init instances
    void clearInstances(void);                  //!< completely remove instances
+   void preprocessInstances(void);                  //!< for osb-writing
 
    //! output method where the geometry is set up
    void perFrameSetup(OSG::NodePtr& parent, OSG::Vec3f eyepoint);
+
+   //! set up a uniform tesselation (maxdepth/2)
+   void uniformSetup(void);
 
    //! call through for WSDmesh2dat::getBoundingBox   
    void OpenMeshBoundingBox(OSG::Pnt3f &boundingMin, OSG::Pnt3f &boundingMax);
@@ -153,6 +159,7 @@ public:
 
    //! Flags
    bool patchesready;      //!< flag: are the patches ready?
+   bool errorcase;         //!< extra flag if errors occured
    bool isSetViewPort;      //!< flag: are the viewport parameters set?
    bool isSetBFCull;          //!< flag: perform backface culling?
 
@@ -208,6 +215,9 @@ public:
 
    //! flag for texture usage
    bool useTexture;
+   
+   //! geometry to recycle from after bin load
+   OSG::GeometryPtr oldGeop;
 
 #ifdef DEFINE_SHOWROOM
    UInt32 _depthsInUse[30];          // never use a maxdepth higher than 30!
