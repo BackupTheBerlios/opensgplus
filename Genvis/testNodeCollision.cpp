@@ -16,7 +16,7 @@
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
 
-#include "OSGGVNodeTraverser.h"
+#include "OSGGVPruningTraverser.h"
 #include "OSGGVNodeCollision.h"
 #include "OSGGVNodeHierarchy.h"
 #include "OSGGVProfiler.h"
@@ -33,8 +33,11 @@ static NodePtr        second;
 static const UInt32 numSecond= 100;
 typedef OSGNodeHierarchy Hierarchy;
 static Hierarchy                 hier;
-static genvis::OSGNodeTraverser* all = NULL;
-static SimpleSceneManager*       mgr = NULL;
+static OSGAllTraverser* all = NULL;
+//typedef DoubleTraverserEmpty<OpenSGTraits,NodeCollisionTraits<OpenSGTraits> > Traverser;
+typedef NodeCollision<OpenSGTraits> Traverser;
+static Traverser*          traverser = NULL;
+static SimpleSceneManager* mgr = NULL;
 
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
@@ -186,9 +189,13 @@ int main(int argc, char **argv)
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     SLOG << "adapters created.." << std::endl;
-    // * create all traverser
-    //   double traverser not necessary
-    all = new OSGNodeTraverser();
+    // * create double traverser for collision detection
+    traverser = new Traverser();
+    traverser->setUseCoherency(false);             // do not use generalized front cache for frame coherency
+    traverser->getDataTyped().setStopFirst(false);
+
+    all = new PruningTraverser<OpenSGTraits>();
+    all->setDoubleTraverser(traverser);
 
     // GLUT main loop
     Profiler::the().Reset();
@@ -204,7 +211,6 @@ int main(int argc, char **argv)
 // redraw the window
 void display(void)
 {
-   Profiler::the().StartProfile("Frame");
    UInt32 i;
    for (i=0; i<numFirst; ++i) {
      TransformPtr trf = TransformPtr::dcast(first->getChild(i)->getCore());
@@ -222,16 +228,17 @@ void display(void)
 				  (rand()/Real32(RAND_MAX)-0.5f), 0.0f);
      endEditCP(trf);
    }
+   Profiler::the().StartProfile("Frame");
    bool result = all->apply(first, second);
+   Profiler::the().EndProfile("Frame");
 
-   OSGNodeCollision& col = all->getDataTyped();     
+   OSGNodeCollision& col = traverser->getDataTyped();     
    SLOG << col.getNumContacts() << " contacts with " 
 	     << col.getNumBVolTests() << " BVolTests/"
 	     << col.getNumMixedTests() << " MixedTests/"
 	     << col.getNumPrimTests() << " TriTests  " 
 	     << std::endl;
 
-   Profiler::the().EndProfile("Frame");
    mgr->redraw();
 }
 
@@ -268,6 +275,7 @@ void keyboard(unsigned char k, int x, int y)
     case 27: {    
       hier.destroy();
       subRefCP(scene);
+      delete traverser;
       delete all;
       Profiler::the().dump(SLOG);
       exit(0);

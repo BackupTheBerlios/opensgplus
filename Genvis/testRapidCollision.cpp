@@ -16,7 +16,7 @@
 #include "OSGGeometry.h"
 #include "OSGSimpleGeometry.h"
 
-#include "OSGGVRAPIDTraverser.h"
+#include "OSGGVAllTraverser.h"
 #include "OSGGVRAPIDCollision.h"
 #include "OSGGVRAPIDHierarchy.h"
 #include "OSGGVProfiler.h"
@@ -28,13 +28,16 @@ USING_GENVIS_NAMESPACE
 // The SimpleSceneManager to manage simple applications
 static NodePtr scene;
 static NodePtr        first;
-static const unsigned numFirst = 100;
+static const unsigned numFirst = 10;
 static NodePtr        second;
-static const unsigned numSecond= 100;
+static const unsigned numSecond= 10;
 typedef OSGRAPIDHierarchy Hierarchy;
-static Hierarchy                  hier;
-static genvis::OSGRAPIDTraverser* all = NULL;
-static SimpleSceneManager*        mgr = NULL;
+static Hierarchy          hier;
+static OSGAllTraverser* all = NULL;
+//typedef DoubleTraverserEmpty<OpenSGTraits,RAPIDCollisionTraits<OpenSGTraits> > Traverser;
+typedef OSGRAPIDCollision  Traverser;
+static Traverser*          traverser = NULL;
+static SimpleSceneManager* mgr = NULL;
 
 // forward declaration so we can have the interesting stuff upfront
 int setupGLUT( int *argc, char *argv[] );
@@ -52,7 +55,14 @@ static NodePtr makePerturbedAll (UInt16 numSubdiv,
       points->setValue(factor*points->getValue(i), i);
    }
    endEditCP(points);
-   return sphereNode;
+
+   NodePtr node = Node::create();
+   beginEditCP(node);
+   node->setCore(Transform::create());
+   node->addChild(sphereNode);
+   endEditCP(node);
+
+   return node;
 }
 static NodePtr makePerturbedUniform (UInt16 numSubdiv, 
 				     Real32 radius,
@@ -71,7 +81,14 @@ static NodePtr makePerturbedUniform (UInt16 numSubdiv,
       }
    }
    endEditCP(points);
-   return sphereNode;
+
+   NodePtr node = Node::create();
+   beginEditCP(node);
+   node->setCore(Transform::create());
+   node->addChild(sphereNode);
+   endEditCP(node);
+
+   return node;
 }
 
 void randomTransform (Matrix& m)
@@ -134,14 +151,16 @@ int main(int argc, char **argv)
     first->setCore(Group::create());
     unsigned i;
     for (i=0; i<numFirst; ++i) {
-       first->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(1,0,0)));
+       first->addChild(makePerturbedAll(4, 1.0f));
+       //makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(1,0,0)));
     }
     endEditCP(first);
     second = Node::create ();
     beginEditCP(second);
     second->setCore(Group::create());
     for (i=0; i<numSecond; ++i) {
-       second->addChild(makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(0,1,0)));
+       second->addChild(makePerturbedAll(4, 1.0f, 0.0f));
+       //makeTransformedCube(1.0f,1.0f,1.0f,1,1,1, Color3f(0,1,0)));
     }
     endEditCP(second);
 
@@ -186,13 +205,17 @@ int main(int argc, char **argv)
     OSGCache::the().setHierarchy(&hier);
     OSGCache::the().apply(scene);
     SLOG << "adapters created.." << std::endl;
-    // * create all traverser
-    //   double traverser not necessary
+    // * create double traverser for collision detection
+    traverser = new Traverser();
+    traverser->setUseCoherency(false);             // do not use generalized front cache for frame coherency
+    traverser->getDataTyped().setStopFirst(false);
 #ifndef GV_WITH_RAPID
     SWARNING << "For RAPID support you have to define GV_WITH_RAPID (see Kernel/OSGGVBase.h)" 
 	     << std::endl;
 #endif
-    all = new OSGRAPIDTraverser();
+    // * create all traverser
+    all = new AllTraverser<OpenSGTraits>();
+    all->setDoubleTraverser(traverser);
 
     // GLUT main loop
     Profiler::the().Reset();
@@ -229,7 +252,7 @@ void display(void)
 
    bool result = all->apply(first, second);
 
-   OSGRAPIDCollision& col = all->getDataTyped();     
+   OSGRAPIDCollision& col = (OSGRAPIDCollision&)all->getData();     
    SLOG << col.getNumContacts() << " contacts with " 
 	<< col.getNumBVolTests() << " BVolTests/"
 	<< col.getNumMixedTests() << " MixedTests/"
@@ -270,7 +293,7 @@ void keyboard(unsigned char k, int x, int y)
 {
     switch(k)
     {
-    case 27: {    
+    case 27: { 
       hier.destroy();
       subRefCP(scene);
       delete all;
