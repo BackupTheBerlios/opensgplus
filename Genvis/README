@@ -11,7 +11,7 @@ for several applications
 * spatialization (using k-DOP hierarchies)
 * point location (using k-DOP hierarchies)
 * ray intersection (using k-DOP hierarchies or regular grid)
-* vertex clustering (using regular grid)
+* vertex clustering (using regular grid and adaptive grid)
 See the test programs...
 
 
@@ -20,12 +20,16 @@ Compilation:
 For the sources in RapidCollision/ you need the package RAPID, Version 2.01
 You can get it for non-commercial use at 
 http://www.cs.unc.edu/~geom/OBB/OBBT.html
+There is also a define GV_WITH_RAPID in OSGGVBase.h to use the library
+RAPID or not.
 
+CYGWIN/autoconf/make
 For this configure OpenSG with the following options added
 (You have to change the paths according to your system!)
 --with-add-incdir=/cygdrive/e/extern/RAPID/include
 --with-add-libdir=/cygdrive/e/extern/RAPID/lib 
 --with-add-lib=RAPID
 
-There is also a define GV_WITH_RAPID in OSGGVBase.h to use the library
-RAPID or not.
+VISUAL STUDIO 7
+The projectfile GenvisLib.vcproj is intended to be in the directory
+VSBuild/VS7/GenvisLib.
