@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:59:31 $
+//   $Revision: 1.4 $
+//   $Date: 2006/06/08 16:57:46 $
 //                                                                            
 //=============================================================================
 
@@ -39,7 +39,7 @@ class RAPID_model;
 
 BEGIN_GENVIS_NAMESPACE
 
-/** \brief FaceAdapter for collision detection with RAPID. This class is only
+/** FaceAdapter for collision detection with RAPID. This class is only
     necessary to implement the common interface for reporting collision pairs.
  */
 template <class BasicTraits>
@@ -64,11 +64,15 @@ public:
    /*! \name Constructor.                                                 */
    /*! \{                                                                 */
    OpenSGRAPIDFaceAdapter ();
-   OpenSGRAPIDFaceAdapter (InternalObjectType* adapter);
    OpenSGRAPIDFaceAdapter (InternalObjectType* adapter,
-			   i32                id);
+			   i32                 id);
+   OpenSGRAPIDFaceAdapter (ObjectAdapterType*  adapter,
+			   i32                 id);
    ~OpenSGRAPIDFaceAdapter ();
-   /*! \}                                                                 */
+   void init (InternalObjectType* adapter,
+	      i32                 id);
+   void init (ObjectAdapterType*  adapter,
+	      i32                 id);
    /*---------------------------------------------------------------------*/
    /*! \name Dump.                                                        */
    /*! \{                                                                 */
@@ -84,14 +88,14 @@ typedef  OpenSGRAPIDFaceAdapter<OpenSGTraits> OSGRAPIDFaceAdapter;
  */
 template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING OpenSGRAPIDAdapter 
-: public OpenSGObjectBase<BasicTraits>, public Adapter
+: public OpenSGObjectBase<BasicTraits>, public BVolAdapterBase
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef OpenSGObjectBase<BasicTraits>             InheritedData;
-   typedef Adapter                                   Inherited;
+   typedef BVolAdapterBase                           Inherited;
    typedef OpenSGRAPIDAdapter<BasicTraits>           Self;
    typedef typename InheritedData::Cache             Cache;
    typedef typename InheritedData::CacheData         CacheData;
@@ -99,6 +103,7 @@ public:
    typedef typename InheritedData::GeomObjectType    GeomObjectType;
    typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
 
+   typedef OpenSGRAPIDFaceAdapter<BasicTraits>       FaceAdapterType;
    typedef FactoryHeap<Self>                         FactoryType;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -113,14 +118,23 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Init.                                                        */
    /*! \{                                                                 */
-   void  init (const GeomObjectType& obj);
-   void  init (const TransformType&  m2w,
-	       const GeomObjectType& obj);
+   void  init     (const GeomObjectType& obj);
+   void  init     (const TransformType&  m2w,
+		   const GeomObjectType& obj);
+   void  postInit (const GeomObjectType& obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
-   /*! \name Class methods.                                               */
+   /*! \name Methods.                                                     */
    /*! \{                                                                 */
-   inline RAPID_model*   getModel     () const;
+   inline RAPID_model*    getModel       () const;
+   FaceAdapterType        getFaceAdapter (i32 id);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Bounding volume.                                             */
+   /*! \{                                                                 */
+   /*! Calc a bounding box from the scenegraph bounding volume. Note this method
+       is not reentrant, as it uses a static variable of type AABox internally! */
+   virtual const BoundingVolume<Real>& getBoundingVolume () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Dump.                                                        */
@@ -130,12 +144,14 @@ public:
    /*---------------------------------------------------------------------*/
    /*! \name Identifier of adapter type.                                  */
    /*! \{                                                                 */
-   static u32       getAdapterId ();
+   static u32        getPrivateId();
+   static u32        getAdapterId ();
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
 
 protected:
-   RAPID_model* m_model;
+   RAPID_model*                 m_model;
+   std::vector<FaceAdapterType> m_index;
 };
 typedef OpenSGRAPIDAdapter<OpenSGTraits> OSGRAPIDAdapter;
 

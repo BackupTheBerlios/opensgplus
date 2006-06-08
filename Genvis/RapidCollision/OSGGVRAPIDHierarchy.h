@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:59:31 $
+//   $Revision: 1.4 $
+//   $Date: 2006/06/08 16:57:46 $
 //                                                                            
 //=============================================================================
 
@@ -70,6 +70,8 @@ public:
    /*! \name Adapter creation.                                            */
    /*! \{                                                                 */
    void         addAdapter (const GeomObjectType& obj);
+   virtual void addAdapter (const TransformType&  m2w,
+			    const GeomObjectType& obj);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Memory management.                                           */
@@ -94,7 +96,11 @@ public:
    /*---------------------------------------------------------------------*/
 
 protected:
-   std::vector<AdapterType*>     m_leaf;
+   void    hierarchyLocal  (const GeomObjectType& node);
+   void    hierarchyGlobal (const GeomObjectType& node);
+
+   std::vector<AdapterType*> m_leaf;
+   AdapterType*              m_current;
 };
 typedef  RAPIDHierarchy<OpenSGTraits>   OSGRAPIDHierarchy;
 

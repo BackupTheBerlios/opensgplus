@@ -6,23 +6,22 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.4 $
-//   $Date: 2004/12/22 18:42:07 $
+//   $Revision: 1.5 $
+//   $Date: 2006/06/08 16:57:46 $
 //                                                                            
 //=============================================================================
 
 #include "OSGGVRAPIDHierarchy.h"
-
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
 
-// explicit template instantiations
-template class OSG_GENVISLIB_DLLMAPPING RAPIDHierarchy<OpenSGTraits>;
+BEGIN_GENVIS_NAMESPACE
 
 template <class BasicTraits> 
 RAPIDHierarchy<BasicTraits>::RAPIDHierarchy ()
   : Inherited()
 {
+   m_current = NULL;
 }
 template <class BasicTraits> 
 RAPIDHierarchy<BasicTraits>::~RAPIDHierarchy ()
@@ -38,9 +37,44 @@ void RAPIDHierarchy<BasicTraits>::addAdapter (const GeomObjectType& obj)
    adapter->init(obj); 
    data.setAdapter(AdapterType::getAdapterId(), adapter);
 }
+template <class BasicTraits>
+void RAPIDHierarchy<BasicTraits>::addAdapter (const TransformType&  m2w,
+					      const GeomObjectType& obj)
+{
+   CacheData& data = Cache::the()[obj];
+   data.setAdapterMatrix(AdapterType::getAdapterId(), m2w);
 
-template <class BasicTraits> 
-void RAPIDHierarchy<BasicTraits>::process (const GeomObjectType& node)
+   if (m_current == NULL) {
+      m_current = FactoryType::the().newObject();
+      m_leaf.push_back(m_current);
+      m_current->setObjectAdapter(&data);
+      m_current->init(m2w, obj);
+   } else {
+      m_current->init(m2w, obj);
+   }
+}
+
+template<class BasicTraits> 
+void RAPIDHierarchy<BasicTraits>::hierarchyGlobal (const GeomObjectType& node)
+{
+   if (m_current == NULL) {
+      return;
+   }
+   // post init
+   m_current->postInit(node);
+   // propagate to parent nodes
+   for (NodePtr parent=node; parent!=NullFC; parent=parent->getParent()) {
+      CacheData& data2 = Cache::the()[parent];
+      if (data2.getNode() == NullFC) { // parent node not in cache 
+	 break;
+      }
+      data2.setAdapter(AdapterType::getAdapterId(), m_current);
+   }
+   m_current = NULL;
+}
+
+template<class BasicTraits> 
+void RAPIDHierarchy<BasicTraits>::hierarchyLocal (const GeomObjectType& node)
 {
    // mark geometry nodes
    std::vector<CacheData*> all;
@@ -61,6 +95,21 @@ void RAPIDHierarchy<BasicTraits>::process (const GeomObjectType& node)
 	 }
 	 data2.setAdapter(AdapterType::getAdapterId(), leaf);
       }
+   }
+}
+
+template <class BasicTraits> 
+void RAPIDHierarchy<BasicTraits>::process (const GeomObjectType& node)
+{
+   switch (getCoordinateSystem()) {
+   case Local:
+   case LocalShared:
+      hierarchyLocal(node);
+      break;
+   default:
+   case Global:
+      hierarchyGlobal(node);
+      break;
    }
 }
 
@@ -107,7 +156,19 @@ bool RAPIDHierarchy<BasicTraits>::staticEnterGeometry
    if (thisInput == NULL) {
       return false;
    }
-   thisInput->addAdapter(Cache::the().getCurrentNode());
+   switch (thisInput->getCoordinateSystem()) { 
+   case Local:
+      thisInput->addAdapter(Cache::the().getCurrentNode());
+      break;
+   case LocalShared:
+      if (Cache::the().findShare(Cache::the().getCurrentNode()) == NULL) {
+	 thisInput->addAdapter(Cache::the().getCurrentNode());
+      }
+      break;
+   case Global:
+      thisInput->addAdapter(Cache::the().getCurrentMatrix(), Cache::the().getCurrentNode());
+      break;
+   }
    return true;
 }
 
@@ -119,3 +180,8 @@ bool RAPIDHierarchy<BasicTraits>::functorEnterGeometry
    return staticEnterGeometry (cnode, input); 
 }
 #endif
+
+// explicit template instantiations
+template class OSG_GENVISLIB_DLLMAPPING RAPIDHierarchy<OpenSGTraits>;
+
+END_GENVIS_NAMESPACE
