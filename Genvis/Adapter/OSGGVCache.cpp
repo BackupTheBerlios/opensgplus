@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:56:35 $
+//   $Revision: 1.4 $
+//   $Date: 2006/06/08 17:08:47 $
 //                                                                            
 //=============================================================================
 
@@ -558,6 +558,15 @@ void OpenSGCache::clearAdapter (u32 id, u32 len)
       data.clearAdapter(id, len);
    }
 }
+void OpenSGCache::destroyAdapter (u32 id, u32 len)
+{
+   for (Entry::iterator it = m_data.begin();
+	it != m_data.end();
+	++it) {
+      Cache::CacheData& data = it->second;
+      data.destroyAdapter(id, len);
+   }
+}
 
 void OpenSGCache::collectLeaves (std::vector<CacheData*>& all, const NodePtr& node)
 {
@@ -1100,6 +1109,13 @@ void OpenSGCache::clearAdapter (u32 id, u32 len)
    for (Entry::iterator it = begin(); it != end(); ++it) {
       CacheData& data = getNode(*it);
       data.clearAdapter(id, len);
+   }
+}
+void OpenSGCache::destroyAdapter (u32 id, u32 len)
+{
+   for (Entry::iterator it = begin(); it != end(); ++it) {
+      CacheData& data = getNode(*it);
+      data.destroyAdapter(id, len);
    }
 }
 

@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.4 $
-//   $Date: 2004/03/12 13:12:36 $
+//   $Revision: 1.5 $
+//   $Date: 2006/06/08 17:08:46 $
 //                                                                            
 //=============================================================================
 
@@ -245,10 +245,11 @@ public:
    const CacheData&     getParent  (const OSG::NodePtr& n, int i=0) const;
 
    void             clearColCache  ();
-   void             clearAdapter   (unsigned id, unsigned len=0);
-   void             collectAdapter (unsigned id, 
+   void             clearAdapter   (u32 id, u32 len=0);
+   void             destroyAdapter (u32 id, u32 len=0);
+   void             collectAdapter (u32 id, 
 				    AdapterVector& all, bool del=false);
-   void             collectAdapter (unsigned id, 
+   void             collectAdapter (u32 id, 
 				    AdapterVector& all, const NodePtr& node, bool del=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
@@ -419,10 +420,11 @@ public:
    /*! \name Internal methods for memory management.                      */
    /*! \{                                                                 */
    void              clearColCache  ();
-   void              clearAdapter   (unsigned id, unsigned len=0);
-   void              collectAdapter (unsigned id, 
+   void              clearAdapter   (u32 id, u32 len=0);
+   void              destroyAdapter (u32 id, u32 len=0);
+   void              collectAdapter (u32 id, 
 				     AdapterVector& all, bool del=false);
-   void              collectAdapter (unsigned id, 
+   void              collectAdapter (u32 id, 
 				     AdapterVector& all, const NodePtr& node, bool del=false);
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
