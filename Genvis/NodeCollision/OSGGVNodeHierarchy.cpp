@@ -6,18 +6,16 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/03/12 13:27:49 $
+//   $Revision: 1.4 $
+//   $Date: 2006/06/08 17:03:30 $
 //                                                                            
 //=============================================================================
 
 #include "OSGGVNodeHierarchy.h"
-
 OSG_USING_NAMESPACE
 USING_GENVIS_NAMESPACE
 
-// explicit template instantiations 
-template class OSG_GENVISLIB_DLLMAPPING NodeHierarchy<OpenSGTraits>;
+BEGIN_GENVIS_NAMESPACE
 
 template <class BasicTraits> 
 NodeHierarchy<BasicTraits>::NodeHierarchy ()
@@ -119,3 +117,8 @@ bool NodeHierarchy<BasicTraits>::functorEnterGeometry
    return staticEnterGeometry (cnode, input); 
 }
 #endif
+
+// explicit template instantiations 
+template class OSG_GENVISLIB_DLLMAPPING NodeHierarchy<OpenSGTraits>;
+
+END_GENVIS_NAMESPACE

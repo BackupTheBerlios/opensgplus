@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.3 $
-//   $Date: 2004/12/20 15:59:08 $
+//   $Revision: 1.4 $
+//   $Date: 2006/06/08 17:03:30 $
 //                                                                            
 //=============================================================================
 
@@ -38,22 +38,23 @@
 
 BEGIN_GENVIS_NAMESPACE
 
-/** \brief Adapter for collision detection with the bounding volume 
+/** Adapter for collision detection with the bounding volume 
     in OpenSG nodes (without any hierarchy).
  */
 template <class BasicTraits>
 class OSG_GENVISLIB_DLLMAPPING OpenSGNodeAdapter 
-: public OpenSGObjectBase<BasicTraits>, public Adapter
+: public OpenSGObjectBase<BasicTraits>, public BVolAdapterBase
 {
 public:
    /*---------------------------------------------------------------------*/
    /*! \name Types.                                                       */
    /*! \{                                                                 */
    typedef OpenSGObjectBase<BasicTraits>             InheritedData;
-   typedef Adapter                                   Inherited;
+   typedef BVolAdapterBase                           Inherited;
    typedef OpenSGNodeAdapter<BasicTraits>            Self;
    typedef typename InheritedData::Cache             Cache;
    typedef typename InheritedData::CacheData         CacheData;
+   typedef K6Dop                                     BVol;
    typedef typename InheritedData::TransformType     TransformType;
    typedef typename InheritedData::GeomObjectType    GeomObjectType;
    typedef typename InheritedData::ObjectAdapterType ObjectAdapterType;
@@ -71,6 +72,13 @@ public:
    /*! \name Init.                                                        */
    /*! \{                                                                 */
    void  init (const GeomObjectType& obj);
+   /*! \}                                                                 */
+   /*---------------------------------------------------------------------*/
+   /*! \name Bounding volume.                                             */
+   /*! \{                                                                 */
+   /*! Calc a bounding box from the scenegraph bounding volume. Mention this method
+       is not reentrant, as it uses a static variable of type AABox internally! */
+   virtual const BoundingVolume<Real>& getBoundingVolume () const;
    /*! \}                                                                 */
    /*---------------------------------------------------------------------*/
    /*! \name Dump.                                                        */
