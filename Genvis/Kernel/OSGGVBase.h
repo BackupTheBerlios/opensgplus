@@ -23,8 +23,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.4 $
-//   $Date: 2004/12/21 17:41:57 $
+//   $Revision: 1.5 $
+//   $Date: 2006/06/08 16:55:26 $
 //                                                                            
 //=============================================================================
 
@@ -171,6 +171,29 @@ inline TYPE2 stdClamp (const TYPE& l, const TYPE2& value, const TYPE& h)
    }
    return value;
 }
+
+/*! Comparison functor for C pointer types.
+ */
+template <class T>
+struct PtrLess {
+  typedef T* PtrType;
+  static size_t value (const PtrType& key) {
+#ifdef WIN32
+    union Caster {
+      PtrType pointer;
+      size_t  address;
+    };
+    Caster result;
+    result.pointer = key;
+    return result.address;
+#else
+    return reinterpret_cast<size_t>(key); 
+#endif
+  }
+  bool operator() (const PtrType& a, const PtrType& b) const {
+    return value(a) < value(b);
+  } 
+};
 
 /** Absolute value of argument.
  */
