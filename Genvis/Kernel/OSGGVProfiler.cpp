@@ -6,8 +6,8 @@
 //                                                                            
 //-----------------------------------------------------------------------------
 //                                                                            
-//   $Revision: 1.5 $
-//   $Date: 2004/03/12 13:23:23 $
+//   $Revision: 1.6 $
+//   $Date: 2006/06/13 22:40:43 $
 //                                                                            
 //-----------------------------------------------------------------------------
 // Hierarchical profiling based on code 
@@ -288,12 +288,23 @@ ProfileData* Profiler::GetResults(u32& nbrecords, u64& totalnbcycles)
 
 		// Special case for root-level...
 		if (CurLevel == 0) {
-		  CurDat->Percents = Real(CurDat->NbCycles) * 100.0f / Total;
+		  if (totalnbcycles == 0) {
+		    CurDat->Percents = 0.0f;
+		  } else {
+		    CurDat->Percents = Real(CurDat->NbCycles) * 100.0f / Total;
+		  }
 		} else {
 		  // Look for the current subtotal, from previous recursion level
 		  u32 j = i-1;
 		  while (Data[j].RecursionLevel != (CurLevel-1)) --j;
-		  CurDat->Percents = Real(CurDat->NbCycles) * 100.0f / Real(Data[j].NbCycles);
+		  if (Data[j].NbCycles == 0) {
+	 	     CurDat->Percents = 0.0f;
+		  } else {
+		     CurDat->Percents = Real(CurDat->NbCycles) * 100.0f / Real(Data[j].NbCycles);
+		  }
+		}
+		if (CurDat->Percents > 100.0f) {
+	 	   CurDat->Percents = 100.0f;
 		}
 	}
 
